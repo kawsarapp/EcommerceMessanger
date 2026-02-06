@@ -18,6 +18,9 @@ use Carbon\Carbon;
 
 class WebhookController extends Controller
 {
+    /**
+     * 1. Facebook Webhook Verification
+     */
     public function verify(Request $request)
     {
         $mode = $request->get('hub_mode');
@@ -34,6 +37,9 @@ class WebhookController extends Controller
         return response('Forbidden', 403);
     }
 
+    /**
+     * 2. Handle Incoming Messages
+     */
     public function handle(Request $request, ChatbotService $chatbot)
     {
         $data = $request->all();
@@ -45,6 +51,7 @@ class WebhookController extends Controller
             $messageText = $messaging['message']['text'] ?? null;
             $mid = $messaging['message']['mid'] ?? null;
 
+            // [Deduplication]
             if ($mid && Cache::has("fb_mid_{$mid}")) return response('OK', 200);
             if ($mid) Cache::put("fb_mid_{$mid}", true, 60);
 
@@ -69,6 +76,9 @@ class WebhookController extends Controller
         return response('EVENT_RECEIVED', 200);
     }
 
+    /**
+     * 3. Process Message
+     */
     private function processIncomingMessage($senderId, $pageId, $messageText, $chatbot, $incomingImageUrl)
     {
         $client = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
@@ -77,25 +87,35 @@ class WebhookController extends Controller
         try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_on'); } catch (\Exception $e) {}
 
         $finalText = $messageText ?? "Sent an image";
+        
+        // AI Response Logic
         $reply = $chatbot->getAiResponse($finalText, $client->id, $senderId, $incomingImageUrl);
 
-        if (str_contains($reply, '[ORDER_DATA:')) {
-            $reply = $this->finalizeOrder($reply, $client, $senderId);
-        } elseif (str_contains($reply, '[ADD_NOTE:')) {
-            $reply = $this->handleOrderNote($reply, $client, $senderId);
-        } elseif (str_contains($reply, '[UPDATE_ORDER:')) {
-            $reply = $this->handleOrderUpdate($reply, $client);
-        } elseif (str_contains($reply, '[CANCEL_ORDER:')) {
-            $reply = $this->handleOrderCancellation($reply, $client, $senderId);
+        if ($reply === null) {
+            try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
+            return; 
+        }
+
+        // [TAG PROCESSING] - Order, Update, Cancel, Note
+        // Regex 's' modifier allows multiline matching
+        if (preg_match('/\[ORDER_DATA:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            $reply = $this->finalizeOrder($reply, $matches, $client, $senderId);
+        } elseif (preg_match('/\[ADD_NOTE:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            $reply = $this->handleOrderNote($reply, $matches, $client, $senderId);
+        } elseif (preg_match('/\[UPDATE_ORDER:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            $reply = $this->handleOrderUpdate($reply, $matches, $client);
+        } elseif (preg_match('/\[CANCEL_ORDER:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            $reply = $this->handleOrderCancellation($reply, $matches, $client, $senderId);
         } elseif (str_contains($reply, '[NOTIFY_ADMIN:')) {
             $reply = str_replace(['[NOTIFY_ADMIN]', '{', '}', '"message":'], '', $reply);
         }
 
+        // Clean up outgoing images from text
         $outgoingImage = null;
         if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
             $outgoingImage = $matches[1];
             $reply = str_replace($outgoingImage, '', $reply);
-            $reply = str_replace(['(ছবি:', '[ছবি]', 'Image Link:', 'Link:'], '', $reply);
+            $reply = str_replace(['(ছবি:', '[ছবি]', 'Image Link:', 'Link:', '()'], '', $reply);
             $reply = trim($reply);
         }
 
@@ -105,34 +125,69 @@ class WebhookController extends Controller
         try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
     }
 
-    // [NEW] বাংলা নম্বর কনভার্টার
+    /**
+     * [HELPER] বাংলা টু ইংরেজি কনভার্সন
+     */
     private function convertBanglaToEnglish($str) {
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         return str_replace($bn, $en, $str);
     }
 
-    private function finalizeOrder($reply, $client, $senderId)
+    /**
+     * [HELPER] ফোন নম্বর ভ্যালিডেশন এবং ক্লিনিং
+     */
+    private function validateAndCleanPhone($phoneRaw) {
+        // ১. বাংলা টু ইংরেজি
+        $phone = $this->convertBanglaToEnglish($phoneRaw);
+        
+        // ২. স্পেস, হাইফেন বা অন্য ক্যারেক্টার রিমুভ
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        // ৩. +88 বা 88 রিমুভ (শুরুতে থাকলে)
+        if (substr($phone, 0, 3) === '880') {
+            $phone = substr($phone, 2);
+        } elseif (substr($phone, 0, 2) === '88') {
+            $phone = substr($phone, 2); // যদি শুধু 88 থাকে (rare case)
+        }
+
+        // ৪. বাংলাদেশী অপারেটর চেক (013, 014, 015, 016, 017, 018, 019)
+        // এবং মোট ডিজিট ১১ হতে হবে
+        if (preg_match('/^01[3-9]\d{8}$/', $phone)) {
+            return $phone; // সঠিক নম্বর
+        }
+
+        return null; // ভুল নম্বর
+    }
+
+    /**
+     * 4. Finalize Order (With Strict Phone Validation)
+     */
+    private function finalizeOrder($reply, $matches, $client, $senderId)
     {
-        preg_match('/\[ORDER_DATA: (.*?)\]/', $reply, $matches);
-        if (!isset($matches[1])) return $reply;
+        $jsonStr = $matches[1];
+        $data = json_decode($jsonStr, true);
 
-        $data = json_decode($matches[1], true);
-        if (!$data) return str_replace($matches[0], "", $reply);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("JSON Decode Error: " . json_last_error_msg() . " | Data: " . $jsonStr);
+            return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: টেকনিক্যাল সমস্যার কারণে অর্ডারটি সেভ করা যায়নি।)";
+        }
 
-        // [FIX] বাংলা নম্বর কনভার্ট এবং ক্লিন করা
-        $phoneRaw = $this->convertBanglaToEnglish($data['phone'] ?? '');
-        $phone = preg_replace('/[^0-9]/', '', $phoneRaw);
+        // [STRICT PHONE VALIDATION]
+        $validPhone = $this->validateAndCleanPhone($data['phone'] ?? '');
 
-        if (strlen($phone) < 11) {
-            return str_replace($matches[0], "", $reply) . "\n(দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।)";
+        if (!$validPhone) {
+            // ট্যাগ রিমুভ করে এরর মেসেজ দেখানো
+            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। দয়া করে ১১ ডিজিটের সঠিক বাংলাদেশী নম্বর দিন (যেমন: 017xxxxxxxx)।";
         }
 
         try {
-            return DB::transaction(function () use ($data, $client, $senderId, $phone, $reply, $matches) {
+            return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches) {
+                // প্রোডাক্ট ভেরিফিকেশন
                 $product = Product::find($data['product_id']);
-                if (!$product) return "দুঃখিত, পণ্যটি পাওয়া যাচ্ছে না।";
+                if (!$product) return "দুঃখিত, পণ্যটি বর্তমানে স্টকে নেই বা পাওয়া যাচ্ছে না।";
 
+                // প্রাইস ক্যালকুলেশন
                 $price = $product->sale_price ?? $product->regular_price ?? 0;
                 $isDhaka = ($data['is_dhaka'] ?? false) === true;
                 $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
@@ -142,8 +197,8 @@ class WebhookController extends Controller
                     'client_id' => $client->id,
                     'sender_id' => $senderId,
                     'customer_name' => $data['name'] ?? 'Guest',
-                    'customer_phone' => $phone,
-                    'shipping_address' => $data['address'] ?? '',
+                    'customer_phone' => $validPhone, // ক্লিন করা নম্বর
+                    'shipping_address' => $data['address'] ?? 'N/A',
                     'total_amount' => $totalAmount,
                     'order_status' => 'processing',
                     'payment_status' => 'pending'
@@ -154,87 +209,157 @@ class WebhookController extends Controller
                 }
 
                 $order = Order::create($orderData);
+
+                // সেশন আপডেট
                 OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
 
+                // ট্যাগ রিমুভ করে ক্লিন রিপ্লাই
                 $cleanReply = str_replace($matches[0], "", $reply);
-                $locText = $isDhaka ? "Inside Dhaka" : "Outside Dhaka";
+                $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
 
-                return $cleanReply . "\n\n✅ অর্ডার কনফার্ম!\nID: #{$order->id}\nTotal: {$totalAmount} Tk ({$locText})";
+                // অর্ডার আইডি সহ ফাইনাল মেসেজ
+                return trim($cleanReply) . "\n\n✅ অর্ডারটি সফলভাবে তৈরি হয়েছে!\nঅর্ডার আইডি: #{$order->id}\nমোট টাকা: {$totalAmount} Tk ({$locText})\nফোন: {$validPhone}";
             });
         } catch (\Exception $e) {
-            Log::error("Order Error: " . $e->getMessage());
-            return "অর্ডার প্রসেসিং এ সমস্যা হয়েছে।";
+            Log::error("Finalize Order DB Error: " . $e->getMessage());
+            return "দুঃখিত, অর্ডার প্রসেসিং এ একটি সমস্যা হয়েছে। এডমিনকে জানানো হয়েছে।";
         }
     }
 
-    private function handleOrderNote($reply, $client, $senderId)
+    /**
+     * 5. Handle Order Note
+     */
+    private function handleOrderNote($reply, $matches, $client, $senderId)
     {
-        preg_match('/\[ADD_NOTE: (.*?)\]/', $reply, $matches);
-        if (!isset($matches[1])) return $reply;
         $data = json_decode($matches[1], true);
         
-        if (!Schema::hasColumn('orders', 'notes')) return str_replace($matches[0], "", $reply);
+        if (Schema::hasColumn('orders', 'notes') && isset($data['note'])) {
+            $order = Order::where('client_id', $client->id)
+                          ->where('sender_id', $senderId)
+                          ->where('order_status', 'processing')
+                          ->latest()
+                          ->first();
 
-        $order = Order::where('client_id', $client->id)->where('sender_id', $senderId)->where('order_status', 'processing')->latest()->first();
-        if ($order) {
-            $order->update(['notes' => ($order->notes ? $order->notes . " | " : "") . ($data['note'] ?? '')]);
-            return str_replace($matches[0], "", $reply) . "\n📝 নোট যুক্ত হয়েছে।";
+            if ($order) {
+                $prevNote = $order->notes ? $order->notes . " | " : "";
+                $order->update(['notes' => $prevNote . $data['note']]);
+                return str_replace($matches[0], "", $reply) . "\n📝 নোট যুক্ত হয়েছে।";
+            }
         }
         return str_replace($matches[0], "", $reply);
     }
 
-    private function handleOrderUpdate($reply, $client)
+    /**
+     * 6. Handle Order Update
+     */
+    private function handleOrderUpdate($reply, $matches, $client)
     {
-        preg_match('/\[UPDATE_ORDER: (.*?)\]/', $reply, $matches);
-        if (!isset($matches[1])) return $reply;
         $data = json_decode($matches[1], true);
         
-        $order = Order::where('id', $data['order_id'])->where('client_id', $client->id)->first();
+        // এখানে AI যদি অর্ডার আইডি না দেয়, তবে লাস্ট অর্ডার ধরা হবে (অপশনাল লজিক)
+        $orderId = $data['order_id'] ?? null;
+        $order = null;
+
+        if ($orderId) {
+            $order = Order::where('id', $orderId)->where('client_id', $client->id)->first();
+        } 
+
         if ($order && in_array($order->order_status, ['processing', 'pending'])) {
             $update = [];
             if (!empty($data['new_address'])) $update['shipping_address'] = $data['new_address'];
             if (!empty($data['new_phone'])) {
-                $rawPhone = $this->convertBanglaToEnglish($data['new_phone']);
-                $update['customer_phone'] = preg_replace('/[^0-9]/', '', $rawPhone);
+                $validPhone = $this->validateAndCleanPhone($data['new_phone']);
+                if ($validPhone) {
+                    $update['customer_phone'] = $validPhone;
+                } else {
+                    return str_replace($matches[0], "", $reply) . "\n⚠️ আপডেট হয়নি: নতুন ফোন নম্বরটি সঠিক নয়।";
+                }
             }
             $order->update($update);
-            return str_replace($matches[0], "", $reply) . "\n✅ আপডেট হয়েছে।";
+            return str_replace($matches[0], "", $reply) . "\n✅ অর্ডার আপডেট হয়েছে।";
         }
-        return "অর্ডারটি পরিবর্তন সম্ভব নয়।";
+        return str_replace($matches[0], "", $reply) . "\n(দুঃখিত, অর্ডারটি আপডেট করা সম্ভব নয়।)";
     }
 
-    private function handleOrderCancellation($reply, $client, $senderId)
+    /**
+     * 7. Handle Order Cancellation
+     */
+    private function handleOrderCancellation($reply, $matches, $client, $senderId)
     {
-        preg_match('/\[CANCEL_ORDER: (.*?)\]/', $reply, $matches);
-        if (!isset($matches[1])) return $reply;
         $data = json_decode($matches[1], true);
-        $order = Order::where('client_id', $client->id)->where('sender_id', $senderId)->latest()->first();
+        
+        $order = Order::where('client_id', $client->id)
+                      ->where('sender_id', $senderId)
+                      ->latest()
+                      ->first();
 
         if ($order && in_array($order->order_status, ['processing', 'pending'])) {
-            $order->update(['order_status' => 'cancelled', 'admin_note' => $data['reason'] ?? 'User Request']);
-            return str_replace($matches[0], "", $reply) . "\n🚫 অর্ডার বাতিল হয়েছে।";
+            $order->update([
+                'order_status' => 'cancelled',
+                'admin_note' => "User Reason: " . ($data['reason'] ?? 'Not Specified')
+            ]);
+            return str_replace($matches[0], "", $reply) . "\n🚫 অর্ডারটি বাতিল করা হয়েছে।";
         }
-        return "অর্ডারটি বাতিল সম্ভব নয়।";
+        return str_replace($matches[0], "", $reply) . "\n(দুঃখিত, অর্ডারটি বাতিল করা সম্ভব নয় বা ইতিমধ্যে বাতিল হয়েছে।)";
     }
 
+    /**
+     * Messenger API Helpers
+     */
     private function sendTypingAction($recipientId, $token, $action) {
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", ['recipient' => ['id' => $recipientId], 'sender_action' => $action]);
+        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", [
+            'recipient' => ['id' => $recipientId], 
+            'sender_action' => $action
+        ]);
     }
 
     private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null) {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token=$token";
-        $sent = false;
+        $sentSuccessfully = false;
+
+        // 1. Send Image First
         if ($imageUrl) {
             try {
-                $res = Http::post($url, ['recipient' => ['id' => $recipientId], 'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]]);
-                if ($res->successful()) $sent = true;
-            } catch (\Exception $e) {}
+                $res = Http::post($url, [
+                    'recipient' => ['id' => $recipientId], 
+                    'message' => [
+                        'attachment' => [
+                            'type' => 'image', 
+                            'payload' => ['url' => $imageUrl, 'is_reusable' => true]
+                        ]
+                    ]
+                ]);
+                if ($res->successful()) $sentSuccessfully = true;
+            } catch (\Exception $e) {
+                Log::error("Image send error: " . $e->getMessage());
+            }
         }
-        if ($imageUrl && !$sent) $message .= "\n(ছবি: $imageUrl)";
-        if (!empty(trim($message))) Http::post($url, ['recipient' => ['id' => $recipientId], 'message' => ['text' => trim($message)]]);
+
+        // Fallback if image fails
+        if ($imageUrl && !$sentSuccessfully) {
+            $message .= "\n(ছবিটি এখানে দেখুন: $imageUrl)";
+        }
+
+        // 2. Send Text
+        if (!empty(trim($message))) {
+            Http::post($url, [
+                'recipient' => ['id' => $recipientId], 
+                'message' => ['text' => trim($message)]
+            ]);
+        }
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {
-        try { Conversation::create(['client_id' => $clientId, 'sender_id' => $senderId, 'platform' => 'messenger', 'user_message' => $userMsg, 'bot_response' => $botMsg, 'attachment_url' => $imgUrl, 'status' => 'success']); } catch (\Exception $e) {}
+        try {
+            Conversation::create([
+                'client_id' => $clientId, 
+                'sender_id' => $senderId, 
+                'platform' => 'messenger', 
+                'user_message' => $userMsg, 
+                'bot_response' => $botMsg, 
+                'attachment_url' => $imgUrl, 
+                'status' => 'success'
+            ]);
+        } catch (\Exception $e) {}
     }
 }
