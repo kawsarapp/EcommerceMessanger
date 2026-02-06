@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 class TopSellingProducts extends BaseWidget
 {
     protected static ?int $sort = 3;
+    protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
@@ -20,20 +21,31 @@ class TopSellingProducts extends BaseWidget
         return $table
             ->query(
                 OrderItem::query()
-                    ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
+                    ->select('product_id', DB::raw('SUM(quantity) as total_qty'), DB::raw('SUM(quantity * unit_price) as total_revenue'))
                     ->whereHas('order', function($q) use ($clientId) {
                         $q->where('client_id', $clientId)
-                          ->where('created_at', '>=', now()->subHours(24));
+                          ->where('created_at', '>=', now()->subDays(7)); // গত ৭ দিনের ডাটা
                     })
                     ->groupBy('product_id')
                     ->orderBy('total_qty', 'desc')
+                    ->limit(5)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('product.name')->label('Top Seller (24h)'),
+                Tables\Columns\ImageColumn::make('product.thumbnail')
+                    ->label('Image')
+                    ->circular(),
+                Tables\Columns\TextColumn::make('product.name')
+                    ->label('Product Name')
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('total_qty')
-                    ->label('Sold Qty')
+                    ->label('Sold')
                     ->badge()
-                    ->color('success'),
+                    ->color('success')
+                    ->suffix(' Units'),
+                Tables\Columns\TextColumn::make('total_revenue')
+                    ->label('Revenue')
+                    ->money('BDT')
+                    ->sortable(),
             ]);
     }
 }

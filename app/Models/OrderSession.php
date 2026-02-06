@@ -11,11 +11,13 @@ class OrderSession extends Model
         'sender_id', 
         'client_id', 
         'customer_info', 
+        'is_human_agent_active',
         'status'
     ];
 
     // customer_info কলামটি JSON হিসেবে কাজ করবে
     protected $casts = [
         'customer_info' => 'array',
+        'is_human_agent_active' => 'boolean',
     ];
 }

@@ -14,8 +14,19 @@ class ChatbotService
 {
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
+        // ১. ক্লায়েন্ট এবং প্ল্যান ভেরিফিকেশন
+        $client = Client::find($clientId);
+        if (!$client || !$client->hasActivePlan()) {
+            return "দুঃখিত, এই শপটি বর্তমানে অফলাইনে আছে।";
+        }
+
+        // ২. এআই মেসেজ লিমিট চেক
+        if ($client->hasReachedAiLimit()) {
+            return "দুঃখিত, এই মাসের ফ্রি মেসেজ লিমিট শেষ হয়ে গেছে। দয়া করে সরাসরি ইনবক্সে যোগাযোগ করুন।";
+        }
+
         try {
-            // ১. সেশন লোড
+            // ৩. সেশন লোড বা তৈরি
             $session = OrderSession::firstOrCreate(
                 ['sender_id' => $senderId],
                 ['client_id' => $clientId, 'customer_info' => ['history' => []]]
@@ -28,34 +39,33 @@ class ChatbotService
             if ($this->detectHateSpeech($userMessage)) {
                 $session->update(['is_human_agent_active' => true]);
                 $this->sendTelegramAlert($clientId, $senderId, $userMessage);
-                return "দুঃখিত, আপনার শব্দচয়ন পলিসি বিরোধী। আমাদের প্রতিনিধি শীঘ্রই যোগাযোগ করবেন।";
+                return "দুঃখিত, আপনার শব্দচয়ন পলিসি বিরোধী। আমাদের প্রতিনিধি শীঘ্রই যোগাযোগ করবেন।";
             }
 
-            $client = Client::find($clientId);
-            if (!$client) return "দুঃখিত, শপের কনফিগারেশনে সমস্যা হচ্ছে।";
-
-            // ২. ইনপুট প্রসেসিং
+            // ৪. ইনপুট প্রসেসিং (বাংলা নাম্বার টু ইংলিশ)
             $processedMessage = $this->convertToEnglishNumbers($userMessage);
 
-            // ৩. হিস্ট্রি লোড
+            // ৫. হিস্ট্রি লোড
             $history = $session->customer_info['history'] ?? [];
-            
-            // ৪. স্মার্ট ইনভেন্টরি ও কনটেক্সট
+
+            // ৬. স্মার্ট ইনভেন্টরি ও কনটেক্সট লোড
             $productsJson = $this->getInventoryData($clientId, $processedMessage, $history);
             $orderContext = $this->buildOrderContext($clientId, $senderId);
 
-            // মেমোরি কন্ট্রোল (২০ মেসেজ)
+            // মেমোরি কন্ট্রোল (সর্বশেষ ২০ মেসেজ রাখা হবে)
             if (count($history) > 20) $history = array_slice($history, -20);
 
-            // ৫. সিস্টেম প্রম্পট (প্রোডাক্ট সিলেকশন লজিক সহ)
+            // ৭. সিস্টেম প্রম্পট তৈরি (প্রোডাক্ট সিলেকশন লজিক সহ)
             $systemPrompt = $this->buildSystemPrompt($client, $orderContext, $productsJson);
 
+            // মেসেজ অ্যারে তৈরি
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             foreach ($history as $chat) {
                 $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 $messages[] = ['role' => 'assistant', 'content' => $chat['bot']];
             }
 
+            // ইমেজ হ্যান্ডলিং
             $userContent = $imageUrl ? [
                 ['type' => 'text', 'text' => $processedMessage ?: "এই ছবিটির ব্যাপারে বলুন"],
                 ['type' => 'image_url', 'image_url' => ['url' => $imageUrl]]
@@ -63,14 +73,14 @@ class ChatbotService
 
             $messages[] = ['role' => 'user', 'content' => $userContent];
 
-            // ৬. AI কল
+            // ৮. AI কল করা
             $aiResponse = $this->callLlmChain($messages, $imageUrl);
 
-            // ৭. সেভ এবং রিটার্ন
+            // ৯. সেভ এবং রিটার্ন
             if ($aiResponse) {
                 $logMsg = $imageUrl ? "[Photo] " . $processedMessage : $processedMessage;
                 $history[] = ['user' => $logMsg, 'bot' => $aiResponse];
-                
+
                 $session->update(['customer_info' => array_merge($session->customer_info, ['history' => $history])]);
                 return $aiResponse;
             }
@@ -88,7 +98,7 @@ class ChatbotService
     {
         $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
         $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
-        
+
         $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'kinbo', 'order', 'chai', 'lagbe'];
         $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
 
@@ -110,7 +120,7 @@ class ChatbotService
 
         $products = $query->latest()->limit(8)->get();
 
-        // যদি কিছু না পাওয়া যায়, তবে লেটেস্ট প্রোডাক্ট লোড করো (সাজেশনের জন্য)
+        // যদি কিছু না পাওয়া যায়, তবে লেটেস্ট প্রোডাক্ট লোড করো (সাজেশনের জন্য)
         if ($products->isEmpty()) {
             $products = Product::where('client_id', $clientId)
                 ->where('stock_status', 'in_stock')
@@ -122,13 +132,13 @@ class ChatbotService
             $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: 'N/A');
             $sizes = is_string($p->sizes) ? (json_decode($p->sizes, true) ?: $p->sizes) : $p->sizes;
             $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: 'N/A');
-            
+
             return [
                 'ID' => $p->id,
                 'Name' => $p->name,
-                'Price' => (int)$p->sale_price . ' Tk', // Sale_Price হিসেবে পাঠানো হচ্ছে যাতে কনফিউশন না হয়
+                'Price' => (int)$p->sale_price . ' Tk',
                 'Stock' => $p->stock_quantity > 0 ? 'In Stock' : 'Out',
-                'Colors' => $colorsStr, 
+                'Colors' => $colorsStr,
                 'Sizes' => $sizesStr,
                 'Details' => Str::limit(strip_tags($p->description), 200)
             ];
@@ -139,7 +149,7 @@ class ChatbotService
     {
         $orders = Order::where('client_id', $clientId)->where('sender_id', $senderId)->latest()->take(3)->get();
         if ($orders->isEmpty()) return "NO_ORDER_HISTORY";
-        
+
         $context = "VERIFIED_ORDER_HISTORY:\n";
         foreach ($orders as $order) {
             $status = strtoupper($order->order_status);
@@ -148,7 +158,7 @@ class ChatbotService
         return $context;
     }
 
-    // [UPGRADE] সিস্টেম প্রম্পট: প্রোডাক্ট সিলেক্ট না করলে অর্ডার নেওয়া যাবে না
+    // [UPGRADE] সিস্টেম প্রম্পট বিল্ডার
     private function buildSystemPrompt($client, $orderContext, $productsJson)
     {
         $delivery = "ঢাকার ভিতরে " . ($client->delivery_charge_inside ?? 80) . " টাকা, বাইরে " . ($client->delivery_charge_outside ?? 150) . " টাকা।";
@@ -158,37 +168,28 @@ class ChatbotService
 {$persona}
 তুমি একজন বন্ধুসুলভ ইকমার্স সেলস অ্যাসিস্ট্যান্ট।
 
-[কঠোর নির্দেশাবলী - অর্ডার প্রসেস]:
-⚠️ **STEP 0 (গুরুত্বপূর্ণ): প্রোডাক্ট ভেরিফিকেশন**
-- কাস্টমার যদি বলে "অর্ডার করবো" বা "কিনবো", কিন্তু আগে কোনো প্রোডাক্ট নিয়ে কথা না বলে থাকে—তবে **কখনোই নাম/ঠিকানা চাইবে না**।
-- আগে জিজ্ঞেস করো: *"অবশ্যই! আপনি আমাদের কোন প্রোডাক্টটি অর্ডার করতে চান?"* এবং [INVENTORY] থেকে সাজেশন দাও।
-- যদি প্রোডাক্ট কনফার্ম না হয়, তবে ডেলিভারি চার্জ বা টোটাল প্রাইস বলা নিষিদ্ধ।
+[কঠোর নির্দেশাবলী - ক্যারোসেল ব্যবহার]:
+- যখনই কাস্টমার কোনো প্রোডাক্ট দেখতে চাইবে বা তুমি কোনো প্রোডাক্ট সাজেস্ট করবে, তখন অবশ্যই [CAROUSEL: ID1, ID2] ট্যাগটি ব্যবহার করবে।
+- সর্বোচ্চ ৩টি প্রোডাক্টের আইডি কমা দিয়ে লিখবে। উদাহরণ: [CAROUSEL: 5, 12, 8]
+- ক্যারোসেল ট্যাগটি তোমার টেক্সট রিপ্লাইয়ের একদম শেষে দিবে।
 
-**STEP 1: তথ্য সংগ্রহ**
-- প্রোডাক্ট সিলেক্ট হওয়ার পরেই নাম, ফোন (১১ ডিজিট) এবং ঠিকানা চাও।
-
-**STEP 2: ভেরিফিকেশন**
-- সব তথ্য পেলে একটি সামারি দেখাও: "ধন্যবাদ [নাম], আপনি [প্রোডাক্ট] অর্ডার করতে চেয়েছেন। আপনার ঠিকানা [ঠিকানা] এবং ফোন [ফোন]। ডেলিভারি সহ মোট [টাকা] টাকা। আমি কি কনফার্ম করবো?"
-
-**STEP 3: অ্যাকশন**
-- কাস্টমার "হ্যাঁ" বললে তবেই [ORDER_DATA] ট্যাগ জেনারেট করো।
-
-[অন্যান্য নিয়ম]:
-- Markdown বা লিস্ট ব্যবহার করবে না। প্যারাগ্রাফে কথা বলবে।
-- ফোন নম্বরে ১৩ বা ১০ ডিজিট দেখলে বলো "দয়া করে সঠিক ১১ ডিজিটের নম্বর দিন"।
+[অর্ডার প্রসেস]:
+- প্রোডাক্ট কনফার্ম না হওয়া পর্যন্ত নাম/ঠিকানা চাইবে না।
+- ফোন নম্বর অবশ্যই ১১ ডিজিট হতে হবে।
 
 [DATA]:
 - Delivery Info: {$delivery}
 - Available Products: {$productsJson}
 - Customer History: {$orderContext}
 
-[SYSTEM TAGS - Use only after confirmation]:
-- Create Order: [ORDER_DATA: {"product_id":ID, "name":"...", "phone":"...", "address":"...", "is_dhaka":true/false, "note":"..."}]
-- Cancel: [CANCEL_ORDER: {"reason":"..."}]
+[SYSTEM TAGS]:
+- Show Carousel: [CAROUSEL: ID1, ID2, ID3]
+- Create Order: [ORDER_DATA: {"product_id":ID, "name":"...", "phone":"...", "address":"...", "is_dhaka":true/false}]
 EOT;
     }
 
-    private function detectHateSpeech($message) {
+    private function detectHateSpeech($message)
+    {
         if (!$message) return false;
         $badWords = ['fucker', 'idiot', 'stupid', 'scam', 'shala', 'kutta', 'harami', 'shuor', 'magi', 'khananki', 'chuda', 'bal', 'boka', 'faltu', 'butpar', 'chor', 'sala', 'khankir', 'madarchod', 'tor mare', 'fraud'];
         $lowerMsg = strtolower($message);
@@ -198,7 +199,8 @@ EOT;
         return false;
     }
 
-    private function sendTelegramAlert($clientId, $senderId, $message) {
+    private function sendTelegramAlert($clientId, $senderId, $message)
+    {
         try {
             $token = env('TELEGRAM_BOT_TOKEN');
             $chatId = env('TELEGRAM_CHAT_ID');
@@ -210,7 +212,8 @@ EOT;
         } catch (\Exception $e) {}
     }
 
-    private function convertToEnglishNumbers($str) {
+    private function convertToEnglishNumbers($str)
+    {
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         return str_replace($bn, $en, $str);
@@ -227,6 +230,8 @@ EOT;
                     'temperature' => 0.3, // কম টেম্পারেচার = স্ট্রিক্ট লজিক
                 ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
-        } catch (\Exception $e) { return null; }
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

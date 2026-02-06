@@ -10,8 +10,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LowStockProducts extends BaseWidget
 {
-    protected static ?int $sort = 2;
-    protected int | string | array $columnSpan = 'full';
+    protected static ?int $sort = 4;
 
     public function table(Table $table): Table
     {
@@ -21,15 +20,23 @@ class LowStockProducts extends BaseWidget
             ->query(
                 Product::where('client_id', $clientId)
                     ->where('stock_quantity', '<', 10)
+                    ->orderBy('stock_quantity', 'asc')
             )
             ->columns([
                 Tables\Columns\ImageColumn::make('thumbnail')->circular(),
-                Tables\Columns\TextColumn::make('name')->label('Low Stock Product'),
+                Tables\Columns\TextColumn::make('name')->limit(30),
                 Tables\Columns\TextColumn::make('stock_quantity')
-                    ->label('Remaining')
+                    ->label('In Stock')
                     ->badge()
-                    ->color('danger'),
-                Tables\Columns\TextColumn::make('sale_price')->money('BDT'),
+                    ->color(fn ($state) => $state < 5 ? 'danger' : 'warning'),
+                Tables\Columns\TextColumn::make('sku')->fontFamily('mono'),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('restock')
+                    ->label('Restock')
+                    ->url(fn (Product $record): string => "/admin/products/{$record->id}/edit")
+                    ->icon('heroicon-m-plus-circle')
+                    ->color('primary'),
             ]);
     }
 }

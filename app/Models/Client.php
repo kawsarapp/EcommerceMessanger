@@ -23,18 +23,20 @@ class Client extends Model
         'fb_page_id', 
         'fb_page_token', 
         'fb_verify_token',
-        'custom_prompt', // এটিও ফর্মে ছিল, তাই অ্যাড করা হলো
+        'webhook_verified_at', // এটি মিসিং ছিল, তাই এড করে দিলাম
+        'custom_prompt', 
     ];
 
     /**
-     * ডাটা টাইপ কাস্টিং (ডেট ক্যালকুলেশনের জন্য জরুরি)
+     * ডাটা টাইপ কাস্টিং
      */
     protected $casts = [
         'plan_ends_at' => 'datetime',
+        'webhook_verified_at' => 'datetime',
     ];
 
     // ==========================================
-    // RELATIONSHIPS (এগুলো মিসিং ছিল)
+    // RELATIONSHIPS
     // ==========================================
 
     public function user(): BelongsTo
@@ -79,7 +81,7 @@ class Client extends Model
             return false;
         }
 
-        // ৩. মেয়াদ শেষ হয়ে গেছে কিনা চেক (যদি null হয়, তার মানে আনলিমিটেড টাইম)
+        // ৩. মেয়াদ শেষ হয়ে গেছে কিনা চেক
         if ($this->plan_ends_at && now()->gt($this->plan_ends_at)) {
             return false;
         }
@@ -92,10 +94,8 @@ class Client extends Model
      */
     public function hasReachedProductLimit(): bool
     {
-        if (!$this->plan) return true; // প্ল্যান না থাকলে লিমিট রিচড (ব্লক)
-        
-        // যদি লিমিট ০ হয় তার মানে আনলিমিটেড (অপশনাল), অথবা কাউন্ট চেক
-        if ($this->plan->product_limit == 0) return false;
+        if (!$this->plan) return true; 
+        if ($this->plan->product_limit == 0) return false; // 0 means Unlimited
 
         return $this->products()->count() >= $this->plan->product_limit;
     }
@@ -106,7 +106,6 @@ class Client extends Model
     public function hasReachedOrderLimit(): bool
     {
         if (!$this->plan) return true;
-        
         if ($this->plan->order_limit == 0) return false;
 
         $monthlyOrders = $this->orders()
@@ -115,6 +114,23 @@ class Client extends Model
             ->count();
             
         return $monthlyOrders >= $this->plan->order_limit;
+    }
+
+    /**
+     * [FIXED] এই মাসের এআই মেসেজ লিমিট ক্রস করেছে কিনা
+     * (এই মেথডটি মিসিং থাকার কারণে এরর আসছিল)
+     */
+    public function hasReachedAiLimit(): bool
+    {
+        if (!$this->plan) return true;
+        if ($this->plan->ai_message_limit == 0) return false;
+
+        $monthlyMessages = $this->conversations()
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+            
+        return $monthlyMessages >= $this->plan->ai_message_limit;
     }
 
     // ==========================================
@@ -126,7 +142,6 @@ class Client extends Model
         if (!$this->plan || $this->plan->product_limit == 0) return 0;
         
         $count = $this->products()->count();
-        // ১০০ এর বেশি যেন না দেখায়
         return min(100, round(($count / $this->plan->product_limit) * 100));
     }
 
