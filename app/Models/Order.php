@@ -24,6 +24,8 @@ class Order extends Model
 		'payment_method',
 		'transaction_id',
 		'customer_note',
+		'division', 
+		'district',
 		'admin_note'
 
 		

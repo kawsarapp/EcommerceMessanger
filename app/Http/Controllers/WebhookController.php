@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\OrderSession;
 use App\Models\Conversation;
@@ -39,23 +40,39 @@ class WebhookController extends Controller
     }
 
     /**
-     * 2. Handle Incoming Messages
+     * 2. Handle Incoming Messages (All Types)
      */
     public function handle(Request $request, ChatbotService $chatbot)
     {
+        // [DEBUG] লগ
+        Log::info("-------------- WEBHOOK HIT --------------");
+
         $data = $request->all();
 
         if (isset($data['entry'][0]['messaging'][0])) {
             $messaging = $data['entry'][0]['messaging'][0];
-            $senderId = $messaging['sender']['id'] ?? null;
-            $pageId = $data['entry'][0]['id'] ?? null;
-            $messageText = $messaging['message']['text'] ?? null;
-            $mid = $messaging['message']['mid'] ?? null;
+            $senderId  = $messaging['sender']['id'] ?? null;
+            $pageId    = $data['entry'][0]['id'] ?? null;
+            $mid       = $messaging['message']['mid'] ?? null;
 
             // [Deduplication]
-            if ($mid && Cache::has("fb_mid_{$mid}")) return response('OK', 200);
+            if ($mid && Cache::has("fb_mid_{$mid}")) {
+                Log::info("Duplicate Message Skipped: $mid");
+                return response('OK', 200);
+            }
             if ($mid) Cache::put("fb_mid_{$mid}", true, 60);
 
+            // Message Type Detection
+            $messageText = null;
+            if (isset($messaging['message']['text'])) {
+                $messageText = $messaging['message']['text'];
+            } elseif (isset($messaging['message']['quick_reply']['payload'])) {
+                $messageText = $messaging['message']['quick_reply']['payload'];
+            } elseif (isset($messaging['postback']['payload'])) {
+                $messageText = $messaging['postback']['payload'];
+            }
+
+            // Image Detection
             $incomingImageUrl = null;
             if (isset($messaging['message']['attachments'])) {
                 foreach ($messaging['message']['attachments'] as $attachment) {
@@ -68,63 +85,120 @@ class WebhookController extends Controller
 
             if ($senderId && $pageId && ($messageText || $incomingImageUrl)) {
                 try {
-                    $this->processIncomingMessage($senderId, $pageId, $messageText, $chatbot, $incomingImageUrl);
-                } catch (\Exception $e) {
-                    Log::error("Webhook Crash: " . $e->getMessage());
+                    // === MAIN CHAT PROCESS ===
+                    $this->processIncomingMessage(
+                        $senderId,
+                        $pageId,
+                        $messageText,
+                        $chatbot,
+                        $incomingImageUrl
+                    );
+
+                } catch (\Throwable $e) {
+                    Log::error("CRITICAL ERROR in processIncomingMessage: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine());
                 }
             }
         }
+
         return response('EVENT_RECEIVED', 200);
     }
 
+
     /**
-     * 3. Process Message
+     * 3. Process Message Logic & Tag Handling
      */
     private function processIncomingMessage($senderId, $pageId, $messageText, $chatbot, $incomingImageUrl)
     {
         $client = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
-        if (!$client) return;
+        if (!$client) {
+            Log::warning("Client inactive or not found for Page ID: $pageId");
+            return;
+        }
+
+        // Session Handling
+        $session = OrderSession::firstOrCreate(['sender_id' => $senderId], ['client_id' => $client->id]);
+        if ($session->is_human_agent_active) return;
+
+        // Carousel Click Handling (Direct Order)
+        if (Str::startsWith($messageText, 'ORDER_PRODUCT_')) {
+            $productId = str_replace('ORDER_PRODUCT_', '', $messageText);
+            $product = Product::find($productId);
+            $messageText = "আমি " . ($product->name ?? 'এই প্রোডাক্টটি') . " অর্ডার করতে চাই।";
+        }
 
         try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_on'); } catch (\Exception $e) {}
 
         $finalText = $messageText ?? "Sent an image";
-        
-        // AI Response Logic
+        Log::info("User ($senderId) Said: $finalText");
+
+        // AI Response Call
         $reply = $chatbot->getAiResponse($finalText, $client->id, $senderId, $incomingImageUrl);
+        Log::info("AI Full Response for $senderId: " . $reply);
 
         if ($reply === null) {
             try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
             return; 
         }
 
-        // [TAG PROCESSING] - Order, Update, Cancel, Note
-        // Regex 's' modifier allows multiline matching
+        // =====================================================
+        // TAG PROCESSING LOGIC (Updated)
+        // =====================================================
+
+        // 1. Check for New Order Creation
         if (preg_match('/\[ORDER_DATA:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            Log::info("TAG DETECTED: [ORDER_DATA]");
             $reply = $this->finalizeOrder($reply, $matches, $client, $senderId);
-        } elseif (preg_match('/\[ADD_NOTE:\s*(\{.*?\})\]/s', $reply, $matches)) {
+        }
+        // 2. Check for Note Addition (Fixes Loop Issue)
+        elseif (preg_match('/\[ADD_NOTE:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            Log::info("TAG DETECTED: [ADD_NOTE]");
             $reply = $this->handleOrderNote($reply, $matches, $client, $senderId);
-        } elseif (preg_match('/\[UPDATE_ORDER:\s*(\{.*?\})\]/s', $reply, $matches)) {
-            $reply = $this->handleOrderUpdate($reply, $matches, $client);
-        } elseif (preg_match('/\[CANCEL_ORDER:\s*(\{.*?\})\]/s', $reply, $matches)) {
+        }
+        // 3. Check for Order Cancellation
+        elseif (preg_match('/\[CANCEL_ORDER:\s*(\{.*?\})\]/s', $reply, $matches)) {
+            Log::info("TAG DETECTED: [CANCEL_ORDER]");
             $reply = $this->handleOrderCancellation($reply, $matches, $client, $senderId);
-        } elseif (str_contains($reply, '[NOTIFY_ADMIN:')) {
+        }
+        // 4. Check for Order Tracking
+        elseif (preg_match('/\[TRACK_ORDER:\s*\"?(\d+)\"?\]/', $reply, $matches)) {
+            Log::info("TAG DETECTED: [TRACK_ORDER]");
+            $phoneNumber = $this->validateAndCleanPhone($matches[1]);
+            if ($phoneNumber) {
+                $trackingResult = $this->trackOrderDetails($phoneNumber, $client->id);
+                $reply = str_replace($matches[0], $trackingResult, $reply);
+            } else {
+                $reply = str_replace($matches[0], "\n⚠️ নম্বরটি সঠিক নয়।", $reply);
+            }
+        }
+        // 5. Clean Admin Tags
+        elseif (str_contains($reply, '[NOTIFY_ADMIN:')) {
             $reply = str_replace(['[NOTIFY_ADMIN]', '{', '}', '"message":'], '', $reply);
         }
 
-        // [CAROUSEL PROCESSING]
+        // Carousel Generation
         if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
             $productIds = explode(',', $matches[1]);
             $productIds = array_map('trim', $productIds);
-            
-            // ট্যাগটি মেসেজ থেকে রিমুভ করে দিন
             $reply = str_replace($matches[0], "", $reply);
-            
-            // ক্যারোসেল পাঠানোর জন্য মেথড কল
             $this->sendMessengerCarousel($senderId, $productIds, $client->fb_page_token);
         }
 
-        // Clean up outgoing images from text
-        // (This logic handles extracting the invoice URL appended in finalizeOrder)
+        // Quick Replies
+        $quickReplies = [];
+        if (preg_match('/\[QUICK_REPLIES:\s*([^\]]+)\]/', $reply, $matches)) {
+            $reply = str_replace($matches[0], "", $reply);
+            $buttons = explode(',', $matches[1]);
+            foreach ($buttons as $btn) {
+                $cleanBtn = trim(str_replace(['"', "'"], '', $btn));
+                $quickReplies[] = [
+                    'content_type' => 'text',
+                    'title' => $cleanBtn,
+                    'payload' => 'QR_' . strtoupper(Str::slug($cleanBtn, '_')),
+                ];
+            }
+        }
+
+        // Image Cleanup
         $outgoingImage = null;
         if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
             $outgoingImage = $matches[1];
@@ -133,342 +207,288 @@ class WebhookController extends Controller
             $reply = trim($reply);
         }
 
+        // Send Final Response
         $this->logConversation($client->id, $senderId, $finalText, $reply, $incomingImageUrl);
-        $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage);
+        $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
         
         try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
     }
 
     /**
-     * [HELPER] বাংলা টু ইংরেজি কনভার্সন
+     * 4. Finalize Order Logic
      */
-    private function convertBanglaToEnglish($str) {
-        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
-        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-        return str_replace($bn, $en, $str);
+ private function finalizeOrder($reply, $matches, $client, $senderId)
+{
+    $jsonStr = $matches[1];
+    Log::info("AI JSON received: " . $jsonStr);
+
+    $data = json_decode($jsonStr, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        Log::error("JSON Parsing Failed: " . json_last_error_msg());
+        return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: অর্ডার ডাটা রিড করা সম্ভব হয়নি।)";
     }
 
-    /**
-     * [HELPER] ফোন নম্বর ভ্যালিডেশন এবং ক্লিনিং
-     */
-    private function validateAndCleanPhone($phoneRaw) {
-        // ১. বাংলা টু ইংরেজি
-        $phone = $this->convertBanglaToEnglish($phoneRaw);
-        
-        // ২. স্পেস, হাইফেন বা অন্য ক্যারেক্টার রিমুভ
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+    $productId = $data['product_id'] ?? null;
+    $product = Product::find($productId);
 
-        // ৩. +88 বা 88 রিমুভ (শুরুতে থাকলে)
-        if (substr($phone, 0, 3) === '880') {
-            $phone = substr($phone, 2);
-        } elseif (substr($phone, 0, 2) === '88') {
-            $phone = substr($phone, 2); 
-        }
-
-        // ৪. বাংলাদেশী অপারেটর চেক (013, 014, 015, 016, 017, 018, 019)
-        // এবং মোট ডিজিট ১১ হতে হবে
-        if (preg_match('/^01[3-9]\d{8}$/', $phone)) {
-            return $phone; // সঠিক নম্বর
-        }
-
-        return null; // ভুল নম্বর
+    if (!$product) {
+        Log::error("Order Failed: Product ID {$productId} not found.");
+        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
     }
 
-    /**
-     * 4. Finalize Order (With Strict Phone Validation & Invoice Generation)
-     */
-    private function finalizeOrder($reply, $matches, $client, $senderId)
-    {
-        $jsonStr = $matches[1];
-        $data = json_decode($jsonStr, true);
+    $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
+    if (!$validPhone) {
+        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।";
+    }
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error("JSON Decode Error: " . json_last_error_msg() . " | Data: " . $jsonStr);
-            return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: টেকনিক্যাল সমস্যার কারণে অর্ডারটি সেভ করা যায়নি।)";
-        }
+    try {
+        return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches, $product) {
 
-        // [STRICT PHONE VALIDATION]
-        $validPhone = $this->validateAndCleanPhone($data['phone'] ?? '');
+            if ($product->stock_quantity <= 0) {
+                return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, এই পণ্যটি বর্তমানে স্টক আউট।";
+            }
 
-        if (!$validPhone) {
-            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। দয়া করে ১১ ডিজিটের সঠিক বাংলাদেশী নম্বর দিন (যেমন: 017xxxxxxxx)।";
-        }
+            $price = $product->sale_price ?? $product->regular_price ?? 0;
+            $isDhaka = ($data['is_dhaka'] ?? false) === true;
+            $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
+            $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
+            $totalAmount = ($price * $qty) + $delivery;
 
-        try {
-            return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches) {
-                // প্রোডাক্ট ভেরিফিকেশন
-                $product = Product::find($data['product_id']);
-                if (!$product) return "দুঃখিত, পণ্যটি বর্তমানে স্টকে নেই বা পাওয়া যাচ্ছে না।";
+            $orderData = [
+                'client_id'        => $client->id,
+                'sender_id'        => $senderId,
+                'customer_name'    => $data['name'] ?? 'Guest',
+                'customer_phone'   => $validPhone,
+                'shipping_address' => $data['address'] ?? 'N/A',
+                'total_amount'     => $totalAmount,
+                'order_status'     => 'processing',
+                'payment_status'   => 'pending',
+                'payment_method'   => 'cod',
+                'customer_email'   => $data['email'] ?? null,
+            ];
 
-                // প্রাইস ক্যালকুলেশন
-                $price = $product->sale_price ?? $product->regular_price ?? 0;
-                $isDhaka = ($data['is_dhaka'] ?? false) === true;
-                $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
-                $totalAmount = $price + $delivery;
+            // Dynamic Column Check
+            if (Schema::hasColumn('orders', 'division')) {
+                $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
+            }
+            if (Schema::hasColumn('orders', 'district')) {
+                $orderData['district'] = $data['district'] ?? null;
+            }
+            if (Schema::hasColumn('orders', 'admin_note')) {
+                $orderData['admin_note'] = $data['note'] ?? null;
+            } elseif (Schema::hasColumn('orders', 'notes')) {
+                $orderData['notes'] = $data['note'] ?? null;
+            }
 
-                $orderData = [
-                    'client_id' => $client->id,
-                    'sender_id' => $senderId,
-                    'customer_name' => $data['name'] ?? 'Guest',
-                    'customer_phone' => $validPhone, 
-                    'shipping_address' => $data['address'] ?? 'N/A',
-                    'total_amount' => $totalAmount,
-                    'order_status' => 'processing',
-                    'payment_status' => 'pending'
+            // ================================
+            // ORDER CREATE
+            // ================================
+            $order = Order::create($orderData);
+            Log::info("Order Created Successfully. ID: {$order->id}");
+
+            // --- টেলিগ্রাম নোটিফিকেশন যোগ করা হলো ---
+            try {
+                $msg = "🛍️ নতুন অর্ডার এসেছে!\n\n" .
+                       "অর্ডার আইডি: #{$order->id}\n" .
+                       "কাস্টমার: {$order->customer_name}\n" .
+                       "ফোন: {$order->customer_phone}\n" .
+                       "ঠিকানা: {$order->shipping_address}\n" .
+                       "মোট টাকা: {$totalAmount} Tk";
+
+                app(\App\Services\ChatbotService::class)
+                    ->sendTelegramAlert($client->id, $senderId, $msg);
+
+            } catch (\Exception $e) {
+                Log::error("Telegram Order Alert Failed: " . $e->getMessage());
+            }
+            // ---------------------------------------
+
+            // Order Item Create
+            if (Schema::hasTable('order_items')) {
+                $itemData = [
+                    'order_id'   => $order->id,
+                    'product_id' => $product->id,
+                    'quantity'   => $qty,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
 
-                if (Schema::hasColumn('orders', 'notes')) {
-                    $orderData['notes'] = $data['note'] ?? null;
+                if (Schema::hasColumn('order_items', 'unit_price')) {
+                    $itemData['unit_price'] = $price;
+                }
+                if (Schema::hasColumn('order_items', 'price')) {
+                    $itemData['price'] = $price;
                 }
 
-                $order = Order::create($orderData);
+                DB::table('order_items')->insert($itemData);
+            }
 
-                // সেশন আপডেট
-                OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
+            $product->decrement('stock_quantity', $qty);
 
-                // ট্যাগ রিমুভ করে ক্লিন রিপ্লাই
-                $cleanReply = str_replace($matches[0], "", $reply);
-                $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
+            // সেশন কমপ্লিট করা যাতে এআই কনটেক্সট বুঝতে পারে
+            OrderSession::where('sender_id', $senderId)
+                ->update(['customer_info' => ['step' => 'completed']]);
 
-                // [INVOICE GENERATION]
-                $invoiceUrl = $this->generateInvoiceImage($order, $client);
+            $cleanReply = str_replace($matches[0], "", $reply);
+            $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
 
-                // আমরা URL টি রিটার্ন স্ট্রিং এর সাথে যুক্ত করে দিচ্ছি। 
-                // processIncomingMessage মেথডটি এটি অটোমেটিক ডিটেক্ট করে ইমেজ হিসেবে সেন্ড করবে।
-                return trim($cleanReply) . "\n\n✅ অর্ডারটি সফলভাবে তৈরি হয়েছে!\nঅর্ডার আইডি: #{$order->id}\nমোট টাকা: {$totalAmount} Tk ({$locText})\nফোন: {$validPhone}\n" . $invoiceUrl;
-            });
-        } catch (\Exception $e) {
-            Log::error("Finalize Order DB Error: " . $e->getMessage());
-            return "দুঃখিত, অর্ডার প্রসেসিং এ একটি সমস্যা হয়েছে। এডমিনকে জানানো হয়েছে।";
-        }
+            return trim($cleanReply)
+                . "\n\n✅ অর্ডার কনফার্ম!"
+                . "\nআইডি: #{$order->id}"
+                . "\nমোট: {$totalAmount} Tk ({$locText})";
+        });
+    } catch (\Throwable $e) {
+        Log::error("DB Transaction Failed: " . $e->getMessage());
+        return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
     }
+}
 
     /**
-     * 5. Handle Order Note
+     * 5. Handle ADD NOTE Logic
      */
     private function handleOrderNote($reply, $matches, $client, $senderId)
     {
         $data = json_decode($matches[1], true);
-        
-        if (Schema::hasColumn('orders', 'notes') && isset($data['note'])) {
-            $order = Order::where('client_id', $client->id)
-                          ->where('sender_id', $senderId)
-                          ->where('order_status', 'processing')
-                          ->latest()
-                          ->first();
+        $lastOrder = Order::where('sender_id', $senderId)->latest()->first();
 
-            if ($order) {
-                $prevNote = $order->notes ? $order->notes . " | " : "";
-                $order->update(['notes' => $prevNote . $data['note']]);
-                return str_replace($matches[0], "", $reply) . "\n📝 নোট যুক্ত হয়েছে।";
-            }
+        if ($lastOrder && isset($data['note'])) {
+            $updateField = Schema::hasColumn('orders', 'customer_note') ? 'customer_note' : 'admin_note';
+            $existingNote = $lastOrder->$updateField;
+            
+            $lastOrder->update([
+                $updateField => ($existingNote ? $existingNote . " | " : "") . $data['note']
+            ]);
+
+            Log::info("Order #{$lastOrder->id} note updated via AI.");
+            
+            // এআই-এর আগের মেসেজ ইগনোর করে ক্লিয়ার মেসেজ পাঠানো
+            return "ধন্যবাদ! আপনার অনুরোধটি অর্ডার #{$lastOrder->id} এর সাথে নোট হিসেবে যুক্ত করা হয়েছে।";
         }
         return str_replace($matches[0], "", $reply);
     }
 
     /**
-     * 6. Handle Order Update
-     */
-    private function handleOrderUpdate($reply, $matches, $client)
-    {
-        $data = json_decode($matches[1], true);
-        
-        $orderId = $data['order_id'] ?? null;
-        $order = null;
-
-        if ($orderId) {
-            $order = Order::where('id', $orderId)->where('client_id', $client->id)->first();
-        } 
-
-        if ($order && in_array($order->order_status, ['processing', 'pending'])) {
-            $update = [];
-            if (!empty($data['new_address'])) $update['shipping_address'] = $data['new_address'];
-            if (!empty($data['new_phone'])) {
-                $validPhone = $this->validateAndCleanPhone($data['new_phone']);
-                if ($validPhone) {
-                    $update['customer_phone'] = $validPhone;
-                } else {
-                    return str_replace($matches[0], "", $reply) . "\n⚠️ আপডেট হয়নি: নতুন ফোন নম্বরটি সঠিক নয়।";
-                }
-            }
-            $order->update($update);
-            return str_replace($matches[0], "", $reply) . "\n✅ অর্ডার আপডেট হয়েছে।";
-        }
-        return str_replace($matches[0], "", $reply) . "\n(দুঃখিত, অর্ডারটি আপডেট করা সম্ভব নয়।)";
-    }
-
-    /**
-     * 7. Handle Order Cancellation
+     * 6. Handle CANCEL ORDER Logic
      */
     private function handleOrderCancellation($reply, $matches, $client, $senderId)
     {
         $data = json_decode($matches[1], true);
         
+        // শুধুমাত্র প্রসেসিং বা পেন্ডিং অর্ডার ক্যান্সেল করা যাবে
         $order = Order::where('client_id', $client->id)
                       ->where('sender_id', $senderId)
+                      ->whereIn('order_status', ['processing', 'pending'])
                       ->latest()
                       ->first();
 
-        if ($order && in_array($order->order_status, ['processing', 'pending'])) {
-            $order->update([
-                'order_status' => 'cancelled',
-                'admin_note' => "User Reason: " . ($data['reason'] ?? 'Not Specified')
-            ]);
-            return str_replace($matches[0], "", $reply) . "\n🚫 অর্ডারটি বাতিল করা হয়েছে।";
+        if ($order) {
+            $reason = $data['reason'] ?? 'Customer requested cancellation';
+            $updateData = ['order_status' => 'cancelled'];
+            
+            if (Schema::hasColumn('orders', 'admin_note')) {
+                $updateData['admin_note'] = "Cancelled by AI. Reason: " . $reason;
+            } elseif (Schema::hasColumn('orders', 'notes')) {
+                $updateData['notes'] = "Cancelled by AI. Reason: " . $reason;
+            }
+
+            $order->update($updateData);
+
+            // স্টক ফেরত দেওয়া
+            if (Schema::hasTable('order_items')) {
+                $items = DB::table('order_items')->where('order_id', $order->id)->get();
+                foreach ($items as $item) {
+                    Product::find($item->product_id)->increment('stock_quantity', $item->quantity);
+                }
+            }
+
+            // Telegram Alert (Using Service)
+            try {
+                $telegramService = new ChatbotService();
+                $msg = "🚨 **ORDER CANCELLED** 🚨\nOrder ID: #{$order->id}\nReason: {$reason}\nStatus: Cancelled via Messenger";
+                $telegramService->sendTelegramNotification($msg);
+            } catch (\Exception $e) {
+                Log::error("Telegram Notification Failed: " . $e->getMessage());
+            }
+
+            return "আপনার অর্ডার #{$order->id} সফলভাবে বাতিল করা হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ।";
         }
-        return str_replace($matches[0], "", $reply) . "\n(দুঃখিত, অর্ডারটি বাতিল করা সম্ভব নয় বা ইতিমধ্যে বাতিল হয়েছে।)";
+
+        return "দুঃখিত, বাতিল করার মতো কোনো প্রক্রিয়াধীন অর্ডার পাওয়া যায়নি।";
     }
 
     /**
-     * 8. Generate Invoice Image (GD Library)
+     * 7. Track Order Logic
      */
-    private function generateInvoiceImage($order, $client)
+    private function trackOrderDetails($phone, $clientId)
     {
-        // ১. ইমেজের সাইজ এবং ব্যাকগ্রাউন্ড
-        $width = 600;
-        $height = 400;
-        $image = imagecreatetruecolor($width, $height);
-        
-        // ২. কালার সেটআপ
-        $white = imagecolorallocate($image, 255, 255, 255);
-        $primary = imagecolorallocate($image, 37, 99, 235); // Blue
-        $text_color = imagecolorallocate($image, 31, 41, 55); // Dark Gray
-        $gray = imagecolorallocate($image, 107, 114, 128);
+        $order = Order::where('client_id', $clientId)
+                      ->where('customer_phone', $phone)
+                      ->latest()
+                      ->first();
 
-        imagefill($image, 0, 0, $white);
-
-        // ৩. ডিজাইন এলিমেন্টস (Header)
-        imagefilledrectangle($image, 0, 0, $width, 80, $primary);
-        
-        // ৪. টেক্সট বসানো
-        imagestring($image, 5, 20, 30, strtoupper($client->shop_name ?? 'Shop') . " - ORDER CONFIRMED", $white);
-        
-        imagestring($image, 5, 40, 110, "Order ID: #" . $order->id, $text_color);
-        imagestring($image, 4, 40, 150, "Customer: " . $order->customer_name, $text_color);
-        imagestring($image, 4, 40, 180, "Phone: " . $order->customer_phone, $text_color);
-        imagestring($image, 4, 40, 210, "Address: " . substr($order->shipping_address, 0, 50), $text_color);
-        
-        imageline($image, 40, 250, 560, 250, $gray);
-        
-        imagestring($image, 5, 40, 280, "TOTAL AMOUNT: " . number_format($order->total_amount) . " TK", $primary);
-        imagestring($image, 3, 40, 350, "Thank you for shopping with us!", $gray);
-
-        // ৫. ফাইল সেভ করা
-        $fileName = 'invoices/order_' . $order->id . '.png';
-        if (!file_exists(storage_path('app/public/invoices'))) {
-            mkdir(storage_path('app/public/invoices'), 0755, true);
+        if ($order) {
+            $status = strtoupper($order->order_status);
+            return "\n📦 অর্ডার স্ট্যাটাস: {$status}\nমোট: {$order->total_amount} টাকা\nআইডি: #{$order->id}";
         }
-        
-        imagepng($image, storage_path('app/public/' . $fileName));
-        imagedestroy($image);
-
-        return asset('storage/' . $fileName);
+        return "\n❌ এই ফোন নম্বরে কোনো অর্ডার পাওয়া যায়নি।";
     }
 
-    /**
-     * Messenger API Helpers
-     */
+    // --- Helpers ---
 
-    private function sendMessengerCarousel($recipientId, $productIds, $token)
-    {
+    private function validateAndCleanPhone($phoneRaw) {
+        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
+        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        $phone = str_replace($bn, $en, $phoneRaw);
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($phone, 0, 3) === '880') $phone = substr($phone, 2);
+        elseif (substr($phone, 0, 2) === '88') $phone = substr($phone, 2);
+        return preg_match('/^01[3-9]\d{8}$/', $phone) ? $phone : null;
+    }
+
+    private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) {
+        $url = "https://graph.facebook.com/v19.0/me/messages?access_token=$token";
+        if ($imageUrl) {
+            try { Http::post($url, ['recipient' => ['id' => $recipientId], 'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]]); } catch (\Exception $e) {}
+        }
+        if (!empty(trim($message))) {
+            $payload = ['recipient' => ['id' => $recipientId], 'message' => ['text' => trim($message)]];
+            if (!empty($quickReplies)) $payload['message']['quick_replies'] = $quickReplies;
+            Http::post($url, $payload);
+        }
+    }
+
+    private function sendMessengerCarousel($recipientId, $productIds, $token) {
         $products = Product::whereIn('id', $productIds)->get();
         if ($products->isEmpty()) return;
-
         $elements = [];
         foreach ($products as $product) {
             $elements[] = [
                 'title' => $product->name,
                 'image_url' => asset('storage/' . $product->thumbnail),
-                'subtitle' => "Price: ৳" . number_format($product->sale_price) . "\n" . Str::limit(strip_tags($product->description), 60),
-                'default_action' => [
-                    'type' => 'web_url',
-                    'url' => url('/shop/' . $product->client->slug . '?product=' . $product->id),
-                    'messenger_extensions' => false,
-                    'webview_height_ratio' => 'tall',
-                ],
+                'subtitle' => "Price: ৳" . number_format($product->sale_price),
                 'buttons' => [
-                    [
-                        'type' => 'postback',
-                        'title' => 'অর্ডার করবো',
-                        'payload' => "ORDER_PRODUCT_" . $product->id,
-                    ],
-                    [
-                        'type' => 'web_url',
-                        'url' => url('/shop/' . $product->client->slug),
-                        'title' => 'বিস্তারিত দেখুন',
-                    ]
+                    ['type' => 'postback', 'title' => 'অর্ডার করবো', 'payload' => "ORDER_PRODUCT_" . $product->id],
+                    ['type' => 'web_url', 'url' => url('/shop/' . $product->client->slug), 'title' => 'বিস্তারিত দেখুন']
                 ]
             ];
         }
-
         Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", [
             'recipient' => ['id' => $recipientId],
-            'message' => [
-                'attachment' => [
-                    'type' => 'template',
-                    'payload' => [
-                        'template_type' => 'generic',
-                        'elements' => $elements
-                    ]
-                ]
-            ]
+            'message' => ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'generic', 'elements' => $elements]]]
         ]);
     }
 
     private function sendTypingAction($recipientId, $token, $action) {
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", [
-            'recipient' => ['id' => $recipientId], 
-            'sender_action' => $action
-        ]);
-    }
-
-    private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null) {
-        $url = "https://graph.facebook.com/v19.0/me/messages?access_token=$token";
-        $sentSuccessfully = false;
-
-        // 1. Send Image First
-        if ($imageUrl) {
-            try {
-                $res = Http::post($url, [
-                    'recipient' => ['id' => $recipientId], 
-                    'message' => [
-                        'attachment' => [
-                            'type' => 'image', 
-                            'payload' => ['url' => $imageUrl, 'is_reusable' => true]
-                        ]
-                    ]
-                ]);
-                if ($res->successful()) $sentSuccessfully = true;
-            } catch (\Exception $e) {
-                Log::error("Image send error: " . $e->getMessage());
-            }
-        }
-
-        // Fallback if image fails (Optional)
-        if ($imageUrl && !$sentSuccessfully) {
-            $message .= "\n(ছবিটি এখানে দেখুন: $imageUrl)";
-        }
-
-        // 2. Send Text
-        if (!empty(trim($message))) {
-            Http::post($url, [
-                'recipient' => ['id' => $recipientId], 
-                'message' => ['text' => trim($message)]
-            ]);
-        }
+        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", ['recipient' => ['id' => $recipientId], 'sender_action' => $action]);
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {
-        try {
-            Conversation::create([
-                'client_id' => $clientId, 
-                'sender_id' => $senderId, 
-                'platform' => 'messenger', 
-                'user_message' => $userMsg, 
-                'bot_response' => $botMsg, 
-                'attachment_url' => $imgUrl, 
-                'status' => 'success'
-            ]);
-        } catch (\Exception $e) {}
+        try { Conversation::create(['client_id' => $clientId, 'sender_id' => $senderId, 
+        'platform' => 'messenger', 'user_message' => $userMsg, 'bot_response' => $botMsg, 
+        'attachment_url' => $imgUrl, 'status' => 'success']); 
+        } catch (\Exception $e) {
+            Log::error("Conversation Log Error: " . $e->getMessage()); 
+        }
     }
 }

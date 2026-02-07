@@ -5,7 +5,6 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\FacebookConnectController;
 
-
 Route::get('/', function () {
     return view('welcome');
 });
