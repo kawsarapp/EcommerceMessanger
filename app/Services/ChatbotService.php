@@ -82,7 +82,7 @@ class ChatbotService
                 $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
                 
                 // যদি ইউজার কালার/সাইজ বলে দেয়, তবে পরের স্টেপে পাঠাও
-                if ($this->hasVariantInMessage($userMessage)) {
+                if ($product && $this->hasVariantInMessage($userMessage, $product)) {
                      $session->update(['customer_info' => array_merge($session->customer_info, ['step' => 'collect_info'])]);
                      $systemInstruction = "কাস্টমার ভেরিয়েশন কনফার্ম করেছে। এখন দ্রুত অর্ডার কনফার্ম করতে তার নাম, ফোন এবং ঠিকানা চাও।";
                 }
@@ -146,6 +146,11 @@ EOT;
      */
     private function lookupOrderByPhone($clientId, $message)
     {
+        // বাংলা নাম্বার ইংরেজিতে কনভার্ট
+        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
+        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        $message = str_replace($bn, $en, $message);
+        
         // ১১ ডিজিটের বিডি নম্বর প্যাটার্ন (01xxxxxxxxx)
         if (preg_match('/01[3-9]\d{8}/', $message, $matches)) {
             $phone = $matches[0];
@@ -308,9 +313,13 @@ EOT;
      * [LOGIC] নেগেটিভ ইন্টেন্ট ডিটেকশন (নতুন লজিক)
      */
     private function isNegativeIntent($msg) {
-        $bad = ['nebo na', 'cancel', 'bad', 'fals', 'nibo na', 'lagbe na'];
+        if (empty($msg)) return false;
+        
+        $bad = ['nebo na', 'cancel', 'bad', 'fals', 'nibo na', 'lagbe na', 'দরকার নাই', 'নিবো না', 'লাগবে না', 'বাতিল'];
+        $msgLower = strtolower($msg);
+        
         foreach($bad as $b) {
-            if (str_contains(strtolower($msg), $b)) return true;
+            if (str_contains($msgLower, $b)) return true;
         }
         return false;
     }
@@ -328,7 +337,21 @@ public function convertVoiceToText($audioUrl)
         $audioResponse = Http::get($audioUrl);
         if (!$audioResponse->successful()) return null;
 
-        $tempFileName = 'voice_' . time() . '.mp4'; // ফেসবুক সাধারণত mp4/aac ফরম্যাট দেয়
+        // অডিও ফাইলের কনটেন্ট-টাইপ চেক করে এক্সটেনশন সেট করা
+        $contentType = $audioResponse->header('Content-Type');
+        $extension = 'mp3'; // default
+
+        if (strpos($contentType, 'audio/mp4') !== false || strpos($contentType, 'video/mp4') !== false) {
+            $extension = 'mp4';
+        } elseif (strpos($contentType, 'audio/ogg') !== false) {
+            $extension = 'ogg';
+        } elseif (strpos($contentType, 'audio/mpeg') !== false) {
+            $extension = 'mp3';
+        } elseif (strpos($contentType, 'audio/x-m4a') !== false) {
+            $extension = 'm4a';
+        }
+
+        $tempFileName = 'voice_' . time() . '.' . $extension;
         $tempPath = storage_path('app/' . $tempFileName);
         file_put_contents($tempPath, $audioResponse->body());
 
@@ -339,10 +362,10 @@ public function convertVoiceToText($audioUrl)
             ->attach('file', fopen($tempPath, 'r'), $tempFileName)
             ->post('https://api.openai.com/v1/audio/transcriptions', [
                 'model' => 'whisper-1',
-                'language' => 'bn', // সরাসরি বাংলা সেট করে দেওয়া হলো নিখুঁত রেজাল্টের জন্য
+                'language' => 'bn', // সরাসরি বাংলা সেট করে দেওয়া হলো নিখুঁত রেজাল্টের জন্য
             ]);
 
-        // ৩. ফাইলটি ডিলিট করে দেওয়া (সার্ভার পরিষ্কার রাখতে)
+        // ৩. ফাইলটি ডিলিট করে দেওয়া (সার্ভার পরিষ্কার রাখতে)
         unlink($tempPath);
 
         if ($response->successful()) {
@@ -364,9 +387,24 @@ public function convertVoiceToText($audioUrl)
      * [LOGIC] ফোন নম্বর এক্সট্রাক্ট (নতুন লজিক)
      */
     private function extractPhoneNumber($msg) {
+        // বাংলা নাম্বার ইংরেজিতে কনভার্ট
+        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
+        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        $msg = str_replace($bn, $en, $msg);
+        
+        // সব নন-ডিজিট রিমুভ করে শুধু নাম্বার রাখা
+        $msg = preg_replace('/[^0-9]/', '', $msg);
+        
+        // ১১ ডিজিটের বিডি নম্বর প্যাটার্ন
         if (preg_match('/01[3-9]\d{8}/', $msg, $matches)) {
             return $matches[0];
         }
+        
+        // যদি 880 দিয়ে শুরু হয়
+        if (preg_match('/8801[3-9]\d{8}/', $msg, $matches)) {
+            return '0' . substr($matches[0], 3);
+        }
+        
         return null;
     }
 
@@ -374,22 +412,65 @@ public function convertVoiceToText($audioUrl)
      * [LOGIC] প্রোডাক্ট খোঁজার হার্ড লজিক (নতুন লজিক)
      */
     private function findProductSystematically($clientId, $message) {
-        // প্রথমে কোড দিয়ে খোঁজা (যেমন: V18)
-        $words = explode(' ', strtoupper($message));
-        foreach($words as $word) {
-            $p = Product::where('client_id', $clientId)->where('sku', 'LIKE', "%$word%")->first();
-            if($p) return $p;
+        // কীওয়ার্ড এক্সট্রাক্ট করা
+        $keywords = array_filter(explode(' ', $message), function($word) {
+            return mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'ei', 'ta', 'kinbo', 'chai', 'korte', 'chachi', 'theke', 'er', 'jonno', 'টা', 'কিনবো', 'চাই', 'জন্য']);
+        });
+        
+        // SKU দিয়ে খোঁজা
+        foreach($keywords as $word) {
+            $product = Product::where('client_id', $clientId)
+                ->where('sku', 'LIKE', "%".strtoupper(trim($word))."%")
+                ->first();
+            if($product) return $product;
         }
-        // নাম দিয়ে খোঁজা
-        return Product::where('client_id', $clientId)->where('name', 'LIKE', "%$message%")->first();
+        
+        // নাম দিয়ে খোঁজা (হাইব্রিড সার্চ)
+        $query = Product::where('client_id', $clientId);
+        
+        foreach($keywords as $word) {
+            $query->orWhere('name', 'LIKE', "%".trim($word)."%");
+        }
+        
+        return $query->first();
     }
 
     /**
      * [LOGIC] ভেরিয়েশন চেক (সিম্পল লজিক) (নতুন লজিক)
      */
-    private function hasVariantInMessage($msg) {
-        // মেসেজটি ছোট হলে (যেমন: "Red", "XL") ধরে নিব ভেরিয়েশন বলেছে
-        return strlen($msg) < 15; 
+    private function hasVariantInMessage($msg, $product) {
+        $msgLower = strtolower($msg);
+        
+        // কালার চেক
+        $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
+        if (is_array($colors)) {
+            foreach ($colors as $color) {
+                if (stripos($msgLower, strtolower($color)) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        // সাইজ চেক
+        $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
+        if (is_array($sizes)) {
+            foreach ($sizes as $size) {
+                if (stripos($msgLower, strtolower($size)) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        // কমন ভেরিয়েশন কীওয়ার্ড
+        $variantKeywords = ['red', 'blue', 'black', 'white', 'green', 'yellow', 'xl', 'xxl', 'l', 'm', 's', 'লাল', 'কালো', 'সাদা', 'সবুজ', 'হলুদ', 'এক্সএল', 'এল', 'এম', 'এস', 'xlarge', 'large', 'medium', 'small'];
+        
+        foreach ($variantKeywords as $keyword) {
+            if (stripos($msgLower, $keyword) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -424,6 +505,7 @@ public function convertVoiceToText($audioUrl)
                 ]);
 
             if ($response->successful()) {
+                Log::info("OpenAI API Success - Model: " . ($imageUrl ? 'gpt-4o' : 'gpt-4o-mini'));
                 return $response->json()['choices'][0]['message']['content'] ?? null;
             }
 
