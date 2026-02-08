@@ -324,17 +324,40 @@ public function sendTelegramAlert($clientId, $senderId, $message)
         return str_replace($bn, $en, $str);
     }
 
+   
+
+
     private function callLlmChain($messages, $imageUrl)
-    {
-        try {
-            $response = Http::withToken(config('services.openai.api_key') ?? env('OPENAI_API_KEY'))
-                ->timeout(25)
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
-                    'messages' => $messages,
-                    'temperature' => 0.3, 
-                ]);
-            return $response->json()['choices'][0]['message']['content'] ?? null;
-        } catch (\Exception $e) { return null; }
-    }
+        {
+            try {
+                $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+
+                if (empty($apiKey)) {
+                    Log::error("OpenAI API Key missing! .env ফাইলে API কী আছে কিনা এবং VPS-এ ক্যাশ ক্লিয়ার করা হয়েছে কিনা চেক করুন।");
+                    return null;
+                }
+
+                $response = Http::withToken($apiKey)
+                    ->timeout(30) // VPS-এর জন্য সময় বাড়িয়ে ৩০ সেকেন্ড করা হলো
+                    ->retry(2, 500) // সাময়িক নেটওয়ার্ক সমস্যার জন্য ২ বার ট্রাই করবে
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+                        'messages' => $messages,
+                        'temperature' => 0.3,
+                    ]);
+
+                if ($response->successful()) {
+                    return $response->json()['choices'][0]['message']['content'] ?? null;
+                }
+
+                Log::error("OpenAI API Error: " . $response->status() . " - " . $response->body());
+                return null;
+
+            } catch (\Exception $e) {
+                Log::error("LLM Call Exception: " . $e->getMessage());
+                return null;
+            }
+        }
+
+
 }
