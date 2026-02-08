@@ -255,7 +255,7 @@ private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
             $orderData = [
                 'client_id'       => $client->id,
                 'sender_id'       => $senderId,
-                'customer_name'   => $data['name'] ?? 'Guest',
+                'customer_name'  => !empty($data['name']) && $data['name'] !== $product->name ? $data['name'] : 'Valued Customer',
                 'customer_phone'  => $validPhone,
                 'shipping_address'=> $data['address'] ?? 'N/A',
                 'total_amount'    => $totalAmount,
@@ -327,24 +327,35 @@ private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
     /**
      * 5. Handle ADD NOTE Logic
      */
-    private function handleOrderNote($reply, $matches, $client, $senderId)
-    {
-        $data = json_decode($matches[1], true);
-        $lastOrder = Order::where('sender_id', $senderId)->latest()->first();
+private function handleOrderNote($reply, $matches, $client, $senderId)
+{
+    $data = json_decode($matches[1], true);
+    $lastOrder = Order::where('sender_id', $senderId)->latest()->first();
 
-        if ($lastOrder && isset($data['note'])) {
-            $updateField = Schema::hasColumn('orders', 'customer_note') ? 'customer_note' : (Schema::hasColumn('orders', 'admin_note') ? 'admin_note' : 'notes');
+    if ($lastOrder && !empty($data['note'])) {
+        // ১. কোন কলামে নোট সেভ হবে তা নিশ্চিত করা
+        $updateField = null;
+        if (Schema::hasColumn('orders', 'admin_note')) $updateField = 'admin_note';
+        elseif (Schema::hasColumn('orders', 'notes')) $updateField = 'notes';
+        elseif (Schema::hasColumn('orders', 'customer_note')) $updateField = 'customer_note';
+
+        if ($updateField) {
             $existingNote = $lastOrder->$updateField;
+            $newNote = $data['note'];
             
-            $lastOrder->update([
-                $updateField => ($existingNote ? $existingNote . " | " : "") . $data['note']
-            ]);
+            // আগের নোটের সাথে নতুন নোট যোগ করা
+            $finalNote = $existingNote ? ($existingNote . " | " . $newNote) : $newNote;
 
-            Log::info("Order #{$lastOrder->id} note updated via AI.");
-            return "ধন্যবাদ! আপনার অনুরোধটি অর্ডার #{$lastOrder->id} এর সাথে নোট হিসেবে যুক্ত করা হয়েছে।";
+            $lastOrder->update([$updateField => $finalNote]);
+            Log::info("Order #{$lastOrder->id} note updated in column '$updateField'");
+            
+            return "ধন্যবাদ! আপনার অনুরোধটি (Friday Delivery) নোট করা হয়েছে।";
+        } else {
+            Log::error("No note column found in orders table!");
         }
-        return str_replace($matches[0], "", $reply);
     }
+    return str_replace($matches[0], "", $reply);
+}
 
     /**
      * 6. Handle CANCEL ORDER Logic
