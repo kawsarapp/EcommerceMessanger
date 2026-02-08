@@ -54,7 +54,7 @@ class WebhookController extends Controller
             $pageId    = $data['entry'][0]['id'] ?? null;
             $mid       = $messaging['message']['mid'] ?? null;
 
-            // [Deduplication] - একই মেসেজ বারবার প্রসেস হওয়া আটকায়
+            // [Deduplication]
             if ($mid && Cache::has("fb_mid_{$mid}")) {
                 Log::info("Duplicate Message Skipped: $mid");
                 return response('OK', 200);
@@ -113,9 +113,9 @@ class WebhookController extends Controller
 
         // Session Handling
         $session = OrderSession::firstOrCreate(['sender_id' => $senderId], ['client_id' => $client->id]);
-        if ($session->is_human_agent_active) return; // হিউম্যান মোডে থাকলে বট চুপ থাকবে
+        if ($session->is_human_agent_active) return;
 
-        // Carousel Click Handling (সরাসরি অর্ডার)
+        // Carousel Click Handling
         if (Str::startsWith($messageText, 'ORDER_PRODUCT_')) {
             $productId = str_replace('ORDER_PRODUCT_', '', $messageText);
             $product = Product::find($productId);
@@ -137,7 +137,7 @@ class WebhookController extends Controller
         }
 
         // =====================================================
-        // TAG PROCESSING LOGIC (Updated & Full)
+        // TAG PROCESSING LOGIC
         // =====================================================
 
         // 1. Check for New Order Creation
@@ -194,7 +194,7 @@ class WebhookController extends Controller
             }
         }
 
-        // Image Cleanup (AI যদি ছবির লিঙ্ক দেয়)
+        // Image Cleanup
         $outgoingImage = null;
         if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
             $outgoingImage = $matches[1];
@@ -211,7 +211,7 @@ class WebhookController extends Controller
     }
 
     /**
-     * 4. Finalize Order Logic (Updated for Clean Telegram Notification)
+     * 4. Finalize Order Logic (DB Error Fix Added)
      */
     private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
     {
@@ -251,6 +251,7 @@ class WebhookController extends Controller
                 $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
                 $totalAmount = ($price * $qty) + $delivery;
 
+                // [FIX] payment_method কলাম না থাকলে সেটা বাদ দিয়ে ডাটা তৈরি হবে
                 $orderData = [
                     'client_id'      => $client->id,
                     'sender_id'      => $senderId,
@@ -260,11 +261,13 @@ class WebhookController extends Controller
                     'total_amount'   => $totalAmount,
                     'order_status'   => 'processing',
                     'payment_status' => 'pending',
-                    'payment_method' => 'cod',
                     'customer_email' => $data['email'] ?? null,
                 ];
 
-                // Dynamic Column Check
+                // Dynamic Column Checks (কলাম থাকলেই শুধু ডাটা ঢুকবে)
+                if (Schema::hasColumn('orders', 'payment_method')) {
+                    $orderData['payment_method'] = 'cod';
+                }
                 if (Schema::hasColumn('orders', 'division')) {
                     $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
                 }
@@ -277,6 +280,7 @@ class WebhookController extends Controller
                     $orderData['notes'] = $data['note'] ?? null;
                 }
 
+                // অর্ডার তৈরি
                 $order = Order::create($orderData);
                 Log::info("Order Created Successfully. ID: {$order->id}");
 
@@ -298,10 +302,10 @@ class WebhookController extends Controller
 
                 $product->decrement('stock_quantity', $qty);
 
-                // সেশন কমপ্লিট করা
+                // সেশন কমপ্লিট
                 OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
 
-                // --- টেলিগ্রাম অ্যালার্ট (একটিই ক্লিন মেসেজ যাবে) ---
+                // --- টেলিগ্রাম অ্যালার্ট ---
                 try {
                     $telegramMsg = "🛍️ **নতুন অর্ডার কনফার্ম হয়েছে!**\n\n" .
                                    "আইডি: #{$order->id}\n" .
@@ -353,7 +357,7 @@ class WebhookController extends Controller
     }
 
     /**
-     * 6. Handle CANCEL ORDER Logic (With Telegram Alert)
+     * 6. Handle CANCEL ORDER Logic
      */
     private function handleOrderCancellation($reply, $matches, $client, $senderId, $chatbot)
     {
@@ -390,7 +394,7 @@ class WebhookController extends Controller
 
             // Telegram Alert
             try {
-                $msg = "❌ **অর্ডার বাতিল করা হয়েছে!**\nআইডি: #{$order->id}\nকারণ: {$reason}\nStatus: Cancelled via Messenger";
+                $msg = "❌ **অর্ডার বাতিল করা হয়েছে!**\nআইডি: #{$order->id}\nকারণ: {$reason}";
                 $chatbot->sendTelegramAlert($client->id, $senderId, $msg);
             } catch (\Exception $e) {
                 Log::error("Telegram Notification Failed: " . $e->getMessage());
