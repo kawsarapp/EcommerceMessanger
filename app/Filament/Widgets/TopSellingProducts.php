@@ -14,6 +14,13 @@ class TopSellingProducts extends BaseWidget
     protected static ?int $sort = 3;
     protected int | string | array $columnSpan = 'full';
 
+
+    protected function getTableRecordKey($record): string
+{
+    return (string) ($record->product_id ?? $record->id);
+}
+
+
     public function table(Table $table): Table
     {
         $clientId = Client::where('user_id', auth()->id())->first()?->id;
