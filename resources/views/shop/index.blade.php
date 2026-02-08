@@ -142,6 +142,21 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+        
+        /* Mobile Menu Toggle */
+        .mobile-menu-btn {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            .category-nav {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 text-gray-800 min-h-screen flex flex-col" 
@@ -152,6 +167,7 @@
           activeVideoUrl: '',
           mainImage: '',
           cartCount: 0,
+          mobileMenuOpen: false,
           
           openProduct(product) {
               this.activeProduct = product;
@@ -183,6 +199,9 @@
           closeVideo() {
               this.showVideoModal = false;
               this.activeVideoUrl = '';
+          },
+          toggleMobileMenu() {
+              this.mobileMenuOpen = !this.mobileMenuOpen;
           }
       }">
 
@@ -190,7 +209,7 @@
     <header class="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50 transition-all duration-300 border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 py-4 md:py-5">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4 group cursor-pointer" @click="window.location.href='/'">
+                <div class="flex items-center gap-4 group cursor-pointer" @click="window.location.href='/shop/{{ $client->slug }}'">
                     <div class="w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                         <i class="fas fa-store text-2xl"></i>
                     </div>
@@ -225,7 +244,7 @@
     <!-- Enhanced Category Navigation -->
     <div class="bg-white border-b border-gray-100 sticky top-[72px] z-40 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 py-3">
-            <div class="flex gap-2 md:gap-4 overflow-x-auto scrollbar-hide pb-1">
+            <div class="flex gap-2 md:gap-4 overflow-x-auto scrollbar-hide pb-1 category-nav">
                 <a href="{{ request()->url() }}" 
                    class="category-item whitespace-nowrap px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-sm md:text-base font-semibold transition-all duration-300 border-2 
                    {{ !request('category') ? 'category-active border-primary shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:border-primary hover:text-primary' }}">
@@ -580,7 +599,7 @@
                     <h4 class="text-lg font-bold mb-4 text-center">Quick Links</h4>
                     <div class="flex flex-col gap-2 text-gray-300 text-sm">
                         <a href="/" class="hover:text-white transition">Home</a>
-                        <a href="#" class="hover:text-white transition">Products</a>
+                        <a href="/shop/{{ $client->slug }}" class="hover:text-white transition">Products</a>
                         <a href="#" class="hover:text-white transition">Categories</a>
                         <a href="#" class="hover:text-white transition">Contact</a>
                     </div>
