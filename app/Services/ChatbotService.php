@@ -33,9 +33,16 @@ class ChatbotService
             }
 
             // ৩. ফোন নম্বর লুকআপ চেক (পুরানো লজিক রাখা হলো)
-            $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
-            if ($phoneLookupResult) {
-                return $phoneLookupResult;
+           // $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
+           // if ($phoneLookupResult) {
+             //   return $phoneLookupResult;
+           // }
+
+            if ($step === 'start') {
+                $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
+                if ($phoneLookupResult) {
+                    return $phoneLookupResult;
+                }
             }
 
             // ৪. স্টেপ অনুযায়ী লজিক (Systematic Flow)
