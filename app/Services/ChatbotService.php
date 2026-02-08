@@ -117,11 +117,26 @@ class ChatbotService
             $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
             
             if ($product && $this->hasVariantInMessage($userMessage, $product)) {
-                $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
-                $systemInstruction = "কাস্টমার ভেরিয়েশন কনফার্ম করেছে। এখন দ্রুত অর্ডার কনফার্ম করতে তার নাম, ফোন এবং ঠিকানা চাও।";
+
+                $variant = $this->extractVariant($userMessage, $product);
+
+                $customerInfo['variant'] = $variant;
+
+                $session->update([
+                    'customer_info' => array_merge($customerInfo, [
+                        'step' => 'collect_info'
+                    ])
+                ]);
+
+                $systemInstruction =
+                    "ভেরিয়েশন কনফার্ম হয়েছে (" .
+                    json_encode($variant) .
+                    ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
             }
+
         }
         elseif ($step === 'collect_info') {
+            $variantInfo = $customerInfo['variant'] ?? [];
             $product = Product::find($currentProductId);
             $phone = $this->extractPhoneNumber($userMessage);
             
@@ -134,7 +149,13 @@ class ChatbotService
                     ]);
                 }
                 $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
-                $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে।{$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো এবং [ORDER_DATA] ট্যাগ জেনারেট করো। নাম না থাকলে 'Guest' ব্যবহার করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।";
+
+                $systemInstruction =
+"কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। {$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো এবং করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।
+ভেরিয়েশন তথ্য: " . json_encode($variantInfo) . "
+এখন তুমি অর্ডারটি কনফার্ম করো এবং অবশ্যই
+[ORDER_DATA] এর ভিতরে variant ফিল্ড হিসেবে এই তথ্য পাঠাবে।";
+
             } else {
                 $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
             }
@@ -152,51 +173,55 @@ class ChatbotService
         $inventoryData = $inventoryData ?: "[]";
         $productContext = $productContext ?: "";
 
-        $finalPrompt = <<<EOT
+
+$finalPrompt = <<<EOT
 {$systemInstruction}
 
-তুমি একজন বন্ধুসুলভ, স্মার্ট এবং মানুষের মতো কথা বলা ইকমার্স সেলস অ্যাসিস্ট্যান্ট। তোমার নাম [আপনার পেজের নাম বা বটের নাম]। তুমি সবসময় বাংলায় উত্তর দিবে (তবে প্রয়োজনে ইংরেজি শব্দ ব্যবহার করতে পারো)।
+**পরিচয় ও পারসোনা:**
+তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"। তোমার লক্ষ্য হলো কাস্টমারকে চমৎকার সার্ভিস দিয়ে তাদের পছন্দের প্রোডাক্টটি কিনতে সাহায্য করা। তোমার কথা হবে একদম মানুষের মতো ন্যাচারাল এবং বন্ধুসুলভ।
 
 [DATA CONTEXT]:
 [Product Info]: {$productContext}
 [Customer History]: {$orderContext}
 [Product Inventory]: {$inventoryData}
-- Current Time: {$currentTime} (e.g., Sunday, 10 PM)
+- Current Time: {$currentTime}
 - Delivery Info: {$delivery}
-- Payment Methods: {$paymentMethods} (e.g., COD, Bkash: 017...)
-- Shop Policies: {$shopPolicies} (Returns, Warranty)
+- Payment Methods: {$paymentMethods}
+- Shop Policies: {$shopPolicies}
 - Active Offers: {$activeOffers}
 - Products Inventory: {$productsJson}
 
-[১. অর্ডার ট্র্যাকিং রুলস]:
-- কাস্টমার যদি অর্ডারের অবস্থা জানতে চায় (যেমন: "অর্ডার কই?", "ট্র্যাক করতে চাই"), তবে ভদ্রভাবে তার ফোন নম্বর চাও।
-- ফোন নম্বর পেলে সেটাকে ১১ ডিজিটে ক্লিন করো (স্পেস বা হাইফেন সরিয়ে)।
-- যদি নম্বর সঠিক থাকে, তবে এই ট্যাগটি জেনারেট করো: 
-[TRACK_ORDER: "017XXXXXXXX"]
-- কখনোই কাস্টমারকে ডাটাবেস চেক করার কথা বলবে না।
+[আচরণের মূল নিয়মাবলী - স্মার্ট সেলসম্যান গাইড]:
+১. **রোবটিক কথা এড়িয়ে চলো:** "নম্বর ক্লিন করছি", "স্টেপ ১", বা "সিস্টেম চেক করছি"—এই ধরণের টেকনিক্যাল কথা একদম বলবে না। 
+২. **নম্বর পেলে প্রতিক্রিয়া:** কাস্টমার ফোন নম্বর দিলে বলো— "ধন্যবাদ! আপনার নম্বরটি আমি নোট করে নিয়েছি।" 
+৩. **প্রোডাক্টের প্রশংসা:** কাস্টমার কিছু কিনতে চাইলে উৎসাহ দাও। যেমন— "দারুণ পছন্দ ভাইয়া/আপু! আমাদের এই প্রোডাক্টটি এখন বেশ পপুলার।"
+৪. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও। যেমন— "অর্ডারটি কনফার্ম করার জন্য আপনার নাম এবং ঠিকানাটি কি দয়া করে বলবেন?"
+৫. **স্টক না থাকলে:** স্টক না থাকলে সরাসরি 'নেই' না বলে দুঃখ প্রকাশ করো এবং ইনভেন্টরি থেকে অন্য কোনো ভালো প্রোডাক্ট সাজেস্ট করো।
 
-[২. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
-- কাস্টমার কোনো প্রোডাক্ট দেখতে চাইলে বা তুমি সাজেস্ট করলে, 'Products Inventory' থেকে মিল রেখে সর্বোচ্চ ৩টি প্রোডাক্টের আইডি দিয়ে ক্যারোসেল দেখাবে।
-- যদি ইনভেন্টরিতে প্রোডাক্ট না থাকে, তবে মিথ্যা আশ্বাস দিবে না।
-- ফরম্যাট (মেসেজের শেষে): [CAROUSEL: ID1, ID2]
+[১. অর্ডার কনফার্মেশন রুলস]:
+- কাস্টমারের নাম, ফোন এবং পূর্ণ ঠিকানা পাওয়ার পর সব তথ্য একবার দেখাবে।
+- ডেলিভারি চার্জ বা ঢাকার ভেতরে না বাইরে সেটা জিজ্ঞেস করার সময় বিনয়ের সাথে বলবে।
+- সব ঠিক থাকলে শেষে এই ট্যাগটি দিবে: [ORDER_DATA: {"product_id": 101, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "..."}]
 
-[৩. অর্ডার প্রসেস - কঠোর নিয়ম]:
-- স্টেপ ১: আগে নিশ্চিত হও কাস্টমার কোন প্রোডাক্টটি (ID) কিনতে চায়। প্রোডাক্ট কনফার্ম না হওয়া পর্যন্ত নাম/ঠিকানা চাইবে না।
-- স্টেপ ২: প্রোডাক্ট কনফার্ম হলে, কাস্টমারের নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা (থানা/জেলা সহ) নাও।
-- স্টেপ ৩: সব তথ্য পেলে এবং কাস্টমার কনফার্ম করলে নিচের ট্যাগটি জেনারেট করো।
-- ঢাকার ভেতরে হলে is_dhaka=true, বাইরে false।
-- ফরম্যাট: 
-[ORDER_DATA: {"product_id": 101, "name": "Customer Name", "phone": "017XXXXXXXX", "address": "Full Address", "is_dhaka": true, "note": "Any special instruction"}]
+[২. প্রোডাক্ট ট্র্যাকিং রুলস]:
+- কাস্টমার যদি জানতে চায় তার আগের অর্ডার কোথায়, তবেই তাকে ফোন নম্বর দিতে বলবে। 
+- নম্বর পেলে এই ট্যাগটি জেনারেট করবে: [TRACK_ORDER: "017XXXXXXXX"]
+- কাস্টমারকে কখনোই বলবে না যে তুমি ডাটাবেস চেক করছো। বলবে— "একটু সময় দিন ভাইয়া, আমি আপনার অর্ডারের বর্তমান অবস্থা দেখে জানাচ্ছি।"
+
+[৩. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
+- কাস্টমার কিছু দেখতে চাইলে সুন্দর করে বর্ণনা দিবে এবং শেষে ট্যাগ ব্যবহার করবে: [CAROUSEL: ID1, ID2]
 
 [৪. সাধারণ আচরণ]:
-- ছোট এবং সুন্দর উত্তর দাও।
-- একবারে একটার বেশি প্রশ্ন করবে না।
-- কাস্টমার রেগে গেলে শান্তভাবে হ্যান্ডেল করো।
+- উত্তর হবে ছোট এবং টু-দ্য-পয়েন্ট। 
+- একবারে একটার বেশি প্রশ্ন করবে না। 
+- কাস্টমার কনফিউজড থাকলে তাকে সিদ্ধান্ত নিতে সাহায্য করো।
 
 [SYSTEM TAGS SUMMARY]:
-- Show Products: [CAROUSEL: ID1, ID2, ID3]
-- Finalize Order: [ORDER_DATA: {...JSON...}]
-- Check Status: [TRACK_ORDER: "Phone Number"]
+- Show Products: [CAROUSEL: ID1, ID2]
+- Finalize Order: [ORDER_DATA: {...}]
+- Check Status: [TRACK_ORDER: "..."]
+
+সবসময় বাংলা এবং প্রয়োজনীয় ইংরেজি শব্দ মিশিয়ে (যেমন— স্টক, ডেলিভারি, কনফার্ম) একজন প্রফেশনাল অনলাইন শপ ম্যানেজারের মতো কথা বলবে।
 EOT;
 
         // ✅ FIX 2: Build message history with context preservation
@@ -229,9 +254,9 @@ EOT;
                 'time' => time()
             ];
             
-            // Prevent history bloat (retain last 10 exchanges)
-            if (count($history) > 10) {
-                $history = array_slice($history, -10);
+            // Prevent history bloat (retain last 20 exchanges)
+            if (count($history) > 20) {
+                $history = array_slice($history, -20);
             }
             
             // Update session with enriched history
@@ -451,6 +476,7 @@ EOT;
         if ($products->isEmpty()) {
             $products = Product::where('client_id', $clientId)
                 ->where('stock_status', 'in_stock')
+                ->where('stock_quantity', '>', 0)
                 ->latest()->limit(5)->get();
         }
 
@@ -487,6 +513,43 @@ EOT;
         })->toJson();
     }
 
+
+    //------------------
+
+    private function extractVariant($msg, $product)
+{
+    $msg = strtolower($msg);
+    $variant = [];
+
+    $colors = is_string($product->colors)
+        ? json_decode($product->colors, true)
+        : $product->colors;
+
+    if (is_array($colors)) {
+        foreach ($colors as $color) {
+            if (str_contains($msg, strtolower($color))) {
+                $variant['color'] = $color;
+            }
+        }
+    }
+
+    $sizes = is_string($product->sizes)
+        ? json_decode($product->sizes, true)
+        : $product->sizes;
+
+    if (is_array($sizes)) {
+        foreach ($sizes as $size) {
+            if (str_contains($msg, strtolower($size))) {
+                $variant['size'] = $size;
+            }
+        }
+    }
+
+    return $variant;
+}
+
+
+//-------
     /**
      * [UPGRADED] স্মার্ট অর্ডার কনটেক্সট বিল্ডার
      */
