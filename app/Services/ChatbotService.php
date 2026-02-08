@@ -17,208 +17,225 @@ class ChatbotService
      * এটি এখন স্টেপ-বাই-স্টেপ অর্ডার প্রসেসিং সিস্টেম ব্যবহার করবে
      */
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
-    {
-        try {
-            
-            $inventoryData = null;
-            $currentTime = now()->format('l, h:i A');
-            $delivery = 'Standard Delivery (2-4 days)';
-            $paymentMethods = 'COD, bKash, Nagad';
-            $shopPolicies = '7 days return, No warranty';
-            $activeOffers = 'No active offers';
-            $productsJson = '[]';
+{
+    try {
+        // ✅ FIX: Safe initialization to prevent null interpolation in prompt
+        $inventoryData = "[]";
+        $productsJson = "[]";
+        $currentTime = now()->format('l, h:i A');
+        $delivery = 'Standard Delivery (2-4 days)';
+        $paymentMethods = 'COD, bKash, Nagad';
+        $shopPolicies = '7 days return, No warranty';
+        $activeOffers = 'No active offers';
+        $productContext = "";
+        $systemInstruction = "";
 
+        // Load session with null-safe history handling
+        $session = OrderSession::firstOrCreate(
+            ['sender_id' => $senderId],
+            ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
+        );
 
-            $session = OrderSession::firstOrCreate(
-                ['sender_id' => $senderId],
-                ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
-            );
+        if ($session->is_human_agent_active) return null;
 
-            if ($session->is_human_agent_active) return null;
+        // ✅ FIX 1: Null-safe customer info extraction (critical for history persistence)
+        $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
+        $step = $customerInfo['step'] ?? 'start';
+        $currentProductId = $customerInfo['product_id'] ?? null;
+        $history = $customerInfo['history'] ?? []; // Preserves chat memory across sessions
 
-            // ২. স্টেপ ভ্যারিয়েবলগুলো প্রথমে ডিফাইন করুন
-            $step = $session->customer_info['step'] ?? 'start';
-            $currentProductId = $session->customer_info['product_id'] ?? null;
-            $history = $session->customer_info['history'] ?? [];
-
-            // ✅ ৩. সেশন রিসেট চেক - 'completed' স্টেপে নতুন মেসেজ এলে রিসেট করব
-            if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
-                $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
-                $step = 'start';
-                $currentProductId = null;
-            }
-
-            // ✅ ৪. অর্ডার ক্যানসেলেশন চেক (সব স্টেপে)
-            if ($this->detectOrderCancellation($userMessage, $senderId)) {
-                return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
-            }
-
-            // ✅ ৫. ডেলিভারি নোট ডিটেকশন (collect_info স্টেপে)
-            $deliveryNote = null;
-            if ($step === 'collect_info' && $this->detectDeliveryNote($userMessage)) {
-                $deliveryNote = $this->extractDeliveryNote($userMessage);
-            }
-
-            // ✅ ৬. হেট স্পিচ বা নেগেটিভ কথা চেক
-            if ($this->detectHateSpeech($userMessage)) {
-                return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
-            }
-
-            $systemInstruction = "";
-            $productContext = "";
-
-            // --- STEP 1: প্রোডাক্ট খোঁজা ---
-            if ($step === 'start' || !$currentProductId) {
-                // ফোন লুকআপ চেক
-                $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
-                if ($phoneLookupResult) {
-                    return $phoneLookupResult;
-                }
-
-                // ইনভেন্টরি সার্চ (নতুন সিস্টেমেটিক লজিক)
-                $product = $this->findProductSystematically($clientId, $userMessage);
-                
-                if ($product) {
-                    // প্রোডাক্ট পাওয়া গেছে! এখন চেক করব ভেরিয়েশন আছে কি না
-                    $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
-                    $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
-
-                    // লজিক: যদি ভেরিয়েশন থাকে, তবে স্টেপ হবে 'select_variant', না থাকলে সরাসরি 'collect_info'
-                    if ($hasColor || $hasSize) {
-                        $nextStep = 'select_variant';
-                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কিন্তু এটার কালার/সাইজ আছে ({$product->colors} / {$product->sizes})। তুমি এখন শুধু কালার বা সাইজ জিজ্ঞেস করো। অন্য কিছু না।";
-                    } else {
-                        $nextStep = 'collect_info'; // সরাসরি নাম ঠিকানায় জাম্প
-                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কোনো কালার বা সাইজ নেই (Single Variation)। তাই ভুলেও কালার/সাইজ চাইবে না। সরাসরি কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও।";
-                    }
-
-                    // সেশন আপডেট
-                    $session->update(['customer_info' => array_merge($session->customer_info ?? [], ['step' => $nextStep, 'product_id' => $product->id])]);
-                    $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
-                
-                } else {
-                    // প্রোডাক্ট পাওয়া না গেলে ইনভেন্টরি ডেটা দেখানোর জন্য পুরানো লজিক ব্যবহার করব
-                    $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
-                    $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
-                }
-            } 
-            
-            // --- STEP 2: ভেরিয়েশন কনফার্মেশন ---
-            elseif ($step === 'select_variant') {
-                $product = Product::find($currentProductId);
-                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
-                
-                // যদি ইউজার কালার/সাইজ বলে দেয়, তবে পরের স্টেপে পাঠাও
-                if ($product && $this->hasVariantInMessage($userMessage, $product)) {
-                    $session->update(['customer_info' => array_merge($session->customer_info ?? [], ['step' => 'collect_info'])]);
-                     $systemInstruction = "কাস্টমার ভেরিয়েশন কনফার্ম করেছে। এখন দ্রুত অর্ডার কনফার্ম করতে তার নাম, ফোন এবং ঠিকানা চাও।";
-                }
-            }
-
-            // --- STEP 3: তথ্য সংগ্রহ ও অর্ডার কনফার্ম ---
-            elseif ($step === 'collect_info') {
-                $product = Product::find($currentProductId);
-                
-                // হার্ড-কোড চেক: মেসেজে ফোন নম্বর আছে কি না
-                $phone = $this->extractPhoneNumber($userMessage);
-                
-                if ($phone) {
-                    // ✅ ফিক্স: প্রোডাক্ট কনটেক্সটে আসল ID পাঠানো
-                    if ($product) {
-                        $productContext = json_encode([
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'price' => $product->sale_price
-                        ]);
-                    }
-                    
-                    // ফোন নম্বর পেলে আমরা ধরে নিব অর্ডার কনফার্ম
-                    $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
-                    $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে।{$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো এবং [ORDER_DATA] ট্যাগ জেনারেট করো। নাম না থাকলে 'Guest' ব্যবহার করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।";
-                } else {
-                    $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
-                }
-            }
-            
-            // --- STEP 4: অর্ডার কমপ্লিট ---
-            elseif ($step === 'completed') {
-                return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
-            }
-
-            // ----------------------------------------
-            // AI কল (এখন AI কন্ট্রোলড এনভায়রনমেন্টে আছে)
-            // ----------------------------------------
-            // কাস্টমার হিস্ট্রি বিল্ড করা (পুরানো লজিক ব্যবহার করব)
-            $orderContext = $this->buildOrderContext($clientId, $senderId);
-            // ✅ SAFETY FALLBACKS (must before prompt)
-            $inventoryData  = $inventoryData  ?? 'No inventory data available';
-            $productContext = $productContext ?? '';
-
-            $finalPrompt = <<<EOT
-                {$systemInstruction}
-
-                তুমি একজন বন্ধুসুলভ, স্মার্ট এবং মানুষের মতো কথা বলা ইকমার্স সেলস অ্যাসিস্ট্যান্ট। তোমার নাম [আপনার পেজের নাম বা বটের নাম]। তুমি সবসময় বাংলায় উত্তর দিবে (তবে প্রয়োজনে ইংরেজি শব্দ ব্যবহার করতে পারো)।
-
-                [DATA CONTEXT]:
-                [Product Info]: {$productContext}
-                [Customer History]: {$orderContext}
-                [Product Inventory]: {$inventoryData}
-                - Current Time: {$currentTime} (e.g., Sunday, 10 PM)
-                - Delivery Info: {$delivery}
-                - Payment Methods: {$paymentMethods} (e.g., COD, Bkash: 017...)
-                - Shop Policies: {$shopPolicies} (Returns, Warranty)
-                - Active Offers: {$activeOffers}
-                - Products Inventory: {$productsJson}
-                - Customer History: {$orderContext}
-
-
-                [১. অর্ডার ট্র্যাকিং রুলস]:
-                - কাস্টমার যদি অর্ডারের অবস্থা জানতে চায় (যেমন: "অর্ডার কই?", "ট্র্যাক করতে চাই"), তবে ভদ্রভাবে তার ফোন নম্বর চাও।
-                - ফোন নম্বর পেলে সেটাকে ১১ ডিজিটে ক্লিন করো (স্পেস বা হাইফেন সরিয়ে)।
-                - যদি নম্বর সঠিক থাকে, তবে এই ট্যাগটি জেনারেট করো: 
-                [TRACK_ORDER: "017XXXXXXXX"]
-                - কখনোই কাস্টমারকে ডাটাবেস চেক করার কথা বলবে না।
-
-                [২. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
-                - কাস্টমার কোনো প্রোডাক্ট দেখতে চাইলে বা তুমি সাজেস্ট করলে, 'Products Inventory' থেকে মিল রেখে সর্বোচ্চ ৩টি প্রোডাক্টের আইডি দিয়ে ক্যারোসেল দেখাবে।
-                - যদি ইনভেন্টরিতে প্রোডাক্ট না থাকে, তবে মিথ্যা আশ্বাস দিবে না।
-                - ফরম্যাট (মেসেজের শেষে): [CAROUSEL: ID1, ID2]
-
-                [৩. অর্ডার প্রসেস - কঠোর নিয়ম]:
-                - স্টেপ ১: আগে নিশ্চিত হও কাস্টমার কোন প্রোডাক্টটি (ID) কিনতে চায়। প্রোডাক্ট কনফার্ম না হওয়া পর্যন্ত নাম/ঠিকানা চাইবে না।
-                - স্টেপ ২: প্রোডাক্ট কনফার্ম হলে, কাস্টমারের নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা (থানা/জেলা সহ) নাও।
-                - স্টেপ ৩: সব তথ্য পেলে এবং কাস্টমার কনফার্ম করলে নিচের ট্যাগটি জেনারেট করো।
-                - ঢাকার ভেতরে হলে is_dhaka=true, বাইরে false।
-                - ফরম্যাট: 
-                [ORDER_DATA: {"product_id": 101, "name": "Customer Name", "phone": "017XXXXXXXX", "address": "Full Address", "is_dhaka": true, "note": "Any special instruction"}]
-
-                [৪. সাধারণ আচরণ]:
-                - ছোট এবং সুন্দর উত্তর দাও।
-                - একবারে একটার বেশি প্রশ্ন করবে না।
-                - কাস্টমার রেগে গেলে শান্তভাবে হ্যান্ডেল করো।
-
-                [SYSTEM TAGS SUMMARY]:
-                - Show Products: [CAROUSEL: ID1, ID2, ID3]
-                - Finalize Order: [ORDER_DATA: {...JSON...}]
-                - Check Status: [TRACK_ORDER: "Phone Number"]
-
-                EOT;
-
-            $messages = [
-                ['role' => 'system', 'content' => $finalPrompt],
-                ['role' => 'user', 'content' => $userMessage]
-            ];
-
-            $aiResponse = $this->callLlmChain($messages, $imageUrl);
-
-            return $aiResponse;
-
-        } catch (\Exception $e) {
-            Log::error('ChatbotService Error: ' . $e->getMessage());
-            return "দুঃখিত, একটু সমস্যা হচ্ছে।";
+        // ✅ Session reset logic: Clear completed sessions for new queries
+        if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
+            $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
+            $step = 'start';
+            $currentProductId = null;
+            $history = []; // Reset history with session
         }
-    }
 
+        // ✅ Critical early-exit checks (MUST happen before AI processing)
+        if ($this->detectOrderCancellation($userMessage, $senderId)) {
+            return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
+        }
+
+        $deliveryNote = null;
+        if ($step === 'collect_info' && $this->detectDeliveryNote($userMessage)) {
+            $deliveryNote = $this->extractDeliveryNote($userMessage);
+        }
+
+        if ($this->detectHateSpeech($userMessage)) {
+            return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
+        }
+
+        // ========================================
+        // ORDER FLOW LOGIC (Preserved 1:1 from original)
+        // ========================================
+        if ($step === 'start' || !$currentProductId) {
+            // Phone lookup check (early return if match found)
+            $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
+            if ($phoneLookupResult) {
+                return $phoneLookupResult;
+            }
+
+            // Systematic product search
+            $product = $this->findProductSystematically($clientId, $userMessage);
+            
+            if ($product) {
+                $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
+                $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
+
+                if ($hasColor || $hasSize) {
+                    $nextStep = 'select_variant';
+                    $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কিন্তু এটার কালার/সাইজ আছে ({$product->colors} / {$product->sizes})। তুমি এখন শুধু কালার বা সাইজ জিজ্ঞেস করো। অন্য কিছু না।";
+                } else {
+                    $nextStep = 'collect_info';
+                    $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কোনো কালার বা সাইজ নেই (Single Variation)। তাই ভুলেও কালার/সাইজ চাইবে না। সরাসরি কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও।";
+                }
+
+                $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
+                $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
+            } else {
+                $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
+                $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
+            }
+        } 
+        elseif ($step === 'select_variant') {
+            $product = Product::find($currentProductId);
+            $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
+            
+            if ($product && $this->hasVariantInMessage($userMessage, $product)) {
+                $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
+                $systemInstruction = "কাস্টমার ভেরিয়েশন কনফার্ম করেছে। এখন দ্রুত অর্ডার কনফার্ম করতে তার নাম, ফোন এবং ঠিকানা চাও।";
+            }
+        }
+        elseif ($step === 'collect_info') {
+            $product = Product::find($currentProductId);
+            $phone = $this->extractPhoneNumber($userMessage);
+            
+            if ($phone) {
+                if ($product) {
+                    $productContext = json_encode([
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $product->sale_price
+                    ]);
+                }
+                $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
+                $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে।{$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো এবং [ORDER_DATA] ট্যাগ জেনারেট করো। নাম না থাকলে 'Guest' ব্যবহার করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।";
+            } else {
+                $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
+            }
+        }
+        elseif ($step === 'completed') {
+            return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
+        }
+
+        // ========================================
+        // AI CONTEXT PREPARATION (With history injection)
+        // ========================================
+        $orderContext = $this->buildOrderContext($clientId, $senderId);
+        
+        // ✅ SAFETY: Ensure no null values reach prompt interpolation
+        $inventoryData = $inventoryData ?: "[]";
+        $productContext = $productContext ?: "";
+
+        $finalPrompt = <<<EOT
+{$systemInstruction}
+
+তুমি একজন বন্ধুসুলভ, স্মার্ট এবং মানুষের মতো কথা বলা ইকমার্স সেলস অ্যাসিস্ট্যান্ট। তোমার নাম [আপনার পেজের নাম বা বটের নাম]। তুমি সবসময় বাংলায় উত্তর দিবে (তবে প্রয়োজনে ইংরেজি শব্দ ব্যবহার করতে পারো)।
+
+[DATA CONTEXT]:
+[Product Info]: {$productContext}
+[Customer History]: {$orderContext}
+[Product Inventory]: {$inventoryData}
+- Current Time: {$currentTime} (e.g., Sunday, 10 PM)
+- Delivery Info: {$delivery}
+- Payment Methods: {$paymentMethods} (e.g., COD, Bkash: 017...)
+- Shop Policies: {$shopPolicies} (Returns, Warranty)
+- Active Offers: {$activeOffers}
+- Products Inventory: {$productsJson}
+
+[১. অর্ডার ট্র্যাকিং রুলস]:
+- কাস্টমার যদি অর্ডারের অবস্থা জানতে চায় (যেমন: "অর্ডার কই?", "ট্র্যাক করতে চাই"), তবে ভদ্রভাবে তার ফোন নম্বর চাও।
+- ফোন নম্বর পেলে সেটাকে ১১ ডিজিটে ক্লিন করো (স্পেস বা হাইফেন সরিয়ে)।
+- যদি নম্বর সঠিক থাকে, তবে এই ট্যাগটি জেনারেট করো: 
+[TRACK_ORDER: "017XXXXXXXX"]
+- কখনোই কাস্টমারকে ডাটাবেস চেক করার কথা বলবে না।
+
+[২. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
+- কাস্টমার কোনো প্রোডাক্ট দেখতে চাইলে বা তুমি সাজেস্ট করলে, 'Products Inventory' থেকে মিল রেখে সর্বোচ্চ ৩টি প্রোডাক্টের আইডি দিয়ে ক্যারোসেল দেখাবে।
+- যদি ইনভেন্টরিতে প্রোডাক্ট না থাকে, তবে মিথ্যা আশ্বাস দিবে না।
+- ফরম্যাট (মেসেজের শেষে): [CAROUSEL: ID1, ID2]
+
+[৩. অর্ডার প্রসেস - কঠোর নিয়ম]:
+- স্টেপ ১: আগে নিশ্চিত হও কাস্টমার কোন প্রোডাক্টটি (ID) কিনতে চায়। প্রোডাক্ট কনফার্ম না হওয়া পর্যন্ত নাম/ঠিকানা চাইবে না।
+- স্টেপ ২: প্রোডাক্ট কনফার্ম হলে, কাস্টমারের নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা (থানা/জেলা সহ) নাও।
+- স্টেপ ৩: সব তথ্য পেলে এবং কাস্টমার কনফার্ম করলে নিচের ট্যাগটি জেনারেট করো।
+- ঢাকার ভেতরে হলে is_dhaka=true, বাইরে false।
+- ফরম্যাট: 
+[ORDER_DATA: {"product_id": 101, "name": "Customer Name", "phone": "017XXXXXXXX", "address": "Full Address", "is_dhaka": true, "note": "Any special instruction"}]
+
+[৪. সাধারণ আচরণ]:
+- ছোট এবং সুন্দর উত্তর দাও।
+- একবারে একটার বেশি প্রশ্ন করবে না।
+- কাস্টমার রেগে গেলে শান্তভাবে হ্যান্ডেল করো।
+
+[SYSTEM TAGS SUMMARY]:
+- Show Products: [CAROUSEL: ID1, ID2, ID3]
+- Finalize Order: [ORDER_DATA: {...JSON...}]
+- Check Status: [TRACK_ORDER: "Phone Number"]
+EOT;
+
+        // ✅ FIX 2: Build message history with context preservation
+        $messages = [
+            ['role' => 'system', 'content' => $finalPrompt]
+        ];
+
+        // Inject last 4 conversation exchanges for context continuity
+        $recentHistory = array_slice($history, -4);
+        foreach ($recentHistory as $chat) {
+            if (!empty($chat['user'])) {
+                $messages[] = ['role' => 'user', 'content' => $chat['user']];
+            }
+            if (!empty($chat['ai'])) {
+                $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
+            }
+        }
+
+        // Add current query
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        // Execute AI call
+        $aiResponse = $this->callLlmChain($messages, $imageUrl);
+
+        // ✅ FIX 3: Persist conversation history (critical for multi-turn flows)
+        if ($aiResponse) {
+            $history[] = [
+                'user' => $userMessage,
+                'ai' => $aiResponse,
+                'time' => time()
+            ];
+            
+            // Prevent history bloat (retain last 10 exchanges)
+            if (count($history) > 10) {
+                $history = array_slice($history, -10);
+            }
+            
+            // Update session with enriched history
+            $customerInfo['history'] = $history;
+            $session->update(['customer_info' => $customerInfo]);
+        }
+
+        return $aiResponse;
+
+    } catch (\Exception $e) {
+        Log::error('ChatbotService Error: ' . $e->getMessage(), [
+            'userMessage' => $userMessage,
+            'clientId' => $clientId,
+            'senderId' => $senderId
+        ]);
+        return "দুঃখিত, একটু সমস্যা হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
+    }
+}
     // =====================================
     // NEW HELPER METHODS (ADDED)
     // =====================================
