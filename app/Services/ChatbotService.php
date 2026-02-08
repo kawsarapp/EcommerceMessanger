@@ -131,61 +131,74 @@ class ChatbotService
      * [LOGIC] স্মার্ট ইনভেন্টরি সার্চ (কনটেক্সট মেমোরি সহ)
      */
     private function getInventoryData($clientId, $userMessage, $history)
-    {
-        $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
+{
+    $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
 
-        $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
-        
-        // কনটেক্সট চেক
-        $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'available', 'stock', 'kinbo', 'order', 'chai', 'lagbe', 'nibo'];
-        $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
+    // সাধারণ সার্চ লজিক
+    $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
+    $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'available', 'stock', 'kinbo', 'order', 'chai', 'lagbe', 'nibo'];
+    $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
 
-        if ($isFollowUp && !empty($history)) {
-            $lastUserMsg = end($history)['user'] ?? '';
-            $lastKeywords = array_filter(explode(' ', $lastUserMsg), fn($w) => mb_strlen($w) > 3);
-            $keywords = array_unique(array_merge($keywords, $lastKeywords));
-        }
-
-        if (!empty($keywords)) {
-            $query->where(function($q) use ($keywords) {
-                foreach ($keywords as $word) {
-                    $q->orWhere('name', 'like', "%{$word}%")
-                      ->orWhere('colors', 'like', "%{$word}%")
-                      ->orWhere('sku', 'like', "%{$word}%");
-                }
-            });
-        }
-
-        $products = $query->latest()->limit(5)->get();
-
-        if ($products->isEmpty()) {
-            $products = Product::where('client_id', $clientId)
-                ->where('stock_status', 'in_stock')
-                ->latest()->limit(5)->get();
-        }
-
-        return $products->map(function ($p) {
-            $colors = is_string($p->colors) ? (json_decode($p->colors, true) ?: $p->colors) : $p->colors;
-            $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: 'N/A');
-
-            $sizes = is_string($p->sizes) ? (json_decode($p->sizes, true) ?: $p->sizes) : $p->sizes;
-            $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: 'N/A');
-
-            $desc = strip_tags(str_replace(["<br>", "</p>", "&nbsp;", "\n"], " ", $p->description));
-
-            return [
-                'ID' => $p->id,
-                'Name' => $p->name,
-                'Sale_Price' => (int)$p->sale_price . ' Tk',
-                'Regular_Price' => $p->regular_price ? (int)$p->regular_price . ' Tk' : null,
-                'Stock' => $p->stock_quantity > 0 ? 'Available' : 'Out of Stock',
-                'Colors' => $colorsStr, 
-                'Sizes' => $sizesStr,
-                'Details' => Str::limit($desc, 200),
-                'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
-            ];
-        })->toJson();
+    // কনটেক্সট অনুসারে আগের মেসেজের কীওয়ার্ড যোগ
+    if ($isFollowUp && !empty($history)) {
+        $lastUserMsg = end($history)['user'] ?? '';
+        $lastKeywords = array_filter(explode(' ', $lastUserMsg), fn($w) => mb_strlen($w) > 3);
+        $keywords = array_unique(array_merge($keywords, $lastKeywords));
     }
+
+    // কীওয়ার্ড অনুসারে সার্চ
+    if (!empty($keywords)) {
+        $query->where(function($q) use ($keywords) {
+            foreach ($keywords as $word) {
+                $q->orWhere('name', 'like', "%{$word}%")
+                  ->orWhere('colors', 'like', "%{$word}%")
+                  ->orWhere('sku', 'like', "%{$word}%");
+            }
+        });
+    }
+
+    $products = $query->latest()->limit(5)->get();
+
+    // যদি সার্চে কিছু না পাওয়া যায়, সর্বশেষ 5 প্রোডাক্ট দেখাও
+    if ($products->isEmpty()) {
+        $products = Product::where('client_id', $clientId)
+            ->where('stock_status', 'in_stock')
+            ->latest()->limit(5)->get();
+    }
+
+    // প্রোডাক্ট ডাটা ম্যাপিং
+    return $products->map(function ($p) {
+        // কালার/সাইজ ডিকোডিং
+        $colors = is_string($p->colors) ? (json_decode($p->colors, true) ?: $p->colors) : $p->colors;
+        $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: null);
+
+        $sizes = is_string($p->sizes) ? (json_decode($p->sizes, true) ?: $p->sizes) : $p->sizes;
+        $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: null);
+
+        $desc = strip_tags(str_replace(["<br>", "</p>", "&nbsp;", "\n"], " ", $p->description));
+
+        $data = [
+            'ID' => $p->id,
+            'Name' => $p->name,
+            'Sale_Price' => (int)$p->sale_price . ' Tk',
+            'Regular_Price' => $p->regular_price ? (int)$p->regular_price . ' Tk' : null,
+            'Stock' => $p->stock_quantity > 0 ? 'Available' : 'Out of Stock',
+            'Details' => Str::limit($desc, 200),
+            'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+        ];
+
+        // [FIX] কেবল বৈধ কালার ও সাইজ দেখানো হবে
+        if ($colorsStr && strtolower($colorsStr) !== 'n/a') {
+            $data['Colors'] = $colorsStr;
+        }
+        if ($sizesStr && strtolower($sizesStr) !== 'n/a') {
+            $data['Sizes'] = $sizesStr;
+        }
+
+        return $data;
+    })->toJson();
+}
+
 
     /**
      * [LOGIC] অর্ডার কনটেক্সট বিল্ডার
@@ -222,32 +235,32 @@ private function buildSystemPrompt($client, $orderContext, $productsJson, $phone
 
         return <<<EOT
 {$persona}
-তোমার প্রধান কাজ হলো কাস্টমারের অর্ডার কনফার্ম করা। নিচের লজিকগুলো **রোবটের মতো** মেনে চলো:
+তোমার কাজ হলো শুধুমাত্র অর্ডার কনফার্ম করা। নিচের লজিকগুলো কঠোরভাবে মেনে চলো:
 
-[১. ইনভেন্টরি চেক (সবচেয়ে গুরুত্বপূর্ণ)]:
-- কাস্টমার কোনো প্রোডাক্ট চাইলে সাথে সাথে নিচের [INVENTORY] ডাটা চেক করো।
-- **RULE 1:** যদি প্রোডাক্টের 'Colors' বা 'Sizes' এর ভ্যালু "N/A", "null", বা ফাঁকা থাকে, তবে **খবরদার! কাস্টমারকে কালার বা সাইজ নিয়ে কোনো প্রশ্ন করবে না।** - **RULE 2:** "N/A" থাকলে ভাববে এই প্রোডাক্টের একটাই ভেরিয়েশন। সরাসরি কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা জিজ্ঞেস করো।
-- **RULE 3:** শুধুমাত্র যদি নির্দিষ্ট অপশন (যেমন: Red, Blue, L, XL) লেখা থাকে, কেবল তখনই কাস্টমারকে অপশনগুলো থেকে বেছে নিতে বলো।
+[১. প্রোডাক্ট ভেরিয়েশন রুল (সবচেয়ে গুরুত্বপূর্ণ)]:
+- [INVENTORY] ডাটা ভালো করে দেখো।
+- **যদি প্রোডাক্টের তথ্যে 'Colors' বা 'Sizes' লেখা না থাকে, তবে ভুলেও কালার বা সাইজ নিয়ে কোনো কথা বলবে না।** (এমনকি "কালার নেই" কথাটাও বলবে না)।
+- এই ক্ষেত্রে সরাসরি ধরে নিবে এটি একটি সিঙ্গেল ভেরিয়েশন প্রোডাক্ট এবং সাথে সাথে কাস্টমারের **নাম, ফোন নম্বর এবং ঠিকানা** চাইবে।
+- শুধুমাত্র যদি 'Colors' বা 'Sizes' উল্লেখ থাকে, তখনই কাস্টমারকে অপশন সিলেক্ট করতে বলবে।
 
 [২. কাস্টমার ডাটা সংগ্রহ]:
-- কাস্টমারের **নিজস্ব নাম** জিজ্ঞেস করো। (সতর্কতা: প্রোডাক্টের নামকে কাস্টমারের নাম হিসেবে ব্যবহার করবে না)।
-- ফোন নম্বর এবং পূর্ণ ঠিকানা নাও।
-- সব তথ্য পেলে অর্ডার কনফার্ম করো।
+- প্রোডাক্ট কনফার্ম হওয়ার পর কাস্টমারের নাম, ফোন এবং ঠিকানা নাও।
+- মনে রাখবে: প্রোডাক্টের নাম কখনোই কাস্টমারের নাম হতে পারে না। নাম না পেলে জিজ্ঞেস করো।
 
-[৩. আউটপুট ফরম্যাট (JSON Tags)]:
-- অর্ডার কনফার্ম হলে: [ORDER_DATA: {"product_id":ID, "name":"Customer Name", "phone":"01xxxxxxxxx", "address":"...", "is_dhaka":true/false, "note":"..."}]
-- অর্ডারের পরে কোনো অনুরোধ আসলে: [ADD_NOTE: {"note":"..."}]
-- অর্ডার বাতিল হলে: [CANCEL_ORDER: {"reason":"..."}]
+[৩. আউটপুট ফরম্যাট]:
+- অর্ডার কনফার্ম হলে: [ORDER_DATA: {"product_id":ID, "name":"Customer Name", "phone":"...", "address":"...", "is_dhaka":true/false, "note":"..."}]
+- অর্ডারের পরে নোট: [ADD_NOTE: {"note":"..."}]
+- বাতিল: [CANCEL_ORDER: {"reason":"..."}]
 
 [কঠোর বিধিনিষেধ]:
-- ইনভেন্টরিতে কালার না থাকলে নিজে থেকে কালার বানাবে না বা জিজ্ঞেস করবে না।
+- ইনভেন্টরিতে তথ্য না থাকলে নিজে থেকে বানিয়ে কিছু জিজ্ঞেস করবে না।
 - Markdown (স্টার/ড্যাশ) ব্যবহার করবে না।
 
 [DATA SOURCES]:
 [DELIVERY]: {$delivery}
 [INVENTORY]: {$productsJson}
 [CUSTOMER HISTORY]: {$orderContext}
-[PHONE_LOOKUP_DATA]: {$phoneLookupInfo}
+[PHONE_LOOKUP]: {$phoneLookupInfo}
 EOT;
     }
 
