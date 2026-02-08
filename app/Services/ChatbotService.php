@@ -282,8 +282,13 @@ EOT;
 public function sendTelegramAlert($clientId, $senderId, $message)
 {
     try {
-        $token = env('TELEGRAM_BOT_TOKEN');
-        $chatId = env('TELEGRAM_CHAT_ID');
+
+    // ChatbotService.php এর ভেতরে
+        $token = config('services.telegram.bot_token');
+        $chatId = config('services.telegram.chat_id');
+
+        //$token = env('TELEGRAM_BOT_TOKEN');
+        //$chatId = env('TELEGRAM_CHAT_ID');
 
         if (!$token || !$chatId) {
             Log::warning("Telegram Credentials missing in .env");
