@@ -489,7 +489,7 @@ EOT;
                 ->attach('file', fopen($tempPath, 'r'), $tempFileName)
                 ->post('https://api.openai.com/v1/audio/transcriptions', [
                     'model' => 'whisper-1',
-                    'language' => 'bn', // বাংলা সেট করে দেওয়া হলো
+                    //'language' => 'bn', // বাংলা সেট করে দেওয়া হলো
                 ]);
 
             // ৩. ফাইলটি ডিলিট করে দেওয়া
@@ -617,38 +617,65 @@ EOT;
     /**
      * [CORE] LLM কল
      */
-    private function callLlmChain($messages, $imageUrl)
-    {
-        try {
-            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+ 
+    private function callLlmChain($messages, $imageUrl = null)
+{
+    try {
+        $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
 
-            if (empty($apiKey)) {
-                Log::error("OpenAI API Key missing!");
-                return null;
-            }
-
-            $response = Http::withToken($apiKey)
-                ->timeout(30)
-                ->retry(2, 500)
-                ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
-                    'messages' => $messages,
-                    'temperature' => 0.3,
-                ]);
-
-            if ($response->successful()) {
-                Log::info("OpenAI API Success - Model: " . ($imageUrl ? 'gpt-4o' : 'gpt-4o-mini'));
-                return $response->json()['choices'][0]['message']['content'] ?? null;
-            }
-
-            Log::error("OpenAI API Error: " . $response->status() . " - " . $response->body());
-            return null;
-
-        } catch (\Exception $e) {
-            Log::error("LLM Call Exception: " . $e->getMessage());
+        if (empty($apiKey)) {
+            Log::error("OpenAI API Key missing!");
             return null;
         }
+
+        // 🔥 Image থাকলে last user message কে Vision format এ রূপান্তর
+        if ($imageUrl) {
+            $lastMessage = array_pop($messages);
+
+            if ($lastMessage && $lastMessage['role'] === 'user') {
+                $messages[] = [
+                    'role' => 'user',
+                    'content' => [
+                        [
+                            'type' => 'text',
+                            'text' => is_array($lastMessage['content'])
+                                ? json_encode($lastMessage['content'])
+                                : $lastMessage['content']
+                        ],
+                        [
+                            'type' => 'image_url',
+                            'image_url' => [
+                                'url' => $imageUrl
+                            ]
+                        ]
+                    ]
+                ];
+            }
+        }
+
+        $response = Http::withToken($apiKey)
+            ->timeout(30)
+            ->retry(2, 500)
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+                'messages' => $messages,
+                'temperature' => 0.3,
+            ]);
+
+        if ($response->successful()) {
+            Log::info("OpenAI API Success - Model: " . ($imageUrl ? 'gpt-4o' : 'gpt-4o-mini'));
+            return $response->json()['choices'][0]['message']['content'] ?? null;
+        }
+
+        Log::error("OpenAI API Error: {$response->status()} - {$response->body()}");
+        return null;
+
+    } catch (\Throwable $e) {
+        Log::error("LLM Call Exception: " . $e->getMessage());
+        return null;
     }
+}
+
 
     /**
      * [LOGIC] টেলিগ্রাম অ্যালার্ট সেন্ড
