@@ -32,12 +32,12 @@ class ChatbotService
             return "ঠিক আছে, কোনো সমস্যা নেই। পরবর্তীতে কিছু প্রয়োজন হলে জানাবেন।";
         }
 
-        // ৩. স্টেপ অনুযায়ী লজিক (Systematic Flow)
+        // ✅ ৩. স্টেপ ভ্যারিয়েবলগুলো প্রথমে ডিফাইন করুন
         $step = $session->customer_info['step'] ?? 'start';
         $currentProductId = $session->customer_info['product_id'] ?? null;
         $history = $session->customer_info['history'] ?? [];
-        
-        // ✅ ফিক্স: ফোন লুকআপ চেক — শুধুমাত্র 'start' স্টেপে
+
+        // ✅ ৪. ফোন লুকআপ চেক — শুধুমাত্র 'start' স্টেপে
         if ($step === 'start') {
             $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
             if ($phoneLookupResult) {
@@ -69,7 +69,7 @@ class ChatbotService
 
                 // সেশন আপডেট
                 $session->update(['customer_info' => array_merge($session->customer_info, ['step' => $nextStep, 'product_id' => $product->id])]);
-                $productContext = json_encode(['name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
+                $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
             
             } else {
                 // প্রোডাক্ট পাওয়া না গেলে ইনভেন্টরি ডেটা দেখানোর জন্য পুরানো লজিক ব্যবহার করব
@@ -98,8 +98,17 @@ class ChatbotService
             $phone = $this->extractPhoneNumber($userMessage);
             
             if ($phone) {
+                // ✅ ফিক্স: প্রোডাক্ট কনটেক্সটে আসল ID পাঠানো
+                if ($product) {
+                    $productContext = json_encode([
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $product->sale_price
+                    ]);
+                }
+                
                 // ফোন নম্বর পেলে আমরা ধরে নিব অর্ডার কনফার্ম
-                $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। এখন তুমি অর্ডারটি কনফার্ম করো এবং [ORDER_DATA] ট্যাগ জেনারেট করো। নাম না থাকলে 'Guest' ব্যবহার করো।";
+                $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। এখন তুমি অর্ডারটি কনফার্ম করো এবং [ORDER_DATA] ট্যাগ জেনারেট করো। নাম না থাকলে 'Guest' ব্যবহার করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।";
             } else {
                 $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
             }
@@ -122,7 +131,8 @@ class ChatbotService
 [কঠোর রুলস]:
 1. তোমাকে যে টাস্ক দেওয়া হয়েছে, ঠিক সেটাই করবে। এর বাইরে কোনো প্রশ্ন করবে না।
 2. যদি বলা হয় "কালার চাইবে না", তবে ভুলেও কালার চাইবে না।
-3. অর্ডার কনফার্ম হলে ট্যাগ দিবে: [ORDER_DATA: {"product_id":ID, "name":"Name", "phone":"...", "address":"...", "is_dhaka":true/false, "note":"..."}]
+3. অর্ডার কনফার্ম হলে ট্যাগ দিবে: [ORDER_DATA: {"product_id": ACTUAL_NUMBER, "name":"Name", "phone":"...", "address":"...", "is_dhaka":true/false, "note":"..."}]
+4. product_id এর জায়গায় কখনো "ID" স্ট্রিং বসাবে না। অবশ্যই আসল প্রোডাক্ট ID নাম্বার বসাবে (যেমন: 123)।
 
 [Product Info]: {$productContext}
 [Customer History]: {$orderContext}
