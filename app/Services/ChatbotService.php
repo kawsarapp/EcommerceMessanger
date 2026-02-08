@@ -67,8 +67,13 @@ class ChatbotService
         }
 
         // ========================================
-        // ORDER FLOW LOGIC (Preserved 1:1 from original)
+        // ORDER FLOW LOGIC (Updated with inventory preload + stock safety check)
         // ========================================
+        
+        // সব সময় ইনভেন্টরি ডেটা লোড করে রাখা ভালো যাতে AI দোকান খালি না মনে করে
+        $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
+        $productsJson = $inventoryData; // AI যাতে ক্যারোসেল দেখাতে পারে
+
         if ($step === 'start' || !$currentProductId) {
             // Phone lookup check (early return if match found)
             $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
@@ -80,21 +85,28 @@ class ChatbotService
             $product = $this->findProductSystematically($clientId, $userMessage);
             
             if ($product) {
-                $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
-                $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
-
-                if ($hasColor || $hasSize) {
-                    $nextStep = 'select_variant';
-                    $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কিন্তু এটার কালার/সাইজ আছে ({$product->colors} / {$product->sizes})। তুমি এখন শুধু কালার বা সাইজ জিজ্ঞেস করো। অন্য কিছু না।";
+                // স্টক চেক করার একটি সেফটি লেয়ার যোগ করা হলো
+                $isOutOfStock = ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0);
+                
+                if ($isOutOfStock) {
+                    $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
+                    $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
                 } else {
-                    $nextStep = 'collect_info';
-                    $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কোনো কালার বা সাইজ নেই (Single Variation)। তাই ভুলেও কালার/সাইজ চাইবে না। সরাসরি কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও।";
-                }
+                    $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
+                    $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
 
-                $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
-                $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
+                    if ($hasColor || $hasSize) {
+                        $nextStep = 'select_variant';
+                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
+                    } else {
+                        $nextStep = 'collect_info';
+                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
+                    }
+
+                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
+                    $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
+                }
             } else {
-                $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
                 $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
             }
         } 
