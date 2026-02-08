@@ -213,126 +213,116 @@ class WebhookController extends Controller
     /**
      * 4. Finalize Order Logic (DB Error Fix Added)
      */
-    private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
-    {
-        $jsonStr = $matches[1];
-        Log::info("AI JSON received: " . $jsonStr);
+private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
+{
+    $jsonStr = $matches[1];
+    Log::info("AI JSON received: " . $jsonStr);
 
-        $data = json_decode($jsonStr, true);
+    $data = json_decode($jsonStr, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error("JSON Parsing Failed: " . json_last_error_msg());
-            return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: অর্ডার ডাটা রিড করা সম্ভব হয়নি।)";
-        }
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        Log::error("JSON Parsing Failed: " . json_last_error_msg());
+        return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: অর্ডার ডাটা রিড করা সম্ভব হয়নি।)";
+    }
 
-        $productId = $data['product_id'] ?? null;
-        $product = Product::find($productId);
+    $productId = $data['product_id'] ?? null;
+    $product = Product::find($productId);
 
-        if (!$product) {
-            Log::error("Order Failed: Product ID {$productId} not found.");
-            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
-        }
+    if (!$product) {
+        Log::error("Order Failed: Product ID {$productId} not found.");
+        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
+    }
 
-        $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
-        if (!$validPhone) {
-            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।";
-        }
+    $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
+    if (!$validPhone) {
+        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।";
+    }
 
-        try {
-            return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches, $product, $chatbot) {
+    try {
+        return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches, $product, $chatbot) {
 
-                if ($product->stock_quantity <= 0) {
-                    return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, এই পণ্যটি বর্তমানে স্টক আউট।";
-                }
+            if ($product->stock_quantity <= 0) {
+                return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, এই পণ্যটি বর্তমানে স্টক আউট।";
+            }
 
-                $price = $product->sale_price ?? $product->regular_price ?? 0;
-                $isDhaka = ($data['is_dhaka'] ?? false) === true;
-                $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
-                $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
-                $totalAmount = ($price * $qty) + $delivery;
+            $price = $product->sale_price ?? $product->regular_price ?? 0;
+            $isDhaka = ($data['is_dhaka'] ?? false) === true;
+            $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
+            $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
+            $totalAmount = ($price * $qty) + $delivery;
 
-                // [FIX] payment_method কলাম না থাকলে সেটা বাদ দিয়ে ডাটা তৈরি হবে
-                $orderData = [
-                    'client_id'      => $client->id,
-                    'sender_id'      => $senderId,
-                    'customer_name'  => $data['name'] ?? 'Guest',
-                    'customer_phone' => $validPhone,
-                    'shipping_address' => $data['address'] ?? 'N/A',
-                    'total_amount'   => $totalAmount,
-                    'order_status'   => 'processing',
-                    'payment_status' => 'pending',
-                    'customer_email' => $data['email'] ?? null,
+            // অর্ডার ডাটা তৈরি
+            $orderData = [
+                'client_id'       => $client->id,
+                'sender_id'       => $senderId,
+                'customer_name'   => $data['name'] ?? 'Guest',
+                'customer_phone'  => $validPhone,
+                'shipping_address'=> $data['address'] ?? 'N/A',
+                'total_amount'    => $totalAmount,
+                'order_status'    => 'processing',
+                'payment_status'  => 'pending',
+            ];
+
+            // ডাইনামিক কলাম চেক
+            if (Schema::hasColumn('orders', 'payment_method')) $orderData['payment_method'] = 'cod';
+            if (Schema::hasColumn('orders', 'customer_email')) $orderData['customer_email'] = $data['email'] ?? null;
+            if (Schema::hasColumn('orders', 'division')) $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
+            if (Schema::hasColumn('orders', 'district')) $orderData['district'] = $data['district'] ?? null;
+            if (Schema::hasColumn('orders', 'admin_note')) $orderData['admin_note'] = $data['note'] ?? null;
+            elseif (Schema::hasColumn('orders', 'notes')) $orderData['notes'] = $data['note'] ?? null;
+
+            // অর্ডার তৈরি
+            $order = Order::create($orderData);
+            Log::info("Order Created Successfully. ID: {$order->id}");
+
+            // অর্ডার আইটেম তৈরি
+            if (Schema::hasTable('order_items')) {
+                $itemData = [
+                    'order_id'   => $order->id,
+                    'product_id' => $product->id,
+                    'quantity'   => $qty,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
 
-                // Dynamic Column Checks (কলাম থাকলেই শুধু ডাটা ঢুকবে)
-                if (Schema::hasColumn('orders', 'payment_method')) {
-                    $orderData['payment_method'] = 'cod';
-                }
-                if (Schema::hasColumn('orders', 'division')) {
-                    $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
-                }
-                if (Schema::hasColumn('orders', 'district')) {
-                    $orderData['district'] = $data['district'] ?? null;
-                }
-                if (Schema::hasColumn('orders', 'admin_note')) {
-                    $orderData['admin_note'] = $data['note'] ?? null;
-                } elseif (Schema::hasColumn('orders', 'notes')) {
-                    $orderData['notes'] = $data['note'] ?? null;
-                }
+                if (Schema::hasColumn('order_items', 'unit_price')) $itemData['unit_price'] = $price;
+                if (Schema::hasColumn('order_items', 'price')) $itemData['price'] = $price;
 
-                // অর্ডার তৈরি
-                $order = Order::create($orderData);
-                Log::info("Order Created Successfully. ID: {$order->id}");
+                DB::table('order_items')->insert($itemData);
+            }
 
-                // Order Item Create
-                if (Schema::hasTable('order_items')) {
-                    $itemData = [
-                        'order_id'   => $order->id,
-                        'product_id' => $product->id,
-                        'quantity'   => $qty,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+            $product->decrement('stock_quantity', $qty);
 
-                    if (Schema::hasColumn('order_items', 'unit_price')) $itemData['unit_price'] = $price;
-                    if (Schema::hasColumn('order_items', 'price')) $itemData['price'] = $price;
+            // সেশন আপডেট
+            OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
 
-                    DB::table('order_items')->insert($itemData);
-                }
+            // টেলিগ্রাম অ্যালার্ট
+            try {
+                $telegramMsg = "🛍️ **নতুন অর্ডার কনফার্ম হয়েছে!**\n\n" .
+                               "আইডি: #{$order->id}\n" .
+                               "পণ্য: {$product->name}\n" .
+                               "কাস্টমার: {$order->customer_name}\n" .
+                               "ফোন: {$order->customer_phone}\n" .
+                               "ঠিকানা: {$order->shipping_address}\n" .
+                               "মোট: {$totalAmount} Tk";
+                $chatbot->sendTelegramAlert($client->id, $senderId, $telegramMsg);
+            } catch (\Exception $e) {
+                Log::error("Telegram Alert Failed: " . $e->getMessage());
+            }
 
-                $product->decrement('stock_quantity', $qty);
+            $cleanReply = str_replace($matches[0], "", $reply);
+            $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
 
-                // সেশন কমপ্লিট
-                OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
-
-                // --- টেলিগ্রাম অ্যালার্ট ---
-                try {
-                    $telegramMsg = "🛍️ **নতুন অর্ডার কনফার্ম হয়েছে!**\n\n" .
-                                   "আইডি: #{$order->id}\n" .
-                                   "পণ্য: {$product->name}\n" .
-                                   "কাস্টমার: {$order->customer_name}\n" .
-                                   "ফোন: {$order->customer_phone}\n" .
-                                   "ঠিকানা: {$order->shipping_address}\n" .
-                                   "মোট: {$totalAmount} Tk";
-                                   
-                    $chatbot->sendTelegramAlert($client->id, $senderId, $telegramMsg);
-                } catch (\Exception $e) {
-                    Log::error("Telegram Alert Failed: " . $e->getMessage());
-                }
-
-                $cleanReply = str_replace($matches[0], "", $reply);
-                $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
-
-                return trim($cleanReply)
-                    . "\n\n✅ অর্ডার কনফার্ম!"
-                    . "\nআইডি: #{$order->id}"
-                    . "\nমোট: {$totalAmount} Tk ({$locText})";
-            });
-        } catch (\Throwable $e) {
-            Log::error("DB Transaction Failed: " . $e->getMessage());
-            return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
-        }
+            return trim($cleanReply)
+                . "\n\n✅ অর্ডার কনফার্ম!"
+                . "\nআইডি: #{$order->id}"
+                . "\nমোট: {$totalAmount} Tk ({$locText})";
+        });
+    } catch (\Throwable $e) {
+        Log::error("DB Transaction Failed: " . $e->getMessage());
+        return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
     }
+}
 
     /**
      * 5. Handle ADD NOTE Logic
