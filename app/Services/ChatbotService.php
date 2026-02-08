@@ -656,8 +656,10 @@ class ChatbotService
     /**
      * [CORE] LLM কল
      */
- 
-    private function callLlmChain($messages, $imageUrl = null)
+ /**
+ * [CORE] LLM কল
+ */
+private function callLlmChain($messages, $imageUrl = null)
 {
     try {
         $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
@@ -667,38 +669,59 @@ class ChatbotService
             return null;
         }
 
-        // 🔥 Image থাকলে last user message কে Vision format এ রূপান্তর
+        // 🔥 Image থাকলে সেটাকে Base64 এ কনভার্ট করা (FIXED for Facebook/CDN URLs)
         if ($imageUrl) {
-            $lastMessage = array_pop($messages);
+            $base64Image = null;
+            try {
+                // ১. ইমেজটি ডাউনলোড করা
+                $imageResponse = Http::get($imageUrl);
+                
+                if ($imageResponse->successful()) {
+                    // ২. কন্টেন্ট টাইপ এবং Base64 এনকোডিং
+                    $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
+                    $base64Data = base64_encode($imageResponse->body());
+                    $base64Image = "data:{$contentType};base64,{$base64Data}";
+                } else {
+                    Log::error("Failed to download image from URL: $imageUrl");
+                }
+            } catch (\Exception $e) {
+                Log::error("Image conversion error: " . $e->getMessage());
+            }
 
-            if ($lastMessage && $lastMessage['role'] === 'user') {
-                $messages[] = [
-                    'role' => 'user',
-                    'content' => [
-                        [
-                            'type' => 'text',
-                            'text' => is_array($lastMessage['content'])
-                                ? json_encode($lastMessage['content'])
-                                : $lastMessage['content']
-                        ],
-                        [
-                            'type' => 'image_url',
-                            'image_url' => [
-                                'url' => $imageUrl
+            // ৩. যদি ইমেজ সফলভাবে কনভার্ট হয়, মেসেজে অ্যাড করা
+            if ($base64Image) {
+                $lastMessage = array_pop($messages);
+
+                if ($lastMessage && $lastMessage['role'] === 'user') {
+                    $messages[] = [
+                        'role' => 'user',
+                        'content' => [
+                            [
+                                'type' => 'text',
+                                'text' => is_array($lastMessage['content'])
+                                    ? json_encode($lastMessage['content'])
+                                    : $lastMessage['content']
+                            ],
+                            [
+                                'type' => 'image_url',
+                                'image_url' => [
+                                    'url' => $base64Image // ✅ Base64 string
+                                ]
                             ]
                         ]
-                    ]
-                ];
+                    ];
+                }
             }
         }
 
         $response = Http::withToken($apiKey)
-            ->timeout(30)
+            ->timeout(60) // ইমেজ প্রসেসিং এর জন্য বেশি টাইমআউট
             ->retry(2, 500)
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+                'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini', // ইমেজ থাকলে gpt-4o
                 'messages' => $messages,
                 'temperature' => 0.3,
+                'max_tokens' => 500,
             ]);
 
         if ($response->successful()) {
@@ -714,6 +737,7 @@ class ChatbotService
         return null;
     }
 }
+
 
 
     /**
