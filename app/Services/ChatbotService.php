@@ -19,7 +19,16 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         try {
-            // ১. সেশন ম্যানেজমেন্ট
+            
+            $inventoryData = null;
+            $currentTime = now()->format('l, h:i A');
+            $delivery = 'Standard Delivery (2-4 days)';
+            $paymentMethods = 'COD, bKash, Nagad';
+            $shopPolicies = '7 days return, No warranty';
+            $activeOffers = 'No active offers';
+            $productsJson = '[]';
+
+
             $session = OrderSession::firstOrCreate(
                 ['sender_id' => $senderId],
                 ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
@@ -141,7 +150,10 @@ class ChatbotService
             // ----------------------------------------
             // কাস্টমার হিস্ট্রি বিল্ড করা (পুরানো লজিক ব্যবহার করব)
             $orderContext = $this->buildOrderContext($clientId, $senderId);
-            
+            // ✅ SAFETY FALLBACKS (must before prompt)
+            $inventoryData  = $inventoryData  ?? 'No inventory data available';
+            $productContext = $productContext ?? '';
+
             $finalPrompt = <<<EOT
                 {$systemInstruction}
 
