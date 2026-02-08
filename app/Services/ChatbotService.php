@@ -93,7 +93,7 @@ class ChatbotService
                     }
 
                     // সেশন আপডেট
-                    $session->update(['customer_info' => array_merge($session->customer_info, ['step' => $nextStep, 'product_id' => $product->id])]);
+                    $session->update(['customer_info' => array_merge($session->customer_info ?? [], ['step' => $nextStep, 'product_id' => $product->id])]);
                     $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
                 
                 } else {
@@ -110,7 +110,7 @@ class ChatbotService
                 
                 // যদি ইউজার কালার/সাইজ বলে দেয়, তবে পরের স্টেপে পাঠাও
                 if ($product && $this->hasVariantInMessage($userMessage, $product)) {
-                     $session->update(['customer_info' => array_merge($session->customer_info, ['step' => 'collect_info'])]);
+                    $session->update(['customer_info' => array_merge($session->customer_info ?? [], ['step' => 'collect_info'])]);
                      $systemInstruction = "কাস্টমার ভেরিয়েশন কনফার্ম করেছে। এখন দ্রুত অর্ডার কনফার্ম করতে তার নাম, ফোন এবং ঠিকানা চাও।";
                 }
             }
