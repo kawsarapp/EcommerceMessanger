@@ -93,6 +93,7 @@ class WebhookController extends Controller
                     );
                 } catch (\Throwable $e) {
                     Log::error("CRITICAL ERROR in processIncomingMessage: " . $e->getMessage());
+                    Log::error("Stack Trace: " . $e->getTraceAsString());
                 }
             }
         }
@@ -320,6 +321,7 @@ private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
         });
     } catch (\Throwable $e) {
         Log::error("DB Transaction Failed: " . $e->getMessage());
+        Log::error("Stack Trace: " . $e->getTraceAsString());
         return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
     }
 }
@@ -349,7 +351,7 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
             $lastOrder->update([$updateField => $finalNote]);
             Log::info("Order #{$lastOrder->id} note updated in column '$updateField'");
             
-            return "ধন্যবাদ! আপনার অনুরোধটি (Friday Delivery) নোট করা হয়েছে।";
+            return "ধন্যবাদ! আপনার অনুরোধটি (Friday Delivery) নোট করা হয়েছে।";
         } else {
             Log::error("No note column found in orders table!");
         }
@@ -395,7 +397,7 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
 
             // Telegram Alert
             try {
-                $msg = "❌ **অর্ডার বাতিল করা হয়েছে!**\nআইডি: #{$order->id}\nকারণ: {$reason}";
+                $msg = "❌ **অর্ডার বাতিল করা হয়েছে!**\nআইডি: #{$order->id}\nকারণ: {$reason}";
                 $chatbot->sendTelegramAlert($client->id, $senderId, $msg);
             } catch (\Exception $e) {
                 Log::error("Telegram Notification Failed: " . $e->getMessage());
@@ -437,7 +439,7 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
     }
 
     private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) {
-        $url = "https://graph.facebook.com/v19.0/me/messages?access_token=$token";
+        $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
         if ($imageUrl) {
             try { Http::post($url, ['recipient' => ['id' => $recipientId], 'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]]); } catch (\Exception $e) {}
         }
@@ -463,14 +465,14 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
                 ]
             ];
         }
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", [
+        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
             'recipient' => ['id' => $recipientId],
             'message' => ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'generic', 'elements' => $elements]]]
         ]);
     }
 
     private function sendTypingAction($recipientId, $token, $action) {
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token=$token", ['recipient' => ['id' => $recipientId], 'sender_action' => $action]);
+        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", ['recipient' => ['id' => $recipientId], 'sender_action' => $action]);
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {

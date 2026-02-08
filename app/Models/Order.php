@@ -31,10 +31,6 @@ class Order extends Model
 		
     ];
 	
-    public function items()
-		{
-			return $this->hasMany(OrderItem::class);
-		}
 
 	public function client(): BelongsTo
     {
@@ -46,5 +42,17 @@ class Order extends Model
 {
     return $this->hasMany(OrderItem::class);
 }
+
+// App\Models\Order.php এর ভেতরে
+public function items()
+{
+    return $this->hasMany(OrderItem::class, 'order_id');
+}
+
+
+
+
+
+
 
 }
