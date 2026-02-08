@@ -315,6 +315,51 @@ EOT;
         return false;
     }
 
+
+
+    // ChatbotService.php এর ভেতরে এই নতুন মেথডটি যোগ করুন
+
+public function convertVoiceToText($audioUrl)
+{
+    try {
+        Log::info("Starting Voice Transcription for: " . $audioUrl);
+
+        // ১. অডিও ফাইলটি ডাউনলোড করা
+        $audioResponse = Http::get($audioUrl);
+        if (!$audioResponse->successful()) return null;
+
+        $tempFileName = 'voice_' . time() . '.mp4'; // ফেসবুক সাধারণত mp4/aac ফরম্যাট দেয়
+        $tempPath = storage_path('app/' . $tempFileName);
+        file_put_contents($tempPath, $audioResponse->body());
+
+        // ২. OpenAI Whisper API কল করা
+        $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+        
+        $response = Http::withToken($apiKey)
+            ->attach('file', fopen($tempPath, 'r'), $tempFileName)
+            ->post('https://api.openai.com/v1/audio/transcriptions', [
+                'model' => 'whisper-1',
+                'language' => 'bn', // সরাসরি বাংলা সেট করে দেওয়া হলো নিখুঁত রেজাল্টের জন্য
+            ]);
+
+        // ৩. ফাইলটি ডিলিট করে দেওয়া (সার্ভার পরিষ্কার রাখতে)
+        unlink($tempPath);
+
+        if ($response->successful()) {
+            $transcribedText = $response->json()['text'] ?? null;
+            Log::info("Voice Result: " . $transcribedText);
+            return $transcribedText;
+        }
+
+        Log::error("Whisper API Error: " . $response->body());
+        return null;
+
+    } catch (\Exception $e) {
+        Log::error("Voice Conversion Failed: " . $e->getMessage());
+        return null;
+    }
+}
+
     /**
      * [LOGIC] ফোন নম্বর এক্সট্রাক্ট (নতুন লজিক)
      */

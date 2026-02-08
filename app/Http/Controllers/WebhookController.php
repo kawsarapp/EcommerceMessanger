@@ -42,11 +42,31 @@ class WebhookController extends Controller
     /**
      * 2. Handle Incoming Messages (All Types)
      */
+
     public function handle(Request $request, ChatbotService $chatbot)
     {
         Log::info("-------------- WEBHOOK HIT --------------");
 
         $data = $request->all();
+
+        // =====================================
+        // WEBHOOK SIGNATURE VERIFICATION
+        // =====================================
+        $pageId = $data['entry'][0]['id'] ?? null;
+        if ($pageId) {
+            $clientForVerification = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
+            if ($clientForVerification && $clientForVerification->fb_app_secret) {
+                $signature = $request->header('X-Hub-Signature');
+                $body = $request->getContent();
+                $appSecret = $clientForVerification->fb_app_secret;
+
+                $expected = 'sha1=' . hash_hmac('sha1', $body, $appSecret);
+                if (!hash_equals($expected, $signature ?? '')) {
+                    Log::warning("Invalid webhook signature from Page ID: $pageId");
+                    return response('Forbidden', 403);
+                }
+            }
+        }
 
         if (isset($data['entry'][0]['messaging'][0])) {
             $messaging = $data['entry'][0]['messaging'][0];
@@ -59,28 +79,55 @@ class WebhookController extends Controller
                 Log::info("Duplicate Message Skipped: $mid");
                 return response('OK', 200);
             }
-            if ($mid) Cache::put("fb_mid_{$mid}", true, 60);
+            if ($mid) Cache::put("fb_mid_{$mid}", true, 300); // 5 minutes
 
-            // Message Type Detection
+            /* ================= MESSAGE & ATTACHMENT DETECTION ================= */
+
             $messageText = null;
+            $incomingImageUrl = null;
+
+            // Text
             if (isset($messaging['message']['text'])) {
                 $messageText = $messaging['message']['text'];
-            } elseif (isset($messaging['message']['quick_reply']['payload'])) {
+            }
+            // Quick Reply
+            elseif (isset($messaging['message']['quick_reply']['payload'])) {
                 $messageText = $messaging['message']['quick_reply']['payload'];
-            } elseif (isset($messaging['postback']['payload'])) {
+            }
+            // Postback
+            elseif (isset($messaging['postback']['payload'])) {
                 $messageText = $messaging['postback']['payload'];
             }
 
-            // Image Detection
-            $incomingImageUrl = null;
-            if (isset($messaging['message']['attachments'])) {
-                foreach ($messaging['message']['attachments'] as $attachment) {
-                    if ($attachment['type'] === 'image') {
-                        $incomingImageUrl = $attachment['payload']['url'];
-                        break;
+            // Attachment (Image / Audio)
+            if (isset($messaging['message']['attachments'][0])) {
+                $attachment = $messaging['message']['attachments'][0];
+                $type = $attachment['type'] ?? null;
+                $url  = $attachment['payload']['url'] ?? null;
+
+                if ($type === 'image') {
+                    $incomingImageUrl = $url;
+                }
+                elseif ($type === 'audio') {
+                    // Voice → Text
+                    $messageText = $chatbot->convertVoiceToText($url);
+
+                    if (!$messageText) {
+                        // Get client for this page to send error message
+                        $clientForAudio = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
+                        if ($clientForAudio) {
+                            $this->sendMessengerMessage(
+                                $senderId,
+                                "দুঃখিত, আমি আপনার ভয়েসটি বুঝতে পারছি না। দয়া করে টাইপ করে বলুন বা আবার ভয়েস দিন।",
+                                $clientForAudio->fb_page_token
+                            );
+                        }
+                        return response('OK', 200);
                     }
                 }
             }
+
+            /* ================= PROCESS MESSAGE ================= */
 
             if ($senderId && $pageId && ($messageText || $incomingImageUrl)) {
                 try {
@@ -100,6 +147,8 @@ class WebhookController extends Controller
 
         return response('EVENT_RECEIVED', 200);
     }
+
+
 
     /**
      * 3. Process Message Logic & Tag Handling
@@ -214,157 +263,176 @@ class WebhookController extends Controller
     /**
      * 4. Finalize Order Logic (DB Error Fix Added)
      */
-private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
-{
-    $jsonStr = $matches[1];
-    Log::info("AI JSON received: " . $jsonStr);
+    private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
+    {
+        $jsonStr = $matches[1];
+        Log::info("AI JSON received: " . $jsonStr);
 
-    $data = json_decode($jsonStr, true);
+        $data = json_decode($jsonStr, true);
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        Log::error("JSON Parsing Failed: " . json_last_error_msg());
-        return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: অর্ডার ডাটা রিড করা সম্ভব হয়নি।)";
-    }
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("JSON Parsing Failed: " . json_last_error_msg());
+            return str_replace($matches[0], "", $reply) . "\n(সিস্টেম এরর: অর্ডার ডাটা রিড করা সম্ভব হয়নি।)";
+        }
 
-    $productId = $data['product_id'] ?? null;
-    $product = Product::find($productId);
+        $productId = $data['product_id'] ?? null;
+        
+        // Fix race condition: Lock product for update
+        $product = Product::where('id', $productId)->lockForUpdate()->first();
 
-    if (!$product) {
-        Log::error("Order Failed: Product ID {$productId} not found.");
-        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
-    }
+        if (!$product) {
+            Log::error("Order Failed: Product ID {$productId} not found.");
+            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
+        }
 
-    $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
-    if (!$validPhone) {
-        return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।";
-    }
+        $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
+        if (!$validPhone) {
+            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, মোবাইল নম্বরটি সঠিক নয়। ১১ ডিজিট হতে হবে।";
+        }
 
-    try {
-        return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches, $product, $chatbot) {
+        try {
+            return DB::transaction(function () use ($data, $client, $senderId, $validPhone, $reply, $matches, $product, $chatbot) {
 
-            if ($product->stock_quantity <= 0) {
-                return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, এই পণ্যটি বর্তমানে স্টক আউট।";
-            }
+                $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
+                
+                // Check stock before proceeding
+                if ($product->stock_quantity < $qty) {
+                    return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, এই পণ্যটি বর্তমানে স্টক আউট।";
+                }
 
-            $price = $product->sale_price ?? $product->regular_price ?? 0;
-            $isDhaka = ($data['is_dhaka'] ?? false) === true;
-            $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
-            $qty = isset($data['quantity']) && is_numeric($data['quantity']) ? (int) $data['quantity'] : 1;
-            $totalAmount = ($price * $qty) + $delivery;
+                $price = $product->sale_price ?? $product->regular_price ?? 0;
+                $isDhaka = ($data['is_dhaka'] ?? false) === true;
+                $delivery = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
+                $totalAmount = ($price * $qty) + $delivery;
 
-            // অর্ডার ডাটা তৈরি
-            $orderData = [
-                'client_id'       => $client->id,
-                'sender_id'       => $senderId,
-                'customer_name'  => !empty($data['name']) && $data['name'] !== $product->name ? $data['name'] : 'Valued Customer',
-                'customer_phone'  => $validPhone,
-                'shipping_address'=> $data['address'] ?? 'N/A',
-                'total_amount'    => $totalAmount,
-                'order_status'    => 'processing',
-                'payment_status'  => 'pending',
-            ];
-
-            // ডাইনামিক কলাম চেক
-            if (Schema::hasColumn('orders', 'payment_method')) $orderData['payment_method'] = 'cod';
-            if (Schema::hasColumn('orders', 'customer_email')) $orderData['customer_email'] = $data['email'] ?? null;
-            if (Schema::hasColumn('orders', 'division')) $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
-            if (Schema::hasColumn('orders', 'district')) $orderData['district'] = $data['district'] ?? null;
-            if (Schema::hasColumn('orders', 'admin_note')) $orderData['admin_note'] = $data['note'] ?? null;
-            elseif (Schema::hasColumn('orders', 'notes')) $orderData['notes'] = $data['note'] ?? null;
-
-            // অর্ডার তৈরি
-            $order = Order::create($orderData);
-            Log::info("Order Created Successfully. ID: {$order->id}");
-
-            // অর্ডার আইটেম তৈরি
-            if (Schema::hasTable('order_items')) {
-                $itemData = [
-                    'order_id'   => $order->id,
-                    'product_id' => $product->id,
-                    'quantity'   => $qty,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                // অর্ডার ডাটা তৈরি
+                $orderData = [
+                    'client_id'       => $client->id,
+                    'sender_id'       => $senderId,
+                    'customer_name'   => !empty($data['name']) && $data['name'] !== $product->name ? $data['name'] : 'Valued Customer',
+                    'customer_phone'  => $validPhone,
+                    'shipping_address'=> $data['address'] ?? 'N/A',
+                    'total_amount'    => $totalAmount,
+                    'order_status'    => 'processing',
+                    'payment_status'  => 'pending',
                 ];
 
-                if (Schema::hasColumn('order_items', 'unit_price')) $itemData['unit_price'] = $price;
-                if (Schema::hasColumn('order_items', 'price')) $itemData['price'] = $price;
+                // ডাইনামিক কলাম চেক
+                if (Schema::hasColumn('orders', 'payment_method')) $orderData['payment_method'] = 'cod';
+                if (Schema::hasColumn('orders', 'customer_email')) $orderData['customer_email'] = $data['email'] ?? null;
+                if (Schema::hasColumn('orders', 'division')) $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
+                if (Schema::hasColumn('orders', 'district')) $orderData['district'] = $data['district'] ?? null;
+                if (Schema::hasColumn('orders', 'admin_note')) $orderData['admin_note'] = $data['note'] ?? null;
+                elseif (Schema::hasColumn('orders', 'notes')) $orderData['notes'] = $data['note'] ?? null;
 
-                DB::table('order_items')->insert($itemData);
-            }
+                // অর্ডার তৈরি
+                $order = Order::create($orderData);
+                Log::info("Order Created Successfully. ID: {$order->id}");
 
-            $product->decrement('stock_quantity', $qty);
+                // অর্ডার আইটেম তৈরি
+                if (Schema::hasTable('order_items')) {
+                    $itemData = [
+                        'order_id'   => $order->id,
+                        'product_id' => $product->id,
+                        'quantity'   => $qty,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
 
-            // সেশন আপডেট
-            OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
+                    if (Schema::hasColumn('order_items', 'unit_price')) $itemData['unit_price'] = $price;
+                    if (Schema::hasColumn('order_items', 'price')) $itemData['price'] = $price;
 
-            // টেলিগ্রাম অ্যালার্ট
-            try {
-                $telegramMsg = "🛍️ **নতুন অর্ডার কনফার্ম হয়েছে!**\n\n" .
-                               "আইডি: #{$order->id}\n" .
-                               "পণ্য: {$product->name}\n" .
-                               "কাস্টমার: {$order->customer_name}\n" .
-                               "ফোন: {$order->customer_phone}\n" .
-                               "ঠিকানা: {$order->shipping_address}\n" .
-                               "মোট: {$totalAmount} Tk";
-                $chatbot->sendTelegramAlert($client->id, $senderId, $telegramMsg);
-            } catch (\Exception $e) {
-                Log::error("Telegram Alert Failed: " . $e->getMessage());
-            }
+                    DB::table('order_items')->insert($itemData);
+                }
 
-            $cleanReply = str_replace($matches[0], "", $reply);
-            $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
+                $product->decrement('stock_quantity', $qty);
 
-            return trim($cleanReply)
-                . "\n\n✅ অর্ডার কনফার্ম!"
-                . "\nআইডি: #{$order->id}"
-                . "\nমোট: {$totalAmount} Tk ({$locText})";
-        });
-    } catch (\Throwable $e) {
-        Log::error("DB Transaction Failed: " . $e->getMessage());
-        Log::error("Stack Trace: " . $e->getTraceAsString());
-        return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
+                // সেশন আপডেট
+                OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
+
+                // টেলিগ্রাম অ্যালার্ট
+                try {
+                    $telegramMsg = "🛍️ **নতুন অর্ডার কনফার্ম হয়েছে!**\n\n" .
+                                   "আইডি: #{$order->id}\n" .
+                                   "পণ্য: {$product->name}\n" .
+                                   "কাস্টমার: {$order->customer_name}\n" .
+                                   "ফোন: {$order->customer_phone}\n" .
+                                   "ঠিকানা: {$order->shipping_address}\n" .
+                                   "মোট: {$totalAmount} Tk";
+                    $chatbot->sendTelegramAlert($client->id, $senderId, $telegramMsg);
+                } catch (\Exception $e) {
+                    Log::error("Telegram Alert Failed: " . $e->getMessage());
+                }
+
+                $cleanReply = str_replace($matches[0], "", $reply);
+                $locText = $isDhaka ? "ঢাকার ভেতরে" : "ঢাকার বাইরে";
+
+                return trim($cleanReply)
+                    . "\n\n✅ অর্ডার কনফার্ম!"
+                    . "\nআইডি: #{$order->id}"
+                    . "\nমোট: {$totalAmount} Tk ({$locText})";
+            });
+        } catch (\Throwable $e) {
+            Log::error("DB Transaction Failed: " . $e->getMessage());
+            Log::error("Stack Trace: " . $e->getTraceAsString());
+            return "দুঃখিত, অর্ডার প্রসেসিং এ একটি কারিগরি সমস্যা হয়েছে।";
+        }
     }
-}
 
     /**
      * 5. Handle ADD NOTE Logic
      */
-private function handleOrderNote($reply, $matches, $client, $senderId)
-{
-    $data = json_decode($matches[1], true);
-    $lastOrder = Order::where('sender_id', $senderId)->latest()->first();
-
-    if ($lastOrder && !empty($data['note'])) {
-        // ১. কোন কলামে নোট সেভ হবে তা নিশ্চিত করা
-        $updateField = null;
-        if (Schema::hasColumn('orders', 'admin_note')) $updateField = 'admin_note';
-        elseif (Schema::hasColumn('orders', 'notes')) $updateField = 'notes';
-        elseif (Schema::hasColumn('orders', 'customer_note')) $updateField = 'customer_note';
-
-        if ($updateField) {
-            $existingNote = $lastOrder->$updateField;
-            $newNote = $data['note'];
-            
-            // আগের নোটের সাথে নতুন নোট যোগ করা
-            $finalNote = $existingNote ? ($existingNote . " | " . $newNote) : $newNote;
-
-            $lastOrder->update([$updateField => $finalNote]);
-            Log::info("Order #{$lastOrder->id} note updated in column '$updateField'");
-            
-            return "ধন্যবাদ! আপনার অনুরোধটি (Friday Delivery) নোট করা হয়েছে।";
-        } else {
-            Log::error("No note column found in orders table!");
+    private function handleOrderNote($reply, $matches, $client, $senderId)
+    {
+        $jsonStr = $matches[1];
+        $data = json_decode($jsonStr, true);
+        
+        // JSON validation
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            Log::error("Invalid JSON in [ADD_NOTE] tag: " . $jsonStr);
+            return str_replace($matches[0], "", $reply);
         }
+
+        $lastOrder = Order::where('sender_id', $senderId)->latest()->first();
+
+        if ($lastOrder && !empty($data['note'])) {
+            // ১. কোন কলামে নোট সেভ হবে তা নিশ্চিত করা
+            $updateField = null;
+            if (Schema::hasColumn('orders', 'admin_note')) $updateField = 'admin_note';
+            elseif (Schema::hasColumn('orders', 'notes')) $updateField = 'notes';
+            elseif (Schema::hasColumn('orders', 'customer_note')) $updateField = 'customer_note';
+
+            if ($updateField) {
+                $existingNote = $lastOrder->$updateField;
+                $newNote = $data['note'];
+                
+                // আগের নোটের সাথে নতুন নোট যোগ করা
+                $finalNote = $existingNote ? ($existingNote . " | " . $newNote) : $newNote;
+
+                $lastOrder->update([$updateField => $finalNote]);
+                Log::info("Order #{$lastOrder->id} note updated in column '$updateField'");
+                
+                return "ধন্যবাদ! আপনার অনুরোধটি (Friday Delivery) নোট করা হয়েছে।";
+            } else {
+                Log::error("No note column found in orders table!");
+            }
+        }
+        return str_replace($matches[0], "", $reply);
     }
-    return str_replace($matches[0], "", $reply);
-}
 
     /**
      * 6. Handle CANCEL ORDER Logic
      */
     private function handleOrderCancellation($reply, $matches, $client, $senderId, $chatbot)
     {
-        $data = json_decode($matches[1], true);
+        $jsonStr = $matches[1];
+        $data = json_decode($jsonStr, true);
+        
+        // JSON validation
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            Log::error("Invalid JSON in [CANCEL_ORDER] tag: " . $jsonStr);
+            return str_replace($matches[0], "", $reply) . "\n⚠️ অর্ডার বাতিল করতে সমস্যা হয়েছে।";
+        }
         
         $order = Order::where('client_id', $client->id)
                       ->where('sender_id', $senderId)
@@ -388,7 +456,10 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
             if (Schema::hasTable('order_items')) {
                 $items = DB::table('order_items')->where('order_id', $order->id)->get();
                 foreach ($items as $item) {
-                    Product::find($item->product_id)->increment('stock_quantity', $item->quantity);
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->increment('stock_quantity', $item->quantity);
+                    }
                 }
             }
 
@@ -441,12 +512,34 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
     private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
         if ($imageUrl) {
-            try { Http::post($url, ['recipient' => ['id' => $recipientId], 'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]]); } catch (\Exception $e) {}
+            try { 
+                $response = Http::post($url, [
+                    'recipient' => ['id' => $recipientId],
+                    'message' => [
+                        'attachment' => [
+                            'type' => 'image',
+                            'payload' => ['url' => $imageUrl, 'is_reusable' => true]
+                        ]
+                    ]
+                ]);
+                if ($response->failed()) {
+                    Log::error("Failed to send image via Messenger: " . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Exception sending image via Messenger: " . $e->getMessage());
+            }
         }
         if (!empty(trim($message))) {
             $payload = ['recipient' => ['id' => $recipientId], 'message' => ['text' => trim($message)]];
             if (!empty($quickReplies)) $payload['message']['quick_replies'] = $quickReplies;
-            Http::post($url, $payload);
+            try {
+                $response = Http::post($url, $payload);
+                if ($response->failed()) {
+                    Log::error("Failed to send message via Messenger: " . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Exception sending message via Messenger: " . $e->getMessage());
+            }
         }
     }
 
@@ -465,20 +558,51 @@ private function handleOrderNote($reply, $matches, $client, $senderId)
                 ]
             ];
         }
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
-            'recipient' => ['id' => $recipientId],
-            'message' => ['attachment' => ['type' => 'template', 'payload' => ['template_type' => 'generic', 'elements' => $elements]]]
-        ]);
+        try {
+            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
+            $response = Http::post($url, [
+                'recipient' => ['id' => $recipientId],
+                'message' => [
+                    'attachment' => [
+                        'type' => 'template',
+                        'payload' => [
+                            'template_type' => 'generic',
+                            'elements' => $elements
+                        ]
+                    ]
+                ]
+            ]);
+            if ($response->failed()) {
+                Log::error("Failed to send carousel via Messenger: " . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error("Exception sending carousel via Messenger: " . $e->getMessage());
+        }
     }
 
     private function sendTypingAction($recipientId, $token, $action) {
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", ['recipient' => ['id' => $recipientId], 'sender_action' => $action]);
+        try {
+            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
+            Http::post($url, [
+                'recipient' => ['id' => $recipientId],
+                'sender_action' => $action
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send typing action: " . $e->getMessage());
+        }
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {
-        try { Conversation::create(['client_id' => $clientId, 'sender_id' => $senderId, 
-        'platform' => 'messenger', 'user_message' => $userMsg, 'bot_response' => $botMsg, 
-        'attachment_url' => $imgUrl, 'status' => 'success']); 
+        try { 
+            Conversation::create([
+                'client_id' => $clientId, 
+                'sender_id' => $senderId, 
+                'platform' => 'messenger', 
+                'user_message' => $userMsg, 
+                'bot_response' => $botMsg, 
+                'attachment_url' => $imgUrl, 
+                'status' => 'success'
+            ]); 
         } catch (\Exception $e) {
             Log::error("Conversation Log Error: " . $e->getMessage()); 
         }
