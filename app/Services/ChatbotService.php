@@ -76,10 +76,12 @@ class ChatbotService
 
         if ($step === 'start' || !$currentProductId) {
             // Phone lookup check (early return if match found)
-            $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
-            if ($phoneLookupResult) {
-                return $phoneLookupResult;
-            }
+            if ($this->isTrackingIntent($userMessage)) {
+                    $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
+                    if ($phoneLookupResult) {
+                        return $phoneLookupResult;
+                    }
+                }
 
             // Systematic product search
             $product = $this->findProductSystematically($clientId, $userMessage);
@@ -251,6 +253,37 @@ EOT;
     // =====================================
     // NEW HELPER METHODS (ADDED)
     // =====================================
+
+
+    /**
+ * [NEW] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা
+ */
+    private function isTrackingIntent($msg) {
+        $trackingKeywords = [
+            'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
+            'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking'
+        ];
+        $msgLower = mb_strtolower($msg, 'UTF-8');
+        
+        foreach ($trackingKeywords as $kw) {
+            if (mb_strpos($msgLower, $kw) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * [NEW] অর্ডার রিলেটেড মেসেজ চেক করা
