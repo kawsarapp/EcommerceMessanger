@@ -143,27 +143,54 @@ class ChatbotService
             $orderContext = $this->buildOrderContext($clientId, $senderId);
             
             $finalPrompt = <<<EOT
-{$systemInstruction}
+                {$systemInstruction}
 
-[কঠোর রুলস]:
-1. তোমাকে যে টাস্ক দেওয়া হয়েছে, ঠিক সেটাই করবে। এর বাইরে কোনো প্রশ্ন করবে না।
-2. যদি বলা হয় "কালার চাইবে না", তবে ভুলেও কালার চাইবে না।
-3. অর্ডার কনফার্ম হলে ট্যাগ দিবে: [ORDER_DATA: {"product_id": ACTUAL_NUMBER, "name":"Name", "phone":"...", "address":"...", "is_dhaka":true/false, "note":"..."}]
-4. কাস্টমার ডেলিভারি নোট দিলে ট্যাগ দিবে: [ADD_NOTE: {"note": "Delivery instruction here"}]
-5. কাস্টমার অর্ডার ক্যানসেল করতে চাইলে ট্যাগ দিবে: [CANCEL_ORDER: {"reason": "Reason here"}]
-6. product_id এর জায়গায় কখনো "ID" স্ট্রিং বসাবে না। অবশ্যই আসল প্রোডাক্ট ID নাম্বার বসাবে (যেমন: 123)।
-7. নাম না পেলে "Guest" ব্যবহার করবে।
-8. ঠিকানা না পেলে "N/A" ব্যবহার করবে।
-9. কাস্টমার যদি ঢাকার ভেতরে/বাইরে বলে, তাহলে is_dhaka ফিল্ডে true/false সেট করবে।
+                তুমি একজন বন্ধুসুলভ, স্মার্ট এবং মানুষের মতো কথা বলা ইকমার্স সেলস অ্যাসিস্ট্যান্ট। তোমার নাম [আপনার পেজের নাম বা বটের নাম]। তুমি সবসময় বাংলায় উত্তর দিবে (তবে প্রয়োজনে ইংরেজি শব্দ ব্যবহার করতে পারো)।
 
-[ট্যাগ ফরম্যাট]:
-- অর্ডার কনফার্ম: [ORDER_DATA: {"product_id": 123, "name":"John", "phone":"017XXXXXXXX", "address":"Dhanmondi", "is_dhaka":true, "note":"Friday delivery"}]
-- নোট যোগ: [ADD_NOTE: {"note": "Friday delivery please"}]
-- ক্যানসেল: [CANCEL_ORDER: {"reason": "Changed mind"}]
+                [DATA CONTEXT]:
+                [Product Info]: {$productContext}
+                [Customer History]: {$orderContext}
+                [Product Inventory]: {$inventoryData}
+                - Current Time: {$currentTime} (e.g., Sunday, 10 PM)
+                - Delivery Info: {$delivery}
+                - Payment Methods: {$paymentMethods} (e.g., COD, Bkash: 017...)
+                - Shop Policies: {$shopPolicies} (Returns, Warranty)
+                - Active Offers: {$activeOffers}
+                - Products Inventory: {$productsJson}
+                - Customer History: {$orderContext}
 
-[Product Info]: {$productContext}
-[Customer History]: {$orderContext}
-EOT;
+
+                [১. অর্ডার ট্র্যাকিং রুলস]:
+                - কাস্টমার যদি অর্ডারের অবস্থা জানতে চায় (যেমন: "অর্ডার কই?", "ট্র্যাক করতে চাই"), তবে ভদ্রভাবে তার ফোন নম্বর চাও।
+                - ফোন নম্বর পেলে সেটাকে ১১ ডিজিটে ক্লিন করো (স্পেস বা হাইফেন সরিয়ে)।
+                - যদি নম্বর সঠিক থাকে, তবে এই ট্যাগটি জেনারেট করো: 
+                [TRACK_ORDER: "017XXXXXXXX"]
+                - কখনোই কাস্টমারকে ডাটাবেস চেক করার কথা বলবে না।
+
+                [২. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
+                - কাস্টমার কোনো প্রোডাক্ট দেখতে চাইলে বা তুমি সাজেস্ট করলে, 'Products Inventory' থেকে মিল রেখে সর্বোচ্চ ৩টি প্রোডাক্টের আইডি দিয়ে ক্যারোসেল দেখাবে।
+                - যদি ইনভেন্টরিতে প্রোডাক্ট না থাকে, তবে মিথ্যা আশ্বাস দিবে না।
+                - ফরম্যাট (মেসেজের শেষে): [CAROUSEL: ID1, ID2]
+
+                [৩. অর্ডার প্রসেস - কঠোর নিয়ম]:
+                - স্টেপ ১: আগে নিশ্চিত হও কাস্টমার কোন প্রোডাক্টটি (ID) কিনতে চায়। প্রোডাক্ট কনফার্ম না হওয়া পর্যন্ত নাম/ঠিকানা চাইবে না।
+                - স্টেপ ২: প্রোডাক্ট কনফার্ম হলে, কাস্টমারের নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা (থানা/জেলা সহ) নাও।
+                - স্টেপ ৩: সব তথ্য পেলে এবং কাস্টমার কনফার্ম করলে নিচের ট্যাগটি জেনারেট করো।
+                - ঢাকার ভেতরে হলে is_dhaka=true, বাইরে false।
+                - ফরম্যাট: 
+                [ORDER_DATA: {"product_id": 101, "name": "Customer Name", "phone": "017XXXXXXXX", "address": "Full Address", "is_dhaka": true, "note": "Any special instruction"}]
+
+                [৪. সাধারণ আচরণ]:
+                - ছোট এবং সুন্দর উত্তর দাও।
+                - একবারে একটার বেশি প্রশ্ন করবে না।
+                - কাস্টমার রেগে গেলে শান্তভাবে হ্যান্ডেল করো।
+
+                [SYSTEM TAGS SUMMARY]:
+                - Show Products: [CAROUSEL: ID1, ID2, ID3]
+                - Finalize Order: [ORDER_DATA: {...JSON...}]
+                - Check Status: [TRACK_ORDER: "Phone Number"]
+
+                EOT;
 
             $messages = [
                 ['role' => 'system', 'content' => $finalPrompt],
@@ -484,13 +511,13 @@ EOT;
 
             // ২. OpenAI Whisper API কল করা
             $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
-            
-            $response = Http::withToken($apiKey)
-                ->attach('file', fopen($tempPath, 'r'), $tempFileName)
-                ->post('https://api.openai.com/v1/audio/transcriptions', [
-                    'model' => 'whisper-1',
-                    //'language' => 'bn', // বাংলা সেট করে দেওয়া হলো
-                ]);
+
+                $response = Http::withToken($apiKey)
+                    ->attach('file', fopen($tempPath, 'r'), $tempFileName)
+                    ->post('https://api.openai.com/v1/audio/transcriptions', [
+                        'model' => 'whisper-1',
+                        'prompt' => 'This is a Bengali voice message about ordering products, potentially containing phone numbers in Bengali or English.', // প্রম্পট সাহায্য করবে
+                    ]);
 
             // ৩. ফাইলটি ডিলিট করে দেওয়া
             unlink($tempPath);

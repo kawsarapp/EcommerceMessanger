@@ -348,7 +348,17 @@ class WebhookController extends Controller
                 $product->decrement('stock_quantity', $qty);
 
                 // সেশন আপডেট
-                OrderSession::where('sender_id', $senderId)->update(['customer_info' => ['step' => 'completed']]);
+                // অর্ডার সেভ হওয়ার পর সেশন ক্লিয়ার বা আপডেট করুন
+                $session = OrderSession::where('sender_id', $senderId)->first();
+                if ($session) {
+                    $session->update([
+                        'customer_info' => [
+                            'step' => 'start', // আবার শুরুতে পাঠিয়ে দিন
+                            'product_id' => null,
+                            'history' => []
+                        ]
+                    ]);
+                }
 
                 // টেলিগ্রাম অ্যালার্ট
                 try {
