@@ -44,9 +44,9 @@ class ChatbotService
                 // রিসেট করার আগে চেক করি এটা কোনো নোট কি না
                 if ($this->detectDeliveryNote($userMessage)) {
                     $note = $this->extractDeliveryNote($userMessage);
-                    // যদি গত ১০ মিনিটে কোনো অর্ডার হয়ে থাকে, সেখানে নোট আপডেট করো
+                    // যদি গত ১০ মিনিটে কোনো অর্ডার হয়ে থাকে, সেখানে নোট আপডেট করো
                     if ($this->updateRecentOrderNote($clientId, $senderId, $note)) {
-                        return "ধন্যবাদ! আপনার নোটটি ('$note') অর্ডারে যুক্ত করা হয়েছে।";
+                        return "ধন্যবাদ! আপনার নোটটি ('$note') অর্ডারে যুক্ত করা হয়েছে।";
                     }
                 }
                 
@@ -101,19 +101,43 @@ class ChatbotService
                         $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
                         $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
                     } else {
-                        // Check variants
-                        $hasVariants = $this->productHasVariants($product);
+                        // ✅ UPGRADE: Extract EXACT variants to prevent hallucination
+                        $colors = $this->decodeVariants($product->colors);
+                        $sizes = $this->decodeVariants($product->sizes);
+                        $hasVariants = !empty($colors) || !empty($sizes);
 
                         if ($hasVariants) {
                             $nextStep = 'select_variant';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
+                            
+                            // স্পেসিফিক অপশন স্ট্রিং তৈরি
+                            $colorStr = !empty($colors) ? implode(', ', $colors) : 'N/A';
+                            $sizeStr = !empty($sizes) ? implode(', ', $sizes) : 'N/A';
+                            
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। 
+                            আমাদের কাছে এই কালারগুলো আছে: [{$colorStr}] এবং এই সাইজগুলো আছে: [{$sizeStr}]।
+                            কাস্টমারকে শুধুমাত্র এই লিস্ট থেকেই কালার/সাইজ বেছে নিতে বলো। এর বাইরে কোনো কালার বা সাইজ অফার করবে না।";
+                            
+                            // Context Update for AI
+                            $productContext = json_encode([
+                                'id' => $product->id,
+                                'name' => $product->name,
+                                'price' => $product->sale_price,
+                                'available_options' => ['colors' => $colors, 'sizes' => $sizes]
+                            ]);
+
                         } else {
                             $nextStep = 'collect_info';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও।";
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কোনো কালার বা সাইজ ভেরিয়েশন নেই। সরাসরি নাম, ফোন এবং ঠিকানা চাও।";
+                            
+                            $productContext = json_encode([
+                                'id' => $product->id, 
+                                'name' => $product->name, 
+                                'price' => $product->sale_price, 
+                                'stock' => 'Available'
+                            ]);
                         }
 
                         $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
-                        $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
                     }
                 } else {
                     $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
@@ -124,7 +148,6 @@ class ChatbotService
             // ----------------------------------------
             elseif ($step === 'select_variant') {
                 $product = Product::find($currentProductId);
-                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে।";
                 
                 if ($product) {
                     if ($this->hasVariantInMessage($userMessage, $product)) {
@@ -133,7 +156,15 @@ class ChatbotService
                         $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
                         $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
                     } else {
-                        $systemInstruction = "কাস্টমার এখনো কালার/সাইজ বলেনি। সুন্দর করে আবার কালার বা সাইজ জিজ্ঞেস করো।";
+                        // ✅ UPGRADE: Re-inject variants info so AI can answer "ki ki color ace"
+                        $colors = $this->decodeVariants($product->colors);
+                        $sizes = $this->decodeVariants($product->sizes);
+                        $colorStr = !empty($colors) ? implode(', ', $colors) : 'None';
+                        $sizeStr = !empty($sizes) ? implode(', ', $sizes) : 'None';
+
+                        $systemInstruction = "কাস্টমার এখনো ভেরিয়েশন সিলেক্ট করেনি।
+                        আমাদের কাছে আছে - Colors: [{$colorStr}], Sizes: [{$sizeStr}]।
+                        কাস্টমারকে এই অপশনগুলো থেকে বেছে নিতে বলো। এর বাইরে কিছু অফার করবে না।";
                     }
                 }
             }
@@ -200,7 +231,7 @@ class ChatbotService
                         'note' => $savedNote
                     ]);
                 } else {
-                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায়। প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো। [CAROUSEL: {$currentProductId}] দেখাও প্রয়োজনে।";
+                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায়। প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো। [CAROUSEL: {$currentProductId}] দেখাও প্রয়োজনে।";
                 }
             }
             elseif ($step === 'completed') {
@@ -267,6 +298,37 @@ class ChatbotService
     // =====================================
 
     /**
+     * [NEW] Variants Decoder (Handles JSON, String, N/A)
+     */
+    private function decodeVariants($data) {
+        if (empty($data)) return [];
+        
+        // If it's already an array
+        if (is_array($data)) {
+            // Filter out 'N/A' or empty strings
+            return array_filter($data, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
+        }
+
+        // Try decoding JSON
+        $decoded = json_decode($data, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+             return array_filter($decoded, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
+        }
+
+        // Treat as simple string (e.g., "Red" or "Red, Blue")
+        if (is_string($data)) {
+            if (strtolower($data) === 'n/a') return [];
+            // If comma separated
+            if (str_contains($data, ',')) {
+                return array_map('trim', explode(',', $data));
+            }
+            return [$data];
+        }
+
+        return [];
+    }
+
+    /**
      * [NEW] সাম্প্রতিক অর্ডারের নোট আপডেট করা
      */
     private function updateRecentOrderNote($clientId, $senderId, $note)
@@ -300,8 +362,11 @@ class ChatbotService
         return <<<EOT
 {$instruction}
 
-**পরিচয়:**
-তুমি একজন স্মার্ট এবং বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"।
+**Role:** Smart Sales Executive.
+**Strict Rules:**
+1. **NO LIES:** Only offer variants listed in [Product Info]. If the list is empty, say "No options available".
+2. **Carousel:** Use [CAROUSEL: ID] tag before confirming orders.
+3. **Tags:** [ORDER_DATA: {...}], [TRACK_ORDER: "..."]
 
 [DATA CONTEXT]:
 [Product Info]: {$prodCtx}
@@ -314,11 +379,6 @@ class ChatbotService
 ১. **ছবি ও সামারি:** অর্ডার কনফার্ম করার আগে (ফাইনাল স্টেপে) **অবশ্যই** [CAROUSEL: ID] ট্যাগ ব্যবহার করবে। Markdown Image ( ![..] ) ব্যবহার করবে না।
 ২. **নম্বর পেলে:** ধন্যবাদ জানাবে।
 ৩. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও।
-
-[System Tags Usage]:
-- ছবি দেখাতে: [CAROUSEL: Product_ID]
-- অর্ডার ফাইনাল করতে: [ORDER_DATA: {"product_id": 101, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "...", "variant": "..."}]
-- অর্ডার ট্র্যাক করতে: [TRACK_ORDER: "017XXXXXXXX"]
 
 সবসময় বাংলা এবং ইংরেজি শব্দ মিশিয়ে প্রফেশনাল কথা বলবে।
 EOT;
