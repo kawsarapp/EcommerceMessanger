@@ -19,19 +19,6 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         try {
-
-         if (is_array($userMessage)) {
-            $userMessage = implode(' ', $userMessage);
-        }
-        
-        if (!is_string($userMessage) || empty(trim($userMessage))) {
-            Log::warning('Invalid user message received', [
-                'userMessage' => $userMessage,
-                'clientId' => $clientId,
-                'senderId' => $senderId
-            ]);
-            return "দুঃখিত, আপনার বার্তাটি বুঝতে পারছি না।";
-        }
             // ✅ Initialization (Variables defined safely)
             $inventoryData = "[]";
             $productsJson = "[]";
@@ -56,14 +43,14 @@ class ChatbotService
             $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
             $step = $customerInfo['step'] ?? 'start';
             $currentProductId = $customerInfo['product_id'] ?? null;
-            $history = $customerInfo['history'] ?? [];
+            $history = $customerInfo['history'] ?? []; 
 
             // ✅ Session reset logic: Clear completed sessions OR New Intents (User change mind)
             if (($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) || $this->detectNewIntent($userMessage)) {
                 $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
                 $step = 'start';
                 $currentProductId = null;
-                $history = [];
+                $history = []; 
                 $customerInfo = ['step' => 'start', 'product_id' => null, 'history' => []];
             }
 
@@ -87,7 +74,7 @@ class ChatbotService
             
             // সব সময় ইনভেন্টরি ডেটা লোড করে রাখা
             $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
-            $productsJson = $inventoryData;
+            $productsJson = $inventoryData; 
 
             // 1. Start Step or Searching
             if ($step === 'start' || !$currentProductId) {
@@ -195,7 +182,7 @@ class ChatbotService
             $inventoryData = $inventoryData ?: "[]";
             $productContext = $productContext ?: "";
 
-            $finalPrompt = <<<EOT
+$finalPrompt = <<<EOT
 {$systemInstruction}
 
 **পরিচয় ও পারসোনা:**
@@ -290,116 +277,67 @@ EOT;
     /**
      * [NEW] Detect if user wants to start over or change topic
      */
-
-
     private function detectNewIntent($msg) {
-    if (is_array($msg)) {
-        $msg = implode(' ', $msg);
-    }
-    
-    if (!is_string($msg)) {
+        $keywords = ['menu', 'start', 'suru', 'list', 'অন্য', 'change', 'bad', 'new', 'notun', 'kiccu na', 'cancel'];
+        foreach($keywords as $kw) {
+            if (stripos($msg, $kw) !== false && strlen($msg) < 20) return true;
+        }
         return false;
     }
-    
-    $keywords = ['menu', 'start', 'suru', 'list', 'অন্য', 'change', 'bad', 'new', 'notun', 'kiccu na', 'cancel'];
-    foreach($keywords as $kw) {
-        if (stripos($msg, $kw) !== false && strlen($msg) < 20) return true;
-    }
-    return false;
-}
 
     /**
      * [NEW] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা
      */
-
-    /**
- * [FIXED] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা (array সাপোর্ট)
- */
-private function isTrackingIntent($msg) {
-    // ✅ FIX: Convert array to string if needed
-    if (is_array($msg)) {
-        $msg = implode(' ', $msg);
-    }
-    
-    if (!is_string($msg)) {
+    private function isTrackingIntent($msg) {
+        $trackingKeywords = [
+            'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
+            'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking'
+        ];
+        $msgLower = mb_strtolower($msg, 'UTF-8');
+        
+        foreach ($trackingKeywords as $kw) {
+            if (mb_strpos($msgLower, $kw) !== false) {
+                return true;
+            }
+        }
         return false;
     }
-    
-    $trackingKeywords = [
-        'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
-        'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking'
-    ];
-    $msgLower = mb_strtolower($msg, 'UTF-8');
-    
-    foreach ($trackingKeywords as $kw) {
-        if (mb_strpos($msgLower, $kw) !== false) {
-            return true;
-        }
-    }
-
-    return false;
-}
 
     /**
      * [NEW] অর্ডার রিলেটেড মেসেজ চেক করা
      */
-    /**
- * [FIXED] অর্ডার রিলেটেড মেসেজ চেক করা (array সাপোর্ট)
- */
-private function isOrderRelatedMessage($msg) {
-    // ✅ FIX: Convert array to string if needed
-    if (is_array($msg)) {
-        $msg = implode(' ', $msg);
-    }
-    
-    if (!is_string($msg)) {
+    private function isOrderRelatedMessage($msg) {
+        $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস', 'price', 'dam'];
+        $msgLower = strtolower($msg);
+        
+        foreach ($orderKeywords as $kw) {
+            if (stripos($msgLower, $kw) !== false) {
+                return true;
+            }
+        }
         return false;
     }
-    
-    $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস', 'price', 'dam'];
-    $msgLower = strtolower($msg);
-    
-    foreach ($orderKeywords as $kw) {
-        if (stripos($msgLower, $kw) !== false) {
-            return true;
-        }
-    }
-    return false;
-}
+
     /**
      * [NEW] ডেলিভারি নোট ডিটেক্ট করা
      */
-
-    
-/**
- * [FIXED] ডেলিভারি নোট ডিটেক্ট করা (array সাপোর্ট)
- */
-private function detectDeliveryNote($msg) {
-    // ✅ FIX: Convert array to string if needed
-    if (is_array($msg)) {
-        $msg = implode(' ', $msg);
-    }
-    
-    if (!is_string($msg)) {
+    private function detectDeliveryNote($msg) {
+        $noteKeywords = [
+            'friday', 'শুক্রবার', 'saturday', 'শনিবার', 'sunday', 'রবিবার',
+            'monday', 'সোমবার', 'tuesday', 'মঙ্গলবার', 'wednesday', 'বুধবার', 'thursday', 'বৃহস্পতিবার',
+            'delivery', 'ডেলিভারি', 'দিবেন', 'দিবে', 'দিয়েন', 'দিয়ে', 'পৌছে', 'পৌছাবেন',
+            'tomorrow', 'আগামীকাল', 'next day', 'asap', 'জরুরি', 'urgent', 'দ্রুত', 'সকালে', 'রাতে',
+            'evening', 'সন্ধ্যায়', 'morning', 'afternoon', 'time', 'সময়', 'before', 'পরে', 'আগে'
+        ];
+        
+        $msgLower = strtolower($msg);
+        foreach ($noteKeywords as $kw) {
+            if (stripos($msgLower, $kw) !== false) {
+                return true;
+            }
+        }
         return false;
     }
-    
-    $noteKeywords = [
-        'friday', 'শুক্রবার', 'saturday', 'শনিবার', 'sunday', 'রবিবার',
-        'monday', 'সোমবার', 'tuesday', 'মঙ্গলবার', 'wednesday', 'বুধবার', 'thursday', 'বৃহস্পতিবার',
-        'delivery', 'ডেলিভারি', 'দিবেন', 'দিবে', 'দিয়েন', 'দিয়ে', 'পৌছে', 'পৌছাবেন',
-        'tomorrow', 'আগামীকাল', 'next day', 'asap', 'জরুরি', 'urgent', 'দ্রুত', 'সকালে', 'রাতে',
-        'evening', 'সন্ধ্যায়', 'morning', 'afternoon', 'time', 'সময়', 'before', 'পরে', 'আগে'
-    ];
-    
-    $msgLower = strtolower($msg);
-    foreach ($noteKeywords as $kw) {
-        if (stripos($msgLower, $kw) !== false) {
-            return true;
-        }
-    }
-    return false;
-}
 
     /**
      * [NEW] ডেলিভারি নোট এক্সট্রাক্ট করা
@@ -413,43 +351,34 @@ private function detectDeliveryNote($msg) {
         return implode(' ', $filtered);
     }
 
-
-
     /**
- * [FIXED] অর্ডার ক্যানসেলেশন ডিটেক্ট করা (array সাপোর্ট)
- */
-private function detectOrderCancellation($msg, $senderId) {
-    // ✅ FIX: Convert array to string if needed
-    if (is_array($msg)) {
-        $msg = implode(' ', $msg);
-    }
-    
-    if (empty($msg) || !is_string($msg)) {
+     * [NEW] অর্ডার ক্যানসেলেশন ডিটেক্ট করা
+     */
+    private function detectOrderCancellation($msg, $senderId) {
+        if (empty($msg)) return false;
+        
+        $cancelPhrases = [
+            'cancel', 'বাতিল', 'cancel koro', 'cancel kore', 'বাতিল কর', 'বাতিল করে', 'বাতিল দেন',
+            'order ta cancel', 'order cancel', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল',
+            'দরকার নাই', 'নিবো না', 'লাগবে না', 'চাই না', 'দরকার নেই', 'না লাগবে',
+            'নিব না', 'নিতে চাই না', 'রাখব না', 'চাইনা', 'লাগবেনা', 'নিবোনা',
+            'change mind', 'changed my mind', 'ভুল হয়েছে', 'ভুল', 'ভুল করেছি'
+        ];
+        
+        $msgLower = mb_strtolower($msg, 'UTF-8');
+        foreach ($cancelPhrases as $phrase) {
+            if (mb_strpos($msgLower, mb_strtolower($phrase, 'UTF-8')) !== false) {
+                // চেক করব কোনো পেন্ডিং অর্ডার আছে কিনা
+                $pendingOrder = Order::where('sender_id', $senderId)
+                    ->whereIn('order_status', ['processing', 'pending'])
+                    ->latest()
+                    ->first();
+                
+                return $pendingOrder ? true : false;
+            }
+        }
         return false;
     }
-    
-    $cancelPhrases = [
-        'cancel', 'বাতিল', 'cancel koro', 'cancel kore', 'বাতিল কর', 'বাতিল করে', 'বাতিল দেন',
-        'order ta cancel', 'order cancel', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল',
-        'দরকার নাই', 'নিবো না', 'লাগবে না', 'চাই না', 'দরকার নেই', 'না লাগবে',
-        'নিব না', 'নিতে চাই না', 'রাখব না', 'চাইনা', 'লাগবেনা', 'নিবোনা',
-        'change mind', 'changed my mind', 'ভুল হয়েছে', 'ভুল', 'ভুল করেছি'
-    ];
-    
-    $msgLower = mb_strtolower($msg, 'UTF-8');
-    foreach ($cancelPhrases as $phrase) {
-        if (mb_strpos($msgLower, mb_strtolower($phrase, 'UTF-8')) !== false) {
-            // চেক করব কোনো পেন্ডিং অর্ডার আছে কিনা
-            $pendingOrder = Order::where('sender_id', $senderId)
-                ->whereIn('order_status', ['processing', 'pending'])
-                ->latest()
-                ->first();
-            
-            return $pendingOrder ? true : false;
-        }
-    }
-    return false;
-}
 
     /**
      * [LOGIC] মেসেজে ফোন নম্বর থাকলে অর্ডার স্ট্যাটাস বের করা
@@ -471,10 +400,7 @@ private function detectOrderCancellation($msg, $senderId) {
 
             if ($order) {
                 $status = strtoupper($order->order_status);
-                $note = $order->admin_note ?? $order->notes ?? '';
-                $noteInfo = $note ? " (Note: {$note})" : "";
-                
-                return "FOUND_ORDER: Phone {$phone} matched Order #{$order->id}. Status: {$status}{$noteInfo}. Total: {$order->total_amount} Tk.";
+                return "FOUND_ORDER: Phone {$phone} matched Order #{$order->id}. Status: {$status}. Total: {$order->total_amount} Tk.";
             } else {
                 return "NO_ORDER_FOUND: Phone {$phone} provided but no order exists.";
             }
@@ -530,15 +456,11 @@ private function detectOrderCancellation($msg, $senderId) {
             $sizes = is_string($p->sizes) ? (json_decode($p->sizes, true) ?: $p->sizes) : $p->sizes;
             $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: null);
 
-            $desc = strip_tags(str_replace(["<br>", "</p>", "&nbsp;", "\n"], " ", $p->description));
-
             $data = [
                 'ID' => $p->id,
                 'Name' => $p->name,
                 'Sale_Price' => (int)$p->sale_price . ' Tk',
-                'Regular_Price' => $p->regular_price ? (int)$p->regular_price . ' Tk' : null,
                 'Stock' => $p->stock_quantity > 0 ? 'Available' : 'Out of Stock',
-                'Details' => Str::limit($desc, 200),
                 'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
             ];
 
@@ -549,6 +471,32 @@ private function detectOrderCancellation($msg, $senderId) {
         })->toJson();
     }
 
+
+    //------------------
+
+    private function extractVariant($msg, $product)
+    {
+        $msg = strtolower($msg);
+        $variant = [];
+
+        $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
+        if (is_array($colors)) {
+            foreach ($colors as $color) {
+                if (str_contains($msg, strtolower($color))) $variant['color'] = $color;
+            }
+        }
+
+        $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
+        if (is_array($sizes)) {
+            foreach ($sizes as $size) {
+                if (str_contains($msg, strtolower($size))) $variant['size'] = $size;
+            }
+        }
+        return $variant;
+    }
+
+
+    //-------
     /**
      * [UPGRADED] স্মার্ট অর্ডার কনটেক্সট বিল্ডার
      */
@@ -578,8 +526,6 @@ private function detectOrderCancellation($msg, $senderId) {
 
             $timeAgo = $order->created_at->diffForHumans();
             $status = strtoupper($order->order_status);
-            $note = $order->admin_note ?? $order->notes ?? $order->customer_note ?? '';
-            $noteInfo = $note ? " | Note: [{$note}]" : "";
             
             $context .= "- Order #{$order->id} ({$timeAgo}):\n";
             $context .= "  Product: {$productNames}\n";
@@ -593,33 +539,16 @@ private function detectOrderCancellation($msg, $senderId) {
     /**
      * [LOGIC] হেট স্পিচ ডিটেকশন
      */
-
-
-    /**
- * [LOGIC] হেট স্পিচ ডিটেকশন (ফিক্সড - array সাপোর্ট)
- */
-private function detectHateSpeech($message)
+    private function detectHateSpeech($message)
     {
-        if (is_array($message)) {
-            $message = implode(' ', $message);
-        }
-        
-        if (!$message || !is_string($message)) {
-            return false;
-        }
-        
+        if (!$message) return false;
         $badWords = ['fucker', 'idiot', 'stupid', 'bastard', 'scam', 'mamla', 'cheat', 'shala', 'kutta', 'harami', 'shuor', 'magi', 'khananki', 'chuda', 'bal', 'boka', 'faltu', 'butpar', 'chor', 'sala', 'khankir', 'madarchod', 'tor mare', 'fraud', 'fuck', 'shit', 'bitch', 'asshole'];
         $lowerMsg = strtolower($message);
-        
         foreach ($badWords as $word) {
-            if (str_contains($lowerMsg, $word)) {
-                return true;
-            }
+            if (str_contains($lowerMsg, $word)) return true;
         }
-        
         return false;
     }
-
 
     // =====================================
     // VOICE TO TEXT
@@ -634,33 +563,19 @@ private function detectHateSpeech($message)
             $audioResponse = Http::get($audioUrl);
             if (!$audioResponse->successful()) return null;
 
-            // অডিও ফাইলের কনটেন্ট-টাইপ চেক করে এক্সটেনশন সেট করা
-            $contentType = $audioResponse->header('Content-Type');
-            $extension = 'mp3'; // default
-
-            if (strpos($contentType, 'audio/mp4') !== false || strpos($contentType, 'video/mp4') !== false) {
-                $extension = 'mp4';
-            } elseif (strpos($contentType, 'audio/ogg') !== false) {
-                $extension = 'ogg';
-            } elseif (strpos($contentType, 'audio/mpeg') !== false) {
-                $extension = 'mp3';
-            } elseif (strpos($contentType, 'audio/x-m4a') !== false) {
-                $extension = 'm4a';
-            }
-
-            $tempFileName = 'voice_' . time() . '.' . $extension;
+            $tempFileName = 'voice_' . time() . '.mp3'; // Simplify extension handling
             $tempPath = storage_path('app/' . $tempFileName);
             file_put_contents($tempPath, $audioResponse->body());
 
             // ২. OpenAI Whisper API কল করা
             $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
 
-                $response = Http::withToken($apiKey)
-                    ->attach('file', fopen($tempPath, 'r'), $tempFileName)
-                    ->post('https://api.openai.com/v1/audio/transcriptions', [
-                        'model' => 'whisper-1',
-                        'prompt' => 'This is a Bengali voice message about ordering products, potentially containing phone numbers in Bengali or English.',
-                    ]);
+            $response = Http::withToken($apiKey)
+                ->attach('file', fopen($tempPath, 'r'), $tempFileName)
+                ->post('https://api.openai.com/v1/audio/transcriptions', [
+                    'model' => 'whisper-1',
+                    'prompt' => 'This is a Bengali voice message about ordering products, potentially containing phone numbers in Bengali or English.', 
+                ]);
 
             // ৩. ফাইলটি ডিলিট করে দেওয়া
             if (file_exists($tempPath)) unlink($tempPath);
@@ -730,27 +645,6 @@ private function detectHateSpeech($message)
         return $query->latest()->first();
     }
 
-    private function extractVariant($msg, $product)
-    {
-        $msg = strtolower($msg);
-        $variant = [];
-
-        $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
-        if (is_array($colors)) {
-            foreach ($colors as $color) {
-                if (str_contains($msg, strtolower($color))) $variant['color'] = $color;
-            }
-        }
-
-        $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
-        if (is_array($sizes)) {
-            foreach ($sizes as $size) {
-                if (str_contains($msg, strtolower($size))) $variant['size'] = $size;
-            }
-        }
-        return $variant;
-    }
-
     private function hasVariantInMessage($msg, $product) {
         $msgLower = strtolower($msg);
         
@@ -791,46 +685,20 @@ private function detectHateSpeech($message)
             }
 
             if ($imageUrl) {
-                $base64Image = null;
-                try {
-                    // ১. ইমেজটি ডাউনলোড করা
-                    $imageResponse = Http::get($imageUrl);
-                    
-                    if ($imageResponse->successful()) {
-                        // ২. কন্টেন্ট টাইপ এবং Base64 এনকোডিং
-                        $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
-                        $base64Data = base64_encode($imageResponse->body());
-                        $base64Image = "data:{$contentType};base64,{$base64Data}";
-                    } else {
-                        Log::error("Failed to download image from URL: $imageUrl");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Image conversion error: " . $e->getMessage());
-                }
+                $imageResponse = Http::get($imageUrl);
+                if ($imageResponse->successful()) {
+                    $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
+                    $base64Data = base64_encode($imageResponse->body());
+                    $base64Image = "data:{$contentType};base64,{$base64Data}";
 
-                // ৩. যদি ইমেজ সফলভাবে কনভার্ট হয়, মেসেজে অ্যাড করা
-                if ($base64Image) {
                     $lastMessage = array_pop($messages);
-
-                    if ($lastMessage && $lastMessage['role'] === 'user') {
-                        $messages[] = [
-                            'role' => 'user',
-                            'content' => [
-                                [
-                                    'type' => 'text',
-                                    'text' => is_array($lastMessage['content'])
-                                        ? json_encode($lastMessage['content'])
-                                        : $lastMessage['content']
-                                ],
-                                [
-                                    'type' => 'image_url',
-                                    'image_url' => [
-                                        'url' => $base64Image
-                                    ]
-                                ]
-                            ]
-                        ];
-                    }
+                    $messages[] = [
+                        'role' => 'user',
+                        'content' => [
+                            ['type' => 'text', 'text' => $lastMessage['content'] ?? 'Image'],
+                            ['type' => 'image_url', 'image_url' => ['url' => $base64Image]]
+                        ]
+                    ];
                 }
             }
 
