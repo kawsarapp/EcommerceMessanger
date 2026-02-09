@@ -4,419 +4,270 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use App\Models\Client;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\OrderSession;
 
+// ✅ OrderFlow Classes Import
+use App\Services\OrderFlow\StartStep;
+use App\Services\OrderFlow\VariantStep;
+use App\Services\OrderFlow\AddressStep;
+use App\Services\OrderFlow\ConfirmStep;
+use App\Services\OrderFlow\OrderTraits; // For shared logic like findProduct
+
 class ChatbotService
 {
+    use OrderTraits; // Trait ব্যবহার করছি কারণ Context Switching-এ findProductSystematically দরকার
+
     /**
      * মেইন ফাংশন: কন্ট্রোলার থেকে রিকোয়েস্ট রিসিভ করে এবং প্রসেস করে
+     * (Production Ready: Modular State Pattern + Optimized Transaction)
      */
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
-        try {
-            // Initializing variables safely
-            $inventoryData = "[]";
-            $productContext = "";
-            $systemInstruction = "";
-            $currentTime = now()->format('l, h:i A');
+        // 🚀 PERFORMANCE FIX: ইমেজ প্রসেসিং ট্রানজেকশনের বাইরে (Database Locking এড়াতে)
+        $base64Image = null;
+        if ($imageUrl) {
+            try {
+                $imgResponse = Http::timeout(5)->get($imageUrl);
+                if ($imgResponse->successful()) {
+                    $base64Image = "data:" . $imgResponse->header('Content-Type') . ";base64," . base64_encode($imgResponse->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Image Pre-fetch Error: " . $e->getMessage());
+            }
+        }
 
-            // Load session with null-safe history handling
-            $session = OrderSession::firstOrCreate(
-                ['sender_id' => $senderId],
-                ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
-            );
+        // ⚠️ Transaction শুরু
+        return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image) {
+            
+            // 1. Lock & Load Session
+            $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
+
+            if (!$session) {
+                $session = OrderSession::create([
+                    'sender_id' => $senderId,
+                    'client_id' => $clientId,
+                    'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]
+                ]);
+            }
 
             // Human agent check
             if ($session->is_human_agent_active) return null;
 
-            // ✅ FIX: Null-safe customer info extraction
+            // Basic Setup
+            $currentTime = now()->format('l, h:i A');
             $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
             $step = $customerInfo['step'] ?? 'start';
-            $currentProductId = $customerInfo['product_id'] ?? null;
             $history = $customerInfo['history'] ?? [];
 
             // ========================================
-            // SMART SESSION RESET & CONTEXT SWITCHING
+            // 1. SMART CONTEXT SWITCHING
             // ========================================
-            // Detect if user mentioned a NEW product different from current context
+            // Trait থেকে findProductSystematically ব্যবহার করা হচ্ছে
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
+            $currentProductId = $customerInfo['product_id'] ?? null;
+            
+            // যদি ইউজার নতুন কোনো প্রোডাক্টের কথা বলে যা বর্তমান কনটেক্সট থেকে আলাদা
             if ($newProduct && $newProduct->id != $currentProductId) {
                 $currentProductId = $newProduct->id;
-                $step = 'start'; // Reset flow for new product
+                $step = 'start'; // Reset step
+                
                 $customerInfo['product_id'] = $currentProductId;
                 $customerInfo['step'] = 'start';
-                // Clear previous variant/note but PRESERVE history
                 unset($customerInfo['variant'], $customerInfo['note']);
+                
                 $session->update(['customer_info' => $customerInfo]);
             }
 
-            // ✅ Session reset logic (অর্ডার কমপ্লিট হলে রিসেট, কিন্তু নোট হ্যান্ডলিং এর সুযোগ রাখা)
+            // ========================================
+            // 2. SESSION RESET LOGIC
+            // ========================================
             if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
-                // রিসেট করার আগে চেক করি এটা কোনো নোট কি না
+                // ডেলিভারি নোট চেক
                 if ($this->detectDeliveryNote($userMessage)) {
                     $note = $this->extractDeliveryNote($userMessage);
-                    // যদি গত ১০ মিনিটে কোনো অর্ডার হয়ে থাকে, সেখানে নোট আপডেট করো
                     if ($this->updateRecentOrderNote($clientId, $senderId, $note)) {
                         return "ধন্যবাদ! আপনার নোটটি ('$note') অর্ডারে যুক্ত করা হয়েছে।";
                     }
                 }
-                $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
+
+                // Reset Logic
+                $customerInfo['step'] = 'start';
+                $customerInfo['product_id'] = null;
+                unset($customerInfo['variant'], $customerInfo['note']); 
+                
+                $session->update(['customer_info' => $customerInfo]);
                 $step = 'start';
-                $currentProductId = null;
-                $history = [];
             }
 
             // ✅ Critical early-exit checks
             if ($this->detectOrderCancellation($userMessage, $senderId)) {
                 return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
             }
-
-            // নোট ডিটেকশন (যেকোনো স্টেপে)
-            $deliveryNote = null;
-            if ($this->detectDeliveryNote($userMessage)) {
-                $deliveryNote = $this->extractDeliveryNote($userMessage);
-            }
-
             if ($this->detectHateSpeech($userMessage)) {
                 return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
             }
 
+            // ডেলিভারি নোট থাকলে সেশনে সেভ রাখার জন্য এক্সট্রাক্ট করা (Step Class-এ পাস করার জন্য)
+            // নোট: স্টেপ ক্লাসগুলো সেশন রিড করে, তাই আমরা এখানে নোট সেশনে পুশ করতে পারি যদি দরকার হয়
+            // তবে আপনার বর্তমান লজিক অনুযায়ী Address/Confirm স্টেপ এটি হ্যান্ডেল করে।
+
             // ========================================
-            // ORDER FLOW LOGIC
+            // 3. MODULAR ORDER FLOW (Using Step Classes)
             // ========================================
-            // ✅ Optimization: Load inventory once smartly
+            
+            // ইনভেন্টরি ডাটা গ্লোবাল প্রম্পটের জন্য জেনারেট করে রাখা
             $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
-            $productsJson = $inventoryData;
 
-            // Load current product object (FIXED from second version)
-            $currentProduct = $currentProductId ? Product::find($currentProductId) : null;
+            // 🔥 STEP MAPPING 🔥
+            $steps = [
+                'start'         => new StartStep(),
+                'select_variant'=> new VariantStep(),
+                'collect_info'  => new AddressStep(),
+                'confirm_order' => new ConfirmStep(),
+            ];
 
-            // ----------------------------------------
-            // STEP: START (পণ্য খোঁজা)
-            // ----------------------------------------
-            if ($step === 'start' || !$currentProductId) {
-                // Tracking Intent Check
-                if ($this->isTrackingIntent($userMessage)) {
-                    $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
-                    if ($phoneLookupResult) {
-                        return $phoneLookupResult;
-                    }
-                }
+            // সঠিক হ্যান্ডলার সিলেক্ট করা
+            $currentStepName = $customerInfo['step'] ?? 'start';
+            $handler = $steps[$currentStepName] ?? $steps['start'];
 
-                // Systematic product search (already done above for context switching)
-                $product = $currentProduct ?: $this->findProductSystematically($clientId, $userMessage);
-                if ($product) {
-                    $isOutOfStock = ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0);
-                    if ($isOutOfStock) {
-                        $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
-                        $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
-                    } else {
-                        // ✅ UPGRADE: Extract EXACT variants
-                        $colors = $this->decodeVariants($product->colors);
-                        $sizes = $this->decodeVariants($product->sizes);
-                        $hasVariants = !empty($colors) || !empty($sizes);
-                        if ($hasVariants) {
-                            $nextStep = 'select_variant';
-                            $colorStr = !empty($colors) ? implode(', ', $colors) : 'N/A';
-                            $sizeStr = !empty($sizes) ? implode(', ', $sizes) : 'N/A';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে।
-আমাদের কাছে এই কালারগুলো আছে: [{$colorStr}] এবং এই সাইজগুলো আছে: [{$sizeStr}]।
-কাস্টমারকে শুধুমাত্র এই লিস্ট থেকেই কালার/সাইজ বেছে নিতে বলো।";
-                            $productContext = json_encode([
-                                'current_focus' => 'active_shopping',
-                                'id' => $product->id,
-                                'name' => $product->name,
-                                'price' => $product->sale_price,
-                                'available_colors' => $colors,
-                                'available_sizes' => $sizes
-                            ]);
-                        } else {
-                            $nextStep = 'collect_info';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কোনো কালার/সাইজ ভেরিয়েশন নেই। সরাসরি নাম, ফোন এবং ঠিকানা চাও।";
-                            $productContext = json_encode([
-                                'current_focus' => 'active_shopping',
-                                'id' => $product->id,
-                                'name' => $product->name,
-                                'price' => $product->sale_price,
-                                'stock' => 'Available'
-                            ]);
-                        }
-                        $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
-                    }
-                } else {
-                    $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
-                }
-            }
+            // 🔥 PROCESS LOGIC 🔥
+            // সব লজিক এখন আলাদা ক্লাসে। ChatbotService এখন শুধু অরকেস্ট্রেটর।
+            $result = $handler->process($session, $userMessage);
 
-            // ----------------------------------------
-            // STEP: SELECT VARIANT
-            // ----------------------------------------
-            elseif ($step === 'select_variant') {
-                $product = $currentProduct;
-                if ($product) {
-                    if ($this->hasVariantInMessage($userMessage, $product)) {
-                        $variant = $this->extractVariant($userMessage, $product);
-                        $customerInfo['variant'] = $variant;
-                        // ✅ UPGRADE: Variant empty guard (from second version)
-                        if (empty($variant)) {
-                            $systemInstruction = "আপনি যে ভেরিয়েশন বলেছেন তা আমাদের অপশনের মধ্যে নেই। দয়া করে সঠিক কালার/সাইজ দিন।";
-                        } else {
-                            // ✅ STRICT TRANSITION: ভেরিয়েশন পেলে সরাসরি ফোন নম্বর চাইতে হবে
-                            $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
-                            $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন অর্ডারটি প্রসেস করতে কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও। (এখনই অর্ডার কনফার্ম করবে না, আগে তথ্য নাও)";
-                        }
-                    } else {
-                        // Re-inject variants
-                        $colors = $this->decodeVariants($product->colors);
-                        $sizes = $this->decodeVariants($product->sizes);
-                        $colorStr = !empty($colors) ? implode(', ', $colors) : 'None';
-                        $sizeStr = !empty($sizes) ? implode(', ', $sizes) : 'None';
-                        $systemInstruction = "কাস্টমার এখনো ভেরিয়েশন সিলেক্ট করেনি।
-আমাদের কাছে আছে - Colors: [{$colorStr}], Sizes: [{$sizeStr}]।
-কাস্টমারকে এই অপশনগুলো থেকে বেছে নিতে বলো।";
-                    }
-                    // Enhanced context with current focus
-                    $productContext = json_encode([
-                        'current_focus' => 'selecting_variant',
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'price' => $product->sale_price,
-                        'available_colors' => $this->decodeVariants($product->colors),
-                        'available_sizes' => $this->decodeVariants($product->sizes)
-                    ]);
-                }
-            }
-
-            // ----------------------------------------
-            // STEP: COLLECT INFO (নাম, ফোন, ঠিকানা)
-            // ----------------------------------------
-            elseif ($step === 'collect_info') {
-                // ✅ UPGRADE: Address extraction added (from second version) - no removal
-                if (!empty($userMessage) && strlen($userMessage) > 10) {
-                    $customerInfo['address'] = $customerInfo['address'] ?? $userMessage;
-                }
-                $variantInfo = $customerInfo['variant'] ?? [];
-                $product = $currentProduct;
-                $phone = $this->extractPhoneNumber($userMessage);
-                if ($phone) {
-                    if ($deliveryNote) $customerInfo['note'] = $deliveryNote;
-                    $customerInfo['phone'] = $phone;
-                    // ✅ UPGRADE: সরাসরি Confirm Order এ পাঠাও
-                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'confirm_order'])]);
-                    if ($product) {
-                        $productContext = json_encode([
-                            'current_focus' => 'confirming_order',
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'price' => $product->sale_price,
-                            'variant' => $variantInfo,
-                            'phone' => $phone
-                        ]);
-                    }
-                    $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে।
-এখন অর্ডারটি ফাইনাল করার আগে:
-১. অর্ডারের সামারি দাও।
-২. [CAROUSEL: {$product->id}] ট্যাগ ব্যবহার করে ছবি দেখাও।
-৩. কাস্টমারকে বলো সব ঠিক থাকলে 'Confirm' করতে।";
-                } else {
-                    // ✅ STRICT: ফোন না পেলে কোনোভাবেই অর্ডার কনফার্মেশন বা ট্যাগ জেনারেট করা যাবে না
-                    $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও। সাবধান: ফোন নম্বর না পাওয়া পর্যন্ত [ORDER_DATA] জেনারেট করবে না।";
-                    // Enhanced context with current focus
-                    if ($product) {
-                        $productContext = json_encode([
-                            'current_focus' => 'collecting_info',
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'price' => $product->sale_price,
-                            'available_colors' => $this->decodeVariants($product->colors),
-                            'available_sizes' => $this->decodeVariants($product->sizes)
-                        ]);
-                    }
-                }
-            }
-
-            // ----------------------------------------
-            // STEP: CONFIRM ORDER
-            // ----------------------------------------
-            elseif ($step === 'confirm_order') {
-                if ($this->isPositiveConfirmation($userMessage)) {
-                    $product = $currentProduct;
-                    $phone = $customerInfo['phone'] ?? '';
-                    $address = $customerInfo['address'] ?? null; // Added from second version
-                    $variant = $customerInfo['variant'] ?? [];
-                    $savedNote = $customerInfo['note'] ?? '';
-                    if ($deliveryNote) {
-                        $savedNote = $savedNote ? "$savedNote. $deliveryNote" : $deliveryNote;
-                    }
-
-                    // ✅ FINAL CHECK: ফোন নম্বর এবং ঠিকানা আছে কিনা (from second version)
-                    if (empty($phone) || empty($address)) {
-                        // যদি কোনো কারণে ফোন নম্বর বা ঠিকানা হারিয়ে যায়
-                        $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
-                        $systemInstruction = "অর্ডার কনফার্ম করতে ফোন এবং ঠিকানা দুটোই প্রয়োজন।";
-                    } else {
-                        // ✅ HARD ORDER_DATA CONTRACT (from second version)
-                        $systemInstruction = "
-কাস্টমার অর্ডার কনফার্ম করেছে।
-শুধু নিচের exact schema ব্যবহার করে [ORDER_DATA] দাও:
-{
-\"product_id\": {$currentProductId},
-\"phone\": \"{$phone}\",
-\"address\": \"{$address}\",
-\"variant\": " . json_encode($variant) . ",
-\"note\": \"{$savedNote}\",
-\"status\": \"PROCESSING\"
-}
-এই schema ছাড়া কিছু দেবে না।
-";
-                        $productContext = json_encode([
-                            'current_focus' => 'order_confirmed',
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'phone' => $phone,
-                            'address' => $address, // Added address
-                            'variant' => $variant,
-                            'note' => $savedNote
-                        ]);
-                    }
-                } else {
-                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায়। প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো। [CAROUSEL: {$currentProductId}] দেখাও।";
-                    if ($currentProduct) {
-                        $productContext = json_encode([
-                            'current_focus' => 'awaiting_confirmation',
-                            'id' => $currentProduct->id,
-                            'name' => $currentProduct->name,
-                            'price' => $currentProduct->sale_price
-                        ]);
-                    }
-                }
-            }
-
-            elseif ($step === 'completed') {
-                return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
-            }
+            $systemInstruction = $result['instruction'] ?? "আমি বুঝতে পারিনি, আবার বলুন।";
+            $productContext = $result['context'] ?? "[]";
 
             // ========================================
-            // AI CONTEXT & PROMPT GENERATION
+            // 4. GENERATE PROMPT & CALL AI
             // ========================================
             $orderContext = $this->buildOrderContext($clientId, $senderId);
-            $productContext = $productContext ?: "";
+            
             $finalPrompt = $this->generateSystemPrompt(
                 $systemInstruction,
                 $productContext,
                 $orderContext,
-                $inventoryData,
-                $currentTime,
-                $productsJson
+                $inventoryData, // এটি গ্লোবাল সার্চ বা ফলব্যাকের জন্য পাঠানো হচ্ছে
+                $currentTime
             );
 
+            // Message History Building
             $messages = [['role' => 'system', 'content' => $finalPrompt]];
-            $recentHistory = array_slice($history, -4);
-            foreach ($recentHistory as $chat) {
+            foreach (array_slice($history, -4) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
             $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-            // ========================================
-            // IMAGE HANDLING (from first version)
-            // ========================================
-            if ($imageUrl) {
-                $base64Image = null;
-                try {
-                    $imageResponse = Http::timeout(10)->get($imageUrl);
-                    if ($imageResponse->successful()) {
-                        $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
-                        $base64Image = "data:{$contentType};base64," . base64_encode($imageResponse->body());
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Image fetch error: " . $e->getMessage());
-                }
-
-                if ($base64Image) {
-                    $lastMessage = array_pop($messages);
-                    if ($lastMessage && $lastMessage['role'] === 'user') {
-                        $messages[] = [
-                            'role' => 'user',
-                            'content' => [
-                                ['type' => 'text', 'text' => is_string($lastMessage['content']) ? $lastMessage['content'] : json_encode($lastMessage['content'])],
-                                ['type' => 'image_url', 'image_url' => ['url' => $base64Image]]
-                            ]
-                        ];
-                    } else {
-                        $messages[] = $lastMessage;
-                    }
-                }
+            // Attach Image (if available)
+            if ($base64Image) {
+                 $lastMsg = array_pop($messages);
+                 $messages[] = [
+                     'role' => 'user',
+                     'content' => [
+                         ['type' => 'text', 'text' => $lastMsg['content']], 
+                         ['type' => 'image_url', 'image_url' => ['url' => $base64Image]]
+                     ]
+                 ];
             }
 
-            $aiResponse = $this->callLlmChain($messages, $imageUrl);
+            // Call LLM
+            $aiResponse = $this->callLlmChain($messages);
 
-            // Persist history
+            // Save History
             if ($aiResponse) {
-                $history[] = [
-                    'user' => $userMessage,
-                    'ai' => $aiResponse,
-                    'time' => time()
-                ];
-                if (count($history) > 20) {
-                    $history = array_slice($history, -20);
-                }
-                $customerInfo['history'] = $history;
+                $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
+                
+                // রি-ফেচ সেশন (process মেথড সেশন আপডেট করে থাকতে পারে)
+                $session->refresh();
+                $customerInfo = $session->customer_info;
+                $customerInfo['history'] = array_slice($history, -20);
+                
                 $session->update(['customer_info' => $customerInfo]);
             }
 
             return $aiResponse;
-        } catch (\Exception $e) {
-            Log::error('ChatbotService Error: ' . $e->getMessage(), [
-                'userMessage' => $userMessage,
-                'clientId' => $clientId,
-                'senderId' => $senderId
-            ]);
-            return "দুঃখিত, একটু সমস্যা হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
-        }
+
+        }); // End Transaction
     }
 
     // =====================================
-    // HELPER METHODS (FULL SET PRESERVED)
+    // GLOBAL HELPER METHODS
+    // (Specific logic moved to Step Classes, keeping generic ones here)
     // =====================================
 
     /**
-     * [NEW] Variants Decoder (Handles JSON, String, N/A)
+     * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ (With Caching)
+     * এটি গ্লোবাল প্রম্পটের জন্য দরকার, তাই এখানে রাখা হলো।
      */
-    private function decodeVariants($data)
+    private function getInventoryData($clientId, $userMessage, $history)
     {
-        if (empty($data)) return [];
-        // If it's already an array
-        if (is_array($data)) {
-            // Filter out 'N/A' or empty strings
-            return array_filter($data, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
-        }
-        // Try decoding JSON
-        $decoded = json_decode($data, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return array_filter($decoded, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
-        }
-        // Treat as simple string (e.g., "Red" or "Red, Blue")
-        if (is_string($data)) {
-            if (strtolower($data) === 'n/a') return [];
-            // If comma separated
-            if (str_contains($data, ',')) {
-                return array_map('trim', explode(',', $data));
+        $cacheKey = "inventory_{$clientId}_" . md5($userMessage);
+
+        return Cache::remember($cacheKey, 600, function () use ($clientId, $userMessage, $history) {
+            
+            $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
+            $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
+            $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'available', 'stock', 'kinbo', 'order', 'chai', 'lagbe', 'nibo', 'টাকা', 'দাম', 'কেমন', 'ছবি'];
+            
+            $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
+
+            if ($isFollowUp && !empty($history)) {
+                $lastUserMsg = end($history)['user'] ?? '';
+                $lastKeywords = array_filter(explode(' ', $lastUserMsg), fn($w) => mb_strlen($w) > 3);
+                $keywords = array_unique(array_merge($keywords, $lastKeywords));
             }
-            return [$data];
-        }
-        return [];
+
+            if (!empty($keywords)) {
+                $query->where(function($q) use ($keywords) {
+                    foreach ($keywords as $word) {
+                        $q->orWhere('name', 'like', "%{$word}%")
+                          ->orWhere('colors', 'like', "%{$word}%")
+                          ->orWhere('sku', 'like', "%{$word}%");
+                    }
+                });
+            }
+
+            $products = $query->latest()->limit(5)->get();
+
+            if ($products->isEmpty()) {
+                $products = Product::where('client_id', $clientId)
+                    ->where('stock_status', 'in_stock')
+                    ->where('stock_quantity', '>', 0)
+                    ->latest()->limit(5)->get();
+            }
+
+            return $products->map(function ($p) {
+                $decode = fn($v) => is_string($v) ? (json_decode($v, true) ?: $v) : $v;
+                $colors = $decode($p->colors);
+                $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: null);
+                $sizes = $decode($p->sizes);
+                $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: null);
+                $desc = strip_tags(str_replace(["<br>", "</p>", "&nbsp;", "\n"], " ", $p->description));
+
+                $data = [
+                    'ID' => $p->id,
+                    'Name' => $p->name,
+                    'Sale_Price' => (int)$p->sale_price . ' Tk',
+                    'Regular_Price' => $p->regular_price ? (int)$p->regular_price . ' Tk' : null,
+                    'Stock' => $p->stock_quantity > 0 ? 'Available' : 'Out of Stock',
+                    'Details' => Str::limit($desc, 200),
+                    'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
+                ];
+
+                if ($colorsStr && strtolower($colorsStr) !== 'n/a') $data['Colors'] = $colorsStr;
+                if ($sizesStr && strtolower($sizesStr) !== 'n/a') $data['Sizes'] = $sizesStr;
+
+                return $data;
+            })->toJson();
+        });
     }
 
-    /**
-     * [NEW] সাম্প্রতিক অর্ডারের নোট আপডেট করা
-     */
     private function updateRecentOrderNote($clientId, $senderId, $note)
     {
-        // গত ১৫ মিনিটের মধ্যে করা অর্ডার চেক
         $recentOrder = Order::where('client_id', $clientId)
             ->where('sender_id', $senderId)
             ->where('created_at', '>=', now()->subMinutes(15))
@@ -427,7 +278,6 @@ class ChatbotService
             $existingNote = $recentOrder->admin_note ?? $recentOrder->notes ?? '';
             $newNote = $existingNote ? "$existingNote | $note" : $note;
 
-            // ডাটাবেস ভেদে কলামের নাম ভিন্ন হতে পারে, তাই সেফ চেক
             if (\Schema::hasColumn('orders', 'admin_note')) {
                 $recentOrder->update(['admin_note' => $newNote]);
             } elseif (\Schema::hasColumn('orders', 'notes')) {
@@ -440,30 +290,55 @@ class ChatbotService
         return false;
     }
 
-    private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time, $prodJson)
+    private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time)
     {
         return <<<EOT
 {$instruction}
 
-**Role:** Smart Sales Executive.
-**CRITICAL CONTEXT RULES (DO NOT BREAK):**
-1. **Current Product Focus:** কাস্টমার বর্তমানে যে প্রোডাক্ট নিয়ে কথা বলছে তার তথ্য [Current Product Info] তে আছে। আগের কেনা প্রোডাক্ট (History) এবং বর্তমান আলোচনার প্রোডাক্ট গুলিয়ে ফেলবে না।
-2. **Require Phone:** NEVER generate [ORDER_DATA] if you do not have the customer's phone number.
-3. **Real Options:** Only offer variants listed in [Current Product Info]. If empty, say "No options".
-4. **Carousel:** Always show [CAROUSEL: Product_ID] before asking for confirmation.
+**System Role:** Elite AI Sales Associate for a top-tier E-commerce Brand in Bangladesh.
+**Objective:** Convert inquiries into confirmed orders efficiently using a polite, mixed Bangla-English tone.
 
+### 🛡️ PRIME DIRECTIVES (ABSOLUTE RULES):
+1.  **CONTEXT FIREWALL (High Priority):**
+    - The USER is currently looking at [Current Product Info].
+    - DO NOT mix this with [Customer Order History] unless the user specifically asks "What did I buy before?".
+    - If [Current Product Info] is empty, check [Product Inventory].
+
+2.  **THE "NO DATA, NO ORDER" RULE:**
+    - You are FORBIDDEN from generating the `[ORDER_DATA]` tag unless you have captured BOTH:
+      (A) A valid 11-digit Phone Number.
+      (B) A Clear Shipping Address (reject vague answers like "Dhaka" or "Same").
+
+3.  **INVENTORY TRUTH:**
+    - ONLY offer Variants (Color/Size) listed in [Current Product Info].
+    - If a user asks for a color NOT in the list, politely say it's out of stock. Do not guess.
+
+4.  **VISUAL CONFIRMATION:**
+    - You MUST display the [CAROUSEL: Product_ID] tag *immediately* before asking for final confirmation.
+
+### 🗣️ LANGUAGE & TONE GUIDELINES:
+- **Script:** Use Bangla script for sentences, but keep key terms in English.
+- **Keywords in English:** Price, Size, Color, Delivery Charge, Stock, Order, Delivery Time.
+- **Tone:** Professional, Concise, and Helpful. (Use 'Apni' for respect).
+- **Example:** "জি স্যার, এই Product টি Stock এ আছে। Price মাত্র 1250 Tk। আপনি কি Order টি Confirm করতে চান?"
+
+### 🧠 INTELLIGENT FLOW:
+1.  **Selection:** If the product has options, ask for Color/Size first. Don't proceed without it.
+2.  **Collection:** Ask for Phone & Address only after product selection is done.
+3.  **Closing:** Show Summary -> Show [CAROUSEL] -> Ask for "Yes/Confirm".
+
+### 📂 DATA PACKETS:
 [Current Product Info]: {$prodCtx}
-[Customer Order History]: {$ordCtx}
-[Product Inventory]: {$invData}
-- Current Time: {$time}
-- Delivery: Standard Delivery (2-4 days)
+[Customer History]: {$ordCtx}
+[Inventory Lookup]: {$invData}
+[Metadata]: Time: {$time} | Delivery: 2-4 Days Standard.
 
-[System Tags]:
-- [CAROUSEL: Product_ID]
-- [ORDER_DATA: {"product_id": 123, "name": "Prod Name", "phone": "017...", "address": "...", "variant": "...", "note": "..."}]
-- [TRACK_ORDER: "017..."]
+### 🔧 SYSTEM COMMANDS (JSON MUST BE VALID):
+- Show Image: [CAROUSEL: {Product_ID}]
+- Finalize Order: [ORDER_DATA: {"product_id": 123, "phone": "01xxx", "address": "Full Address", "variant": {"color":"Red"}, "note": "...", "status": "PROCESSING"}]
+- Tracking: [TRACK_ORDER: "01xxx"]
 
-সবসময় বাংলা এবং ইংরেজি শব্দ মিশিয়ে প্রফেশনাল কথা বলবে।
+Now, respond to the user professionally.
 EOT;
     }
 
@@ -570,87 +445,6 @@ EOT;
         return null;
     }
 
-    /**
-     * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ
-     */
-    private function getInventoryData($clientId, $userMessage, $history)
-    {
-        $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
-        $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
-        $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'available', 'stock', 'kinbo', 'order', 'chai', 'lagbe', 'nibo', 'টাকা', 'দাম', 'কেমন', 'ছবি'];
-        $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
-
-        if ($isFollowUp && !empty($history)) {
-            $lastUserMsg = end($history)['user'] ?? '';
-            $lastKeywords = array_filter(explode(' ', $lastUserMsg), fn($w) => mb_strlen($w) > 3);
-            $keywords = array_unique(array_merge($keywords, $lastKeywords));
-        }
-
-        if (!empty($keywords)) {
-            $query->where(function($q) use ($keywords) {
-                foreach ($keywords as $word) {
-                    $q->orWhere('name', 'like', "%{$word}%")
-                      ->orWhere('colors', 'like', "%{$word}%")
-                      ->orWhere('sku', 'like', "%{$word}%");
-                }
-            });
-        }
-
-        $products = $query->latest()->limit(5)->get();
-        if ($products->isEmpty()) {
-            $products = Product::where('client_id', $clientId)
-                ->where('stock_status', 'in_stock')
-                ->where('stock_quantity', '>', 0)
-                ->latest()->limit(5)->get();
-        }
-
-        return $products->map(function ($p) {
-            $decode = fn($v) => is_string($v) ? (json_decode($v, true) ?: $v) : $v;
-            $colors = $decode($p->colors);
-            $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: null);
-            $sizes = $decode($p->sizes);
-            $sizesStr = is_array($sizes) ? implode(', ', $sizes) : ((string)$sizes ?: null);
-            $desc = strip_tags(str_replace(["<br>", "</p>", "&nbsp;", "\n"], " ", $p->description));
-
-            $data = [
-                'ID' => $p->id,
-                'Name' => $p->name,
-                'Sale_Price' => (int)$p->sale_price . ' Tk',
-                'Regular_Price' => $p->regular_price ? (int)$p->regular_price . ' Tk' : null,
-                'Stock' => $p->stock_quantity > 0 ? 'Available' : 'Out of Stock',
-                'Details' => Str::limit($desc, 200),
-                'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
-            ];
-
-            if ($colorsStr && strtolower($colorsStr) !== 'n/a') $data['Colors'] = $colorsStr;
-            if ($sizesStr && strtolower($sizesStr) !== 'n/a') $data['Sizes'] = $sizesStr;
-
-            return $data;
-        })->toJson();
-    }
-
-    private function extractVariant($msg, $product)
-    {
-        $msg = strtolower($msg);
-        $variant = [];
-
-        $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
-        if (is_array($colors)) {
-            foreach ($colors as $color) {
-                if (str_contains($msg, strtolower($color))) $variant['color'] = $color;
-            }
-        }
-
-        $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
-        if (is_array($sizes)) {
-            foreach ($sizes as $size) {
-                if (str_contains($msg, strtolower($size))) $variant['size'] = $size;
-            }
-        }
-
-        return $variant;
-    }
-
     private function buildOrderContext($clientId, $senderId)
     {
         $orders = Order::with('items.product')
@@ -678,9 +472,6 @@ EOT;
         return $context;
     }
 
-    /**
-     * [FIXED & OPTIMIZED] Voice to Text
-     */
     public function convertVoiceToText($audioUrl)
     {
         $tempPath = null;
@@ -725,116 +516,6 @@ EOT;
         }
     }
 
-    private function extractPhoneNumber($msg)
-    {
-        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
-        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-        $msg = str_replace($bn, $en, $msg);
-        $msg = preg_replace('/[^0-9]/', '', $msg);
-
-        if (str_starts_with($msg, '8801')) {
-            $msg = substr($msg, 2);
-        }
-
-        if (preg_match('/^01[3-9]\d{8}$/', $msg)) {
-            return $msg;
-        }
-
-        return null;
-    }
-
-    /**
-     * [OPTIMIZED] Systematic Product Search
-     */
-    private function findProductSystematically($clientId, $message)
-    {
-        $keywords = array_filter(explode(' ', $message), function($word) {
-            return is_string($word) && mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
-        });
-
-        if (empty($keywords)) return null;
-
-        foreach($keywords as $word) {
-            $product = Product::where('client_id', $clientId)
-                ->where('sku', 'LIKE', "%".strtoupper(trim($word))."%")
-                ->first();
-            if($product) return $product;
-        }
-
-        return Product::where('client_id', $clientId)
-            ->where(function($q) use ($keywords) {
-                foreach($keywords as $word) {
-                    $q->orWhere('name', 'LIKE', "%".trim($word)."%");
-                }
-            })
-            ->first();
-    }
-
-    /**
-     * [FIXED] Array Crash Fix in strtolower
-     */
-    private function hasVariantInMessage($msg, $product)
-    {
-        $msgLower = strtolower($msg);
-        $check = function($data) use ($msgLower) {
-            $items = is_string($data) ? json_decode($data, true) : $data;
-            if (!is_array($items)) {
-                $items = is_string($data) ? [$data] : [];
-            }
-            foreach ($items as $item) {
-                if (is_string($item) && stripos($msgLower, strtolower(trim($item))) !== false) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        if ($check($product->colors) || $check($product->sizes)) return true;
-
-        $variantKeywords = ['red', 'blue', 'black', 'white', 'green', 'yellow', 'xl', 'xxl', 'l', 'm', 's', 'লাল', 'কালো', 'সাদা', 'সবুজ', 'হলুদ', 'এক্সএল', 'এল', 'এম', 'এস', 'large', 'medium', 'small'];
-        foreach ($variantKeywords as $kw) {
-            if (stripos($msgLower, $kw) !== false) return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * [NEW] Check if product has variants safely
-     */
-    private function productHasVariants($product)
-    {
-        $check = function($data) {
-            if (empty($data)) return false;
-            $items = is_string($data) ? json_decode($data, true) : $data;
-            if (is_string($data) && json_last_error() !== JSON_ERROR_NONE) {
-                return strlen($data) > 1 && strtolower($data) !== 'n/a';
-            }
-            if (is_array($items) && count($items) > 0) {
-                return !(count($items) === 1 && strtolower($items[0] ?? '') === 'n/a');
-            }
-            return false;
-        };
-
-        return $check($product->colors) || $check($product->sizes);
-    }
-
-    /**
-     * [NEW] Check Positive Confirmation
-     */
-    private function isPositiveConfirmation($msg)
-    {
-        $positiveWords = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'koren', 'order koren', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'done'];
-        $msgLower = strtolower($msg);
-        foreach ($positiveWords as $w) {
-            if (str_contains($msgLower, $w)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * [CORE] LLM Call (from first version)
-     */
     private function callLlmChain($messages, $imageUrl = null)
     {
         try {
@@ -844,12 +525,12 @@ EOT;
                 return null;
             }
 
-            // Note: Image handling is done in getAiResponse method before calling this function
             $response = Http::withToken($apiKey)
                 ->timeout(30)
                 ->retry(2, 500)
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => 'gpt-4o-mini',
+                    'response_format' => ['type' => 'json_object'],
                     'messages' => $messages,
                     'temperature' => 0.3,
                     'max_tokens' => 500,
