@@ -19,6 +19,19 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         try {
+
+         if (is_array($userMessage)) {
+            $userMessage = implode(' ', $userMessage);
+        }
+        
+        if (!is_string($userMessage) || empty(trim($userMessage))) {
+            Log::warning('Invalid user message received', [
+                'userMessage' => $userMessage,
+                'clientId' => $clientId,
+                'senderId' => $senderId
+            ]);
+            return "দুঃখিত, আপনার বার্তাটি বুঝতে পারছি না।";
+        }
             // ✅ Initialization (Variables defined safely)
             $inventoryData = "[]";
             $productsJson = "[]";
@@ -277,67 +290,116 @@ EOT;
     /**
      * [NEW] Detect if user wants to start over or change topic
      */
+
+
     private function detectNewIntent($msg) {
-        $keywords = ['menu', 'start', 'suru', 'list', 'অন্য', 'change', 'bad', 'new', 'notun', 'kiccu na', 'cancel'];
-        foreach($keywords as $kw) {
-            if (stripos($msg, $kw) !== false && strlen($msg) < 20) return true;
-        }
+    if (is_array($msg)) {
+        $msg = implode(' ', $msg);
+    }
+    
+    if (!is_string($msg)) {
         return false;
     }
+    
+    $keywords = ['menu', 'start', 'suru', 'list', 'অন্য', 'change', 'bad', 'new', 'notun', 'kiccu na', 'cancel'];
+    foreach($keywords as $kw) {
+        if (stripos($msg, $kw) !== false && strlen($msg) < 20) return true;
+    }
+    return false;
+}
 
     /**
      * [NEW] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা
      */
-    private function isTrackingIntent($msg) {
-        $trackingKeywords = [
-            'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
-            'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking'
-        ];
-        $msgLower = mb_strtolower($msg, 'UTF-8');
-        
-        foreach ($trackingKeywords as $kw) {
-            if (mb_strpos($msgLower, $kw) !== false) {
-                return true;
-            }
-        }
+
+    /**
+ * [FIXED] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা (array সাপোর্ট)
+ */
+private function isTrackingIntent($msg) {
+    // ✅ FIX: Convert array to string if needed
+    if (is_array($msg)) {
+        $msg = implode(' ', $msg);
+    }
+    
+    if (!is_string($msg)) {
         return false;
     }
+    
+    $trackingKeywords = [
+        'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
+        'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking'
+    ];
+    $msgLower = mb_strtolower($msg, 'UTF-8');
+    
+    foreach ($trackingKeywords as $kw) {
+        if (mb_strpos($msgLower, $kw) !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
     /**
      * [NEW] অর্ডার রিলেটেড মেসেজ চেক করা
      */
-    private function isOrderRelatedMessage($msg) {
-        $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস', 'price', 'dam'];
-        $msgLower = strtolower($msg);
-        
-        foreach ($orderKeywords as $kw) {
-            if (stripos($msgLower, $kw) !== false) {
-                return true;
-            }
-        }
+    /**
+ * [FIXED] অর্ডার রিলেটেড মেসেজ চেক করা (array সাপোর্ট)
+ */
+private function isOrderRelatedMessage($msg) {
+    // ✅ FIX: Convert array to string if needed
+    if (is_array($msg)) {
+        $msg = implode(' ', $msg);
+    }
+    
+    if (!is_string($msg)) {
         return false;
     }
-
+    
+    $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস', 'price', 'dam'];
+    $msgLower = strtolower($msg);
+    
+    foreach ($orderKeywords as $kw) {
+        if (stripos($msgLower, $kw) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
     /**
      * [NEW] ডেলিভারি নোট ডিটেক্ট করা
      */
-    private function detectDeliveryNote($msg) {
-        $noteKeywords = [
-            'friday', 'শুক্রবার', 'saturday', 'শনিবার', 'sunday', 'রবিবার',
-            'monday', 'সোমবার', 'tuesday', 'মঙ্গলবার', 'wednesday', 'বুধবার', 'thursday', 'বৃহস্পতিবার',
-            'delivery', 'ডেলিভারি', 'দিবেন', 'দিবে', 'দিয়েন', 'দিয়ে', 'পৌছে', 'পৌছাবেন',
-            'tomorrow', 'আগামীকাল', 'next day', 'asap', 'জরুরি', 'urgent', 'দ্রুত', 'সকালে', 'রাতে',
-            'evening', 'সন্ধ্যায়', 'morning', 'afternoon', 'time', 'সময়', 'before', 'পরে', 'আগে'
-        ];
-        
-        $msgLower = strtolower($msg);
-        foreach ($noteKeywords as $kw) {
-            if (stripos($msgLower, $kw) !== false) {
-                return true;
-            }
-        }
+
+    
+/**
+ * [FIXED] ডেলিভারি নোট ডিটেক্ট করা (array সাপোর্ট)
+ */
+private function detectDeliveryNote($msg) {
+    // ✅ FIX: Convert array to string if needed
+    if (is_array($msg)) {
+        $msg = implode(' ', $msg);
+    }
+    
+    if (!is_string($msg)) {
         return false;
     }
+    
+    $noteKeywords = [
+        'friday', 'শুক্রবার', 'saturday', 'শনিবার', 'sunday', 'রবিবার',
+        'monday', 'সোমবার', 'tuesday', 'মঙ্গলবার', 'wednesday', 'বুধবার', 'thursday', 'বৃহস্পতিবার',
+        'delivery', 'ডেলিভারি', 'দিবেন', 'দিবে', 'দিয়েন', 'দিয়ে', 'পৌছে', 'পৌছাবেন',
+        'tomorrow', 'আগামীকাল', 'next day', 'asap', 'জরুরি', 'urgent', 'দ্রুত', 'সকালে', 'রাতে',
+        'evening', 'সন্ধ্যায়', 'morning', 'afternoon', 'time', 'সময়', 'before', 'পরে', 'আগে'
+    ];
+    
+    $msgLower = strtolower($msg);
+    foreach ($noteKeywords as $kw) {
+        if (stripos($msgLower, $kw) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
 
     /**
      * [NEW] ডেলিভারি নোট এক্সট্রাক্ট করা
@@ -351,34 +413,43 @@ EOT;
         return implode(' ', $filtered);
     }
 
+
+
     /**
-     * [NEW] অর্ডার ক্যানসেলেশন ডিটেক্ট করা
-     */
-    private function detectOrderCancellation($msg, $senderId) {
-        if (empty($msg)) return false;
-        
-        $cancelPhrases = [
-            'cancel', 'বাতিল', 'cancel koro', 'cancel kore', 'বাতিল কর', 'বাতিল করে', 'বাতিল দেন',
-            'order ta cancel', 'order cancel', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল',
-            'দরকার নাই', 'নিবো না', 'লাগবে না', 'চাই না', 'দরকার নেই', 'না লাগবে',
-            'নিব না', 'নিতে চাই না', 'রাখব না', 'চাইনা', 'লাগবেনা', 'নিবোনা',
-            'change mind', 'changed my mind', 'ভুল হয়েছে', 'ভুল', 'ভুল করেছি'
-        ];
-        
-        $msgLower = mb_strtolower($msg, 'UTF-8');
-        foreach ($cancelPhrases as $phrase) {
-            if (mb_strpos($msgLower, mb_strtolower($phrase, 'UTF-8')) !== false) {
-                // চেক করব কোনো পেন্ডিং অর্ডার আছে কিনা
-                $pendingOrder = Order::where('sender_id', $senderId)
-                    ->whereIn('order_status', ['processing', 'pending'])
-                    ->latest()
-                    ->first();
-                
-                return $pendingOrder ? true : false;
-            }
-        }
+ * [FIXED] অর্ডার ক্যানসেলেশন ডিটেক্ট করা (array সাপোর্ট)
+ */
+private function detectOrderCancellation($msg, $senderId) {
+    // ✅ FIX: Convert array to string if needed
+    if (is_array($msg)) {
+        $msg = implode(' ', $msg);
+    }
+    
+    if (empty($msg) || !is_string($msg)) {
         return false;
     }
+    
+    $cancelPhrases = [
+        'cancel', 'বাতিল', 'cancel koro', 'cancel kore', 'বাতিল কর', 'বাতিল করে', 'বাতিল দেন',
+        'order ta cancel', 'order cancel', 'অর্ডার বাতিল', 'অর্ডারটা বাতিল',
+        'দরকার নাই', 'নিবো না', 'লাগবে না', 'চাই না', 'দরকার নেই', 'না লাগবে',
+        'নিব না', 'নিতে চাই না', 'রাখব না', 'চাইনা', 'লাগবেনা', 'নিবোনা',
+        'change mind', 'changed my mind', 'ভুল হয়েছে', 'ভুল', 'ভুল করেছি'
+    ];
+    
+    $msgLower = mb_strtolower($msg, 'UTF-8');
+    foreach ($cancelPhrases as $phrase) {
+        if (mb_strpos($msgLower, mb_strtolower($phrase, 'UTF-8')) !== false) {
+            // চেক করব কোনো পেন্ডিং অর্ডার আছে কিনা
+            $pendingOrder = Order::where('sender_id', $senderId)
+                ->whereIn('order_status', ['processing', 'pending'])
+                ->latest()
+                ->first();
+            
+            return $pendingOrder ? true : false;
+        }
+    }
+    return false;
+}
 
     /**
      * [LOGIC] মেসেজে ফোন নম্বর থাকলে অর্ডার স্ট্যাটাস বের করা
@@ -522,16 +593,33 @@ EOT;
     /**
      * [LOGIC] হেট স্পিচ ডিটেকশন
      */
-    private function detectHateSpeech($message)
+
+
+    /**
+ * [LOGIC] হেট স্পিচ ডিটেকশন (ফিক্সড - array সাপোর্ট)
+ */
+private function detectHateSpeech($message)
     {
-        if (!$message) return false;
+        if (is_array($message)) {
+            $message = implode(' ', $message);
+        }
+        
+        if (!$message || !is_string($message)) {
+            return false;
+        }
+        
         $badWords = ['fucker', 'idiot', 'stupid', 'bastard', 'scam', 'mamla', 'cheat', 'shala', 'kutta', 'harami', 'shuor', 'magi', 'khananki', 'chuda', 'bal', 'boka', 'faltu', 'butpar', 'chor', 'sala', 'khankir', 'madarchod', 'tor mare', 'fraud', 'fuck', 'shit', 'bitch', 'asshole'];
         $lowerMsg = strtolower($message);
+        
         foreach ($badWords as $word) {
-            if (str_contains($lowerMsg, $word)) return true;
+            if (str_contains($lowerMsg, $word)) {
+                return true;
+            }
         }
+        
         return false;
     }
+
 
     // =====================================
     // VOICE TO TEXT
