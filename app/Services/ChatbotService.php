@@ -10,55 +10,46 @@ use App\Models\OrderSession;
 
 class ChatbotService
 {
-    /**
-    * মেইন ফাংশন: কন্ট্রোলার থেকে রিকোয়েস্ট রিসিভ করে এবং প্রসেস করে
-    */
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         try {
-            // Initializing variables safely
             $inventoryData = "[]";
             $productContext = "";
             $systemInstruction = "";
             $currentTime = now()->format('l, h:i A');
             
-            // Load session with null-safe history handling
             $session = OrderSession::firstOrCreate(
                 ['sender_id' => $senderId],
                 ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
             );
             
-            // Human agent check
             if ($session->is_human_agent_active) return null;
             
-            // ✅ FIX: Null-safe customer info extraction
             $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
             $step = $customerInfo['step'] ?? 'start';
             $currentProductId = $customerInfo['product_id'] ?? null;
             $history = $customerInfo['history'] ?? [];
             
-            // ✅ Session reset logic (অর্ডার কমপ্লিট হলে রিসেট, কিন্তু নোট হ্যান্ডলিং এর সুযোগ রাখা)
-            if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
-                // রিসেট করার আগে চেক করি এটা কোনো নোট কি না
+            // ✅ CRITICAL FIX 1: RESET SESSION FOR ANY NEW MESSAGE AFTER COMPLETION
+            // Handles both notes AND new orders immediately after completion
+            if ($step === 'completed') {
                 if ($this->detectDeliveryNote($userMessage)) {
                     $note = $this->extractDeliveryNote($userMessage);
-                    // যদি গত ১০ মিনিটে কোনো অর্ডার হয়ে থাকে, সেখানে নোট আপডেট করো
                     if ($this->updateRecentOrderNote($clientId, $senderId, $note)) {
                         return "ধন্যবাদ! আপনার নোটটি ('$note') অর্ডারে যুক্ত করা হয়েছে।";
                     }
                 }
+                // RESET FOR ALL OTHER MESSAGES (including new orders)
                 $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
                 $step = 'start';
                 $currentProductId = null;
                 $history = [];
             }
             
-            // ✅ Critical early-exit checks
             if ($this->detectOrderCancellation($userMessage, $senderId)) {
                 return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
             }
             
-            // নোট ডিটেকশন (যেকোনো স্টেপে)
             $deliveryNote = null;
             if ($this->detectDeliveryNote($userMessage)) {
                 $deliveryNote = $this->extractDeliveryNote($userMessage);
@@ -68,18 +59,10 @@ class ChatbotService
                 return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
             }
             
-            // ========================================
-            // ORDER FLOW LOGIC
-            // ========================================
-            // ✅ Optimization: Load inventory once smartly
             $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
             $productsJson = $inventoryData;
             
-            // ----------------------------------------
-            // STEP: START (পণ্য খোঁজা)
-            // ----------------------------------------
             if ($step === 'start' || !$currentProductId) {
-                // Tracking Intent Check
                 if ($this->isTrackingIntent($userMessage)) {
                     $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
                     if ($phoneLookupResult) {
@@ -87,7 +70,6 @@ class ChatbotService
                     }
                 }
                 
-                // Systematic product search
                 $product = $this->findProductSystematically($clientId, $userMessage);
                 if ($product) {
                     $isOutOfStock = ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0);
@@ -95,7 +77,6 @@ class ChatbotService
                         $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
                         $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
                     } else {
-                        // ✅ UPGRADE: Extract EXACT variants
                         $colors = $this->decodeVariants($product->colors);
                         $sizes = $this->decodeVariants($product->sizes);
                         $hasVariants = !empty($colors) || !empty($sizes);
@@ -130,25 +111,19 @@ class ChatbotService
                 }
             }
             
-            // ----------------------------------------
-            // STEP: SELECT VARIANT
-            // ----------------------------------------
             elseif ($step === 'select_variant') {
                 $product = Product::find($currentProductId);
                 if ($product) {
                     if ($this->hasVariantInMessage($userMessage, $product)) {
                         $variant = $this->extractVariant($userMessage, $product);
                         $customerInfo['variant'] = $variant;
-                        // ✅ UPGRADE: Variant empty guard (from second version)
                         if (empty($variant)) {
                             $systemInstruction = "আপনি যে ভেরিয়েশন বলেছেন তা আমাদের অপশনের মধ্যে নেই। দয়া করে সঠিক কালার/সাইজ দিন।";
                         } else {
-                            // ✅ STRICT TRANSITION: ভেরিয়েশন পেলে সরাসরি ফোন নম্বর চাইতে হবে
                             $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
                             $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন অর্ডারটি প্রসেস করতে কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও। (এখনই অর্ডার কনফার্ম করবে না, আগে তথ্য নাও)";
                         }
                     } else {
-                        // Re-inject variants
                         $colors = $this->decodeVariants($product->colors);
                         $sizes = $this->decodeVariants($product->sizes);
                         $colorStr = !empty($colors) ? implode(', ', $colors) : 'None';
@@ -160,11 +135,7 @@ class ChatbotService
                 }
             }
             
-            // ----------------------------------------
-            // STEP: COLLECT INFO (নাম, ফোন, ঠিকানা)
-            // ----------------------------------------
             elseif ($step === 'collect_info') {
-                // ✅ UPGRADE: Address extraction added (from second version) - no removal
                 if (!empty($userMessage) && strlen($userMessage) > 10) {
                     $customerInfo['address'] = $customerInfo['address'] ?? $userMessage;
                 }
@@ -176,7 +147,6 @@ class ChatbotService
                 if ($phone) {
                     if ($deliveryNote) $customerInfo['note'] = $deliveryNote;
                     $customerInfo['phone'] = $phone;
-                    // ✅ UPGRADE: সরাসরি Confirm Order এ পাঠাও
                     $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'confirm_order'])]);
                     if ($product) {
                         $productContext = json_encode([
@@ -192,19 +162,15 @@ class ChatbotService
                     ২. [CAROUSEL: {$product->id}] ট্যাগ ব্যবহার করে ছবি দেখাও।
                     ৩. কাস্টমারকে বলো সব ঠিক থাকলে 'Confirm' করতে।";
                 } else {
-                    // ✅ STRICT: ফোন না পেলে কোনোভাবেই অর্ডার কনফার্মেশন বা ট্যাগ জেনারেট করা যাবে না
                     $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও। সাবধান: ফোন নম্বর না পাওয়া পর্যন্ত [ORDER_DATA] জেনারেট করবে না।";
                 }
             }
             
-            // ----------------------------------------
-            // STEP: CONFIRM ORDER
-            // ----------------------------------------
             elseif ($step === 'confirm_order') {
                 if ($this->isPositiveConfirmation($userMessage)) {
                     $product = Product::find($currentProductId);
                     $phone = $customerInfo['phone'] ?? '';
-                    $address = $customerInfo['address'] ?? null; // Added from second version
+                    $address = $customerInfo['address'] ?? null;
                     $variant = $customerInfo['variant'] ?? [];
                     $savedNote = $customerInfo['note'] ?? '';
                     
@@ -212,13 +178,10 @@ class ChatbotService
                         $savedNote = $savedNote ? "$savedNote. $deliveryNote" : $deliveryNote;
                     }
                     
-                    // ✅ FINAL CHECK: ফোন নম্বর এবং ঠিকানা আছে কিনা (from second version)
                     if (empty($phone) || empty($address)) {
-                        // যদি কোনো কারণে ফোন নম্বর বা ঠিকানা হারিয়ে যায়
                         $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
                         $systemInstruction = "অর্ডার কনফার্ম করতে ফোন এবং ঠিকানা দুটোই প্রয়োজন।";
                     } else {
-                        // ✅ HARD ORDER_DATA CONTRACT (from second version)
                         $systemInstruction = "
                         কাস্টমার অর্ডার কনফার্ম করেছে।
                         শুধু নিচের exact schema ব্যবহার করে [ORDER_DATA] দাও:
@@ -236,7 +199,7 @@ class ChatbotService
                             'id' => $product->id,
                             'name' => $product->name,
                             'phone' => $phone,
-                            'address' => $address, // Added address
+                            'address' => $address,
                             'variant' => $variant,
                             'note' => $savedNote
                         ]);
@@ -246,13 +209,8 @@ class ChatbotService
                 }
             }
             
-            elseif ($step === 'completed') {
-                return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
-            }
+            // ✅ REMOVED BUGGY 'completed' STEP BLOCK (was causing context leakage)
             
-            // ========================================
-            // AI CONTEXT & PROMPT GENERATION
-            // ========================================
             $orderContext = $this->buildOrderContext($clientId, $senderId);
             $productContext = $productContext ?: "";
             $finalPrompt = $this->generateSystemPrompt(
@@ -272,16 +230,13 @@ class ChatbotService
             }
             $messages[] = ['role' => 'user', 'content' => $userMessage];
             
-            // ========================================
-            // IMAGE HANDLING (from first version)
-            // ========================================
             if ($imageUrl) {
                 $base64Image = null;
                 try {
                     $imageResponse = Http::timeout(10)->get($imageUrl);
                     if ($imageResponse->successful()) {
                         $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
-                        $base64Image = "data:{$contentType};base64," . base64_encode($imageResponse->body());
+                        $base64Image = "{$contentType};base64," . base64_encode($imageResponse->body());
                     }
                 } catch (\Exception $e) {
                     Log::error("Image fetch error: " . $e->getMessage());
@@ -305,7 +260,6 @@ class ChatbotService
             
             $aiResponse = $this->callLlmChain($messages, $imageUrl);
             
-            // Persist history
             if ($aiResponse) {
                 $history[] = [
                     'user' => $userMessage,
@@ -330,29 +284,17 @@ class ChatbotService
         }
     }
     
-    // =====================================
-    // HELPER METHODS (from first version - untouched)
-    // =====================================
-    
-    /**
-    * [NEW] Variants Decoder (Handles JSON, String, N/A)
-    */
     private function decodeVariants($data) {
         if (empty($data)) return [];
-        // If it's already an array
         if (is_array($data)) {
-            // Filter out 'N/A' or empty strings
             return array_filter($data, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
         }
-        // Try decoding JSON
         $decoded = json_decode($data, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return array_filter($decoded, fn($item) => strtolower($item) !== 'n/a' && !empty($item));
         }
-        // Treat as simple string (e.g., "Red" or "Red, Blue")
         if (is_string($data)) {
             if (strtolower($data) === 'n/a') return [];
-            // If comma separated
             if (str_contains($data, ',')) {
                 return array_map('trim', explode(',', $data));
             }
@@ -361,12 +303,8 @@ class ChatbotService
         return [];
     }
     
-    /**
-    * [NEW] সাম্প্রতিক অর্ডারের নোট আপডেট করা
-    */
     private function updateRecentOrderNote($clientId, $senderId, $note)
     {
-        // গত ১৫ মিনিটের মধ্যে করা অর্ডার চেক
         $recentOrder = Order::where('client_id', $clientId)
             ->where('sender_id', $senderId)
             ->where('created_at', '>=', now()->subMinutes(15))
@@ -377,7 +315,6 @@ class ChatbotService
             $existingNote = $recentOrder->admin_note ?? $recentOrder->notes ?? '';
             $newNote = $existingNote ? "$existingNote | $note" : $note;
             
-            // ডাটাবেস ভেদে কলামের নাম ভিন্ন হতে পারে, তাই সেফ চেক
             if (\Schema::hasColumn('orders', 'admin_note')) {
                 $recentOrder->update(['admin_note' => $newNote]);
             } elseif (\Schema::hasColumn('orders', 'notes')) {
@@ -399,6 +336,7 @@ class ChatbotService
 1. **Require Phone:** NEVER generate [ORDER_DATA] if you do not have the customer's phone number.
 2. **Real Options:** Only offer variants listed in [Product Info]. If empty, say "No options".
 3. **Carousel:** Always show [CAROUSEL: ID] before asking for confirmation.
+4. **LANGUAGE POLICY:** সবসময় বাংলায় উত্তর দিবে। প্রোডাক্টের নাম, ব্র্যান্ড, কোড এবং টেকনিক্যাল টার্ম ইংরেজিতে রাখবে। কাস্টমার যদি "bangla bolo" বলে, তাহলে সম্পূর্ণ বাংলায় কথা বলবে।
 [DATA CONTEXT]:
 [Product Info]: {$prodCtx}
 [Customer History]: {$ordCtx}
@@ -409,7 +347,6 @@ class ChatbotService
 - [CAROUSEL: Product_ID]
 - [ORDER_DATA: {"product_id": 123, "name": "Prod Name", "phone": "017...", "address": "...", "variant": "...", "note": "..."}]
 - [TRACK_ORDER: "017..."]
-সবসময় বাংলা এবং ইংরেজি শব্দ মিশিয়ে প্রফেশনাল কথা বলবে।
 EOT;
     }
     
@@ -509,9 +446,6 @@ EOT;
         return null;
     }
     
-    /**
-    * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ
-    */
     private function getInventoryData($clientId, $userMessage, $history)
     {
         $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
@@ -615,9 +549,6 @@ EOT;
         return $context;
     }
     
-    /**
-    * [FIXED & OPTIMIZED] Voice to Text
-    */
     public function convertVoiceToText($audioUrl)
     {
         $tempPath = null;
@@ -678,9 +609,6 @@ EOT;
         return null;
     }
     
-    /**
-    * [OPTIMIZED] Systematic Product Search
-    */
     private function findProductSystematically($clientId, $message) {
         $keywords = array_filter(explode(' ', $message), function($word) {
             return is_string($word) && mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
@@ -704,9 +632,6 @@ EOT;
             ->first();
     }
     
-    /**
-    * [FIXED] Array Crash Fix in strtolower
-    */
     private function hasVariantInMessage($msg, $product) {
         $msgLower = strtolower($msg);
         
@@ -732,9 +657,6 @@ EOT;
         return false;
     }
     
-    /**
-    * [NEW] Check if product has variants safely
-    */
     private function productHasVariants($product) {
         $check = function($data) {
             if (empty($data)) return false;
@@ -751,9 +673,6 @@ EOT;
         return $check($product->colors) || $check($product->sizes);
     }
     
-    /**
-    * [NEW] Check Positive Confirmation
-    */
     private function isPositiveConfirmation($msg) {
         $positiveWords = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'koren', 'order koren', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'done'];
         $msgLower = strtolower($msg);
@@ -763,9 +682,6 @@ EOT;
         return false;
     }
     
-    /**
-    * [CORE] LLM Call (from first version)
-    */
     private function callLlmChain($messages, $imageUrl = null)
     {
         try {
@@ -775,7 +691,6 @@ EOT;
                 return null;
             }
             
-            // Note: Image handling is done in getAiResponse method before calling this function
             $response = Http::withToken($apiKey)
                 ->timeout(30)
                 ->retry(2, 500)
