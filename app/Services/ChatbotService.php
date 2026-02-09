@@ -39,8 +39,17 @@ class ChatbotService
             $currentProductId = $customerInfo['product_id'] ?? null;
             $history = $customerInfo['history'] ?? [];
 
-            // ✅ Session reset logic
+            // ✅ Session reset logic (অর্ডার কমপ্লিট হলে রিসেট, কিন্তু নোট হ্যান্ডলিং এর সুযোগ রাখা)
             if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
+                // রিসেট করার আগে চেক করি এটা কোনো নোট কি না
+                if ($this->detectDeliveryNote($userMessage)) {
+                    $note = $this->extractDeliveryNote($userMessage);
+                    // যদি গত ১০ মিনিটে কোনো অর্ডার হয়ে থাকে, সেখানে নোট আপডেট করো
+                    if ($this->updateRecentOrderNote($clientId, $senderId, $note)) {
+                        return "ধন্যবাদ! আপনার নোটটি ('$note') অর্ডারে যুক্ত করা হয়েছে।";
+                    }
+                }
+                
                 $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
                 $step = 'start';
                 $currentProductId = null;
@@ -52,7 +61,7 @@ class ChatbotService
                 return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
             }
 
-            // নোট ডিটেকশন (যেকোনো স্টেপে হতে পারে, তবে মূলত ইনফো কালেক্টের সময় লাগে)
+            // নোট ডিটেকশন (যেকোনো স্টেপে)
             $deliveryNote = null;
             if ($this->detectDeliveryNote($userMessage)) {
                 $deliveryNote = $this->extractDeliveryNote($userMessage);
@@ -92,7 +101,7 @@ class ChatbotService
                         $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
                         $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
                     } else {
-                        // ✅ UPGRADE: Check if variants actually exist before asking
+                        // Check variants
                         $hasVariants = $this->productHasVariants($product);
 
                         if ($hasVariants) {
@@ -100,7 +109,7 @@ class ChatbotService
                             $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
                         } else {
                             $nextStep = 'collect_info';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কালার/সাইজ নেই। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও।";
                         }
 
                         $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
@@ -115,10 +124,9 @@ class ChatbotService
             // ----------------------------------------
             elseif ($step === 'select_variant') {
                 $product = Product::find($currentProductId);
-                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও।";
+                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে।";
                 
                 if ($product) {
-                    // ✅ FIX: Safe variant check (No crash)
                     if ($this->hasVariantInMessage($userMessage, $product)) {
                         $variant = $this->extractVariant($userMessage, $product);
                         $customerInfo['variant'] = $variant;
@@ -144,8 +152,8 @@ class ChatbotService
                     }
                     $customerInfo['phone'] = $phone;
                     
-                    // ✅ UPGRADE: সরাসরি অর্ডার কনফার্ম না করে 'confirm_order' স্টেপে পাঠানো
-                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'confirm_order'])]); // New Step
+                    // ✅ UPGRADE: সরাসরি Confirm Order এ পাঠাও
+                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'confirm_order'])]);
 
                     if ($product) {
                         $productContext = json_encode([
@@ -156,22 +164,21 @@ class ChatbotService
                         ]);
                     }
                     
-                    // এখানে নির্দেশ দেওয়া হচ্ছে সামারি এবং ছবি দেখানোর জন্য
                     $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। 
                     এখন অর্ডারটি ফাইনাল করার আগে:
-                    ১. অর্ডারের সামারি দাও (প্রোডাক্ট, ভেরিয়েশন, দাম)।
-                    ২. [CAROUSEL: {$product->id}] ট্যাগ ব্যবহার করে ছবি দেখাও।
-                    ৩. কাস্টমারকে বলো সব ঠিক থাকলে 'Confirm' করতে বা 'হ্যাঁ' বলতে।";
+                    ১. অর্ডারের সামারি দাও।
+                    ২. [CAROUSEL: {$product->id}] ট্যাগ ব্যবহার করে ছবি দেখাও। (Markdown Image ব্যবহার করবে না)
+                    ৩. কাস্টমারকে বলো সব ঠিক থাকলে 'Confirm' করতে।";
 
                 } else {
                     $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
                 }
             }
             // ----------------------------------------
-            // STEP: CONFIRM ORDER (ফাইনাল চেক) - NEW
+            // STEP: CONFIRM ORDER
             // ----------------------------------------
             elseif ($step === 'confirm_order') {
-                // কাস্টমার কি পজিটিভ কিছু বলল? (হ্যাঁ, ঠিক আছে, কনফার্ম)
+                // কাস্টমার কি পজিটিভ কিছু বলল?
                 if ($this->isPositiveConfirmation($userMessage)) {
                     $product = Product::find($currentProductId);
                     $phone = $customerInfo['phone'] ?? '';
@@ -193,8 +200,7 @@ class ChatbotService
                         'note' => $savedNote
                     ]);
                 } else {
-                    // কনফার্ম না করলে
-                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায় অথবা পরিবর্তন করতে চায়। তার প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো।";
+                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায়। প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো। [CAROUSEL: {$currentProductId}] দেখাও প্রয়োজনে।";
                 }
             }
             elseif ($step === 'completed') {
@@ -207,7 +213,6 @@ class ChatbotService
             $orderContext = $this->buildOrderContext($clientId, $senderId);
             $productContext = $productContext ?: "";
             
-            // Generate clean prompt using helper method
             $finalPrompt = $this->generateSystemPrompt(
                 $systemInstruction, 
                 $productContext, 
@@ -217,23 +222,19 @@ class ChatbotService
                 $productsJson
             );
 
-            // Build message history
             $messages = [['role' => 'system', 'content' => $finalPrompt]];
 
-            // Context continuity (Last 4 exchanges)
             $recentHistory = array_slice($history, -4);
             foreach ($recentHistory as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
 
-            // Add current query
             $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-            // Execute AI call
             $aiResponse = $this->callLlmChain($messages, $imageUrl);
 
-            // Persist conversation history
+            // Persist history
             if ($aiResponse) {
                 $history[] = [
                     'user' => $userMessage,
@@ -241,7 +242,6 @@ class ChatbotService
                     'time' => time()
                 ];
                 
-                // Keep history size manageable
                 if (count($history) > 20) {
                     $history = array_slice($history, -20);
                 }
@@ -267,15 +267,41 @@ class ChatbotService
     // =====================================
 
     /**
-     * [OPTIMIZED] প্রম্পট জেনারেশন লজিক
+     * [NEW] সাম্প্রতিক অর্ডারের নোট আপডেট করা
      */
+    private function updateRecentOrderNote($clientId, $senderId, $note)
+    {
+        // গত ১৫ মিনিটের মধ্যে করা অর্ডার চেক
+        $recentOrder = Order::where('client_id', $clientId)
+            ->where('sender_id', $senderId)
+            ->where('created_at', '>=', now()->subMinutes(15))
+            ->latest()
+            ->first();
+
+        if ($recentOrder) {
+            $existingNote = $recentOrder->admin_note ?? $recentOrder->notes ?? '';
+            $newNote = $existingNote ? "$existingNote | $note" : $note;
+            
+            // ডাটাবেস ভেদে কলামের নাম ভিন্ন হতে পারে, তাই সেফ চেক
+            if (\Schema::hasColumn('orders', 'admin_note')) {
+                $recentOrder->update(['admin_note' => $newNote]);
+            } elseif (\Schema::hasColumn('orders', 'notes')) {
+                $recentOrder->update(['notes' => $newNote]);
+            }
+            
+            Log::info("Updated Note for Order #{$recentOrder->id}: $note");
+            return true;
+        }
+        return false;
+    }
+
     private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time, $prodJson)
     {
         return <<<EOT
 {$instruction}
 
-**পরিচয় ও পারসোনা:**
-তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"।
+**পরিচয়:**
+তুমি একজন স্মার্ট এবং বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"।
 
 [DATA CONTEXT]:
 [Product Info]: {$prodCtx}
@@ -283,16 +309,11 @@ class ChatbotService
 [Product Inventory]: {$invData}
 - Current Time: {$time}
 - Delivery: Standard Delivery (2-4 days)
-- Payment: COD, bKash, Nagad
-- Policy: 7 days return, No warranty
-- Offers: No active offers
 
-[আচরণের মূল নিয়মাবলী]:
-১. **ছবি ও সামারি:** অর্ডার কনফার্ম করার আগে (ফাইনাল স্টেপে) **অবশ্যই** [CAROUSEL: ID] ট্যাগ দিয়ে প্রোডাক্টের ছবি দেখাবে এবং অর্ডারের সামারি দিবে। ছবি ছাড়া কনফার্ম করবে না।
-২. **রোবটিক কথা এড়িয়ে চলো:** টেকনিক্যাল কথা বলবে না।
-৩. **নম্বর পেলে:** ধন্যবাদ জানাবে।
-৪. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও।
-৫. **স্টক:** স্টক না থাকলে অন্য ভালো প্রোডাক্ট সাজেস্ট করো।
+[আচরণের নিয়মাবলী]:
+১. **ছবি ও সামারি:** অর্ডার কনফার্ম করার আগে (ফাইনাল স্টেপে) **অবশ্যই** [CAROUSEL: ID] ট্যাগ ব্যবহার করবে। Markdown Image ( ![..] ) ব্যবহার করবে না।
+২. **নম্বর পেলে:** ধন্যবাদ জানাবে।
+৩. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও।
 
 [System Tags Usage]:
 - ছবি দেখাতে: [CAROUSEL: Product_ID]
@@ -511,7 +532,7 @@ EOT;
     }
 
     /**
-     * [FIXED & OPTIMIZED] Voice to Text with Cleanup
+     * [FIXED & OPTIMIZED] Voice to Text
      */
     public function convertVoiceToText($audioUrl)
     {
@@ -553,7 +574,6 @@ EOT;
             Log::error("Voice Conversion Failed: " . $e->getMessage());
             return null;
         } finally {
-            // ✅ Cleanup temp file
             if ($tempPath && file_exists($tempPath)) {
                 @unlink($tempPath);
             }
@@ -564,14 +584,12 @@ EOT;
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         $msg = str_replace($bn, $en, $msg);
-        $msg = preg_replace('/[^0-9]/', '', $msg); // Keep only digits
+        $msg = preg_replace('/[^0-9]/', '', $msg);
 
-        // Handle +880 or 880 prefix
         if (str_starts_with($msg, '8801')) {
             $msg = substr($msg, 2);
         }
         
-        // Strict 11 digit BD format check
         if (preg_match('/^01[3-9]\d{8}$/', $msg)) {
             return $msg;
         }
@@ -579,18 +597,15 @@ EOT;
     }
 
     /**
-     * [OPTIMIZED] Systematic Product Search (Improved Logic)
+     * [OPTIMIZED] Systematic Product Search
      */
     private function findProductSystematically($clientId, $message) {
-        // Safe string explosion
         $keywords = array_filter(explode(' ', $message), function($word) {
-            // Ensure word is a string before trim
             return is_string($word) && mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
         });
 
         if (empty($keywords)) return null;
 
-        // Try to match SKU first (Exact Match Priority)
         foreach($keywords as $word) {
             $product = Product::where('client_id', $clientId)
                 ->where('sku', 'LIKE', "%".strtoupper(trim($word))."%")
@@ -598,7 +613,6 @@ EOT;
             if($product) return $product;
         }
 
-        // Single Query Name Search (Performance Fix)
         return Product::where('client_id', $clientId)
             ->where(function($q) use ($keywords) {
                 foreach($keywords as $word) {
@@ -614,18 +628,13 @@ EOT;
     private function hasVariantInMessage($msg, $product) {
         $msgLower = strtolower($msg);
         
-        // Safe check function to handle Array/String/JSON
         $check = function($data) use ($msgLower) {
-            // Decode if JSON string, otherwise keep as is
             $items = is_string($data) ? json_decode($data, true) : $data;
-            
-            // If decoding failed (not JSON) or original was simple string, wrap in array
             if (!is_array($items)) {
                 $items = is_string($data) ? [$data] : [];
             }
 
             foreach ($items as $item) {
-                // IMPORTANT: Ensure $item is string before string operations
                 if (is_string($item) && stripos($msgLower, strtolower(trim($item))) !== false) {
                     return true;
                 }
@@ -648,23 +657,15 @@ EOT;
     private function productHasVariants($product) {
         $check = function($data) {
             if (empty($data)) return false;
-            
-            // Decode logic
             $items = is_string($data) ? json_decode($data, true) : $data;
-            
-            // Not a valid JSON array, maybe a simple string like "Red"
             if (is_string($data) && json_last_error() !== JSON_ERROR_NONE) {
                  return strlen($data) > 1 && strtolower($data) !== 'n/a'; 
             }
-            
-            // If array check content
             if (is_array($items) && count($items) > 0) {
-                // If it's just ['N/A'] then false
                 return !(count($items) === 1 && strtolower($items[0] ?? '') === 'n/a');
             }
             return false;
         };
-
         return $check($product->colors) || $check($product->sizes);
     }
     
@@ -672,7 +673,7 @@ EOT;
      * [NEW] Check Positive Confirmation
      */
     private function isPositiveConfirmation($msg) {
-        $positiveWords = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'koren', 'order koren', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন'];
+        $positiveWords = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'koren', 'order koren', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'done'];
         $msgLower = strtolower($msg);
         foreach ($positiveWords as $w) {
             if (str_contains($msgLower, $w)) return true;
@@ -681,7 +682,7 @@ EOT;
     }
 
     /**
-     * [CORE] LLM Call (Robust Error Handling)
+     * [CORE] LLM Call
      */
     private function callLlmChain($messages, $imageUrl = null)
     {
@@ -692,7 +693,6 @@ EOT;
                 return null;
             }
 
-            // Image Processing
             if ($imageUrl) {
                 $base64Image = null;
                 try {
