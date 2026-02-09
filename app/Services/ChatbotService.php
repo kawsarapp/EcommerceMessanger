@@ -530,7 +530,7 @@ EOT;
                 ->retry(2, 500)
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => 'gpt-4o-mini',
-                    'response_format' => ['type' => 'json_object'],
+                    //'response_format' => ['type' => 'json_object'],
                     'messages' => $messages,
                     'temperature' => 0.3,
                     'max_tokens' => 500,
