@@ -52,8 +52,9 @@ class ChatbotService
                 return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
             }
 
+            // নোট ডিটেকশন (যেকোনো স্টেপে হতে পারে, তবে মূলত ইনফো কালেক্টের সময় লাগে)
             $deliveryNote = null;
-            if ($step === 'collect_info' && $this->detectDeliveryNote($userMessage)) {
+            if ($this->detectDeliveryNote($userMessage)) {
                 $deliveryNote = $this->extractDeliveryNote($userMessage);
             }
 
@@ -69,6 +70,9 @@ class ChatbotService
             $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
             $productsJson = $inventoryData;
 
+            // ----------------------------------------
+            // STEP: START (পণ্য খোঁজা)
+            // ----------------------------------------
             if ($step === 'start' || !$currentProductId) {
                 // Tracking Intent Check
                 if ($this->isTrackingIntent($userMessage)) {
@@ -88,15 +92,15 @@ class ChatbotService
                         $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
                         $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
                     } else {
-                        $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
-                        $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
+                        // ✅ UPGRADE: Check if variants actually exist before asking
+                        $hasVariants = $this->productHasVariants($product);
 
-                        if ($hasColor || $hasSize) {
+                        if ($hasVariants) {
                             $nextStep = 'select_variant';
                             $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
                         } else {
                             $nextStep = 'collect_info';
-                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। এই প্রোডাক্টের কালার/সাইজ নেই। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
                         }
 
                         $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
@@ -106,37 +110,91 @@ class ChatbotService
                     $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
                 }
             } 
+            // ----------------------------------------
+            // STEP: SELECT VARIANT
+            // ----------------------------------------
             elseif ($step === 'select_variant') {
                 $product = Product::find($currentProductId);
-                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
+                $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও।";
                 
-                if ($product && $this->hasVariantInMessage($userMessage, $product)) {
-                    $variant = $this->extractVariant($userMessage, $product);
-                    $customerInfo['variant'] = $variant;
-                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
-                    $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
+                if ($product) {
+                    // ✅ FIX: Safe variant check (No crash)
+                    if ($this->hasVariantInMessage($userMessage, $product)) {
+                        $variant = $this->extractVariant($userMessage, $product);
+                        $customerInfo['variant'] = $variant;
+                        $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])]);
+                        $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
+                    } else {
+                        $systemInstruction = "কাস্টমার এখনো কালার/সাইজ বলেনি। সুন্দর করে আবার কালার বা সাইজ জিজ্ঞেস করো।";
+                    }
                 }
             }
+            // ----------------------------------------
+            // STEP: COLLECT INFO (নাম, ফোন, ঠিকানা)
+            // ----------------------------------------
             elseif ($step === 'collect_info') {
                 $variantInfo = $customerInfo['variant'] ?? [];
                 $product = Product::find($currentProductId);
                 $phone = $this->extractPhoneNumber($userMessage);
                 
                 if ($phone) {
+                    // নোট সেভ করা
+                    if ($deliveryNote) {
+                        $customerInfo['note'] = $deliveryNote;
+                    }
+                    $customerInfo['phone'] = $phone;
+                    
+                    // ✅ UPGRADE: সরাসরি অর্ডার কনফার্ম না করে 'confirm_order' স্টেপে পাঠানো
+                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => 'confirm_order'])]); // New Step
+
                     if ($product) {
                         $productContext = json_encode([
                             'id' => $product->id,
                             'name' => $product->name,
-                            'price' => $product->sale_price
+                            'price' => $product->sale_price,
+                            'variant' => $variantInfo
                         ]);
                     }
-                    $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
+                    
+                    // এখানে নির্দেশ দেওয়া হচ্ছে সামারি এবং ছবি দেখানোর জন্য
+                    $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। 
+                    এখন অর্ডারটি ফাইনাল করার আগে:
+                    ১. অর্ডারের সামারি দাও (প্রোডাক্ট, ভেরিয়েশন, দাম)।
+                    ২. [CAROUSEL: {$product->id}] ট্যাগ ব্যবহার করে ছবি দেখাও।
+                    ৩. কাস্টমারকে বলো সব ঠিক থাকলে 'Confirm' করতে বা 'হ্যাঁ' বলতে।";
 
-                    $systemInstruction = "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। {$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো। 
-                    ভেরিয়েশন তথ্য: " . json_encode($variantInfo) . "
-                    এখন তুমি অর্ডারটি কনফার্ম করো এবং অবশ্যই [ORDER_DATA] এর ভিতরে variant ফিল্ড হিসেবে এই তথ্য পাঠাবে। product_id এর জায়গায় আসল নাম্বার বসাবে।";
                 } else {
                     $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
+                }
+            }
+            // ----------------------------------------
+            // STEP: CONFIRM ORDER (ফাইনাল চেক) - NEW
+            // ----------------------------------------
+            elseif ($step === 'confirm_order') {
+                // কাস্টমার কি পজিটিভ কিছু বলল? (হ্যাঁ, ঠিক আছে, কনফার্ম)
+                if ($this->isPositiveConfirmation($userMessage)) {
+                    $product = Product::find($currentProductId);
+                    $phone = $customerInfo['phone'] ?? '';
+                    $variant = $customerInfo['variant'] ?? [];
+                    $savedNote = $customerInfo['note'] ?? '';
+                    
+                    // নতুন নোট থাকলে অ্যাড করো
+                    if ($deliveryNote) {
+                        $savedNote = $savedNote ? "$savedNote. $deliveryNote" : $deliveryNote;
+                    }
+
+                    $systemInstruction = "কাস্টমার অর্ডার কনফার্ম করেছে। ধন্যবাদ জানাও এবং [ORDER_DATA] জেনারেট করো।";
+                    
+                    $productContext = json_encode([
+                        'id' => $product->id, 
+                        'name' => $product->name,
+                        'phone' => $phone,
+                        'variant' => $variant,
+                        'note' => $savedNote
+                    ]);
+                } else {
+                    // কনফার্ম না করলে
+                    $systemInstruction = "কাস্টমার এখনো কনফার্ম করেনি। সে হয়তো কিছু জানতে চায় অথবা পরিবর্তন করতে চায়। তার প্রশ্নের উত্তর দাও এবং শেষে আবার কনফার্ম করতে বলো।";
                 }
             }
             elseif ($step === 'completed') {
@@ -209,7 +267,7 @@ class ChatbotService
     // =====================================
 
     /**
-     * [OPTIMIZED] প্রম্পট জেনারেশন লজিক আলাদা ফাংশনে
+     * [OPTIMIZED] প্রম্পট জেনারেশন লজিক
      */
     private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time, $prodJson)
     {
@@ -217,7 +275,7 @@ class ChatbotService
 {$instruction}
 
 **পরিচয় ও পারসোনা:**
-তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"। তোমার লক্ষ্য হলো কাস্টমারকে চমৎকার সার্ভিস দিয়ে তাদের পছন্দের প্রোডাক্টটি কিনতে সাহায্য করা।
+তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"।
 
 [DATA CONTEXT]:
 [Product Info]: {$prodCtx}
@@ -228,26 +286,19 @@ class ChatbotService
 - Payment: COD, bKash, Nagad
 - Policy: 7 days return, No warranty
 - Offers: No active offers
-- Products Inventory: {$prodJson}
 
-[আচরণের মূল নিয়মাবলী - স্মার্ট সেলসম্যান গাইড]:
-১. **রোবটিক কথা এড়িয়ে চলো:** টেকনিক্যাল কথা বলবে না।
-২. **নম্বর পেলে প্রতিক্রিয়া:** কাস্টমার নম্বর দিলে ধন্যবাদ জানাবে।
-৩. **প্রোডাক্টের প্রশংসা:** কাস্টমারকে কিনতে উৎসাহ দাও।
+[আচরণের মূল নিয়মাবলী]:
+১. **ছবি ও সামারি:** অর্ডার কনফার্ম করার আগে (ফাইনাল স্টেপে) **অবশ্যই** [CAROUSEL: ID] ট্যাগ দিয়ে প্রোডাক্টের ছবি দেখাবে এবং অর্ডারের সামারি দিবে। ছবি ছাড়া কনফার্ম করবে না।
+২. **রোবটিক কথা এড়িয়ে চলো:** টেকনিক্যাল কথা বলবে না।
+৩. **নম্বর পেলে:** ধন্যবাদ জানাবে।
 ৪. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও।
 ৫. **স্টক:** স্টক না থাকলে অন্য ভালো প্রোডাক্ট সাজেস্ট করো।
 
-[১. অর্ডার কনফার্মেশন রুলস]:
-- সব তথ্য পাওয়ার পর কনফার্ম করবে।
-- শেষে ট্যাগ: [ORDER_DATA: {"product_id": 101, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "..."}]
+[System Tags Usage]:
+- ছবি দেখাতে: [CAROUSEL: Product_ID]
+- অর্ডার ফাইনাল করতে: [ORDER_DATA: {"product_id": 101, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "...", "variant": "..."}]
+- অর্ডার ট্র্যাক করতে: [TRACK_ORDER: "017XXXXXXXX"]
 
-[২. প্রোডাক্ট ট্র্যাকিং রুলস]:
-- নম্বর পেলে ট্যাগ: [TRACK_ORDER: "017XXXXXXXX"]
-
-[৩. প্রোডাক্ট দেখানো]:
-- ট্যাগ: [CAROUSEL: ID1, ID2]
-
-[SYSTEM TAGS]: [CAROUSEL: ...], [ORDER_DATA: ...], [TRACK_ORDER: "..."]
 সবসময় বাংলা এবং ইংরেজি শব্দ মিশিয়ে প্রফেশনাল কথা বলবে।
 EOT;
     }
@@ -349,7 +400,7 @@ EOT;
     }
 
     /**
-     * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ (Loop এর ভেতর Query বন্ধ করা হয়েছে)
+     * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ
      */
     private function getInventoryData($clientId, $userMessage, $history)
     {
@@ -357,7 +408,6 @@ EOT;
         
         $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2);
         
-        // Contextual keyword merge
         $genericWords = ['price', 'details', 'dam', 'koto', 'eta', 'atar', 'size', 'color', 'picture', 'img', 'kemon', 'product', 'available', 'stock', 'kinbo', 'order', 'chai', 'lagbe', 'nibo', 'টাকা', 'দাম', 'কেমন', 'ছবি'];
         $isFollowUp = Str::contains(strtolower($userMessage), $genericWords) || count($keywords) < 2;
 
@@ -367,7 +417,6 @@ EOT;
             $keywords = array_unique(array_merge($keywords, $lastKeywords));
         }
 
-        // Optimized Query Building
         if (!empty($keywords)) {
             $query->where(function($q) use ($keywords) {
                 foreach ($keywords as $word) {
@@ -533,8 +582,10 @@ EOT;
      * [OPTIMIZED] Systematic Product Search (Improved Logic)
      */
     private function findProductSystematically($clientId, $message) {
+        // Safe string explosion
         $keywords = array_filter(explode(' ', $message), function($word) {
-            return mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
+            // Ensure word is a string before trim
+            return is_string($word) && mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
         });
 
         if (empty($keywords)) return null;
@@ -557,14 +608,26 @@ EOT;
             ->first();
     }
 
+    /**
+     * [FIXED] Array Crash Fix in strtolower
+     */
     private function hasVariantInMessage($msg, $product) {
         $msgLower = strtolower($msg);
         
+        // Safe check function to handle Array/String/JSON
         $check = function($data) use ($msgLower) {
+            // Decode if JSON string, otherwise keep as is
             $items = is_string($data) ? json_decode($data, true) : $data;
-            if (is_array($items)) {
-                foreach ($items as $item) {
-                    if (stripos($msgLower, strtolower($item)) !== false) return true;
+            
+            // If decoding failed (not JSON) or original was simple string, wrap in array
+            if (!is_array($items)) {
+                $items = is_string($data) ? [$data] : [];
+            }
+
+            foreach ($items as $item) {
+                // IMPORTANT: Ensure $item is string before string operations
+                if (is_string($item) && stripos($msgLower, strtolower(trim($item))) !== false) {
+                    return true;
                 }
             }
             return false;
@@ -575,6 +638,44 @@ EOT;
         $variantKeywords = ['red', 'blue', 'black', 'white', 'green', 'yellow', 'xl', 'xxl', 'l', 'm', 's', 'লাল', 'কালো', 'সাদা', 'সবুজ', 'হলুদ', 'এক্সএল', 'এল', 'এম', 'এস', 'large', 'medium', 'small'];
         foreach ($variantKeywords as $kw) {
             if (stripos($msgLower, $kw) !== false) return true;
+        }
+        return false;
+    }
+    
+    /**
+     * [NEW] Check if product has variants safely
+     */
+    private function productHasVariants($product) {
+        $check = function($data) {
+            if (empty($data)) return false;
+            
+            // Decode logic
+            $items = is_string($data) ? json_decode($data, true) : $data;
+            
+            // Not a valid JSON array, maybe a simple string like "Red"
+            if (is_string($data) && json_last_error() !== JSON_ERROR_NONE) {
+                 return strlen($data) > 1 && strtolower($data) !== 'n/a'; 
+            }
+            
+            // If array check content
+            if (is_array($items) && count($items) > 0) {
+                // If it's just ['N/A'] then false
+                return !(count($items) === 1 && strtolower($items[0] ?? '') === 'n/a');
+            }
+            return false;
+        };
+
+        return $check($product->colors) || $check($product->sizes);
+    }
+    
+    /**
+     * [NEW] Check Positive Confirmation
+     */
+    private function isPositiveConfirmation($msg) {
+        $positiveWords = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'koren', 'order koren', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন'];
+        $msgLower = strtolower($msg);
+        foreach ($positiveWords as $w) {
+            if (str_contains($msgLower, $w)) return true;
         }
         return false;
     }
