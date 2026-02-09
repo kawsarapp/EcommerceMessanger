@@ -17,272 +17,277 @@ class ChatbotService
      * এটি এখন স্টেপ-বাই-স্টেপ অর্ডার প্রসেসিং সিস্টেম ব্যবহার করবে
      */
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
-{
-    try {
-        // ✅ FIX: Safe initialization to prevent null interpolation in prompt
-        $inventoryData = "[]";
-        $productsJson = "[]";
-        $currentTime = now()->format('l, h:i A');
-        $delivery = 'Standard Delivery (2-4 days)';
-        $paymentMethods = 'COD, bKash, Nagad';
-        $shopPolicies = '7 days return, No warranty';
-        $activeOffers = 'No active offers';
-        $productContext = "";
-        $systemInstruction = "";
+    {
+        try {
+            // ✅ Initialization (Variables defined safely)
+            $inventoryData = "[]";
+            $productsJson = "[]";
+            $currentTime = now()->format('l, h:i A');
+            $delivery = 'Standard Delivery (2-4 days)';
+            $paymentMethods = 'COD, bKash, Nagad';
+            $shopPolicies = '7 days return, No warranty';
+            $activeOffers = 'No active offers';
+            $productContext = "";
+            $systemInstruction = "";
+            $selectedProductInfo = "NONE"; // [NEW] নির্দিষ্ট প্রোডাক্ট ফিক্স করার জন্য
 
-        // Load session with null-safe history handling
-        $session = OrderSession::firstOrCreate(
-            ['sender_id' => $senderId],
-            ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
-        );
+            // Load session with null-safe history handling
+            $session = OrderSession::firstOrCreate(
+                ['sender_id' => $senderId],
+                ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]
+            );
 
-        if ($session->is_human_agent_active) return null;
+            if ($session->is_human_agent_active) return null;
 
-        // ✅ FIX 1: Null-safe customer info extraction (critical for history persistence)
-        $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
-        $step = $customerInfo['step'] ?? 'start';
-        $currentProductId = $customerInfo['product_id'] ?? null;
-        $history = $customerInfo['history'] ?? []; // Preserves chat memory across sessions
+            // ✅ Null-safe customer info extraction
+            $customerInfo = $session->customer_info ?? ['step' => 'start', 'product_id' => null, 'history' => []];
+            $step = $customerInfo['step'] ?? 'start';
+            $currentProductId = $customerInfo['product_id'] ?? null;
+            $history = $customerInfo['history'] ?? [];
 
-        // ✅ Session reset logic: Clear completed sessions for new queries
-        if ($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) {
-            $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
-            $step = 'start';
-            $currentProductId = null;
-            $history = []; // Reset history with session
-        }
+            // ✅ Session reset logic: Clear completed sessions OR New Intents (User change mind)
+            if (($step === 'completed' && !$this->isOrderRelatedMessage($userMessage)) || $this->detectNewIntent($userMessage)) {
+                $session->update(['customer_info' => ['step' => 'start', 'product_id' => null, 'history' => []]]);
+                $step = 'start';
+                $currentProductId = null;
+                $history = [];
+                $customerInfo = ['step' => 'start', 'product_id' => null, 'history' => []];
+            }
 
-        // ✅ Critical early-exit checks (MUST happen before AI processing)
-        if ($this->detectOrderCancellation($userMessage, $senderId)) {
-            return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
-        }
+            // ✅ Critical early-exit checks
+            if ($this->detectOrderCancellation($userMessage, $senderId)) {
+                return "[CANCEL_ORDER: {\"reason\": \"Customer requested cancellation\"}]";
+            }
 
-        $deliveryNote = null;
-        if ($step === 'collect_info' && $this->detectDeliveryNote($userMessage)) {
-            $deliveryNote = $this->extractDeliveryNote($userMessage);
-        }
+            $deliveryNote = null;
+            if ($step === 'collect_info' && $this->detectDeliveryNote($userMessage)) {
+                $deliveryNote = $this->extractDeliveryNote($userMessage);
+            }
 
-        if ($this->detectHateSpeech($userMessage)) {
-            return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
-        }
+            if ($this->detectHateSpeech($userMessage)) {
+                return "দুঃখিত, আমরা শালীন আলোচনা করি। অন্য কোনো সাহায্য প্রয়োজন?";
+            }
 
-        // ========================================
-        // ORDER FLOW LOGIC (Updated with inventory preload + stock safety check)
-        // ========================================
-        
-        // সব সময় ইনভেন্টরি ডেটা লোড করে রাখা ভালো যাতে AI দোকান খালি না মনে করে
-        $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
-        $productsJson = $inventoryData; // AI যাতে ক্যারোসেল দেখাতে পারে
+            // ========================================
+            // ORDER FLOW LOGIC
+            // ========================================
+            
+            // সব সময় ইনভেন্টরি ডেটা লোড করে রাখা
+            $inventoryData = $this->getInventoryData($clientId, $userMessage, $history);
+            $productsJson = $inventoryData;
 
-        if ($step === 'start' || !$currentProductId) {
-            // Phone lookup check (early return if match found)
-            if ($this->isTrackingIntent($userMessage)) {
+            // 1. Start Step or Searching
+            if ($step === 'start' || !$currentProductId) {
+                // Phone lookup check
+                if ($this->isTrackingIntent($userMessage)) {
                     $phoneLookupResult = $this->lookupOrderByPhone($clientId, $userMessage);
-                    if ($phoneLookupResult) {
-                        return $phoneLookupResult;
-                    }
+                    if ($phoneLookupResult) return $phoneLookupResult;
                 }
 
-            // Systematic product search
-            $product = $this->findProductSystematically($clientId, $userMessage);
-            
-            if ($product) {
-                // স্টক চেক করার একটি সেফটি লেয়ার যোগ করা হলো
-                $isOutOfStock = ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0);
+                // Systematic product search
+                $product = $this->findProductSystematically($clientId, $userMessage);
                 
-                if ($isOutOfStock) {
-                    $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
-                    $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
-                } else {
-                    $hasColor = $product->colors && strtolower($product->colors) !== 'n/a';
-                    $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a';
-
-                    if ($hasColor || $hasSize) {
-                        $nextStep = 'select_variant';
-                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
-                    } else {
-                        $nextStep = 'collect_info';
-                        $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
-                    }
-
-                    $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
-                    $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
-                }
-            } else {
-                $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
-            }
-        } 
-        elseif ($step === 'select_variant') {
-            $product = Product::find($currentProductId);
-            $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
-            
-            if ($product && $this->hasVariantInMessage($userMessage, $product)) {
-
-                $variant = $this->extractVariant($userMessage, $product);
-
-                $customerInfo['variant'] = $variant;
-
-                $session->update([
-                    'customer_info' => array_merge($customerInfo, [
-                        'step' => 'collect_info'
-                    ])
-                ]);
-
-                $systemInstruction =
-                    "ভেরিয়েশন কনফার্ম হয়েছে (" .
-                    json_encode($variant) .
-                    ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
-            }
-
-        }
-        elseif ($step === 'collect_info') {
-            $variantInfo = $customerInfo['variant'] ?? [];
-            $product = Product::find($currentProductId);
-            $phone = $this->extractPhoneNumber($userMessage);
-            
-            if ($phone) {
                 if ($product) {
-                    $productContext = json_encode([
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'price' => $product->sale_price
-                    ]);
+                    // স্টক চেক সেফটি লেয়ার
+                    $isOutOfStock = ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0);
+                    
+                    if ($isOutOfStock) {
+                        $systemInstruction = "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কিছু দেখতে বলো। ইনভেন্টরি ডেটা: {$inventoryData}";
+                        $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'stock' => 'Out of Stock']);
+                    } else {
+                        // Check Variants
+                        $hasColor = $product->colors && strtolower($product->colors) !== 'n/a' && strtolower($product->colors) !== '[]';
+                        $hasSize = $product->sizes && strtolower($product->sizes) !== 'n/a' && strtolower($product->sizes) !== '[]';
+
+                        if ($hasColor || $hasSize) {
+                            $nextStep = 'select_variant';
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। কালার/সাইজ জিজ্ঞেস করো। স্টক: Available";
+                        } else {
+                            $nextStep = 'collect_info';
+                            $systemInstruction = "কাস্টমার '{$product->name}' পছন্দ করেছে। সরাসরি নাম, ফোন এবং ঠিকানা চাও। স্টক: Available";
+                        }
+
+                        $session->update(['customer_info' => array_merge($customerInfo, ['step' => $nextStep, 'product_id' => $product->id])]);
+                        
+                        $productContext = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price, 'stock' => 'Available']);
+                        // [NEW] Selected Info Lock (এআই যাতে ভুল না করে)
+                        $selectedProductInfo = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price]);
+                    }
+                } else {
+                    $systemInstruction = "কাস্টমার কিছু কিনতে চাচ্ছে কিন্তু আমরা প্রোডাক্টটি চিনতে পারছি না। বিনীতভাবে প্রোডাক্টের সঠিক নাম বা কোড জানতে চাও। ইনভেন্টরি ডেটা: {$inventoryData}";
                 }
-                $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
+            } 
+            // 2. Variant Selection Step
+            elseif ($step === 'select_variant') {
+                $product = Product::find($currentProductId);
+                
+                if ($product) {
+                    // Lock Info
+                    $selectedProductInfo = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price]);
 
-                $systemInstruction =
-"কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। {$noteStr} এখন তুমি অর্ডারটি কনফার্ম করো এবং করো। অবশ্যই product_id এর জায়গায় আসল নাম্বার বসাবে, 'ID' স্ট্রিং বসাবে না।
-ভেরিয়েশন তথ্য: " . json_encode($variantInfo) . "
-এখন তুমি অর্ডারটি কনফার্ম করো এবং অবশ্যই
-[ORDER_DATA] এর ভিতরে variant ফিল্ড হিসেবে এই তথ্য পাঠাবে।";
+                    if ($this->hasVariantInMessage($userMessage, $product)) {
+                        $variant = $this->extractVariant($userMessage, $product);
+                        $customerInfo['variant'] = $variant;
 
-            } else {
-                $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
+                        $session->update([
+                            'customer_info' => array_merge($customerInfo, ['step' => 'collect_info'])
+                        ]);
+
+                        $systemInstruction = "ভেরিয়েশন কনফার্ম হয়েছে (" . json_encode($variant) . ")। এখন নাম, ফোন এবং ঠিকানা চাও।";
+                    } else {
+                        $systemInstruction = "কাস্টমার ভেরিয়েশন সিলেক্ট করছে। যদি সে কালার/সাইজ বলে থাকে, তবে এখন তার নাম, ফোন এবং ঠিকানা চাও। আর যদি না বলে থাকে, তবে আবার জিজ্ঞেস করো।";
+                    }
+                } else {
+                    // Product deleted scenario
+                    $session->update(['customer_info' => ['step' => 'start']]);
+                    $systemInstruction = "দুঃখিত, প্রোডাক্টটি খুঁজে পাওয়া যাচ্ছে না। অনুগ্রহ করে আবার বলুন।";
+                }
             }
-        }
-        elseif ($step === 'completed') {
-            return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
-        }
+            // 3. Info Collection Step
+            elseif ($step === 'collect_info') {
+                $variantInfo = $customerInfo['variant'] ?? [];
+                $product = Product::find($currentProductId);
+                $phone = $this->extractPhoneNumber($userMessage);
+                
+                if ($product) {
+                    $selectedProductInfo = json_encode(['id' => $product->id, 'name' => $product->name, 'price' => $product->sale_price]);
+                    
+                    if ($phone) {
+                        $noteStr = $deliveryNote ? " নোট: {$deliveryNote}" : "";
 
-        // ========================================
-        // AI CONTEXT PREPARATION (With history injection)
-        // ========================================
-        $orderContext = $this->buildOrderContext($clientId, $senderId);
-        
-        // ✅ SAFETY: Ensure no null values reach prompt interpolation
-        $inventoryData = $inventoryData ?: "[]";
-        $productContext = $productContext ?: "";
+                        // [CRITICAL FIX] Strict Instruction for ID
+                        $systemInstruction =
+                            "কাস্টমার ফোন নম্বর ({$phone}) দিয়েছে। {$noteStr}\n" .
+                            "এখন তুমি অর্ডারটি কনফার্ম করো।\n" .
+                            "⚠️ গুরুত্বপূর্ণ: [ORDER_DATA] জেনারেট করার সময় product_id হিসেবে অবশ্যই '{$product->id}' ব্যবহার করবে। ভুলেও অন্য কোনো সংখ্যা দিবে না।\n" .
+                            "ভেরিয়েশন তথ্য: " . json_encode($variantInfo);
+                    } else {
+                        $systemInstruction = "আমরা এখনো ফোন নম্বর পাইনি। অর্ডার কনফার্ম করতে বিনীতভাবে ফোন নম্বর এবং ঠিকানা চাও।";
+                    }
+                } else {
+                    $session->update(['customer_info' => ['step' => 'start']]);
+                    $systemInstruction = "সেশন এক্সপায়ার হয়েছে। অনুগ্রহ করে প্রোডাক্টটি আবার সিলেক্ট করুন।";
+                }
+            }
+            elseif ($step === 'completed') {
+                return "আপনার অর্ডারটি ইতিমধ্যে আমাদের সিস্টেমে জমা হয়েছে। ধন্যবাদ! নতুন অর্ডার দিতে চাইলে প্রোডাক্টের নাম বলুন।";
+            }
 
+            // ========================================
+            // AI PROMPT CONSTRUCTION
+            // ========================================
+            $orderContext = $this->buildOrderContext($clientId, $senderId);
+            
+            // Safety checks
+            $inventoryData = $inventoryData ?: "[]";
+            $productContext = $productContext ?: "";
 
-$finalPrompt = <<<EOT
+            $finalPrompt = <<<EOT
 {$systemInstruction}
 
-**পরিচয় ও পারসোনা:**
-তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"। তোমার লক্ষ্য হলো কাস্টমারকে চমৎকার সার্ভিস দিয়ে তাদের পছন্দের প্রোডাক্টটি কিনতে সাহায্য করা। তোমার কথা হবে একদম মানুষের মতো ন্যাচারাল এবং বন্ধুসুলভ।
+**পরিচয় ও পারসোনা:**
+তুমি একজন স্মার্ট, অভিজ্ঞ এবং অত্যন্ত বিনয়ী "অনলাইন সেলস এক্সিকিউটিভ"। লক্ষ্য: কাস্টমারকে চমৎকার সার্ভিস দিয়ে তাদের পছন্দের প্রোডাক্টটি কিনতে সাহায্য করা।
 
-[DATA CONTEXT]:
-[Product Info]: {$productContext}
-[Customer History]: {$orderContext}
-[Product Inventory]: {$inventoryData}
+[LOCKED CONTEXT - DO NOT HALLUCINATE]:
+- **Selected Product:** {$selectedProductInfo} (অর্ডার কনফার্ম করার সময় শুধুমাত্র এই ID ব্যবহার করবে)
+- Inventory: {$productsJson}
+- Shop Info: Delivery: {$delivery}, Policies: {$shopPolicies}
 - Current Time: {$currentTime}
-- Delivery Info: {$delivery}
-- Payment Methods: {$paymentMethods}
-- Shop Policies: {$shopPolicies}
-- Active Offers: {$activeOffers}
-- Products Inventory: {$productsJson}
 
-[আচরণের মূল নিয়মাবলী - স্মার্ট সেলসম্যান গাইড]:
-১. **রোবটিক কথা এড়িয়ে চলো:** "নম্বর ক্লিন করছি", "স্টেপ ১", বা "সিস্টেম চেক করছি"—এই ধরণের টেকনিক্যাল কথা একদম বলবে না। 
-২. **নম্বর পেলে প্রতিক্রিয়া:** কাস্টমার ফোন নম্বর দিলে বলো— "ধন্যবাদ! আপনার নম্বরটি আমি নোট করে নিয়েছি।" 
-৩. **প্রোডাক্টের প্রশংসা:** কাস্টমার কিছু কিনতে চাইলে উৎসাহ দাও। যেমন— "দারুণ পছন্দ ভাইয়া/আপু! আমাদের এই প্রোডাক্টটি এখন বেশ পপুলার।"
-৪. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও। যেমন— "অর্ডারটি কনফার্ম করার জন্য আপনার নাম এবং ঠিকানাটি কি দয়া করে বলবেন?"
-৫. **স্টক না থাকলে:** স্টক না থাকলে সরাসরি 'নেই' না বলে দুঃখ প্রকাশ করো এবং ইনভেন্টরি থেকে অন্য কোনো ভালো প্রোডাক্ট সাজেস্ট করো।
+[Customer History]: 
+{$orderContext}
+
+[আচরণের মূল নিয়মাবলী - স্মার্ট সেলসম্যান গাইড]:
+১. **রোবটিক কথা এড়িয়ে চলো:** "নম্বর ক্লিন করছি", "স্টেপ ১"—এই ধরণের টেকনিক্যাল কথা একদম বলবে না। 
+২. **নম্বর পেলে প্রতিক্রিয়া:** কাস্টমার ফোন নম্বর দিলে বলো— "ধন্যবাদ! আপনার নম্বরটি আমি নোট করে নিয়েছি।" 
+৩. **প্রোডাক্টের প্রশংসা:** কাস্টমার কিছু কিনতে চাইলে উৎসাহ দাও।
+৪. **অর্ডার প্রসেস:** কাস্টমারকে একসাথে সব প্রশ্ন না করে কথাচ্ছলে তথ্য নাও।
 
 [১. অর্ডার কনফার্মেশন রুলস]:
-- কাস্টমারের নাম, ফোন এবং পূর্ণ ঠিকানা পাওয়ার পর সব তথ্য একবার দেখাবে।
-- ডেলিভারি চার্জ বা ঢাকার ভেতরে না বাইরে সেটা জিজ্ঞেস করার সময় বিনয়ের সাথে বলবে।
-- সব ঠিক থাকলে শেষে এই ট্যাগটি দিবে: [ORDER_DATA: {"product_id": 101, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "..."}]
+- কাস্টমারের নাম, ফোন এবং পূর্ণ ঠিকানা পাওয়ার পর সব তথ্য একবার দেখাবে।
+- সব ঠিক থাকলে শেষে এই ট্যাগটি দিবে: [ORDER_DATA: {"product_id": 123, "name": "...", "phone": "...", "address": "...", "is_dhaka": true, "note": "..."}]
+- **সতর্কতা:** product_id অবশ্যই [Selected Product] এর ID হতে হবে।
 
 [২. প্রোডাক্ট ট্র্যাকিং রুলস]:
-- কাস্টমার যদি জানতে চায় তার আগের অর্ডার কোথায়, তবেই তাকে ফোন নম্বর দিতে বলবে। 
 - নম্বর পেলে এই ট্যাগটি জেনারেট করবে: [TRACK_ORDER: "017XXXXXXXX"]
-- কাস্টমারকে কখনোই বলবে না যে তুমি ডাটাবেস চেক করছো। বলবে— "একটু সময় দিন ভাইয়া, আমি আপনার অর্ডারের বর্তমান অবস্থা দেখে জানাচ্ছি।"
 
 [৩. প্রোডাক্ট দেখানো ও ক্যারোসেল]:
 - কাস্টমার কিছু দেখতে চাইলে সুন্দর করে বর্ণনা দিবে এবং শেষে ট্যাগ ব্যবহার করবে: [CAROUSEL: ID1, ID2]
-
-[৪. সাধারণ আচরণ]:
-- উত্তর হবে ছোট এবং টু-দ্য-পয়েন্ট। 
-- একবারে একটার বেশি প্রশ্ন করবে না। 
-- কাস্টমার কনফিউজড থাকলে তাকে সিদ্ধান্ত নিতে সাহায্য করো।
 
 [SYSTEM TAGS SUMMARY]:
 - Show Products: [CAROUSEL: ID1, ID2]
 - Finalize Order: [ORDER_DATA: {...}]
 - Check Status: [TRACK_ORDER: "..."]
 
-সবসময় বাংলা এবং প্রয়োজনীয় ইংরেজি শব্দ মিশিয়ে (যেমন— স্টক, ডেলিভারি, কনফার্ম) একজন প্রফেশনাল অনলাইন শপ ম্যানেজারের মতো কথা বলবে।
+সবসময় বাংলা এবং প্রয়োজনীয় ইংরেজি শব্দ মিশিয়ে ন্যাচারাল ভাবে কথা বলবে।
 EOT;
 
-        // ✅ FIX 2: Build message history with context preservation
-        $messages = [
-            ['role' => 'system', 'content' => $finalPrompt]
-        ];
+            // Build Messages
+            $messages = [['role' => 'system', 'content' => $finalPrompt]];
 
-        // Inject last 4 conversation exchanges for context continuity
-        $recentHistory = array_slice($history, -4);
-        foreach ($recentHistory as $chat) {
-            if (!empty($chat['user'])) {
-                $messages[] = ['role' => 'user', 'content' => $chat['user']];
+            // Inject last 4 conversation exchanges
+            $recentHistory = array_slice($history, -4);
+            foreach ($recentHistory as $chat) {
+                if (!empty($chat['user'])) {
+                    $messages[] = ['role' => 'user', 'content' => $chat['user']];
+                }
+                if (!empty($chat['ai'])) {
+                    $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
+                }
             }
-            if (!empty($chat['ai'])) {
-                $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
+
+            // Add current query
+            $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+            // Execute AI call
+            $aiResponse = $this->callLlmChain($messages, $imageUrl);
+
+            // Persist history
+            if ($aiResponse) {
+                $history[] = [
+                    'user' => $userMessage,
+                    'ai' => $aiResponse,
+                    'time' => time()
+                ];
+                
+                // Prevent history bloat
+                if (count($history) > 20) {
+                    $history = array_slice($history, -20);
+                }
+                
+                $customerInfo['history'] = $history;
+                $session->update(['customer_info' => $customerInfo]);
             }
+
+            return $aiResponse;
+
+        } catch (\Exception $e) {
+            Log::error('ChatbotService Error: ' . $e->getMessage(), [
+                'userMessage' => $userMessage,
+                'senderId' => $senderId
+            ]);
+            return "দুঃখিত, একটু সমস্যা হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
         }
-
-        // Add current query
-        $messages[] = ['role' => 'user', 'content' => $userMessage];
-
-        // Execute AI call
-        $aiResponse = $this->callLlmChain($messages, $imageUrl);
-
-        // ✅ FIX 3: Persist conversation history (critical for multi-turn flows)
-        if ($aiResponse) {
-            $history[] = [
-                'user' => $userMessage,
-                'ai' => $aiResponse,
-                'time' => time()
-            ];
-            
-            // Prevent history bloat (retain last 20 exchanges)
-            if (count($history) > 20) {
-                $history = array_slice($history, -20);
-            }
-            
-            // Update session with enriched history
-            $customerInfo['history'] = $history;
-            $session->update(['customer_info' => $customerInfo]);
-        }
-
-        return $aiResponse;
-
-    } catch (\Exception $e) {
-        Log::error('ChatbotService Error: ' . $e->getMessage(), [
-            'userMessage' => $userMessage,
-            'clientId' => $clientId,
-            'senderId' => $senderId
-        ]);
-        return "দুঃখিত, একটু সমস্যা হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
     }
-}
-    // =====================================
-    // NEW HELPER METHODS (ADDED)
-    // =====================================
 
+    // =====================================
+    // HELPER METHODS
+    // =====================================
 
     /**
- * [NEW] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা
- */
+     * [NEW] Detect if user wants to start over or change topic
+     */
+    private function detectNewIntent($msg) {
+        $keywords = ['menu', 'start', 'suru', 'list', 'অন্য', 'change', 'bad', 'new', 'notun', 'kiccu na', 'cancel'];
+        foreach($keywords as $kw) {
+            if (stripos($msg, $kw) !== false && strlen($msg) < 20) return true;
+        }
+        return false;
+    }
+
+    /**
+     * [NEW] ইউজার কি অর্ডার ট্র্যাক করতে চাচ্ছে কি না তা চেক করা
+     */
     private function isTrackingIntent($msg) {
         $trackingKeywords = [
             'track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 
@@ -295,26 +300,14 @@ EOT;
                 return true;
             }
         }
-
         return false;
     }
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * [NEW] অর্ডার রিলেটেড মেসেজ চেক করা
      */
     private function isOrderRelatedMessage($msg) {
-        $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস'];
+        $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস', 'price', 'dam'];
         $msgLower = strtolower($msg);
         
         foreach ($orderKeywords as $kw) {
@@ -350,13 +343,11 @@ EOT;
      * [NEW] ডেলিভারি নোট এক্সট্রাক্ট করা
      */
     private function extractDeliveryNote($msg) {
-        // সাধারণ ফিল্টারিং
         $commonWords = ['ami', 'amra', 'tumi', 'apni', 'she', 'i', 'you', 'we', 'they', 'want', 'need', 'please', 'kindly', 'দয়া', 'করে', 'চাই', 'লাগবে'];
         $words = explode(' ', strtolower($msg));
         $filtered = array_filter($words, function($w) use ($commonWords) {
             return !in_array(strtolower(trim($w)), $commonWords) && strlen(trim($w)) > 2;
         });
-        
         return implode(' ', $filtered);
     }
 
@@ -390,26 +381,6 @@ EOT;
     }
 
     /**
-     * [UPGRADED] নেগেটিভ ইন্টেন্ট ডিটেকশন
-     */
-    private function isNegativeIntent($msg) {
-        if (empty($msg)) return false;
-        
-        $negativePhrases = [
-            'bad', 'খারাপ', 'fals', 'মিথ্যা', 'scam', 'ঠকবাজি', 'cheat', 'প্রতারণা',
-            'worst', 'সবচেয়ে খারাপ', 'terrible', 'ভয়ানক', 'hate', 'ঘৃণা', 'dislike', 'পছন্দ নেই'
-        ];
-        
-        $msgLower = strtolower($msg);
-        foreach ($negativePhrases as $phrase) {
-            if (stripos($msgLower, $phrase) !== false) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * [LOGIC] মেসেজে ফোন নম্বর থাকলে অর্ডার স্ট্যাটাস বের করা
      */
     private function lookupOrderByPhone($clientId, $message)
@@ -429,10 +400,10 @@ EOT;
 
             if ($order) {
                 $status = strtoupper($order->order_status);
-                $note = $order->admin_note ?? $order->notes ?? ''; 
+                $note = $order->admin_note ?? $order->notes ?? '';
                 $noteInfo = $note ? " (Note: {$note})" : "";
                 
-                return "FOUND_ORDER: Phone {$phone} matched Order #{$order->id}. Status: {$status} {$noteInfo}. Total: {$order->total_amount} Tk.";
+                return "FOUND_ORDER: Phone {$phone} matched Order #{$order->id}. Status: {$status}{$noteInfo}. Total: {$order->total_amount} Tk.";
             } else {
                 return "NO_ORDER_FOUND: Phone {$phone} provided but no order exists.";
             }
@@ -482,7 +453,6 @@ EOT;
 
         // প্রোডাক্ট ডাটা ম্যাপিং
         return $products->map(function ($p) {
-            // কালার/সাইজ ডিকোডিং
             $colors = is_string($p->colors) ? (json_decode($p->colors, true) ?: $p->colors) : $p->colors;
             $colorsStr = is_array($colors) ? implode(', ', $colors) : ((string)$colors ?: null);
 
@@ -501,61 +471,18 @@ EOT;
                 'Image_URL' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null,
             ];
 
-            // কেবল বৈধ কালার ও সাইজ দেখানো হবে
-            if ($colorsStr && strtolower($colorsStr) !== 'n/a') {
-                $data['Colors'] = $colorsStr;
-            }
-            if ($sizesStr && strtolower($sizesStr) !== 'n/a') {
-                $data['Sizes'] = $sizesStr;
-            }
+            if ($colorsStr && strtolower($colorsStr) !== 'n/a') $data['Colors'] = $colorsStr;
+            if ($sizesStr && strtolower($sizesStr) !== 'n/a') $data['Sizes'] = $sizesStr;
 
             return $data;
         })->toJson();
     }
 
-
-    //------------------
-
-    private function extractVariant($msg, $product)
-{
-    $msg = strtolower($msg);
-    $variant = [];
-
-    $colors = is_string($product->colors)
-        ? json_decode($product->colors, true)
-        : $product->colors;
-
-    if (is_array($colors)) {
-        foreach ($colors as $color) {
-            if (str_contains($msg, strtolower($color))) {
-                $variant['color'] = $color;
-            }
-        }
-    }
-
-    $sizes = is_string($product->sizes)
-        ? json_decode($product->sizes, true)
-        : $product->sizes;
-
-    if (is_array($sizes)) {
-        foreach ($sizes as $size) {
-            if (str_contains($msg, strtolower($size))) {
-                $variant['size'] = $size;
-            }
-        }
-    }
-
-    return $variant;
-}
-
-
-//-------
     /**
      * [UPGRADED] স্মার্ট অর্ডার কনটেক্সট বিল্ডার
      */
     private function buildOrderContext($clientId, $senderId)
     {
-        // ১. রিলেশনসহ অর্ডার লোড করা
         $orders = Order::with('items.product')
                         ->where('client_id', $clientId)
                         ->where('sender_id', $senderId)
@@ -570,7 +497,6 @@ EOT;
         $context = "CUSTOMER ORDER HISTORY (Last 3 Orders):\n";
         
         foreach ($orders as $order) {
-            // ২. প্রোডাক্টের নাম বের করা
             $productNames = $order->items->map(function($item) {
                 return $item->product->name ?? 'Unknown Product';
             })->implode(', ');
@@ -579,22 +505,14 @@ EOT;
                 $productNames = "Product ID: " . ($order->product_id ?? 'N/A');
             }
 
-            // ৩. সময় বের করা
             $timeAgo = $order->created_at->diffForHumans();
             $status = strtoupper($order->order_status);
-            
-            // ৪. নোট হ্যান্ডলিং
             $note = $order->admin_note ?? $order->notes ?? $order->customer_note ?? '';
             $noteInfo = $note ? " | Note: [{$note}]" : "";
-
-            // ৫. কাস্টমার ইনফো
-            $customerInfo = "Name: {$order->customer_name}, Phone: {$order->customer_phone}, Address: {$order->shipping_address}";
-
-            // ৬. ফরম্যাটেড স্ট্রিং তৈরি
+            
             $context .= "- Order #{$order->id} ({$timeAgo}):\n";
             $context .= "  Product: {$productNames}\n";
             $context .= "  Status: [{$status}] | Amount: {$order->total_amount} Tk\n";
-            $context .= "  Info: {$customerInfo}{$noteInfo}\n";
             $context .= "  -----------------------------\n";
         }
         
@@ -653,11 +571,11 @@ EOT;
                     ->attach('file', fopen($tempPath, 'r'), $tempFileName)
                     ->post('https://api.openai.com/v1/audio/transcriptions', [
                         'model' => 'whisper-1',
-                        'prompt' => 'This is a Bengali voice message about ordering products, potentially containing phone numbers in Bengali or English.', // প্রম্পট সাহায্য করবে
+                        'prompt' => 'This is a Bengali voice message about ordering products, potentially containing phone numbers in Bengali or English.',
                     ]);
 
             // ৩. ফাইলটি ডিলিট করে দেওয়া
-            unlink($tempPath);
+            if (file_exists($tempPath)) unlink($tempPath);
 
             if ($response->successful()) {
                 $transcribedText = $response->json()['text'] ?? null;
@@ -678,25 +596,18 @@ EOT;
     // PHONE NUMBER EXTRACTION (FIXED)
     // =====================================
 
-    /**
-     * [FIXED] ফোন নম্বর এক্সট্রাক্ট - ১১-১২ ডিজিট সাপোর্ট
-     */
     private function extractPhoneNumber($msg) {
-        // বাংলা নাম্বার ইংরেজিতে কনভার্ট
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         $msg = str_replace($bn, $en, $msg);
         
-        // সব নন-ডিজিট রিমুভ করে শুধু নাম্বার রাখা
         $msg = preg_replace('/[^0-9]/', '', $msg);
         
-        // ১১ বা ১২ ডিজিটের বিডি নম্বর প্যাটার্ন (ইউজার অতিরিক্ত ডিজিট দিলেও হবে)
         if (preg_match('/01[3-9]\d{8,9}/', $msg, $matches)) {
-            $phone = substr($matches[0], 0, 11); // প্রথম ১১ ডিজিট নিব
+            $phone = substr($matches[0], 0, 11);
             return preg_match('/^01[3-9]\d{8}$/', $phone) ? $phone : null;
         }
         
-        // যদি 880 দিয়ে শুরু হয়
         if (preg_match('/8801[3-9]\d{8,9}/', $msg, $matches)) {
             $phone = '0' . substr($matches[0], 3, 10);
             return preg_match('/^01[3-9]\d{8}$/', $phone) ? $phone : null;
@@ -709,11 +620,7 @@ EOT;
     // PRODUCT SEARCH & VARIANT HANDLING
     // =====================================
 
-    /**
-     * [LOGIC] প্রোডাক্ট খোঁজার হার্ড লজিক
-     */
     private function findProductSystematically($clientId, $message) {
-        // কীওয়ার্ড এক্সট্রাক্ট করা
         $keywords = array_filter(explode(' ', $message), function($word) {
             return mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'ei', 'ta', 'kinbo', 'chai', 'korte', 'chachi', 'theke', 'er', 'jonno', 'টা', 'কিনবো', 'চাই', 'জন্য', 'দেন', 'দিবেন', 'দিবে']);
         });
@@ -726,49 +633,56 @@ EOT;
             if($product) return $product;
         }
         
-        // নাম দিয়ে খোঁজা (হাইব্রিড সার্চ)
+        // নাম দিয়ে খোঁজা
         $query = Product::where('client_id', $clientId);
-        
         foreach($keywords as $word) {
             $query->orWhere('name', 'LIKE', "%".trim($word)."%");
         }
         
-        return $query->first();
+        return $query->latest()->first();
     }
 
-    /**
-     * [LOGIC] ভেরিয়েশন চেক
-     */
-    private function hasVariantInMessage($msg, $product) {
-        $msgLower = strtolower($msg);
-        
-        // কালার চেক
+    private function extractVariant($msg, $product)
+    {
+        $msg = strtolower($msg);
+        $variant = [];
+
         $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
         if (is_array($colors)) {
             foreach ($colors as $color) {
-                if (stripos($msgLower, strtolower($color)) !== false) {
-                    return true;
-                }
+                if (str_contains($msg, strtolower($color))) $variant['color'] = $color;
             }
         }
-        
-        // সাইজ চেক
+
         $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
         if (is_array($sizes)) {
             foreach ($sizes as $size) {
-                if (stripos($msgLower, strtolower($size)) !== false) {
-                    return true;
-                }
+                if (str_contains($msg, strtolower($size))) $variant['size'] = $size;
+            }
+        }
+        return $variant;
+    }
+
+    private function hasVariantInMessage($msg, $product) {
+        $msgLower = strtolower($msg);
+        
+        $colors = is_string($product->colors) ? json_decode($product->colors, true) : $product->colors;
+        if (is_array($colors)) {
+            foreach ($colors as $color) {
+                if (str_contains($msgLower, strtolower($color))) return true;
             }
         }
         
-        // কমন ভেরিয়েশন কীওয়ার্ড
-        $variantKeywords = ['red', 'blue', 'black', 'white', 'green', 'yellow', 'xl', 'xxl', 'l', 'm', 's', 'লাল', 'কালো', 'সাদা', 'সবুজ', 'হলুদ', 'এক্সএল', 'এল', 'এম', 'এস', 'xlarge', 'large', 'medium', 'small', 'গোলাপি', 'নীল', 'বেগুনি'];
-        
-        foreach ($variantKeywords as $keyword) {
-            if (stripos($msgLower, $keyword) !== false) {
-                return true;
+        $sizes = is_string($product->sizes) ? json_decode($product->sizes, true) : $product->sizes;
+        if (is_array($sizes)) {
+            foreach ($sizes as $size) {
+                if (str_contains($msgLower, strtolower($size))) return true;
             }
+        }
+        
+        $variantKeywords = ['red', 'blue', 'black', 'white', 'green', 'yellow', 'xl', 'xxl', 'l', 'm', 's', 'লাল', 'কালো', 'সাদা', 'সবুজ', 'হলুদ', 'এক্সএল', 'এল', 'এম', 'এস', 'xlarge', 'large', 'medium', 'small', 'গোলাপি', 'নীল', 'বেগুনি'];
+        foreach ($variantKeywords as $keyword) {
+            if (stripos($msgLower, $keyword) !== false) return true;
         }
         
         return false;
@@ -778,96 +692,84 @@ EOT;
     // CORE LLM & NOTIFICATION
     // =====================================
 
-    /**
-     * [CORE] LLM কল
-     */
- /**
- * [CORE] LLM কল
- */
-private function callLlmChain($messages, $imageUrl = null)
-{
-    try {
-        $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+    private function callLlmChain($messages, $imageUrl = null)
+    {
+        try {
+            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
 
-        if (empty($apiKey)) {
-            Log::error("OpenAI API Key missing!");
-            return null;
-        }
-
-        // 🔥 Image থাকলে সেটাকে Base64 এ কনভার্ট করা (FIXED for Facebook/CDN URLs)
-        if ($imageUrl) {
-            $base64Image = null;
-            try {
-                // ১. ইমেজটি ডাউনলোড করা
-                $imageResponse = Http::get($imageUrl);
-                
-                if ($imageResponse->successful()) {
-                    // ২. কন্টেন্ট টাইপ এবং Base64 এনকোডিং
-                    $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
-                    $base64Data = base64_encode($imageResponse->body());
-                    $base64Image = "data:{$contentType};base64,{$base64Data}";
-                } else {
-                    Log::error("Failed to download image from URL: $imageUrl");
-                }
-            } catch (\Exception $e) {
-                Log::error("Image conversion error: " . $e->getMessage());
+            if (empty($apiKey)) {
+                Log::error("OpenAI API Key missing!");
+                return null;
             }
 
-            // ৩. যদি ইমেজ সফলভাবে কনভার্ট হয়, মেসেজে অ্যাড করা
-            if ($base64Image) {
-                $lastMessage = array_pop($messages);
+            if ($imageUrl) {
+                $base64Image = null;
+                try {
+                    // ১. ইমেজটি ডাউনলোড করা
+                    $imageResponse = Http::get($imageUrl);
+                    
+                    if ($imageResponse->successful()) {
+                        // ২. কন্টেন্ট টাইপ এবং Base64 এনকোডিং
+                        $contentType = $imageResponse->header('Content-Type') ?? 'image/jpeg';
+                        $base64Data = base64_encode($imageResponse->body());
+                        $base64Image = "data:{$contentType};base64,{$base64Data}";
+                    } else {
+                        Log::error("Failed to download image from URL: $imageUrl");
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Image conversion error: " . $e->getMessage());
+                }
 
-                if ($lastMessage && $lastMessage['role'] === 'user') {
-                    $messages[] = [
-                        'role' => 'user',
-                        'content' => [
-                            [
-                                'type' => 'text',
-                                'text' => is_array($lastMessage['content'])
-                                    ? json_encode($lastMessage['content'])
-                                    : $lastMessage['content']
-                            ],
-                            [
-                                'type' => 'image_url',
-                                'image_url' => [
-                                    'url' => $base64Image // ✅ Base64 string
+                // ৩. যদি ইমেজ সফলভাবে কনভার্ট হয়, মেসেজে অ্যাড করা
+                if ($base64Image) {
+                    $lastMessage = array_pop($messages);
+
+                    if ($lastMessage && $lastMessage['role'] === 'user') {
+                        $messages[] = [
+                            'role' => 'user',
+                            'content' => [
+                                [
+                                    'type' => 'text',
+                                    'text' => is_array($lastMessage['content'])
+                                        ? json_encode($lastMessage['content'])
+                                        : $lastMessage['content']
+                                ],
+                                [
+                                    'type' => 'image_url',
+                                    'image_url' => [
+                                        'url' => $base64Image
+                                    ]
                                 ]
                             ]
-                        ]
-                    ];
+                        ];
+                    }
                 }
             }
+
+            $response = Http::withToken($apiKey)
+                ->timeout(60)
+                ->retry(2, 500)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+                    'messages' => $messages,
+                    'temperature' => 0.3,
+                    'max_tokens' => 500,
+                ]);
+
+            if ($response->successful()) {
+                Log::info("OpenAI API Success - Model: " . ($imageUrl ? 'gpt-4o' : 'gpt-4o-mini'));
+                return $response->json()['choices'][0]['message']['content'] ?? null;
+            }
+
+            Log::error("OpenAI API Error: {$response->status()} - {$response->body()}");
+            return null;
+
+        } catch (\Throwable $e) {
+            Log::error("LLM Call Exception: " . $e->getMessage());
+            return null;
         }
-
-        $response = Http::withToken($apiKey)
-            ->timeout(60) // ইমেজ প্রসেসিং এর জন্য বেশি টাইমআউট
-            ->retry(2, 500)
-            ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => $imageUrl ? 'gpt-4o' : 'gpt-4o-mini', // ইমেজ থাকলে gpt-4o
-                'messages' => $messages,
-                'temperature' => 0.3,
-                'max_tokens' => 500,
-            ]);
-
-        if ($response->successful()) {
-            Log::info("OpenAI API Success - Model: " . ($imageUrl ? 'gpt-4o' : 'gpt-4o-mini'));
-            return $response->json()['choices'][0]['message']['content'] ?? null;
-        }
-
-        Log::error("OpenAI API Error: {$response->status()} - {$response->body()}");
-        return null;
-
-    } catch (\Throwable $e) {
-        Log::error("LLM Call Exception: " . $e->getMessage());
-        return null;
     }
-}
 
-
-
-    /**
-     * [LOGIC] টেলিগ্রাম অ্যালার্ট সেন্ড
-     */
     public function sendTelegramAlert($clientId, $senderId, $message)
     {
         try {
@@ -891,11 +793,8 @@ private function callLlmChain($messages, $imageUrl = null)
                 ])
             ];
 
-            $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", $payload);
+            Http::post("https://api.telegram.org/bot{$token}/sendMessage", $payload);
 
-            if (!$response->successful()) {
-                Log::error("Telegram API Error: " . $response->body());
-            }
         } catch (\Exception $e) {
             Log::error("Telegram Notification Error: " . $e->getMessage());
         }

@@ -43,7 +43,7 @@ class Product extends Model
     'meta_description',
     'warranty', 
     'return_policy', 
-    'is_featured'
+    'is_featured',
 ];
 
 protected $casts = [
@@ -52,6 +52,12 @@ protected $casts = [
     'colors' => 'array',
     'sizes' => 'array',
     'is_featured' => 'boolean',
+];
+
+
+protected $attributes = [
+    'regular_price' => 0,
+    'stock_status' => 'in_stock',
 ];
 
     public function client(): BelongsTo

@@ -42,7 +42,6 @@ class WebhookController extends Controller
     /**
      * 2. Handle Incoming Messages (All Types)
      */
-
     public function handle(Request $request, ChatbotService $chatbot)
     {
         Log::info("-------------- WEBHOOK HIT --------------");
@@ -147,8 +146,6 @@ class WebhookController extends Controller
 
         return response('EVENT_RECEIVED', 200);
     }
-
-
 
     /**
      * 3. Process Message Logic & Tag Handling
@@ -261,7 +258,7 @@ class WebhookController extends Controller
     }
 
     /**
-     * 4. Finalize Order Logic (DB Error Fix Added)
+     * 4. Finalize Order Logic (Complete Fix)
      */
     private function finalizeOrder($reply, $matches, $client, $senderId, $chatbot)
     {
@@ -277,12 +274,18 @@ class WebhookController extends Controller
 
         $productId = $data['product_id'] ?? null;
         
+        // Product Validation: Prevent NULL or Invalid Product IDs
+        if (!$productId) {
+             Log::error("Order Failed: Product ID is missing in AI Response.");
+             return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, অর্ডার প্রসেস করার জন্য কোনো পণ্যের আইডি পাওয়া যায়নি।";
+        }
+
         // Fix race condition: Lock product for update
         $product = Product::where('id', $productId)->lockForUpdate()->first();
 
         if (!$product) {
             Log::error("Order Failed: Product ID {$productId} not found.");
-            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি।";
+            return str_replace($matches[0], "", $reply) . "\n⚠️ দুঃখিত, টেকনিক্যাল সমস্যার কারণে পণ্যটি শনাক্ত করা যায়নি (ভুল আইডি)।";
         }
 
         $validPhone = $this->validateAndCleanPhone($data['phone'] ?? null);
@@ -317,13 +320,31 @@ class WebhookController extends Controller
                     'payment_status'  => 'pending',
                 ];
 
-                // ডাইনামিক কলাম চেক
-                if (Schema::hasColumn('orders', 'payment_method')) $orderData['payment_method'] = 'cod';
-                if (Schema::hasColumn('orders', 'customer_email')) $orderData['customer_email'] = $data['email'] ?? null;
-                if (Schema::hasColumn('orders', 'division')) $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
-                if (Schema::hasColumn('orders', 'district')) $orderData['district'] = $data['district'] ?? null;
-                if (Schema::hasColumn('orders', 'admin_note')) $orderData['admin_note'] = $data['note'] ?? null;
-                elseif (Schema::hasColumn('orders', 'notes')) $orderData['notes'] = $data['note'] ?? null;
+                // ডাইনামিক কলাম চেক (Database Column Error Fix)
+                if (Schema::hasColumn('orders', 'payment_method')) {
+                    $orderData['payment_method'] = 'cod';
+                }
+                if (Schema::hasColumn('orders', 'customer_email')) {
+                    $orderData['customer_email'] = $data['email'] ?? null;
+                }
+                if (Schema::hasColumn('orders', 'division')) {
+                    $orderData['division'] = $isDhaka ? 'Dhaka' : 'Outside Dhaka';
+                }
+                if (Schema::hasColumn('orders', 'district')) {
+                    $orderData['district'] = $data['district'] ?? null;
+                }
+                
+                // Note handling
+                $note = $data['note'] ?? null;
+                if ($note) {
+                    if (Schema::hasColumn('orders', 'admin_note')) {
+                         $orderData['admin_note'] = $note;
+                    } elseif (Schema::hasColumn('orders', 'notes')) {
+                         $orderData['notes'] = $note;
+                    } elseif (Schema::hasColumn('orders', 'customer_note')) {
+                         $orderData['customer_note'] = $note;
+                    }
+                }
 
                 // অর্ডার তৈরি
                 $order = Order::create($orderData);
@@ -347,15 +368,14 @@ class WebhookController extends Controller
 
                 $product->decrement('stock_quantity', $qty);
 
-                // সেশন আপডেট
-                // অর্ডার সেভ হওয়ার পর সেশন ক্লিয়ার বা আপডেট করুন
+                // সেশন আপডেট (Reset Session to Avoid Repeat Order Errors)
                 $session = OrderSession::where('sender_id', $senderId)->first();
                 if ($session) {
                     $session->update([
                         'customer_info' => [
-                            'step' => 'start', // আবার শুরুতে পাঠিয়ে দিন
+                            'step' => 'start',
                             'product_id' => null,
-                            'history' => []
+                            'history' => [] // Clear history to start fresh
                         ]
                     ]);
                 }

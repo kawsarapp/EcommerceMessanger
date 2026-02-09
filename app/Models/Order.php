@@ -8,28 +8,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Order extends Model
 {
-	protected $fillable = [
-        'client_id',
-		'sender_id',
-		'customer_name',
-		'customer_image',
-		'customer_phone',
-		'customer_email',
-		'division',
-		'district',
-		'shipping_address',
-		'total_amount',
-		'order_status',
-		'payment_status',
-		'payment_method',
-		'transaction_id',
-		'customer_note',
-		'division', 
-		'district',
-		'admin_note'
-
-		
-    ];
+protected $fillable = [
+    'client_id',
+    'sender_id',
+    'customer_name',
+    'customer_image',
+    'customer_phone',
+    'customer_email',
+    'division',
+    'district',
+    'shipping_address',
+    'total_amount',
+    'order_status',
+    'payment_status',
+    'payment_method',
+    'transaction_id',
+    'customer_note',
+    'admin_note',
+];
 	
 
 	public function client(): BelongsTo
