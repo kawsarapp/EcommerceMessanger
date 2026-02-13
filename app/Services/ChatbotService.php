@@ -37,12 +37,14 @@ class ChatbotService
     {
         Log::info("🤖 AI Service Started for User: $senderId");
 
+        // 🔥 NULL SAFETY GUARD: Ensure message is never null to prevent TypeErrors
         $userMessage = $userMessage ?? '';
 
-        // 1. IMAGE HANDLING
+        // 🚀 1. IMAGE HANDLING (Robust)
         $base64Image = null;
         if ($imageUrl) {
             try {
+                // Facebook Image sometimes needs User-Agent
                 $imgResponse = Http::withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 ])->timeout(10)->get($imageUrl);
@@ -50,7 +52,7 @@ class ChatbotService
                 if ($imgResponse->successful()) {
                     $mime = $imgResponse->header('Content-Type') ?: 'image/jpeg';
                     $base64Image = "data:" . $mime . ";base64," . base64_encode($imgResponse->body());
-                    Log::info("Image downloaded successfully.");
+                    Log::info("Image downloaded successfully for User: $senderId");
                 } else {
                     Log::error("Image download failed: " . $imgResponse->status());
                 }
@@ -59,12 +61,13 @@ class ChatbotService
             }
         }
 
-        // Image only logic
+        // যদি শুধু ইমেজ থাকে এবং কোনো টেক্সট না থাকে
         if (empty(trim($userMessage)) && $base64Image) {
             $userMessage = "User sent an image. Please describe it and match with inventory.";
             Log::info("ℹ️ Auto-filled message for image input.");
         } elseif (empty(trim($userMessage))) {
-            Log::warning("⚠️ Empty message received. Returning null.");
+            // If both are empty, safely return null
+            Log::warning("⚠️ Empty message received in ChatbotService. Returning null.");
             return null;
         }
 
@@ -84,8 +87,7 @@ class ChatbotService
 
             $client = Client::find($clientId);
             
-            // 🔄 SMART RESET CHECK
-            // Check if the user is asking for a SPECIFIC product
+            // 🔄 SMART RESET: Check if user is asking for a SPECIFIC product
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
             
             if ($newProduct) {
@@ -93,7 +95,7 @@ class ChatbotService
                 $currentStep = $session->customer_info['step'] ?? '';
 
                 if ($newProduct->id != $currentProductId || $currentStep === 'collect_info') {
-                    Log::info("🔄 Product Switch / Reset: Found ({$newProduct->name})");
+                    Log::info("🔄 Product Switch: Found ({$newProduct->name})");
                     $session->update([
                         'customer_info' => [
                             'step' => 'start', 
@@ -103,10 +105,9 @@ class ChatbotService
                     ]);
                 }
             } else {
-                // 🔥 GENERIC QUERY HANDLING
-                // যদি প্রোডাক্ট না পাওয়া যায়, কিন্তু ইউজার সাধারণ প্রশ্ন করে (ki ace, offer ki),
-                // তবে সেশন রিসেট করো যাতে সে 'collect_info' লুপে আটকে না থাকে।
-                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার'];
+                // 🔥 GENERIC QUERY RESET
+                // If user asks general questions like "ki ace", "offer", reset session to start
+                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার', 'price koto', 'dam koto'];
                 foreach ($genericPhrases as $phrase) {
                     if (stripos(strtolower($userMessage), $phrase) !== false) {
                         Log::info("🔄 Generic Query Reset Triggered.");
@@ -135,20 +136,21 @@ class ChatbotService
 
             $handler = $steps[$stepName] ?? $steps['start'];
             
+            // 🔥 SAFE CALL: Force string type to prevent AddressStep error
             $result = $handler->process($session, (string)$userMessage);
             
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
-            // Order Creation
+            // Order Creation Action
             if (isset($result['action']) && $result['action'] === 'create_order') {
-                Log::info("🚀 Creating Order...");
+                Log::info("🚀 Action Triggered: create_order");
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    $instruction .= " (System: Order #{$order->id} created successfully!)";
+                    $instruction .= " (System: Order #{$order->id} created successfully! Congratulate the customer.)";
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
                 } catch (\Exception $e) {
-                    $instruction = "Technical error creating order.";
+                    $instruction = "Technical error creating order. Please apologize.";
                     Log::error("❌ Order Error: " . $e->getMessage());
                 }
             }
@@ -158,19 +160,21 @@ class ChatbotService
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
 
-            // Prompt Generation
+            // Prompt Generation (Dynamic)
             $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime);
-            Log::info("📝 Prompt Generated with Inventory Data.");
+            Log::info("📝 System Prompt Generated.");
 
             // Message Building
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             
+            // Add History
             $history = $session->customer_info['history'] ?? [];
             foreach (array_slice($history, -4) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
             
+            // Current Message
             if ($base64Image) {
                 $messages[] = [
                     'role' => 'user',
@@ -200,58 +204,69 @@ class ChatbotService
         });
     }
 
+
     // =====================================
     // GLOBAL HELPER METHODS
     // (Specific logic moved to Step Classes, keeping generic ones here)
     // =====================================
 
     /**
-     * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ (With Caching)
-     * এটি গ্লোবাল প্রম্পটের জন্য দরকার, তাই এখানে রাখা হলো।
+     * [OPTIMIZED] ইনভেন্টরি সার্চ (Price, Description, Image সহ)
      */
     private function getInventoryData($clientId, $userMessage)
     {
+        // Cache key based on message keywords
         $cacheKey = "inv_{$clientId}_" . md5(Str::limit($userMessage, 20));
 
         return Cache::remember($cacheKey, 60, function () use ($clientId, $userMessage) {
-            // 🔥 STOP WORDS: These words will NOT trigger a name search.
-            $stopWords = ['product', 'products', 'item', 'items', 'offer', 'offers', 'collection', 'list', 'show', 'dekhann', 'janan', 'bolen', 'ki', 'ace', 'ase', 'store', 'shop', 'kicu', 'kichu', 'stock', 'available'];
+            // Stop words prevent searching for generic terms in "name"
+            $stopWords = ['product', 'products', 'item', 'items', 'offer', 'offers', 'collection', 'list', 'show', 'dekhann', 'janan', 'bolen', 'ki', 'ace', 'ase', 'store', 'shop', 'kicu', 'kichu', 'stock', 'available', 'details', 'pic', 'picture'];
             
             $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2 && !in_array(strtolower($w), $stopWords));
             
             $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
             
             if (!empty($keywords)) {
-                // Specific Search
                 $query->where(function($q) use ($keywords) {
                     foreach ($keywords as $word) {
                         $q->orWhere('name', 'like', "%{$word}%")
                           ->orWhere('tags', 'like', "%{$word}%")
+                          // ✅ SQL FIX: Relation Search
                           ->orWhereHas('category', function($cq) use ($word){
                               $cq->where('name', 'like', "%{$word}%");
                           });
                     }
                 });
             } else {
-                // 🔥 GENERIC FALLBACK: If keywords are empty (e.g. "ki ki product ace"), show RANDOM products
+                // If no keywords, show random featured products
                 $query->inRandomOrder();
             }
 
-            $products = $query->limit(5)->get(['id', 'name', 'sale_price', 'stock_quantity', 'thumbnail']);
+            $products = $query->limit(5)->get();
             
             if ($products->isEmpty()) {
-                // If specific search failed, fallback to random suggestion
-                return Product::where('client_id', $clientId)
+                // Fallback to random if search yields nothing
+                $products = Product::where('client_id', $clientId)
                     ->where('stock_status', 'in_stock')
                     ->inRandomOrder()
                     ->limit(3)
-                    ->get(['id', 'name', 'sale_price', 'stock_quantity', 'thumbnail'])
-                    ->toJson();
+                    ->get();
             }
 
-            return $products->toJson();
+            return $products->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sale_price' => $p->sale_price,
+                    'regular_price' => $p->regular_price, // Added regular price
+                    'stock' => $p->stock_quantity,
+                    'description' => Str::limit(strip_tags($p->short_description ?? $p->description), 150), // Added Description
+                    'image_url' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null // Added full image URL
+                ];
+            })->toJson();
         });
     }
+
     private function updateRecentOrderNote($clientId, $senderId, $note)
     {
         $recentOrder = Order::where('client_id', $clientId)
@@ -279,25 +294,31 @@ class ChatbotService
     /**
      * 🔥 DYNAMIC PROMPT GENERATION
      */
-
     private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time)
     {
         return <<<EOT
 {$instruction}
 
-**Context:**
-- Product Context: {$prodCtx}
-- Inventory Match (Available Products): {$invData}
-- History: {$ordCtx}
+**System Role:** Elite AI Sales Associate for an E-commerce Brand in Bangladesh.
+**Objective:** Convert inquiries into orders politely and efficiently.
 
-**Rules:**
-1. **CHECK INVENTORY FIRST:** The [Inventory Match] list contains the products we ACTUALLY have. 
-2. If user asks "ki ace", "offer ki", or generic questions, LIST the items from [Inventory Match].
-3. Show [CAROUSEL: id] for any product you mention.
-4. If [Inventory Match] is empty, assume we are out of stock.
-5. Be concise and friendly.
+### 🛡️ STRICT GUIDELINES:
+1. **INVENTORY FIRST:** The [Inventory Match] list contains the products we ACTUALLY have. 
+2. **SHOWING PRODUCTS:** If user asks "ki ace", "offer", or general product questions, list items from [Inventory Match].
+   - **IMPORTANT:** Use [CAROUSEL: id1, id2, id3] to show multiple products. Comma separate IDs.
+3. **PRICING & OFFERS:** - If 'regular_price' > 'sale_price', say: "Regular Price: X, Offer Price: Y". Otherwise just show Sale Price.
+   - Mention key details from the 'description'.
+4. **IMAGES:** If user asks for a picture (e.g., "pic daw"), output the 'image_url' from [Inventory Match] directly in the text.
+5. **Context:** [Product Context] is the specific item user selected. Use it for specific questions.
+6. If [Inventory Match] is empty, assume we are out of stock.
 
-Reply in Bangla/English mix.
+### 📂 DATA PACKETS:
+- [Product Context]: {$prodCtx}
+- [Inventory Match]: {$invData}
+- [Customer History]: {$ordCtx}
+- [Time]: {$time}
+
+Respond now in friendly Bangla (using English terms for Price, Size, etc).
 EOT;
     }
 
@@ -468,7 +489,7 @@ EOT;
             $response = Http::withToken($apiKey)->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
-                'max_tokens' => 350,
+                'max_tokens' => 450, // Increased token limit for better details
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
@@ -476,8 +497,6 @@ EOT;
             return null;
         }
     }
-
-
 
     public function sendTelegramAlert($clientId, $senderId, $message) {
         try {
@@ -497,7 +516,4 @@ EOT;
             ]);
         } catch (\Exception $e) { Log::error("Telegram Error: " . $e->getMessage()); }
     }
-
-
-
 }

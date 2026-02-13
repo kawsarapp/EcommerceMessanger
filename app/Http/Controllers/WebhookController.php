@@ -164,6 +164,14 @@ class WebhookController extends Controller
                     $outgoingImage = null;
                     $quickReplies = [];
 
+                    // 🔥 FIX: IMAGE EXTRACTION (Link Detection)
+                    // If AI replies with an image URL, extract it and send as attachment
+                    if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
+                        $outgoingImage = $matches[1];
+                        $reply = str_replace($outgoingImage, '', $reply); // Remove URL from text
+                        Log::info("🖼️ Image Response Detected: $outgoingImage");
+                    }
+
                     // Carousel
                     if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
                         Log::info("🖼️ Carousel Triggered: " . $matches[1]);
@@ -188,8 +196,8 @@ class WebhookController extends Controller
                     }
 
                     // Send Final Message
-                    if (!empty(trim($reply))) {
-                        Log::info("📤 Sending Final Text Response.");
+                    if (!empty(trim($reply)) || $outgoingImage) {
+                        Log::info("📤 Sending Final Response.");
                         $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
                     }
 
@@ -244,7 +252,10 @@ class WebhookController extends Controller
 
     private function sendMessengerCarousel($recipientId, $productIds, $token) {
         $products = Product::whereIn('id', $productIds)->get();
-        if ($products->isEmpty()) return;
+        if ($products->isEmpty()) {
+            Log::warning("Carousel: No products found for IDs " . implode(',', $productIds));
+            return;
+        }
         
         $elements = [];
         foreach ($products as $product) {
@@ -258,6 +269,8 @@ class WebhookController extends Controller
                 ]
             ];
         }
+
+        Log::info("Sending Carousel with " . count($elements) . " elements.");
 
         try {
             $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
