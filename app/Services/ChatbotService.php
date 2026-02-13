@@ -86,21 +86,23 @@ class ChatbotService
             }
 
             $client = Client::find($clientId);
+            $customerInfo = $session->customer_info;
             
             // 🔄 SMART RESET: Check if user is asking for a SPECIFIC product
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
             
             if ($newProduct) {
-                $currentProductId = $session->customer_info['product_id'] ?? null;
-                $currentStep = $session->customer_info['step'] ?? '';
+                $currentProductId = $customerInfo['product_id'] ?? null;
+                $currentStep = $customerInfo['step'] ?? '';
 
+                // If new product found OR currently collecting info but user switched topic
                 if ($newProduct->id != $currentProductId || $currentStep === 'collect_info') {
                     Log::info("🔄 Product Switch: Found ({$newProduct->name})");
                     $session->update([
                         'customer_info' => [
                             'step' => 'start', 
                             'product_id' => $newProduct->id, 
-                            'history' => $session->customer_info['history'] ?? []
+                            'history' => $customerInfo['history'] ?? []
                         ]
                     ]);
                 }
@@ -114,7 +116,7 @@ class ChatbotService
                         $session->update([
                             'customer_info' => [
                                 'step' => 'start', 
-                                'history' => $session->customer_info['history'] ?? []
+                                'history' => $customerInfo['history'] ?? []
                             ]
                         ]);
                         break;
@@ -123,6 +125,7 @@ class ChatbotService
             }
 
             // Step Processing
+            $session->refresh(); // Reload fresh data
             $stepName = $session->customer_info['step'] ?? 'start';
             Log::info("👣 Processing Step: $stepName");
 
@@ -159,9 +162,12 @@ class ChatbotService
             $inventoryData = $this->getInventoryData($clientId, $userMessage); 
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
+            
+            // 🔥 User identity memory
+            $userName = $session->customer_info['name'] ?? 'Unknown';
 
             // Prompt Generation (Dynamic)
-            $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime);
+            $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime, $userName);
             Log::info("📝 System Prompt Generated.");
 
             // Message Building
@@ -169,7 +175,7 @@ class ChatbotService
             
             // Add History
             $history = $session->customer_info['history'] ?? [];
-            foreach (array_slice($history, -4) as $chat) {
+            foreach (array_slice($history, -6) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
@@ -259,7 +265,7 @@ class ChatbotService
                     'name' => $p->name,
                     'sale_price' => $p->sale_price,
                     'regular_price' => $p->regular_price, // Added regular price
-                    'stock' => $p->stock_quantity,
+                    'stock_available' => $p->stock_quantity, // 🔥 Added Stock Level
                     'description' => Str::limit(strip_tags($p->short_description ?? $p->description), 150), // Added Description
                     'image_url' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null // Added full image URL
                 ];
@@ -292,25 +298,27 @@ class ChatbotService
     }
 
     /**
-     * 🔥 DYNAMIC PROMPT GENERATION
+     * 🔥 DYNAMIC PROMPT GENERATION (UPDATED FOR LOGIC)
      */
-    private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time)
+    private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time, $userName)
     {
         return <<<EOT
 {$instruction}
 
 **System Role:** Elite AI Sales Associate for an E-commerce Brand in Bangladesh.
 **Objective:** Convert inquiries into orders politely and efficiently.
+**Customer Name:** {$userName}
 
-### 🛡️ STRICT GUIDELINES:
-1. **INVENTORY FIRST:** The [Inventory Match] list contains the products we ACTUALLY have. 
-2. **SHOWING PRODUCTS:** If user asks "ki ace", "offer", or general product questions, list items from [Inventory Match].
+### 🛑 CRITICAL LOGIC RULES (DO NOT IGNORE):
+1. **PICS vs TAKA:** If a user says "200 pics" or "200 items", it means **QUANTITY**, NOT PRICE. Never mistake quantity for price.
+2. **STOCK GUARD:** Check 'stock_available' in [Inventory Match]. If a user orders MORE than available stock, polite refuse: "Sorry, we only have X items in stock."
+3. **INVENTORY FIRST:** The [Inventory Match] list contains the products we ACTUALLY have. 
+4. **SHOWING PRODUCTS:** If user asks "ki ace", "offer", or general product questions, list items from [Inventory Match].
    - **IMPORTANT:** Use [CAROUSEL: id1, id2, id3] to show multiple products. Comma separate IDs.
-3. **PRICING & OFFERS:** - If 'regular_price' > 'sale_price', say: "Regular Price: X, Offer Price: Y". Otherwise just show Sale Price.
+5. **PRICING & OFFERS:** - If 'regular_price' > 'sale_price', say: "Regular Price: X, Offer Price: Y". Otherwise just show Sale Price.
    - Mention key details from the 'description'.
-4. **IMAGES:** If user asks for a picture (e.g., "pic daw"), output the 'image_url' from [Inventory Match] directly in the text.
-5. **Context:** [Product Context] is the specific item user selected. Use it for specific questions.
-6. If [Inventory Match] is empty, assume we are out of stock.
+6. **IMAGES:** If user asks for a picture (e.g., "pic daw"), output the 'image_url' from [Inventory Match] directly in the text.
+7. **Context:** [Product Context] is the specific item user selected. Use it for specific questions.
 
 ### 📂 DATA PACKETS:
 - [Product Context]: {$prodCtx}
@@ -489,7 +497,8 @@ EOT;
             $response = Http::withToken($apiKey)->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
-                'max_tokens' => 450, // Increased token limit for better details
+                'max_tokens' => 450, 
+                'temperature' => 0.2, // Lower temperature to fix Quantity vs Price confusion
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
