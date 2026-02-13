@@ -13,11 +13,13 @@ class AddressStep implements OrderStepInterface
         $productId = $customerInfo['product_id'] ?? null;
         $product = $productId ? Product::find($productId) : null;
 
+        $userMessage = trim($userMessage);
+
         // =========================
-        // 1️⃣ Strict Address Guard
+        // 1️⃣ Strict Address Guard (Improved)
         // =========================
         if ($this->isValidAddress($userMessage)) {
-            $customerInfo['address'] = trim($userMessage);
+            $customerInfo['address'] = $userMessage;
         }
 
         // =========================
@@ -50,7 +52,7 @@ class AddressStep implements OrderStepInterface
             ];
         }
 
-        // Update session once (if not confirmed yet)
+        // Update session once
         $session->update(['customer_info' => $customerInfo]);
 
         $missing = [];
@@ -69,27 +71,26 @@ class AddressStep implements OrderStepInterface
     }
 
     // =========================
-    // Strict Address Validation
+    // Strict Address Validation (Improved)
     // =========================
     private function isValidAddress(string $text): bool
     {
         $text = trim($text);
 
-        // Minimum length (prevents "kurtee ace")
         if (mb_strlen($text) < 15) {
             return false;
         }
 
         $invalidTriggers = [
-            'price', 'dam', 'koto', 'picture', 'send',
-            'delivery charge', 'available', 'details',
-            'ace', 'ase', 'আছে', 'product', 'pic', 'chobi'
+            'price','dam','koto','picture','send',
+            'delivery charge','available','details',
+            'ace','ase','আছে','product','pic','chobi'
         ];
 
         $lower = mb_strtolower($text);
 
         foreach ($invalidTriggers as $trigger) {
-            if ($lower === $trigger) {
+            if (str_contains($lower, $trigger)) {
                 return false;
             }
         }
@@ -98,7 +99,7 @@ class AddressStep implements OrderStepInterface
     }
 
     // =========================
-    // BD Phone Extractor
+    // BD Phone Extractor (Stable)
     // =========================
     private function extractPhoneNumber(string $msg): ?string
     {
@@ -106,10 +107,10 @@ class AddressStep implements OrderStepInterface
         $en = ["1","2","3","4","5","6","7","8","9","0"];
 
         $msg = str_replace($bn, $en, $msg);
-        $msg = preg_replace('/[^0-9]/', '', $msg);
+        $digits = preg_replace('/[^0-9]/', '', $msg);
 
-        if (preg_match('/(01[3-9]\d{8})/', $msg, $matches)) {
-            return $matches[0];
+        if (preg_match('/01[3-9]\d{8}/', $digits, $matches)) {
+            return substr($matches[0], 0, 11);
         }
 
         return null;
