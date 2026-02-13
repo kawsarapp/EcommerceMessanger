@@ -21,27 +21,38 @@ trait OrderTraits
         return [];
     }
 
+   
+    
     public function findProductSystematically($clientId, $message)
     {
-        $keywords = array_filter(explode(' ', $message), function($word) {
-            return is_string($word) && mb_strlen(trim($word)) >= 3 && !in_array(strtolower($word), ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন']);
+        // 1. অপ্রয়োজনীয় শব্দ বাদ দেওয়া
+        $stopWords = ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন', 'ace', 'ase', 'আছে', 'নিব', 'nibo', 'product', 'koto', 'dam', 'price'];
+        
+        $keywords = array_filter(explode(' ', $message), function($word) use ($stopWords) {
+            return is_string($word) && mb_strlen(trim($word)) >= 2 && !in_array(strtolower($word), $stopWords);
         });
 
         if (empty($keywords)) return null;
 
-        foreach($keywords as $word) {
-            $product = Product::where('client_id', $clientId)
-                ->where('sku', 'LIKE', "%".strtoupper(trim($word))."%")
-                ->first();
-            if($product) return $product;
-        }
+        $query = Product::where('client_id', $clientId)
+            ->where('stock_status', 'in_stock');
 
-        return Product::where('client_id', $clientId)
-            ->where(function($q) use ($keywords) {
-                foreach($keywords as $word) {
-                    $q->orWhere('name', 'LIKE', "%".trim($word)."%");
-                }
-            })
-            ->first();
+        // 2. প্রতিটি কিওয়ার্ড দিয়ে সার্চ (Fuzzy Search)
+        $query->where(function($q) use ($keywords) {
+            foreach($keywords as $word) {
+                $word = trim($word);
+                $q->orWhere('name', 'LIKE', "%{$word}%")
+                  ->orWhere('sku', 'LIKE', "%{$word}%")
+                  ->orWhere('tags', 'LIKE', "%{$word}%")
+                  ->orWhere('category', 'LIKE', "%{$word}%") // যদি category কলাম স্ট্রিং হয়
+                  ->orWhereHas('category', function($catQ) use ($word) { // যদি রিলেশনশিপ থাকে
+                      $catQ->where('name', 'LIKE', "%{$word}%");
+                  });
+            }
+        });
+
+        return $query->latest()->first();
     }
+
+    
 }

@@ -38,37 +38,46 @@ class ChatbotService
    
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
-        // 🚀 1. IMAGE PREFETCH (Outside Transaction)
+        // 🚀 1. IMAGE HANDLING (Robust)
         $base64Image = null;
         if ($imageUrl) {
             try {
-                $imgResponse = Http::timeout(5)->get($imageUrl);
+                // Facebook Image sometimes needs User-Agent
+                $imgResponse = Http::withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                ])->timeout(10)->get($imageUrl);
+
                 if ($imgResponse->successful()) {
-                    $base64Image = "data:" . $imgResponse->header('Content-Type') . ";base64," . base64_encode($imgResponse->body());
+                    $mime = $imgResponse->header('Content-Type') ?: 'image/jpeg';
+                    $base64Image = "data:" . $mime . ";base64," . base64_encode($imgResponse->body());
+                    Log::info("Image downloaded successfully for User: $senderId");
+                } else {
+                    Log::error("Image download failed: " . $imgResponse->status());
                 }
             } catch (\Exception $e) {
                 Log::error("Image Pre-fetch Error: " . $e->getMessage());
             }
         }
 
+        // যদি শুধু ইমেজ থাকে এবং কোনো টেক্সট না থাকে
+        if (empty($userMessage) && $base64Image) {
+            $userMessage = "User sent an image. Please describe it and match with inventory.";
+        }
+
         return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image) {
 
-            // 🔒 2. LOCK SESSION
+            // Session Lock
             $session = OrderSession::firstOrCreate(
                 ['sender_id' => $senderId],
                 ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'history' => []]]
             );
-
-            // Reload with lock for safety
             $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
 
-            // 👤 Human Agent Check
             if ($session->is_human_agent_active) return null;
 
             $client = Client::find($clientId);
             
-            // 🔄 3. SMART RESET (If user wants to buy something else)
-            // Trait থেকে findProductSystematically ব্যবহার করা হচ্ছে
+            // 🔄 SMART RESET: যদি ইউজার নতুন প্রোডাক্ট খোঁজে
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
             $currentProductId = $session->customer_info['product_id'] ?? null;
             
@@ -82,73 +91,53 @@ class ChatbotService
                 ]);
             }
 
-            // 🧠 4. LOAD CURRENT STEP
-            $customerInfo = $session->customer_info;
-            $stepName = $customerInfo['step'] ?? 'start';
-
+            // Step Processing
+            $stepName = $session->customer_info['step'] ?? 'start';
             $steps = [
-                'start'         => new StartStep(),
-                'select_variant'=> new VariantStep(),
-                'collect_info'  => new AddressStep(),
+                'start' => new StartStep(),
+                'select_variant' => new VariantStep(),
+                'collect_info' => new AddressStep(),
                 'confirm_order' => new ConfirmStep(),
-                'completed'     => new StartStep(), // Loop back to start if completed
+                'completed' => new StartStep(),
             ];
 
             $handler = $steps[$stepName] ?? $steps['start'];
-
-            // 🔥 5. EXECUTE LOGIC (The Step Class decides what to do)
             $result = $handler->process($session, $userMessage);
+            
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
-            // ====================================
-            // ✅ 6. CODE-FIRST ACTION: CREATE ORDER
-            // ====================================
+            // Order Creation Action
             if (isset($result['action']) && $result['action'] === 'create_order') {
                 try {
-                    // OrderService ব্যবহার করে অর্ডার তৈরি
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    
-                    $instruction .= " (সিস্টেম: অর্ডার সফল হয়েছে! অর্ডার আইডি #{$order->id}। কাস্টমারকে সুন্দর করে অভিনন্দন জানাও।)";
-                    
-                    // Send Telegram Alert
+                    $instruction .= " (System: Order #{$order->id} created successfully!)";
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
-
                 } catch (\Exception $e) {
-                    Log::error("Order Creation Failed: " . $e->getMessage());
-                    $instruction = "দুঃখিত, কারিগরি ত্রুটির কারণে অর্ডারটি নেওয়া যাচ্ছে না। অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।";
+                    $instruction = "Technical error creating order.";
+                    Log::error("Order Error: " . $e->getMessage());
                 }
             }
 
-            // ====================================
-            // 🤖 7. CALL AI (With updated instruction)
-            // ====================================
-            
-            // Prepare Context
-            $inventoryData = $this->getInventoryData($clientId, $userMessage, $customerInfo['history'] ?? []);
+            // Context Loading
+            $inventoryData = $this->getInventoryData($clientId, $userMessage); // Removed history dependency for cleaner search
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
 
-            // Generate System Prompt
-            $systemPrompt = $this->generateSystemPrompt(
-                $instruction, 
-                $contextData, 
-                $orderHistory, 
-                $inventoryData, 
-                $currentTime
-            );
+            // Prompt Generation
+            $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime);
 
-            // Build Messages Array
+            // Message Building
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             
-            // Add History (Last 4 turns)
-            $history = $customerInfo['history'] ?? [];
+            // Add History
+            $history = $session->customer_info['history'] ?? [];
             foreach (array_slice($history, -4) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
             
-            // Add Current Message (With Image if exists)
+            // Current Message
             if ($base64Image) {
                 $messages[] = [
                     'role' => 'user',
@@ -164,12 +153,12 @@ class ChatbotService
             // Call LLM
             $aiResponse = $this->callLlmChain($messages);
 
-            // 💾 8. SAVE HISTORY
+            // Save History
             if ($aiResponse) {
                 $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
-                $customerInfo = $session->customer_info; // Re-fetch as it might have changed
-                $customerInfo['history'] = array_slice($history, -20);
-                $session->update(['customer_info' => $customerInfo]);
+                $info = $session->customer_info;
+                $info['history'] = array_slice($history, -20);
+                $session->update(['customer_info' => $info]);
             }
 
             return $aiResponse;
@@ -186,24 +175,31 @@ class ChatbotService
      * [OPTIMIZED] স্মার্ট ইনভেন্টরি সার্চ (With Caching)
      * এটি গ্লোবাল প্রম্পটের জন্য দরকার, তাই এখানে রাখা হলো।
      */
-    private function getInventoryData($clientId, $userMessage, $history)
+    private function getInventoryData($clientId, $userMessage)
     {
-        $cacheKey = "inventory_{$clientId}_" . md5($userMessage);
-        return Cache::remember($cacheKey, 600, function () use ($clientId, $userMessage) {
-            // Simple generic keyword search for context fallback
-            $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 3);
-            if (empty($keywords)) return "[]";
+        // Cache key based on message keywords
+        $cacheKey = "inv_{$clientId}_" . md5(Str::limit($userMessage, 20));
 
-            return Product::where('client_id', $clientId)
-                ->where('stock_status', 'in_stock')
-                ->where(function($q) use ($keywords) {
+        return Cache::remember($cacheKey, 300, function () use ($clientId, $userMessage) {
+            // Broad search for context
+            $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 3);
+            
+            $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
+            
+            if (!empty($keywords)) {
+                $query->where(function($q) use ($keywords) {
                     foreach ($keywords as $word) {
-                        $q->orWhere('name', 'like', "%{$word}%");
+                        $q->orWhere('name', 'like', "%{$word}%")
+                          ->orWhere('tags', 'like', "%{$word}%") // Added tags
+                          ->orWhere('category', 'like', "%{$word}%"); // Added category
                     }
-                })
-                ->limit(3)
-                ->get(['id', 'name', 'sale_price', 'stock_quantity'])
-                ->toJson();
+                });
+            } else {
+                // If no keywords, show random featured products
+                $query->inRandomOrder();
+            }
+
+            return $query->limit(5)->get(['id', 'name', 'sale_price', 'stock_quantity'])->toJson();
         });
     }
 
@@ -236,20 +232,18 @@ class ChatbotService
         return <<<EOT
 {$instruction}
 
-**Role:** You are a helpful sales assistant.
 **Context:**
-- Product Info: {$prodCtx}
-- Inventory: {$invData}
-- Customer History: {$ordCtx}
-- Time: {$time}
+- Product Context: {$prodCtx}
+- Inventory Match: {$invData}
+- History: {$ordCtx}
 
 **Rules:**
-1. Be polite and concise (Bangla + English).
-2. If the instruction says "Order Placed", congratulate the user.
-3. Do NOT generate JSON tags like [ORDER_DATA]. The system handles orders now.
-4. Only use [CAROUSEL: id] if you need to show a product.
+1. If the user sent an IMAGE, look at 'Inventory Match' to find a similar product.
+2. If 'Inventory Match' is empty, say "Sorry, we don't have this item."
+3. Do NOT mistake inquiries (e.g. "kurtee ace") for addresses.
+4. If a product is found, show [CAROUSEL: id].
 
-Reply to the user now.
+Reply in Bangla/English mix.
 EOT;
     }
 
@@ -421,8 +415,7 @@ EOT;
             $response = Http::withToken($apiKey)->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
-                'temperature' => 0.3,
-                'max_tokens' => 300,
+                'max_tokens' => 350,
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
