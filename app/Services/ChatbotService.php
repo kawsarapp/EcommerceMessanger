@@ -17,7 +17,7 @@ use App\Services\OrderFlow\StartStep;
 use App\Services\OrderFlow\VariantStep;
 use App\Services\OrderFlow\AddressStep;
 use App\Services\OrderFlow\ConfirmStep;
-use App\Services\OrderFlow\OrderTraits; // For shared logic like findProduct
+use App\Services\OrderFlow\OrderTraits; 
 
 class ChatbotService
 {
@@ -88,18 +88,24 @@ class ChatbotService
             $client = Client::find($clientId);
             
             // 🔄 SMART RESET: যদি ইউজার নতুন প্রোডাক্ট খোঁজে
+            // Always check for product first. If user mentions a new product, FORCE reset to StartStep.
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
-            $currentProductId = $session->customer_info['product_id'] ?? null;
             
-            if ($newProduct && $newProduct->id != $currentProductId) {
-                Log::info("🔄 Product Switch: " . $newProduct->name);
-                $session->update([
-                    'customer_info' => [
-                        'step' => 'start', 
-                        'product_id' => $newProduct->id, 
-                        'history' => $session->customer_info['history'] ?? []
-                    ]
-                ]);
+            if ($newProduct) {
+                $currentProductId = $session->customer_info['product_id'] ?? null;
+                $currentStep = $session->customer_info['step'] ?? '';
+
+                // যদি নতুন প্রোডাক্ট হয় অথবা আগে কোনো প্রোডাক্ট সিলেক্ট না করা থাকে কিন্তু ইউজার প্রোডাক্টের নাম বলছে
+                if ($newProduct->id != $currentProductId || $currentStep === 'collect_info') {
+                    Log::info("🔄 Context Switch Triggered: New Product Found ({$newProduct->name})");
+                    $session->update([
+                        'customer_info' => [
+                            'step' => 'start', // Force Start Step
+                            'product_id' => $newProduct->id, 
+                            'history' => $session->customer_info['history'] ?? []
+                        ]
+                    ]);
+                }
             }
 
             // Step Processing
@@ -127,10 +133,10 @@ class ChatbotService
                 Log::info("🚀 Action Triggered: create_order");
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    $instruction .= " (System: Order #{$order->id} created successfully!)";
+                    $instruction .= " (System: Order #{$order->id} created successfully! Congratulate the customer.)";
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
                 } catch (\Exception $e) {
-                    $instruction = "Technical error creating order.";
+                    $instruction = "Technical error creating order. Please apologize.";
                     Log::error("❌ Order Error: " . $e->getMessage());
                 }
             }
@@ -140,7 +146,7 @@ class ChatbotService
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
 
-            // Prompt Generation
+            // Prompt Generation (Dynamic)
             $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime);
             Log::info("📝 System Prompt Generated.");
 
@@ -209,8 +215,8 @@ class ChatbotService
                 $query->where(function($q) use ($keywords) {
                     foreach ($keywords as $word) {
                         $q->orWhere('name', 'like', "%{$word}%")
-                          ->orWhere('tags', 'like', "%{$word}%") // Added tags
-                          // ❌ REMOVED BAD SQL: ->orWhere('category', 'like', ...)
+                          ->orWhere('tags', 'like', "%{$word}%")
+                          // ✅ SQL FIX: Relation Search
                           ->orWhereHas('category', function($cq) use ($word){
                               $cq->where('name', 'like', "%{$word}%");
                           });
@@ -249,23 +255,35 @@ class ChatbotService
         return false;
     }
 
+    /**
+     * 🔥 DYNAMIC PROMPT GENERATION
+     */
     private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time)
     {
         return <<<EOT
 {$instruction}
 
-**Context:**
-- Product Context: {$prodCtx}
-- Inventory Match: {$invData}
-- History: {$ordCtx}
+**System Role:** Elite AI Sales Associate for an E-commerce Brand in Bangladesh.
+**Objective:** Convert inquiries into orders politely and efficiently.
 
-**Rules:**
-1. If the user sent an IMAGE, look at 'Inventory Match' to find a similar product.
-2. If 'Inventory Match' is empty, say "Sorry, we don't have this item."
-3. Do NOT mistake inquiries (e.g. "kurtee ace") for addresses.
-4. If a product is found, show [CAROUSEL: id].
+### 🛡️ STRICT GUIDELINES:
+1. **Instructions First:** You MUST follow the instruction provided at the top.
+2. **Inventory Truth:** - [Inventory Match] contains real products we have.
+   - If [Inventory Match] is empty and user asks "what do you have", apologize and say stock is unavailable.
+3. **Product Context:** - [Product Context] contains the product the user is currently interested in (from database).
+   - Use this to answer specific questions about price/size/stock.
+4. **No Hallucination:** Do not invent products or prices. Use the provided JSON data.
+5. **Format:**
+   - Use [CAROUSEL: product_id] to show products.
+   - Keep responses short and friendly in mixed Bangla/English.
 
-Reply in Bangla/English mix.
+### 📂 DATA PACKETS:
+- [Product Context]: {$prodCtx}
+- [Inventory Match]: {$invData}
+- [Customer History]: {$ordCtx}
+- [Time]: {$time}
+
+Respond now.
 EOT;
     }
 
