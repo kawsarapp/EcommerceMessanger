@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
-    /**
-     * চ্যাট সেশন থেকে অর্ডার তৈরি করা
-     */
     public function finalizeOrderFromSession($clientId, $senderId, $clientModel)
     {
         $session = OrderSession::where('sender_id', $senderId)->first();
@@ -32,8 +29,8 @@ class OrderService
             $price = $product->sale_price ?? $product->regular_price;
             $total = ($price * $qty) + $delivery;
 
-            // ১. অর্ডার তৈরি
-            $order = Order::create([
+            // ১. অর্ডার ডাটা প্রস্তুত
+            $orderData = [
                 'client_id'       => $clientId,
                 'sender_id'       => $senderId,
                 'customer_name'   => $info['name'] ?? 'Messenger Customer',
@@ -42,9 +39,27 @@ class OrderService
                 'total_amount'    => $total,
                 'order_status'    => 'processing',
                 'payment_status'  => 'pending',
-            ]);
+            ];
 
-            // ২. অর্ডার আইটেম ও নোট (ডাইনামিক কলাম চেক)
+            // SQL FIX: কলাম থাকলেই কেবল ডাটা সেভ হবে
+            if (Schema::hasColumn('orders', 'payment_method')) {
+                $orderData['payment_method'] = 'cod';
+            }
+            
+            // নোট হ্যান্ডলিং
+            if (isset($info['variant'])) {
+                $variantNote = "Variant: " . json_encode($info['variant']);
+                if (Schema::hasColumn('orders', 'admin_note')) {
+                    $orderData['admin_note'] = $variantNote;
+                } elseif (Schema::hasColumn('orders', 'notes')) {
+                    $orderData['notes'] = $variantNote;
+                }
+            }
+
+            // ২. অর্ডার তৈরি
+            $order = Order::create($orderData);
+
+            // ৩. আইটেম তৈরি
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $product->id,
@@ -53,16 +68,10 @@ class OrderService
                 'price' => $price
             ]);
 
-            // নোট সেভ করা (যদি কলাম থাকে)
-            if (isset($info['variant']) && Schema::hasColumn('orders', 'admin_note')) {
-                $variantNote = json_encode($info['variant']);
-                $order->update(['admin_note' => "Variant: $variantNote"]);
-            }
-
-            // ৩. স্টক আপডেট
+            // ৪. স্টক আপডেট
             $product->decrement('stock_quantity', $qty);
 
-            // ৪. সেশন ক্লিয়ার করা
+            // ৫. সেশন আপডেট
             $session->update(['customer_info' => ['step' => 'completed', 'history' => $info['history'] ?? []]]);
 
             return $order;

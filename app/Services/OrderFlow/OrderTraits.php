@@ -2,6 +2,7 @@
 namespace App\Services\OrderFlow;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\Log;
 
 trait OrderTraits
 {
@@ -21,12 +22,17 @@ trait OrderTraits
         return [];
     }
 
-   
-    
+    /**
+     * ✅ SQL FIX: Removed search on non-existent 'category' column
+     */
     public function findProductSystematically($clientId, $message)
     {
-        // 1. অপ্রয়োজনীয় শব্দ বাদ দেওয়া
-        $stopWords = ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন', 'ace', 'ase', 'আছে', 'নিব', 'nibo', 'product', 'koto', 'dam', 'price'];
+        // Null Safety Check
+        $message = (string) $message; 
+        if (empty(trim($message))) return null;
+
+        // 1. Stop words removal
+        $stopWords = ['ami', 'kinbo', 'chai', 'korte', 'jonno', 'কিনবো', 'চাই', 'জন্য', 'দিবেন', 'ace', 'ase', 'আছে', 'নিব', 'nibo', 'product', 'koto', 'dam', 'price', 'hi', 'hello'];
         
         $keywords = array_filter(explode(' ', $message), function($word) use ($stopWords) {
             return is_string($word) && mb_strlen(trim($word)) >= 2 && !in_array(strtolower($word), $stopWords);
@@ -34,25 +40,33 @@ trait OrderTraits
 
         if (empty($keywords)) return null;
 
+        Log::info("🔍 Searching for Client $clientId with Keywords: " . implode(', ', $keywords));
+
         $query = Product::where('client_id', $clientId)
             ->where('stock_status', 'in_stock');
 
-        // 2. প্রতিটি কিওয়ার্ড দিয়ে সার্চ (Fuzzy Search)
+        // 2. Fuzzy Search (Corrected for SQL Schema)
         $query->where(function($q) use ($keywords) {
             foreach($keywords as $word) {
                 $word = trim($word);
                 $q->orWhere('name', 'LIKE', "%{$word}%")
                   ->orWhere('sku', 'LIKE', "%{$word}%")
                   ->orWhere('tags', 'LIKE', "%{$word}%")
-                  ->orWhere('category', 'LIKE', "%{$word}%") // যদি category কলাম স্ট্রিং হয়
-                  ->orWhereHas('category', function($catQ) use ($word) { // যদি রিলেশনশিপ থাকে
+                  // SQL FIX: 'category' কলাম নেই, তাই এটি বাদ দিয়েছি। রিলেশনশিপ থাকলে এটি কাজ করবে:
+                  ->orWhereHas('category', function($catQ) use ($word) { 
                       $catQ->where('name', 'LIKE', "%{$word}%");
                   });
             }
         });
 
-        return $query->latest()->first();
-    }
+        $product = $query->latest()->first();
+        
+        if ($product) {
+            Log::info("✅ Product Found: {$product->name} (ID: {$product->id})");
+        } else {
+            Log::warning("❌ No Product Found.");
+        }
 
-    
+        return $product;
+    }
 }

@@ -19,11 +19,8 @@ use App\Services\OrderFlow\AddressStep;
 use App\Services\OrderFlow\ConfirmStep;
 use App\Services\OrderFlow\OrderTraits; // For shared logic like findProduct
 
-
-
 class ChatbotService
 {
-
     use OrderTraits; 
 
     protected $orderService;
@@ -31,13 +28,18 @@ class ChatbotService
     public function __construct(OrderService $orderService) {
         $this->orderService = $orderService;
     }
+
     /**
      * মেইন ফাংশন: কন্ট্রোলার থেকে রিকোয়েস্ট রিসিভ করে এবং প্রসেস করে
      * (Production Ready: Modular State Pattern + Optimized Transaction)
      */
-   
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
+        Log::info("🤖 AI Service Started for User: $senderId");
+
+        // 🔥 NULL SAFETY GUARD: Ensure message is never null to prevent TypeErrors
+        $userMessage = $userMessage ?? '';
+
         // 🚀 1. IMAGE HANDLING (Robust)
         $base64Image = null;
         if ($imageUrl) {
@@ -60,8 +62,13 @@ class ChatbotService
         }
 
         // যদি শুধু ইমেজ থাকে এবং কোনো টেক্সট না থাকে
-        if (empty($userMessage) && $base64Image) {
+        if (empty(trim($userMessage)) && $base64Image) {
             $userMessage = "User sent an image. Please describe it and match with inventory.";
+            Log::info("ℹ️ Auto-filled message for image input.");
+        } elseif (empty(trim($userMessage))) {
+            // If both are empty, safely return null
+            Log::warning("⚠️ Empty message received in ChatbotService. Returning null.");
+            return null;
         }
 
         return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image) {
@@ -73,7 +80,10 @@ class ChatbotService
             );
             $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
 
-            if ($session->is_human_agent_active) return null;
+            if ($session->is_human_agent_active) {
+                Log::info("⏸️ Human Agent Active. AI Paused.");
+                return null;
+            }
 
             $client = Client::find($clientId);
             
@@ -82,6 +92,7 @@ class ChatbotService
             $currentProductId = $session->customer_info['product_id'] ?? null;
             
             if ($newProduct && $newProduct->id != $currentProductId) {
+                Log::info("🔄 Product Switch: " . $newProduct->name);
                 $session->update([
                     'customer_info' => [
                         'step' => 'start', 
@@ -93,6 +104,8 @@ class ChatbotService
 
             // Step Processing
             $stepName = $session->customer_info['step'] ?? 'start';
+            Log::info("👣 Processing Step: $stepName");
+
             $steps = [
                 'start' => new StartStep(),
                 'select_variant' => new VariantStep(),
@@ -102,30 +115,34 @@ class ChatbotService
             ];
 
             $handler = $steps[$stepName] ?? $steps['start'];
-            $result = $handler->process($session, $userMessage);
+            
+            // 🔥 SAFE CALL: Force string type to prevent AddressStep error
+            $result = $handler->process($session, (string)$userMessage);
             
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
             // Order Creation Action
             if (isset($result['action']) && $result['action'] === 'create_order') {
+                Log::info("🚀 Action Triggered: create_order");
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
                     $instruction .= " (System: Order #{$order->id} created successfully!)";
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
                 } catch (\Exception $e) {
                     $instruction = "Technical error creating order.";
-                    Log::error("Order Error: " . $e->getMessage());
+                    Log::error("❌ Order Error: " . $e->getMessage());
                 }
             }
 
             // Context Loading
-            $inventoryData = $this->getInventoryData($clientId, $userMessage); // Removed history dependency for cleaner search
+            $inventoryData = $this->getInventoryData($clientId, $userMessage); 
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
 
             // Prompt Generation
             $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime);
+            Log::info("📝 System Prompt Generated.");
 
             // Message Building
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
@@ -151,7 +168,9 @@ class ChatbotService
             }
 
             // Call LLM
+            Log::info("📡 Calling LLM...");
             $aiResponse = $this->callLlmChain($messages);
+            Log::info("🗣️ AI Response: " . Str::limit($aiResponse, 50));
 
             // Save History
             if ($aiResponse) {
@@ -191,7 +210,10 @@ class ChatbotService
                     foreach ($keywords as $word) {
                         $q->orWhere('name', 'like', "%{$word}%")
                           ->orWhere('tags', 'like', "%{$word}%") // Added tags
-                          ->orWhere('category', 'like', "%{$word}%"); // Added category
+                          // ❌ REMOVED BAD SQL: ->orWhere('category', 'like', ...)
+                          ->orWhereHas('category', function($cq) use ($word){
+                              $cq->where('name', 'like', "%{$word}%");
+                          });
                     }
                 });
             } else {

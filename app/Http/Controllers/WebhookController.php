@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\OrderSession;
 use App\Models\Conversation;
-use App\Models\Product; // Carousel এর জন্য লাগতে পারে
+use App\Models\Product; // Carousel এর জন্য
 use App\Services\ChatbotService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -20,6 +20,8 @@ class WebhookController extends Controller
      */
     public function verify(Request $request)
     {
+        Log::info("--- Webhook Verification Hit ---", $request->all());
+
         $mode = $request->get('hub_mode');
         $token = $request->get('hub_verify_token');
         $challenge = $request->get('hub_challenge');
@@ -28,7 +30,10 @@ class WebhookController extends Controller
             $client = Client::where('fb_verify_token', $token)->first();
             if ($client) {
                 $client->update(['webhook_verified_at' => now()]);
+                Log::info("✅ Webhook Verified for Client ID: " . $client->id);
                 return response($challenge, 200);
+            } else {
+                Log::error("❌ Verification Failed: Token mismatch.");
             }
         }
         return response('Forbidden', 403);
@@ -39,7 +44,8 @@ class WebhookController extends Controller
      */
     public function handle(Request $request, ChatbotService $chatbot)
     {
-        // Log::info("-------------- WEBHOOK HIT --------------"); // লগ কমানোর জন্য কমেন্ট করতে পারো
+        Log::info("-------------- WEBHOOK MESSAGE RECEIVED --------------");
+        // Log::debug("Raw Payload:", $request->all()); // Uncomment for deep debug
 
         $data = $request->all();
 
@@ -47,6 +53,7 @@ class WebhookController extends Controller
         // WEBHOOK SIGNATURE VERIFICATION
         // =====================================
         $pageId = $data['entry'][0]['id'] ?? null;
+        
         if ($pageId) {
             $clientForVerification = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
             if ($clientForVerification && $clientForVerification->fb_app_secret) {
@@ -56,10 +63,12 @@ class WebhookController extends Controller
 
                 $expected = 'sha1=' . hash_hmac('sha1', $body, $appSecret);
                 if (!hash_equals($expected, $signature ?? '')) {
-                    Log::warning("Invalid webhook signature from Page ID: $pageId");
+                    Log::warning("⚠️ Invalid Signature for Page ID: $pageId");
                     return response('Forbidden', 403);
                 }
             }
+        } else {
+            Log::warning("⚠️ Page ID missing in webhook data.");
         }
 
         if (isset($data['entry'][0]['messaging'][0])) {
@@ -68,8 +77,11 @@ class WebhookController extends Controller
             $pageId    = $data['entry'][0]['id'] ?? null;
             $mid       = $messaging['message']['mid'] ?? null;
 
+            Log::info("📩 Processing Message - Sender: $senderId | Page: $pageId");
+
             // [Deduplication]
             if ($mid && Cache::has("fb_mid_{$mid}")) {
+                Log::info("⏭️ Duplicate Message Skipped: $mid");
                 return response('OK', 200);
             }
             if ($mid) Cache::put("fb_mid_{$mid}", true, 300);
@@ -77,7 +89,10 @@ class WebhookController extends Controller
             /* ================= MESSAGE PRE-PROCESSING ================= */
 
             $client = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
-            if (!$client) return response('OK', 200);
+            if (!$client) {
+                Log::error("❌ Client not found or inactive for Page ID: $pageId");
+                return response('OK', 200);
+            }
 
             $messageText = null;
             $incomingImageUrl = null;
@@ -85,10 +100,13 @@ class WebhookController extends Controller
             // Text / Payload Extraction
             if (isset($messaging['message']['text'])) {
                 $messageText = $messaging['message']['text'];
+                Log::info("📝 Text Message: " . Str::limit($messageText, 50));
             } elseif (isset($messaging['message']['quick_reply']['payload'])) {
                 $messageText = $messaging['message']['quick_reply']['payload'];
+                Log::info("🔘 Quick Reply Payload: $messageText");
             } elseif (isset($messaging['postback']['payload'])) {
                 $messageText = $messaging['postback']['payload'];
+                Log::info("🔙 Postback Payload: $messageText");
             }
 
             // Image / Audio Extraction
@@ -99,45 +117,56 @@ class WebhookController extends Controller
 
                 if ($type === 'image') {
                     $incomingImageUrl = $url;
+                    Log::info("📷 Image Attachment Received: $url");
                 } elseif ($type === 'audio') {
-                    $messageText = $chatbot->convertVoiceToText($url); // ChatbotService-এ এই মেথড থাকতে হবে
+                    Log::info("🎤 Audio Attachment Received. Converting...");
+                    $messageText = $chatbot->convertVoiceToText($url);
+                    
                     if (!$messageText) {
-                        $this->sendMessengerMessage($senderId, "দুঃখিত, ভয়েসটি বুঝতে পারিনি। টাইপ করুন।", $client->fb_page_token);
+                        Log::warning("⚠️ Audio conversion failed.");
+                        $this->sendMessengerMessage($senderId, "দুঃখিত, ভয়েসটি বুঝতে পারিনি। দয়া করে টাইপ করুন।", $client->fb_page_token);
                         return response('OK', 200);
                     }
+                    Log::info("🗣️ Audio Converted: $messageText");
                 }
             }
 
-            // Carousel Click Handling (Simple logic keeps here is fine)
+            // Carousel Click Handling
             if (Str::startsWith($messageText, 'ORDER_PRODUCT_')) {
                 $productId = str_replace('ORDER_PRODUCT_', '', $messageText);
                 $product = Product::find($productId);
                 $messageText = "আমি " . ($product->name ?? 'এই প্রোডাক্টটি') . " অর্ডার করতে চাই।";
+                Log::info("🛒 Product Selection Intent: $messageText");
             }
 
             /* ================= MAIN PROCESS ================= */
 
-            if ($senderId && ($messageText || $incomingImageUrl)) {
+            // NULL SAFETY: Ensure messageText is never null
+            $finalMessage = $messageText ?? '';
+
+            if ($senderId && ($finalMessage !== '' || $incomingImageUrl)) {
                 
                 // Typing Indicator ON
                 try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_on'); } catch (\Exception $e) {}
 
-                // 🔥 MAIN CHANGE: All logic is now inside ChatbotService
-                $reply = $chatbot->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl);
+                Log::info("🤖 Calling ChatbotService...");
+                
+                // 🔥 CALL AI SERVICE
+                $reply = $chatbot->getAiResponse($finalMessage, $client->id, $senderId, $incomingImageUrl);
+                
+                Log::info("🤖 AI Reply Generated: " . Str::limit($reply, 100));
 
                 // Typing Indicator OFF
                 try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
 
                 // Send Response
                 if ($reply) {
-                    // Check for internal tags strictly for UI elements (Carousel/Quick Replies only)
-                    // Note: ORDER_DATA is NOT checked here anymore because Service handles it.
-                    
                     $outgoingImage = null;
                     $quickReplies = [];
 
                     // Carousel
                     if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
+                        Log::info("🖼️ Carousel Triggered: " . $matches[1]);
                         $productIds = explode(',', $matches[1]);
                         $reply = str_replace($matches[0], "", $reply);
                         $this->sendMessengerCarousel($senderId, $productIds, $client->fb_page_token);
@@ -145,6 +174,7 @@ class WebhookController extends Controller
 
                     // Quick Replies
                     if (preg_match('/\[QUICK_REPLIES:\s*([^\]]+)\]/', $reply, $matches)) {
+                        Log::info("🔘 Quick Replies Triggered.");
                         $reply = str_replace($matches[0], "", $reply);
                         $buttons = explode(',', $matches[1]);
                         foreach ($buttons as $btn) {
@@ -157,13 +187,21 @@ class WebhookController extends Controller
                         }
                     }
 
-                    // Log & Send
-                    $this->logConversation($client->id, $senderId, $messageText, $reply, $incomingImageUrl);
-                    $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
+                    // Send Final Message
+                    if (!empty(trim($reply))) {
+                        Log::info("📤 Sending Final Text Response.");
+                        $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
+                    }
+
+                    // Log Conversation
+                    $this->logConversation($client->id, $senderId, $finalMessage, $reply, $incomingImageUrl);
+                } else {
+                    Log::info("⚠️ No reply from AI (Human agent active or empty response).");
                 }
             }
         }
 
+        Log::info("-------------- WEBHOOK END --------------");
         return response('EVENT_RECEIVED', 200);
     }
 
@@ -174,18 +212,33 @@ class WebhookController extends Controller
     private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
         
-        // Image Send logic (if AI sends image link) - keeping simplified
+        // Image Send logic
         if ($imageUrl) {
-             Http::post($url, [
-                'recipient' => ['id' => $recipientId],
-                'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]
-            ]);
+            try { 
+                $response = Http::post($url, [
+                    'recipient' => ['id' => $recipientId],
+                    'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]
+                ]);
+                if ($response->failed()) Log::error("❌ Failed to send image: " . $response->body());
+            } catch (\Exception $e) {
+                Log::error("❌ Exception sending image: " . $e->getMessage());
+            }
         }
 
         if (!empty(trim($message))) {
             $payload = ['recipient' => ['id' => $recipientId], 'message' => ['text' => trim($message)]];
             if (!empty($quickReplies)) $payload['message']['quick_replies'] = $quickReplies;
-            Http::post($url, $payload);
+            
+            try {
+                $response = Http::post($url, $payload);
+                if ($response->failed()) {
+                    Log::error("❌ Failed to send message: " . $response->body());
+                } else {
+                    Log::info("✅ Message sent successfully.");
+                }
+            } catch (\Exception $e) {
+                Log::error("❌ Exception sending message: " . $e->getMessage());
+            }
         }
     }
 
@@ -206,27 +259,51 @@ class WebhookController extends Controller
             ];
         }
 
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
-            'recipient' => ['id' => $recipientId],
-            'message' => [
-                'attachment' => [
-                    'type' => 'template',
-                    'payload' => ['template_type' => 'generic', 'elements' => $elements]
+        try {
+            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
+            $response = Http::post($url, [
+                'recipient' => ['id' => $recipientId],
+                'message' => [
+                    'attachment' => [
+                        'type' => 'template',
+                        'payload' => ['template_type' => 'generic', 'elements' => $elements]
+                    ]
                 ]
-            ]
-        ]);
+            ]);
+            if ($response->failed()) {
+                Log::error("❌ Failed to send carousel: " . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error("❌ Exception sending carousel: " . $e->getMessage());
+        }
     }
 
     private function sendTypingAction($recipientId, $token, $action) {
-        Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
-            'recipient' => ['id' => $recipientId], 'sender_action' => $action
-        ]);
+        try {
+            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
+            Http::post($url, [
+                'recipient' => ['id' => $recipientId],
+                'sender_action' => $action
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send typing action: " . $e->getMessage());
+        }
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {
-        Conversation::create([
-            'client_id' => $clientId, 'sender_id' => $senderId, 'platform' => 'messenger',
-            'user_message' => $userMsg, 'bot_response' => $botMsg, 'attachment_url' => $imgUrl, 'status' => 'success'
-        ]);
+        try { 
+            Conversation::create([
+                'client_id' => $clientId, 
+                'sender_id' => $senderId, 
+                'platform' => 'messenger', 
+                'user_message' => $userMsg, 
+                'bot_response' => $botMsg, 
+                'attachment_url' => $imgUrl, 
+                'status' => 'success'
+            ]); 
+            Log::info("✅ Conversation Logged.");
+        } catch (\Exception $e) {
+            Log::error("❌ Conversation Log Error: " . $e->getMessage()); 
+        }
     }
 }
