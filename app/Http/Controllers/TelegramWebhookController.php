@@ -12,6 +12,9 @@ class TelegramWebhookController extends Controller
 {
     public function handle(Request $request)
     {
+        // 1. লগ চেক: রিকোয়েস্ট আসছে কিনা
+        Log::info("📨 Telegram Webhook Hit", $request->all());
+
         $data = $request->all();
         $token = env('TELEGRAM_BOT_TOKEN');
 
@@ -21,20 +24,36 @@ class TelegramWebhookController extends Controller
             $chatId = $data['callback_query']['message']['chat']['id'];
             $callbackId = $data['callback_query']['id'];
 
+            Log::info("🔘 Button Clicked: $callbackData");
+
             // AI পজ করার লজিক
             if (Str::startsWith($callbackData, 'pause_ai_')) {
                 $senderId = str_replace('pause_ai_', '', $callbackData);
-                OrderSession::where('sender_id', $senderId)->update(['is_human_agent_active' => true]);
                 
-                $this->sendMessage($chatId, "⏸️ ইউজার ($senderId) এর জন্য AI বন্ধ করা হয়েছে। এখন আপনি সরাসরি কথা বলুন।", $token);
+                // আপডেট লজিক
+                $updated = OrderSession::where('sender_id', $senderId)->update(['is_human_agent_active' => true]);
+                
+                if ($updated) {
+                    Log::info("✅ AI Paused for User: $senderId");
+                    $this->sendMessage($chatId, "⏸️ AI Stopped for User ($senderId). You can chat now.", $token);
+                } else {
+                    Log::error("❌ Failed to find session for User: $senderId");
+                }
             }
 
             // AI পুনরায় চালু করার লজিক
             if (Str::startsWith($callbackData, 'resume_ai_')) {
                 $senderId = str_replace('resume_ai_', '', $callbackData);
-                OrderSession::where('sender_id', $senderId)->update(['is_human_agent_active' => false]);
                 
-                $this->sendMessage($chatId, "▶️ ইউজার ($senderId) এর জন্য AI পুনরায় চালু করা হয়েছে।", $token);
+                // আপডেট লজিক
+                $updated = OrderSession::where('sender_id', $senderId)->update(['is_human_agent_active' => false]);
+
+                if ($updated) {
+                    Log::info("✅ AI Resumed for User: $senderId");
+                    $this->sendMessage($chatId, "▶️ AI Resumed for User ($senderId).", $token);
+                } else {
+                    Log::error("❌ Failed to find session for User: $senderId");
+                }
             }
 
             // টেলিগ্রামের লোডিং আইকন বন্ধ করা

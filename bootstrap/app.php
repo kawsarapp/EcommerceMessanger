@@ -13,10 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
-            'api/telegram/webhook', // এই রাউটটিকে ভেরিফিকেশন থেকে বাদ দিন
-            'webhook', // ⚠️ এই লাইনটি যোগ করুন
-            'api/webhook',   // যদি api.php ব্যবহার করেন
-            'fb-webhook',
+            'webhook',           // Facebook Webhook
+            'telegram/webhook',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
