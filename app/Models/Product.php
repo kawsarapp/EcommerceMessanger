@@ -2,17 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    use HasFactory;
+
+    protected $guarded = ['id'];
+
     protected $fillable = [
         'client_id',
         'category_id', // ✅ Correct Foreign Key
         'name',
         'slug',
-        // 'category', // ❌ REMOVED: This column does not exist in your DB table
         'sub_category',
         'brand',
         'tags',
@@ -46,12 +52,15 @@ class Product extends Model
         'is_featured',
     ];
 
+    // ✅ Casts for Arrays & Numbers
     protected $casts = [
         'key_features' => 'array',
         'gallery' => 'array',
         'colors' => 'array',
         'sizes' => 'array',
         'is_featured' => 'boolean',
+        'regular_price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
     ];
 
     protected $attributes = [
@@ -59,19 +68,44 @@ class Product extends Model
         'stock_status' => 'in_stock',
     ];
 
+    // 🔥 Auto-generate Slug (অটোমেটিক লিংক তৈরি করবে)
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($product) {
+            if (empty($product->slug)) {
+                // নাম থেকে স্লাগ + ইউনিক কোড (যাতে ডুপ্লিকেট না হয়)
+                $product->slug = Str::slug($product->name) . '-' . Str::random(6);
+            }
+        });
+    }
+
+    // ===========================
+    // 🔗 Relationships
+    // ===========================
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function getImageUrlAttribute()
-    {
-        return $this->thumbnail ? asset('storage/' . $this->thumbnail) : asset('images/default-product.png');
-    }
-
-    // ✅ Relationship to Category (Only one definition allowed)
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    // 🔥 New: ট্র্যাকিং এবং রিপোর্টের জন্য এটি লাগবে
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    // ===========================
+    // 🛠 Accessors
+    // ===========================
+
+    public function getImageUrlAttribute()
+    {
+        return $this->thumbnail ? asset('storage/' . $this->thumbnail) : asset('images/default-product.png');
     }
 }

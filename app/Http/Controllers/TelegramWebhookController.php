@@ -14,11 +14,11 @@ use Carbon\Carbon;
 class TelegramWebhookController extends Controller
 {
     /**
-     * ডাইনামিক হ্যান্ডলার: {token} দিয়ে সেলার চিহ্নিত করা হবে
+     * ডাইনামিক হ্যান্ডলার: {token} দিয়ে সেলার চিহ্নিত করা হবে
      */
     public function handle(Request $request, $token)
     {
-        // ১. টোকেন দিয়ে সেলার/ক্লায়েন্ট খুঁজে বের করা
+        // ১. টোকেন দিয়ে সেলার/ক্লায়েন্ট খুঁজে বের করা
         $client = Client::where('telegram_bot_token', $token)->first();
 
         if (!$client) {
@@ -38,12 +38,25 @@ class TelegramWebhookController extends Controller
         // ৩. টেক্সট মেসেজ ও মেনু হ্যান্ডলিং
         if (isset($data['message']['text'])) {
             $chatId = $data['message']['chat']['id'];
-            $text = $data['message']['text'];
+            $text = trim($data['message']['text']);
 
             // 🔒 সিকিউরিটি চেক: শুধু ওই সেলারের চ্যাট আইডি থেকেই এক্সেস পাবে
-            // গ্রুপ চ্যাটের জন্য আমরা স্ট্রিক্ট টাইপ চেক (string conversion) করছি
             if ((string)$chatId !== (string)$adminChatId) {
-                $this->sendMessage($token, $chatId, "⛔ Unauthorized Access. This bot belongs to {$client->shop_name}.");
+                $this->sendMessage($token, $chatId, "⛔ Unauthorized Access. This bot belongs to **{$client->shop_name}**.");
+                return response('OK', 200);
+            }
+
+            // 🔍 অর্ডার সার্চ (Command: /order 123)
+            if (Str::startsWith($text, '/order ')) {
+                $orderId = Str::after($text, '/order ');
+                $this->searchOrderById($token, $chatId, $client->id, $orderId);
+                return response('OK', 200);
+            }
+
+            // 🔍 কাস্টমার সার্চ (Command: /search 017...)
+            if (Str::startsWith($text, '/search ')) {
+                $phone = Str::after($text, '/search ');
+                $this->searchCustomerByPhone($token, $chatId, $client->id, $phone);
                 return response('OK', 200);
             }
 
@@ -51,22 +64,22 @@ class TelegramWebhookController extends Controller
             switch ($text) {
                 case '/start':
                 case '/menu':
-                    $this->showMainMenu($token, $chatId);
+                    $this->showMainMenu($token, $chatId, $client->shop_name);
                     break;
 
                 case '📊 আজকের রিপোর্ট':
-                    $this->showDailyReport($token, $chatId, $client->id);
+                    $this->showDailyReport($token, $chatId, $client);
                     break;
 
                 case '📦 পেন্ডিং অর্ডার':
                     $this->showPendingOrders($token, $chatId, $client->id);
                     break;
                 
-                case '❌ বাতিল অর্ডার': // নতুন ফিচার
+                case '❌ বাতিল অর্ডার':
                     $this->showCancelledOrders($token, $chatId, $client->id);
                     break;
 
-                case '🚚 শিপিং স্ট্যাটাস': // নতুন ফিচার
+                case '🚚 শিপিং স্ট্যাটাস':
                     $this->showShippingStatus($token, $chatId, $client->id);
                     break;
 
@@ -75,8 +88,10 @@ class TelegramWebhookController extends Controller
                     break;
 
                 default:
-                    // অন্য কিছু লিখলে মেনু শো করবে না (যাতে সাধারণ চ্যাটিং এ সমস্যা না হয়)
-                    // তবে চাইলে এখানেও showMainMenu কল করতে পারেন
+                    // হেল্প মেসেজ (যদি কমান্ড না মিলে)
+                    if (Str::startsWith($text, '/')) {
+                        $this->sendMessage($token, $chatId, "⚠️ কমান্ডটি সঠিক নয়। মেনু দেখতে `/menu` লিখুন।");
+                    }
                     break;
             }
         }
@@ -102,14 +117,12 @@ class TelegramWebhookController extends Controller
         if (Str::startsWith($callbackData, 'pause_ai_')) {
             $senderId = trim(str_replace('pause_ai_', '', $callbackData));
             
-            // SAAS Fix: শুধু এই ক্লায়েন্টের সেশন আপডেট হবে
             OrderSession::where('client_id', $client->id)
                 ->where('sender_id', $senderId)
                 ->update(['is_human_agent_active' => true]);
             
             $this->answerCallback($token, $callbackId, "🛑 AI Stopped!");
             
-            // বাটন আপডেট
             $this->updateMessageButtons($token, $chatId, $messageId, "🛑 **AI Stopped for:** `$senderId`", [
                 [
                     ['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"],
@@ -128,7 +141,6 @@ class TelegramWebhookController extends Controller
             
             $this->answerCallback($token, $callbackId, "✅ AI Resumed!");
             
-            // বাটন আপডেট
             $this->updateMessageButtons($token, $chatId, $messageId, "✅ **AI Active for:** `$senderId`", [
                 [
                     ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
@@ -148,7 +160,7 @@ class TelegramWebhookController extends Controller
     // 📊 DASHBOARD FEATURES (SAAS Enabled)
     // ==========================================
 
-    private function showMainMenu($token, $chatId)
+    private function showMainMenu($token, $chatId, $shopName)
     {
         $keyboard = [
             ['📊 আজকের রিপোর্ট', '📦 পেন্ডিং অর্ডার'],
@@ -156,24 +168,26 @@ class TelegramWebhookController extends Controller
             ['⚙️ সেটিংস / স্টপ লিস্ট']
         ];
 
-        $this->sendMessageWithReplyKeyboard($token, $chatId, "👋 স্বাগতম অ্যাডমিন প্যানেলে! নিচের অপশনগুলো চেক করুন:", $keyboard);
+        $msg = "👋 **স্বাগতম, {$shopName} অ্যাডমিন!**\nনিচের অপশনগুলো চেক করুন অথবা সার্চ করুন:\n`/order [ID]` - অর্ডার খুঁজতে\n`/search [Phone]` - কাস্টমার খুঁজতে";
+
+        $this->sendMessageWithReplyKeyboard($token, $chatId, $msg, $keyboard);
     }
 
-    private function showDailyReport($token, $chatId, $clientId)
+    private function showDailyReport($token, $chatId, $client)
     {
         $today = Carbon::today();
         
-        $totalOrders = Order::where('client_id', $clientId)->whereDate('created_at', $today)->count();
-        $totalSales = Order::where('client_id', $clientId)
+        $totalOrders = Order::where('client_id', $client->id)->whereDate('created_at', $today)->count();
+        $totalSales = Order::where('client_id', $client->id)
             ->whereDate('created_at', $today)
             ->where('order_status', '!=', 'cancelled')
             ->sum('total_amount');
         
-        $processing = Order::where('client_id', $clientId)->whereDate('created_at', $today)->where('order_status', 'processing')->count();
-        $completed = Order::where('client_id', $clientId)->whereDate('created_at', $today)->where('order_status', 'completed')->count();
+        $processing = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'processing')->count();
+        $completed = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'completed')->count();
 
-        $msg = "📅 **আজকের রিপোর্ট (" . $today->format('d M') . ")**\n\n";
-        $msg .= "💰 **মোট সেল:** " . number_format($totalSales) . " Tk\n";
+        $msg = "📊 **{$client->shop_name} - আজকের রিপোর্ট**\n📅 তারিক: " . $today->format('d M, Y') . "\n\n";
+        $msg .= "💰 **মোট সেল:** ৳" . number_format($totalSales) . "\n";
         $msg .= "📦 **মোট অর্ডার:** $totalOrders টি\n";
         $msg .= "⏳ **প্রসেসিং:** $processing টি\n";
         $msg .= "✅ **কমপ্লিট:** $completed টি\n";
@@ -196,32 +210,73 @@ class TelegramWebhookController extends Controller
 
         $msg = "📦 **সর্বশেষ ৫টি পেন্ডিং অর্ডার:**\n\n";
         foreach ($orders as $order) {
-            $msg .= "#{$order->id} - {$order->customer_name} ({$order->total_amount} Tk)\n📞 {$order->customer_phone}\n------------------\n";
+            $msg .= "🔹 **#{$order->id}** - {$order->customer_name}\n📞 `{$order->customer_phone}`\n💰 ৳{$order->total_amount}\n------------------\n";
         }
+        $this->sendMessage($token, $chatId, $msg);
+    }
+
+    // 🔥 NEW: Search Order By ID
+    private function searchOrderById($token, $chatId, $clientId, $orderId)
+    {
+        $order = Order::where('client_id', $clientId)->where('id', trim($orderId))->first();
+
+        if (!$order) {
+            $this->sendMessage($token, $chatId, "❌ অর্ডার #{$orderId} খুঁজে পাওয়া যায়নি।");
+            return;
+        }
+
+        $msg = "📦 **অর্ডার বিস্তারিত (#{$order->id})**\n\n";
+        $msg .= "👤 নাম: {$order->customer_name}\n";
+        $msg .= "📞 ফোন: `{$order->customer_phone}`\n";
+        $msg .= "📍 ঠিকানা: {$order->shipping_address}\n";
+        $msg .= "💰 মোট বিল: ৳{$order->total_amount}\n";
+        $msg .= "📊 স্ট্যাটাস: " . strtoupper($order->order_status) . "\n";
+        $msg .= "📅 সময়: " . $order->created_at->format('d M, h:i A');
+
+        $this->sendMessage($token, $chatId, $msg);
+    }
+
+    // 🔥 NEW: Search Customer By Phone
+    private function searchCustomerByPhone($token, $chatId, $clientId, $phone)
+    {
+        $orders = Order::where('client_id', $clientId)
+            ->where('customer_phone', 'LIKE', "%{$phone}%")
+            ->latest()
+            ->take(5)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $this->sendMessage($token, $chatId, "❌ এই নম্বরে কোনো অর্ডার পাওয়া যায়নি।");
+            return;
+        }
+
+        $msg = "🔍 **কাস্টমার হিস্ট্রি ({$phone})**\n\n";
+        foreach ($orders as $order) {
+            $msg .= "🔹 #{$order->id} - ৳{$order->total_amount} ({$order->order_status})\n";
+        }
+
         $this->sendMessage($token, $chatId, $msg);
     }
 
     private function showCancelledOrders($token, $chatId, $clientId)
     {
         $today = Carbon::today();
-        $count = Order::where('client_id', $clientId)
+        $orders = Order::where('client_id', $clientId)
             ->whereDate('created_at', $today)
             ->where('order_status', 'cancelled')
-            ->count();
+            ->latest()
+            ->take(5)
+            ->get();
             
+        $count = $orders->count();
         $msg = "❌ **আজকের বাতিল অর্ডার:** {$count} টি\n\n";
         
         if ($count > 0) {
-            $orders = Order::where('client_id', $clientId)
-                ->whereDate('created_at', $today)
-                ->where('order_status', 'cancelled')
-                ->latest()
-                ->take(5)
-                ->get();
-                
             foreach ($orders as $order) {
-                $msg .= "#{$order->id} - {$order->customer_name} ({$order->customer_phone})\n";
+                $msg .= "🔸 #{$order->id} - {$order->customer_name}\n";
             }
+        } else {
+            $msg .= "✅ আজ কোনো অর্ডার বাতিল হয়নি।";
         }
         
         $this->sendMessage($token, $chatId, $msg);
@@ -229,18 +284,13 @@ class TelegramWebhookController extends Controller
 
     private function showShippingStatus($token, $chatId, $clientId)
     {
-        // Shipped status চেক করা
-        $shipping = Order::where('client_id', $clientId)
-            ->where('order_status', 'shipped')
-            ->count();
-            
-        $msg = "🚚 **বর্তমানে শিপিং-এ আছে:** {$shipping} টি অর্ডার।";
+        $shipping = Order::where('client_id', $clientId)->where('order_status', 'shipped')->count();
+        $msg = "🚚 **শিপিং আপডেট:**\nবর্তমানে {$shipping} টি পার্সেল ডেলিভারির পথে আছে।";
         $this->sendMessage($token, $chatId, $msg);
     }
 
     private function showStoppedUsers($token, $chatId, $clientId)
     {
-        // SAAS Logic: শুধু এই ক্লায়েন্টের ইউজারদের দেখাবে
         $users = OrderSession::where('client_id', $clientId)
             ->where('is_human_agent_active', true)
             ->limit(10)
@@ -251,25 +301,23 @@ class TelegramWebhookController extends Controller
             return;
         }
 
-        $msg = "📋 **AI বন্ধ থাকা ইউজার লিস্ট:**\n\n";
+        $msg = "📋 **AI বন্ধ থাকা ইউজার লিস্ট:**\n(Resume করতে বাটনে ক্লিক করুন)\n\n";
         $keyboard = [];
 
         foreach ($users as $user) {
             $info = $user->customer_info ?? [];
-            $name = $info['name'] ?? 'Unknown';
-            $phone = $info['phone'] ?? 'No Phone';
+            $name = $info['name'] ?? 'Guest User';
             $id = $user->sender_id;
 
-            $msg .= "👤 $name ($phone)\n";
+            $msg .= "👤 $name (`$id`)\n";
             $keyboard[] = [['text' => "▶️ Resume ($name)", 'callback_data' => "resume_ai_{$id}"]];
         }
 
-        // Inline বাটন সহ লিস্ট পাঠানো
         $this->sendMessageWithInlineKeyboard($token, $chatId, $msg, $keyboard);
     }
 
     // ==========================================
-    // 📨 API HELPERS (Dynamic Token Support)
+    // 📨 API HELPERS (Robust & Secure)
     // ==========================================
 
     private function sendMessage($token, $chatId, $text)

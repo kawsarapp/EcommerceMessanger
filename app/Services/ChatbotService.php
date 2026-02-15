@@ -40,29 +40,30 @@ class ChatbotService
         // 🔥 NULL SAFETY GUARD
         $userMessage = $userMessage ?? '';
 
-        // 🚀 1. IMAGE HANDLING (Robust)
+        // 🚀 1. IMAGE READING & VISION HANDLING (Extreme Upgrade)
+        // কাস্টমার ছবি পাঠালে সেটা বেস৬৪ এনকোড করে AI-কে পাঠানো হবে
         $base64Image = null;
         if ($imageUrl) {
             try {
                 $imgResponse = Http::withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                ])->timeout(10)->get($imageUrl);
+                ])->timeout(15)->get($imageUrl);
 
                 if ($imgResponse->successful()) {
                     $mime = $imgResponse->header('Content-Type') ?: 'image/jpeg';
                     $base64Image = "data:" . $mime . ";base64," . base64_encode($imgResponse->body());
-                    Log::info("Image downloaded successfully for User: $senderId");
+                    Log::info("📷 Image downloaded & encoded for Vision API: User $senderId");
                 }
             } catch (\Exception $e) {
                 Log::error("Image Pre-fetch Error: " . $e->getMessage());
             }
         }
 
-        // যদি শুধু ইমেজ থাকে এবং কোনো টেক্সট না থাকে
+        // যদি শুধু ইমেজ থাকে এবং কোনো টেক্সট না থাকে, তবে ডিফল্ট টেক্সট সেট করা
         if (empty(trim($userMessage)) && $base64Image) {
-            $userMessage = "User sent an image. Please describe it and match with inventory.";
+            $userMessage = "I have sent an image. Please analyze it and check if you have something similar in your inventory.";
             Log::info("ℹ️ Auto-filled message for image input.");
-        } elseif (empty(trim($userMessage))) {
+        } elseif (empty(trim($userMessage)) && !$base64Image) {
             Log::warning("⚠️ Empty message received in ChatbotService. Returning null.");
             return null;
         }
@@ -89,12 +90,13 @@ class ChatbotService
                 return null;
             }
 
-            // 🔥 3. LOOP DETECTION (New Feature)
+            // 🔥 3. LOOP DETECTION (Advanced)
             // ইউজার বা AI যদি একই কথা বারবার বলে, তবে লুপ ব্রেক করা হবে
             $history = $session->customer_info['history'] ?? [];
             if (count($history) >= 4) {
                 $lastUserMsgs = array_slice(array_column($history, 'user'), -3);
-                if (count(array_unique($lastUserMsgs)) === 1 && end($lastUserMsgs) == $userMessage) {
+                // যদি একই মেসেজ ৩ বার আসে
+                if (count($lastUserMsgs) === 3 && count(array_unique($lastUserMsgs)) === 1 && end($lastUserMsgs) == $userMessage) {
                     $this->sendTelegramAlert($clientId, $senderId, "⚠️ **Loop Detected:** User repeating '{$userMessage}'. AI Paused.");
                     $session->update(['is_human_agent_active' => true]);
                     return "দুঃখিত, আমি আপনার কথা বুঝতে পারছি না। আমাদের একজন প্রতিনিধি শীঘ্রই আপনার সাথে যোগাযোগ করবেন।";
@@ -105,12 +107,13 @@ class ChatbotService
             $client = Client::find($clientId);
             $customerInfo = $session->customer_info;
 
-            // 🔥 4. SMART ORDER TRACKING (Database First)
+            // 🔥 4. SMART ORDER TRACKING (Database Priority)
+            // কাস্টমার যদি অর্ডারের অবস্থা জানতে চায়
             if ($this->isTrackingIntent($userMessage) || preg_match('/01[3-9]\d{8}/', $userMessage)) {
                 $orderStatusMsg = $this->lookupOrderByPhone($clientId, $userMessage);
                 if ($orderStatusMsg && str_contains($orderStatusMsg, 'FOUND_ORDER')) {
                     $cleanMsg = str_replace('FOUND_ORDER:', '', $orderStatusMsg);
-                    return "স্যার/ম্যাম, আপনার অর্ডারের তথ্য পেয়েছি: \n" . $cleanMsg . "\nআমাদের সাথে থাকার জন্য ধন্যবাদ!";
+                    return "স্যার/ম্যাম, আপনার অর্ডারের তথ্য পেয়েছি: \n" . $cleanMsg . "\nআমাদের সাথে থাকার জন্য ধন্যবাদ!";
                 }
             }
             
@@ -134,7 +137,7 @@ class ChatbotService
                 }
             } else {
                 // GENERIC RESET (Menu/Offer/Start Over)
-                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার', 'price koto', 'dam koto', 'menu', 'start'];
+                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার', 'price koto', 'dam koto', 'menu', 'start', 'suru', 'first'];
                 foreach ($genericPhrases as $phrase) {
                     if (stripos(strtolower($userMessage), $phrase) !== false) {
                         Log::info("🔄 Generic Query Reset Triggered.");
@@ -164,8 +167,8 @@ class ChatbotService
 
             $handler = $steps[$stepName] ?? $steps['start'];
             
-            // Execute Step Logic
-            $result = $handler->process($session, (string)$userMessage);
+            // Execute Step Logic (With Image URL support)
+            $result = $handler->process($session, (string)$userMessage, $imageUrl);
             
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
@@ -176,8 +179,8 @@ class ChatbotService
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
                     
-                    // AI-কে অর্ডার আইডি জানিয়ে দেওয়া হচ্ছে
-                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. Congratulate user and share Order ID.)";
+                    // AI-কে অর্ডার আইডি জানিয়ে দেওয়া হচ্ছে
+                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. You MUST congratulate the user and explicitly tell them the Order ID.)";
                     
                     // Telegram Notification (SaaS Dynamic Token)
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
@@ -187,8 +190,9 @@ class ChatbotService
                 }
             }
 
-            // ✅ 8. CONTEXT LOADING (Inventory, History, Knowledge Base)
-            $inventoryData = $this->getInventoryData($clientId, $userMessage); 
+            // ✅ 8. CONTEXT LOADING (Extreme Upgrade: Link + Description)
+            // এখানে ক্লায়েন্ট মডেল পাস করা হচ্ছে যাতে ইনভেন্টরিতে লিংক জেনারেট করা যায়
+            $inventoryData = $this->getInventoryData($client, $userMessage); 
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
             $userName = $session->customer_info['name'] ?? 'Sir/Ma\'am';
@@ -205,14 +209,14 @@ class ChatbotService
             // Message Building
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             
-            // History Injection
+            // History Injection (Last 6 Interactions)
             $history = $session->customer_info['history'] ?? [];
             foreach (array_slice($history, -6) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
             
-            // Current Message
+            // Current Message (With Vision Support)
             if ($base64Image) {
                 $messages[] = [
                     'role' => 'user',
@@ -257,32 +261,33 @@ class ChatbotService
         // 1. সেলারের কাস্টম প্রম্পট আছে কিনা চেক করা
         $customPrompt = $client->custom_prompt;
 
-        // 2. যদি কাস্টম প্রম্পট না থাকে, তবে ডিফল্ট সেলসম্যান প্রম্পট ব্যবহার করা
+        // 2. যদি কাস্টম প্রম্পট না থাকে, তবে ডিফল্ট সেলসম্যান প্রম্পট ব্যবহার করা (EXTREME VERSION)
         if (empty($customPrompt)) {
             $customPrompt = <<<EOT
 তুমি হলে **{{shop_name}}**-এর একজন দক্ষ এবং স্মার্ট অনলাইন সেলস এক্সিকিউটিভ।
 
-**твоমার নলেজ বেস (দোকানের নিয়মকানুন):**
+**твоমার নলেজ বেস (দোকানের নিয়মকানুন):**
 {{knowledge_base}}
 **ডেলিভারি চার্জ:** {{delivery_info}}
 
-**তোমার নিয়মাবলী (Rules):**
-১. সবসময় ভদ্র এবং প্রফেশনাল ভাষায় (বাংলায়) কথা বলবে। "তুমি" না বলে "আপনি" বলবে।
-২. কাস্টমার কোনো পণ্যের ব্যাপারে জানতে চাইলে **{{inventory}}** চেক করে সঠিক তথ্য দিবে।
-৩. অর্ডার কনফার্ম করার আগে অবশ্যই পণ্যের নাম, দাম এবং ডেলিভারি চার্জ সহ সামারি দেখাবে।
-৪. কাস্টমার "হ্যাঁ" বললে অর্ডার কনফার্ম করবে।
-৫. অর্ডার কনফার্ম হলে অবশ্যই **{{last_order}}** চেক করে অর্ডার আইডি কাস্টমারকে দিবে।
-৬. যদি কোনো প্রশ্নের উত্তর জানা না থাকে, তবে **{{knowledge_base}}** ফলো করবে।
+**তোমার নিয়মাবলী (Strict Rules):**
+১. সবসময় ভদ্র এবং প্রফেশনাল ভাষায় (বাংলায়) কথা বলবে। "তুমি" না বলে "আপনি" বলবে।
+২. **LINK SHARING:** কাস্টমার যদি বিস্তারিত দেখতে চায় বা কিনতে চায়, তবে **{{inventory}}** থেকে পাওয়া `link` তাকে দিবে। লিংকটি সরাসরি মেসেজে দিবে।
+৩. **IMAGE SHOWING:** কাস্টমার যদি কোনো পণ্যের ছবি দেখতে চায়, তবে **{{inventory}}** লিস্টে থাকা `image_url` এর লিংকটি সরাসরি মেসেজে দিবে।
+৪. **DETAILS SHARING:** কাস্টমার যদি পণ্যের বিবরণ (Description) জানতে চায়, তবে **{{inventory}}** থেকে `desc` বা `description` পড়ে বিস্তারিত জানাবে।
+৫. কাস্টমার "অর্ডার" বা "কিনব" বললে অর্ডার কনফার্ম করার প্রসেস শুরু করবে (নাম, ফোন, ঠিকানা নিবে)।
+৬. অর্ডার কনফার্ম হলে অবশ্যই **{{last_order}}** চেক করে অর্ডার আইডি কাস্টমারকে দিবে।
+৭. যদি কাস্টমার ছবি পাঠায়, সেটা বিশ্লেষণ করে ইনভেন্টরি থেকে সিমিলার প্রোডাক্ট সাজেস্ট করবে।
 
-**বর্তমান পরিস্থিতি:**
+**বর্তমান পরিস্থিতি (Instruction):**
 {{instruction}}
 
-**প্রয়োজনীয় তথ্য:**
-- বর্তমান সময়: {{time}}
+**প্রয়োজনীয় তথ্য (Database Context):**
+- বর্তমান সময়: {{time}}
 - কাস্টমার: {{customer_name}}
 - অর্ডার ইতিহাস: {{order_history}}
 - প্রোডাক্ট প্রসঙ্গ: {{product_context}}
-- ইনভেন্টরি: {{inventory}}
+- ইনভেন্টরি (লিংক ও ডিটেইলস সহ): {{inventory}}
 EOT;
         }
 
@@ -326,17 +331,19 @@ EOT;
     }
 
     /**
-     * [OPTIMIZED] ইনভেন্টরি সার্চ
+     * [EXTREME UPGRADE] ইনভেন্টরি সার্চ - লিংক এবং ডিটেইলস সহ
+     * Accept Client Model to generate routes
      */
-    private function getInventoryData($clientId, $userMessage)
+    private function getInventoryData($client, $userMessage)
     {
+        $clientId = $client->id;
         $cacheKey = "inv_{$clientId}_" . md5(Str::limit($userMessage, 20));
 
-        return Cache::remember($cacheKey, 60, function () use ($clientId, $userMessage) {
-            $stopWords = ['product', 'offer', 'collection', 'list', 'show', 'ki', 'ace', 'store', 'shop', 'stock', 'pic'];
+        return Cache::remember($cacheKey, 60, function () use ($client, $userMessage) {
+            $stopWords = ['product', 'offer', 'collection', 'list', 'show', 'ki', 'ace', 'store', 'shop', 'stock', 'pic', 'photo', 'chobi', 'link', 'details'];
             $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2 && !in_array(strtolower($w), $stopWords));
             
-            $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
+            $query = Product::where('client_id', $client->id)->where('stock_status', 'in_stock');
             
             if (!empty($keywords)) {
                 $query->where(function($q) use ($keywords) {
@@ -354,24 +361,72 @@ EOT;
             $products = $query->limit(5)->get();
             
             if ($products->isEmpty()) {
-                $products = Product::where('client_id', $clientId)
+                $products = Product::where('client_id', $client->id)
                     ->where('stock_status', 'in_stock')
                     ->inRandomOrder()
                     ->limit(3)
                     ->get();
             }
 
-            return $products->map(function($p) {
+            // 🔥 Extreme Data Mapping
+            return $products->map(function($p) use ($client) {
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'price' => $p->sale_price ?? $p->regular_price,
-                    'stock' => $p->stock_quantity,
-                    'desc' => Str::limit(strip_tags($p->description), 100),
-                    'image' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null
+                    'price' => "Tk " . ($p->sale_price ?? $p->regular_price),
+                    'stock' => $p->stock_quantity > 0 ? 'In Stock' : 'Out of Stock',
+                    // Description Truncated to avoid token limit but enough for AI context
+                    'desc' => Str::limit(strip_tags($p->description ?? $p->short_description), 300),
+                    // Generated Product Page Link
+                    'link' => route('shop.product.details', [$client->slug, $p->slug]),
+                    'image_url' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null
                 ];
             })->toJson();
         });
+    }
+
+    /**
+     * 🔥 VOICE TO TEXT CONVERSION (Whisper API)
+     */
+    public function convertVoiceToText($audioUrl)
+    {
+        $tempPath = null;
+        try {
+            // 1. অডিও ডাউনলোড
+            $audioResponse = Http::get($audioUrl);
+            if (!$audioResponse->successful()) return null;
+
+            // 2. টেম্প ফাইল তৈরি
+            $extension = 'mp3'; 
+            if (str_contains($audioResponse->header('Content-Type'), 'ogg')) $extension = 'ogg';
+            
+            $tempFileName = 'voice_' . uniqid() . '.' . $extension;
+            $tempPath = storage_path('app/' . $tempFileName);
+            file_put_contents($tempPath, $audioResponse->body());
+
+            // 3. Whisper API কল
+            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
+            
+            $response = Http::withToken($apiKey)
+                ->attach('file', fopen($tempPath, 'r'), $tempFileName)
+                ->post('https://api.openai.com/v1/audio/transcriptions', [
+                    'model' => 'whisper-1',
+                    'language' => 'bn', // বাংলা ডিটেকশন ফোর্স করা
+                    'response_format' => 'json'
+                ]);
+
+            if ($response->successful()) {
+                return $response->json()['text'] ?? null;
+            } else {
+                Log::error("Whisper API Error: " . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error("Voice Conversion Failed: " . $e->getMessage());
+        } finally {
+            // ক্লিনআপ
+            if ($tempPath && file_exists($tempPath)) @unlink($tempPath);
+        }
+        return null;
     }
 
     private function lookupOrderByPhone($clientId, $message)
@@ -421,11 +476,11 @@ EOT;
     private function callLlmChain($messages) {
         try {
             $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
-            $response = Http::withToken($apiKey)->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
+            $response = Http::withToken($apiKey)->timeout(40)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
-                'max_tokens' => 500, 
-                'temperature' => 0.3, 
+                'max_tokens' => 600, 
+                'temperature' => 0.4, 
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
@@ -453,40 +508,25 @@ EOT;
         return false;
     }
 
-    public function convertVoiceToText($url) { return null; } 
-
     /**
      * 🔥 SAAS ENABLED: Sends Telegram alert using CLIENT'S token
      */
     public function sendTelegramAlert($clientId, $senderId, $message) {
         try {
-            // 1. সেলার খুঁজে বের করা (DB থেকে)
             $client = Client::find($clientId);
+            if (!$client || empty($client->telegram_bot_token) || empty($client->telegram_chat_id)) return;
 
-            // 2. টোকেন চেক করা
-            if (!$client || empty($client->telegram_bot_token) || empty($client->telegram_chat_id)) {
-                return; // টেলিগ্রাম সেটআপ করা নেই
-            }
-
-            $token = $client->telegram_bot_token;
-            $chatId = $client->telegram_chat_id;
-
-            // 3. ডাইনামিক টোকেন দিয়ে মেসেজ পাঠানো
-            Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id' => $chatId,
-                'text' => "🔔 **New Alert**\nShop: {$client->shop_name}\nUser: `{$senderId}`\n{$message}",
+            Http::post("https://api.telegram.org/bot{$client->telegram_bot_token}/sendMessage", [
+                'chat_id' => $client->telegram_chat_id,
+                'text' => "🔔 **Shop Alert: {$client->shop_name}**\nUser: `{$senderId}`\n{$message}",
                 'parse_mode' => 'Markdown',
                 'reply_markup' => json_encode([
-                    'inline_keyboard' => [
-                        [
-                            ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
-                            ['text' => '📋 Stopped List', 'callback_data' => "list_stopped_users"]
-                        ]
-                    ]
+                    'inline_keyboard' => [[
+                        ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
+                        ['text' => '📋 Check List', 'callback_data' => "list_stopped_users"]
+                    ]]
                 ])
             ]);
-        } catch (\Exception $e) { 
-            Log::error("Telegram Error: " . $e->getMessage()); 
-        }
+        } catch (\Exception $e) { Log::error("Telegram Error: " . $e->getMessage()); }
     }
 }

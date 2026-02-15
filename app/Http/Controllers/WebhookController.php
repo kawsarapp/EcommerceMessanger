@@ -42,7 +42,7 @@ class WebhookController extends Controller
 
     /**
      * 2. Handle Incoming Messages (All Types)
-     * (মেসেজ প্রসেসিং এর মেইন ফাংশন)
+     * (মেসেজ প্রসেসিং এর মেইন ফাংশন - Extreme Version)
      */
     public function handle(Request $request, ChatbotService $chatbot)
     {
@@ -84,9 +84,16 @@ class WebhookController extends Controller
                 $senderId = $messaging['sender']['id'] ?? null;
                 $recipientId = $messaging['recipient']['id'] ?? null; // Page ID (From FB)
                 
-                // 🛑 1. SELF-REPLY & SYSTEM MESSAGE CHECK (Loop Prevention)
-                // ডেলিভারি রিপোর্ট, রিড রিসিপ্ট বা পেজের নিজের মেসেজ (is_echo) ইগনোর করা
+                // 🛑 1. EVENT TYPE FILTERS (Ignore non-message events)
+                // ডেলিভারি, রিড, বা ইকো মেসেজ ইগনোর করা
                 if (isset($messaging['delivery']) || isset($messaging['read']) || ($messaging['message']['is_echo'] ?? false)) {
+                    continue;
+                }
+
+                // 🛑 2. REACTION HANDLING (New Feature)
+                // কাস্টমার মেসেজে রিয়্যাক্ট দিলে সেটা ইগনোর করা হবে (নাহলে লুপ হতে পারে)
+                if (isset($messaging['reaction'])) {
+                    Log::info("👍 User reacted to a message. Ignoring.");
                     continue;
                 }
 
@@ -97,7 +104,7 @@ class WebhookController extends Controller
                     continue;
                 }
 
-                // 🔄 2. DEDUPLICATION (Cache Check)
+                // 🔄 3. DEDUPLICATION (Cache Check)
                 // একই মেসেজ দুইবার আসলে আটকানো হবে
                 $mid = $messaging['message']['mid'] ?? $messaging['postback']['mid'] ?? null;
                 if ($mid) {
@@ -108,16 +115,17 @@ class WebhookController extends Controller
                     Cache::put("fb_mid_{$mid}", true, 300); // 5 minutes cache
                 }
 
-                // 👁️ 3. MARK SEEN & TYPING ON (User Experience Upgrade)
-                // মেসেজ পাওয়ার সাথে সাথে 'Seen' এবং 'Typing...' দেখাবে
+                // 👁️ 4. MARK SEEN & TYPING ON (User Experience Upgrade)
+                // মেসেজ পাওয়ার সাথে সাথে 'Seen' এবং 'Typing...' দেখাবে
                 $this->sendSenderAction($senderId, $client->fb_page_token, 'mark_seen');
                 $this->sendSenderAction($senderId, $client->fb_page_token, 'typing_on');
 
-                // 📦 4. PAYLOAD EXTRACTION
+                // 📦 5. PAYLOAD EXTRACTION & ANALYSIS
                 $messageText = null;
                 $incomingImageUrl = null;
+                $messageType = 'text'; // default
                 
-                // A. Postback Buttons (Get Started / Menu)
+                // A. Postback Buttons (Get Started / Menu / Ads Referral)
                 if (isset($messaging['postback'])) {
                     $messageText = $messaging['postback']['payload'];
                     $title = $messaging['postback']['title'] ?? 'Menu Click';
@@ -127,8 +135,14 @@ class WebhookController extends Controller
                     if (isset($messaging['postback']['referral'])) {
                         $ref = $messaging['postback']['referral']['ref'] ?? '';
                         $source = $messaging['postback']['referral']['source'] ?? 'ad';
-                        $messageText .= " [Referral: $ref, Source: $source]";
+                        // AI-কে জানানো হচ্ছে যে ইউজার অ্যাড থেকে এসেছে
+                        $messageText .= " [System Note: User came from Referral/Ad: $ref, Source: $source]";
                         Log::info("📢 User came from AD/Referral: $ref");
+                    }
+
+                    // Special Handling for "Get Started"
+                    if ($messageText === 'GET_STARTED') {
+                        $messageText = "Hi, I want to start shopping.";
                     }
                 }
                 // B. Quick Replies
@@ -141,7 +155,7 @@ class WebhookController extends Controller
                     $messageText = $messaging['message']['text'];
                     Log::info("📝 Text Message: " . Str::limit($messageText, 50));
                 }
-                // D. Attachments (Image/Audio/File)
+                // D. Attachments (Image/Audio/File/Video/Location)
                 elseif (isset($messaging['message']['attachments'])) {
                     foreach ($messaging['message']['attachments'] as $attachment) {
                         $type = $attachment['type'];
@@ -149,24 +163,43 @@ class WebhookController extends Controller
 
                         if ($type === 'image') {
                             $incomingImageUrl = $url;
+                            $messageType = 'image';
                             // টেক্সট না থাকলে [Image] স্ট্রিং যোগ করা, যাতে AI বুঝতে পারে
-                            $messageText = $messageText ? $messageText . " [Image]" : "[Image]"; 
+                            $messageText = $messageText ? $messageText . " [Image Attached]" : "[User sent an Image]"; 
                             Log::info("📷 Image Received: $url");
-                        } elseif ($type === 'audio') {
+                        } 
+                        elseif ($type === 'audio') {
+                            $messageType = 'audio';
                             Log::info("🎤 Audio Received: Converting...");
                             // Voice to Text Conversion Call
                             $convertedText = $chatbot->convertVoiceToText($url);
                             
                             if ($convertedText) {
-                                $messageText = $convertedText;
+                                $messageText = $convertedText . " [Voice Message]";
                                 Log::info("🗣️ Audio Converted: $messageText");
                             } else {
-                                $this->sendMessengerMessage($senderId, "দুঃখিত, ভয়েসটি বুঝতে পারিনি। দয়া করে টাইপ করুন।", $client->fb_page_token);
+                                $this->sendMessengerMessage($senderId, "দুঃখিত, আপনার ভয়েস মেসেজটি পরিষ্কার বোঝা যাচ্ছে না। দয়া করে লিখে জানান।", $client->fb_page_token);
                                 return response('OK', 200);
                             }
-                        } elseif ($type === 'fallback' || $type === 'file' || $type === 'video') {
-                            $messageText = "[Sent an Attachment/Sticker]";
-                            Log::info("📂 Other Attachment Received: $type");
+                        } 
+                        elseif ($type === 'video') {
+                            $messageType = 'video';
+                            $messageText = "[User sent a Video. URL: $url]";
+                            Log::info("🎥 Video Received");
+                        }
+                        elseif ($type === 'file') {
+                            $messageType = 'file';
+                            $messageText = "[User sent a File/Document]";
+                            Log::info("📂 File Received");
+                        }
+                        elseif ($type === 'location') {
+                            $lat = $attachment['payload']['coordinates']['lat'] ?? 0;
+                            $long = $attachment['payload']['coordinates']['long'] ?? 0;
+                            $messageText = "My Location: Lat: $lat, Long: $long";
+                            Log::info("📍 Location Received: $lat, $long");
+                        }
+                        else {
+                            $messageText = "[User sent an unknown attachment]";
                         }
                     }
                 }
@@ -187,7 +220,7 @@ class WebhookController extends Controller
                 // NULL SAFETY: Ensure we have something to process
                 if ($messageText || $incomingImageUrl) {
                     
-                    // Call AI Service
+                    // Call AI Service (History & Order Logic handled inside)
                     $reply = $chatbot->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl);
 
                     // Stop Typing Indicator
@@ -199,6 +232,7 @@ class WebhookController extends Controller
                         $carouselIds = null;
 
                         // ১. টেক্সট থেকে ইমেজ লিংক আলাদা করা (Regex Upgrade)
+                        // AI যদি উত্তরের সাথে কোনো ইমেজ লিংক দেয়, সেটা ডিটেক্ট করে এটাচমেন্ট হিসেবে পাঠানো হবে
                         if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
                             $outgoingImage = $matches[1];
                             $reply = str_replace($outgoingImage, '', $reply);
@@ -235,11 +269,11 @@ class WebhookController extends Controller
                             }
                             $this->sendMessengerCarousel($senderId, $carouselIds, $client->fb_page_token);
                         } else {
-                            // সাধারণ মেসেজ (ইমেজ সহ বা ছাড়া)
+                            // সাধারণ মেসেজ (ইমেজ সহ বা ছাড়া)
                             $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
                         }
 
-                        // ৫. লগ সংরক্ষণ
+                        // ৫. লগ সংরক্ষণ (History Tracking)
                         $this->logConversation($client->id, $senderId, $messageText, $reply, $incomingImageUrl);
                     } else {
                         Log::info("⚠️ No reply from AI (Human agent active or empty response).");
@@ -262,7 +296,7 @@ class WebhookController extends Controller
                 'sender_action' => $action
             ]);
         } catch (\Exception $e) {
-            // অ্যাকশন ফেইল করলে লগ করার দরকার নেই, ইউজার এক্সপেরিয়েন্স নষ্ট হবে না
+            // অ্যাকশন ফেইল করলে লগ করার দরকার নেই, ইউজার এক্সপেরিয়েন্স নষ্ট হবে না
         }
     }
 
