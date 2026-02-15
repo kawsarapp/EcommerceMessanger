@@ -31,7 +31,7 @@
                     <div class="w-8 h-8 bg-[#F53003] rounded-lg flex items-center justify-center text-white font-bold">AI</div>
                     <span class="text-xl font-bold tracking-tight">{{ config('app.name', 'Laravel') }}</span>
                 </div>
-                
+                <!--
                 <div class="flex items-center gap-4">
                     @auth
                         <a href="{{ url('/dashboard') }}" class="px-5 py-2 border border-[#19140035] dark:border-[#3E3E3A] hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition rounded-full font-medium">Dashboard</a>
@@ -42,6 +42,7 @@
                         @endif
                     @endauth
                 </div>
+                -->
             </nav>
         </header>
 
