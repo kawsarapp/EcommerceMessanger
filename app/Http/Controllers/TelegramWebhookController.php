@@ -10,140 +10,84 @@ use Illuminate\Support\Str;
 
 class TelegramWebhookController extends Controller
 {
-    private $token;
-
-    public function __construct()
-    {
-        $this->token = env('TELEGRAM_BOT_TOKEN');
-    }
-
     public function handle(Request $request)
     {
         $data = $request->all();
+        
+        // ⚠️ FIX: env() ব্যবহার করবেন না, config() ব্যবহার করুন
+        // যদি config ফাইলে না থাকে, তবে সরাসরি env() ফলব্যাক হিসেবে কাজ করবে
+        $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
 
-        // 1. Button Click Handling (Callback Query)
-        if (isset($data['callback_query'])) {
-            $this->handleCallback($data['callback_query']);
-            return response('OK', 200);
+        if (!$token) {
+            Log::error("❌ Telegram Token Missing in Controller!");
+            return response('Token Missing', 500);
         }
 
-        // 2. Text Message Handling (For Commands like /list)
-        if (isset($data['message']['text'])) {
-            $chatId = $data['message']['chat']['id'];
-            $text = $data['message']['text'];
+        // বাটনে ক্লিক করলে (Callback Query)
+        if (isset($data['callback_query'])) {
+            $callbackData = $data['callback_query']['data'];
+            $chatId = $data['callback_query']['message']['chat']['id'];
+            $callbackId = $data['callback_query']['id']; // এটি জরুরি লোডিং বন্ধ করার জন্য
+            $messageId = $data['callback_query']['message']['message_id']; // মেসেজ আপডেটের জন্য
 
-            if ($text === '/list' || $text === '/stopped') {
-                $this->listStoppedUsers($chatId);
+            Log::info("🔘 Telegram Button Clicked: $callbackData");
+
+            // 1. STOP AI LOGIC
+            if (Str::startsWith($callbackData, 'pause_ai_')) {
+                $senderId = trim(str_replace('pause_ai_', '', $callbackData));
+                
+                OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => true]);
+                
+                // বাটন লোডিং বন্ধ করুন (Answer Callback)
+                $this->answerCallback($token, $callbackId, "🛑 AI Stopped!");
+
+                // বাটন আপডেট করে দিন (Stop বাটন সরিয়ে Resume বাটন দেখান)
+                $this->updateMessageButtons($token, $chatId, $messageId, "🛑 **AI Stopped for User:** $senderId", [
+                    [['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"]]
+                ]);
+            }
+
+            // 2. RESUME AI LOGIC
+            if (Str::startsWith($callbackData, 'resume_ai_')) {
+                $senderId = trim(str_replace('resume_ai_', '', $callbackData));
+                
+                OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => false]);
+
+                // বাটন লোডিং বন্ধ করুন
+                $this->answerCallback($token, $callbackId, "✅ AI Resumed!");
+
+                // বাটন আপডেট করে দিন (Resume বাটন সরিয়ে Stop বাটন দেখান)
+                $this->updateMessageButtons($token, $chatId, $messageId, "✅ **AI Active for User:** $senderId", [
+                    [['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"]]
+                ]);
             }
         }
 
         return response('OK', 200);
     }
 
-    private function handleCallback($callback)
+    // ✅ লোডিং আইকন বন্ধ করার ফাংশন
+    private function answerCallback($token, $callbackId, $text)
     {
-        $callbackData = $callback['data'];
-        $chatId = $callback['message']['chat']['id'];
-        $messageId = $callback['message']['message_id'];
-        $callbackId = $callback['id'];
-
-        Log::info("🔘 Telegram Button Clicked: $callbackData");
-
-        // --- ACTION: STOP AI ---
-        if (Str::startsWith($callbackData, 'pause_ai_')) {
-            $senderId = trim(str_replace('pause_ai_', '', $callbackData));
-            
-            OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => true]);
-            
-            $this->answerCallback($callbackId, "🛑 AI Stopped!");
-            
-            // Update Message with Resume Button Only
-            $this->editMessageButtons($chatId, $messageId, "🛑 **AI Stopped for User:** $senderId", [
-                [['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"]]
-            ]);
-        }
-
-        // --- ACTION: RESUME AI ---
-        elseif (Str::startsWith($callbackData, 'resume_ai_')) {
-            $senderId = trim(str_replace('resume_ai_', '', $callbackData));
-            
-            OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => false]);
-            
-            $this->answerCallback($callbackId, "✅ AI Resumed!");
-
-            // Update Message with Stop Button Only
-            $this->editMessageButtons($chatId, $messageId, "✅ **AI Active for User:** $senderId", [
-                [['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"]]
-            ]);
-        }
-
-        // --- ACTION: LIST STOPPED USERS ---
-        elseif ($callbackData === 'list_stopped_users') {
-            $this->listStoppedUsers($chatId);
-            $this->answerCallback($callbackId, "Loading list...");
-        }
-    }
-
-    private function listStoppedUsers($chatId)
-    {
-        $users = OrderSession::where('is_human_agent_active', true)
-            ->limit(10)
-            ->get(['sender_id', 'updated_at']);
-
-        if ($users->isEmpty()) {
-            $this->sendMessage($chatId, "✅ No users are currently stopped. AI is active for everyone.");
-            return;
-        }
-
-        $msg = "📋 **Stopped Users List:**\n";
-        $keyboard = [];
-
-        foreach ($users as $user) {
-            $msg .= "👤 ID: `{$user->sender_id}`\n";
-            // Add individual Resume button for each user in the list
-            $keyboard[] = [['text' => "▶️ Resume {$user->sender_id}", 'callback_data' => "resume_ai_{$user->sender_id}"]];
-        }
-
-        $this->sendMessageWithKeyboard($chatId, $msg, $keyboard);
-    }
-
-    // --- HELPER METHODS ---
-
-    private function sendMessage($chatId, $text)
-    {
-        Http::post("https://api.telegram.org/bot{$this->token}/sendMessage", [
-            'chat_id' => $chatId,
-            'text' => $text,
-            'parse_mode' => 'Markdown'
-        ]);
-    }
-
-    private function sendMessageWithKeyboard($chatId, $text, $keyboard)
-    {
-        Http::post("https://api.telegram.org/bot{$this->token}/sendMessage", [
-            'chat_id' => $chatId,
-            'text' => $text,
-            'parse_mode' => 'Markdown',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard])
-        ]);
-    }
-
-    private function editMessageButtons($chatId, $messageId, $text, $keyboard)
-    {
-        Http::post("https://api.telegram.org/bot{$this->token}/editMessageText", [
-            'chat_id' => $chatId,
-            'message_id' => $messageId,
-            'text' => $text,
-            'parse_mode' => 'Markdown',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard])
-        ]);
-    }
-
-    private function answerCallback($callbackId, $text)
-    {
-        Http::post("https://api.telegram.org/bot{$this->token}/answerCallbackQuery", [
+        $response = Http::post("https://api.telegram.org/bot{$token}/answerCallbackQuery", [
             'callback_query_id' => $callbackId,
             'text' => $text
+        ]);
+        
+        if ($response->failed()) {
+            Log::error("❌ Failed to answer callback: " . $response->body());
+        }
+    }
+
+    // ✅ বাটন আপডেট করার ফাংশন (যাতে Stop চাপলে Resume বাটন আসে)
+    private function updateMessageButtons($token, $chatId, $messageId, $newText, $newKeyboard)
+    {
+        Http::post("https://api.telegram.org/bot{$token}/editMessageText", [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $newText,
+            'parse_mode' => 'Markdown',
+            'reply_markup' => json_encode(['inline_keyboard' => $newKeyboard])
         ]);
     }
 }
