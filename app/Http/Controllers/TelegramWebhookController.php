@@ -4,47 +4,164 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\OrderSession;
+use App\Models\Order;
+use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class TelegramWebhookController extends Controller
 {
     private $token;
+    private $adminChatId;
 
     public function __construct()
     {
-        // Constructor-এ টোকেন সেট করা ভালো প্র্যাকটিস
         $this->token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
+        $this->adminChatId = config('services.telegram.chat_id') ?? env('TELEGRAM_CHAT_ID');
     }
 
     public function handle(Request $request)
     {
         $data = $request->all();
 
-        if (!$this->token) {
-            Log::error("❌ Telegram Token Missing!");
-            return response('Token Missing', 500);
-        }
+        if (!$this->token) return response('Token Missing', 500);
 
-        // 1. BUTTON CLICK HANDLING (Callback Query)
+        // 1. BUTTON CLICK HANDLING (Callback Query - Inline Buttons)
         if (isset($data['callback_query'])) {
             $this->handleCallback($data['callback_query']);
             return response('OK', 200);
         }
 
-        // 2. TEXT COMMAND HANDLING (Optional: /list কমান্ড দিলে লিস্ট দেখাবে)
+        // 2. TEXT & MENU HANDLING
         if (isset($data['message']['text'])) {
-            $text = $data['message']['text'];
             $chatId = $data['message']['chat']['id'];
+            $text = $data['message']['text'];
 
-            if ($text === '/list' || $text === '/stopped') {
-                $this->showStoppedUsers($chatId);
+            // সিকিউরিটি চেক: শুধু অ্যাডমিন এক্সেস পাবে
+            if ((string)$chatId !== (string)$this->adminChatId) {
+                $this->sendMessage($chatId, "⛔ Unauthorized Access.");
+                return response('OK', 200);
+            }
+
+            // মেনু কমান্ড হ্যান্ডলিং
+            switch ($text) {
+                case '/start':
+                case '/menu':
+                    $this->showMainMenu($chatId);
+                    break;
+
+                case '📊 আজকের রিপোর্ট':
+                    $this->showDailyReport($chatId);
+                    break;
+
+                case '📦 পেন্ডিং অর্ডার':
+                    $this->showPendingOrders($chatId);
+                    break;
+                
+                case '❌ বাতিল অর্ডার':
+                    $this->showCancelledOrders($chatId);
+                    break;
+
+                case '🚚 শিপিং স্ট্যাটাস':
+                    $this->showShippingStatus($chatId);
+                    break;
+
+                case '⚙️ সেটিংস / স্টপ লিস্ট':
+                    $this->showStoppedUsers($chatId);
+                    break;
+
+                default:
+                    // অন্য কিছু লিখলে মেনু শো করবে
+                    //$this->showMainMenu($chatId);
+                    break;
             }
         }
 
         return response('OK', 200);
     }
+
+    // ==========================================
+    // 📊 DASHBOARD LOGIC METHODS
+    // ==========================================
+
+    private function showMainMenu($chatId)
+    {
+        $keyboard = [
+            ['📊 আজকের রিপোর্ট', '📦 পেন্ডিং অর্ডার'],
+            ['🚚 শিপিং স্ট্যাটাস', '❌ বাতিল অর্ডার'],
+            ['⚙️ সেটিংস / স্টপ লিস্ট']
+        ];
+
+        $this->sendMessageWithReplyKeyboard($chatId, "👋 স্বাগতম অ্যাডমিন প্যানেলে! নিচের অপশনগুলো থেকে বেছে নিন:", $keyboard);
+    }
+
+    private function showDailyReport($chatId)
+    {
+        $today = Carbon::today();
+        
+        $totalOrders = Order::whereDate('created_at', $today)->count();
+        $totalSales = Order::whereDate('created_at', $today)
+            ->where('order_status', '!=', 'cancelled')
+            ->sum('total_amount');
+        
+        $processing = Order::whereDate('created_at', $today)->where('order_status', 'processing')->count();
+        $completed = Order::whereDate('created_at', $today)->where('order_status', 'completed')->count();
+
+        $msg = "📅 **আজকের রিপোর্ট (" . $today->format('d M') . ")**\n\n";
+        $msg .= "💰 **মোট সেল:** " . number_format($totalSales) . " Tk\n";
+        $msg .= "📦 **মোট অর্ডার:** $totalOrders টি\n";
+        $msg .= "⏳ **প্রসেসিং:** $processing টি\n";
+        $msg .= "✅ **কমপ্লিট:** $completed টি\n";
+
+        $this->sendMessage($chatId, $msg);
+    }
+
+    private function showPendingOrders($chatId)
+    {
+        $orders = Order::where('order_status', 'processing')->latest()->take(5)->get();
+
+        if ($orders->isEmpty()) {
+            $this->sendMessage($chatId, "✅ কোনো পেন্ডিং অর্ডার নেই।");
+            return;
+        }
+
+        $msg = "📦 **সর্বশেষ ৫টি পেন্ডিং অর্ডার:**\n\n";
+        foreach ($orders as $order) {
+            $msg .= "#{$order->id} - {$order->customer_name} ({$order->total_amount} Tk)\n📞 {$order->customer_phone}\n------------------\n";
+        }
+        $this->sendMessage($chatId, $msg);
+    }
+
+    private function showCancelledOrders($chatId)
+    {
+        $count = Order::whereDate('created_at', Carbon::today())
+            ->where('order_status', 'cancelled')->count();
+            
+        $msg = "❌ **আজকের বাতিল অর্ডার:** {$count} টি\n\n";
+        
+        if ($count > 0) {
+            $orders = Order::whereDate('created_at', Carbon::today())
+                ->where('order_status', 'cancelled')->latest()->take(5)->get();
+            foreach ($orders as $order) {
+                $msg .= "#{$order->id} - {$order->customer_phone}\n";
+            }
+        }
+        
+        $this->sendMessage($chatId, $msg);
+    }
+
+    private function showShippingStatus($chatId)
+    {
+        $shipping = Order::where('order_status', 'shipped')->count();
+        $msg = "🚚 **বর্তমানে শিপিং-এ আছে:** {$shipping} টি অর্ডার।";
+        $this->sendMessage($chatId, $msg);
+    }
+
+    // ==========================================
+    // ⚙️ SYSTEM HANDLERS (Callback & Logic)
+    // ==========================================
 
     private function handleCallback($callback)
     {
@@ -53,43 +170,29 @@ class TelegramWebhookController extends Controller
         $messageId = $callback['message']['message_id'];
         $callbackId = $callback['id'];
 
-        Log::info("🔘 Telegram Button Clicked: $callbackData");
+        Log::info("🔘 Button Click: $callbackData");
 
-        // --- ACTION: STOP AI ---
+        // --- STOP AI ---
         if (Str::startsWith($callbackData, 'pause_ai_')) {
             $senderId = trim(str_replace('pause_ai_', '', $callbackData));
-            
             OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => true]);
-            
             $this->answerCallback($callbackId, "🛑 AI Stopped!");
-            
-            // Update Message: Show 'Resume' & 'List' buttons
-            $this->updateMessageButtons($chatId, $messageId, "🛑 **AI Stopped for User:** `$senderId`\nYou can chat manually now.", [
-                [
-                    ['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"],
-                    ['text' => '📋 Stopped List', 'callback_data' => "list_stopped_users"]
-                ]
+            $this->updateMessageButtons($chatId, $messageId, "🛑 **AI Stopped for:** `$senderId`", [
+                [['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"]]
             ]);
         }
 
-        // --- ACTION: RESUME AI ---
+        // --- RESUME AI ---
         elseif (Str::startsWith($callbackData, 'resume_ai_')) {
             $senderId = trim(str_replace('resume_ai_', '', $callbackData));
-            
             OrderSession::where('sender_id', (string)$senderId)->update(['is_human_agent_active' => false]);
-            
             $this->answerCallback($callbackId, "✅ AI Resumed!");
-
-            // Update Message: Show 'Stop' & 'List' buttons
-            $this->updateMessageButtons($chatId, $messageId, "✅ **AI Active for User:** `$senderId`", [
-                [
-                    ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
-                    ['text' => '📋 Stopped List', 'callback_data' => "list_stopped_users"]
-                ]
+            $this->updateMessageButtons($chatId, $messageId, "✅ **AI Active for:** `$senderId`", [
+                [['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"]]
             ]);
         }
 
-        // --- ACTION: SHOW STOPPED LIST ---
+        // --- LIST STOPPED USERS ---
         elseif ($callbackData === 'list_stopped_users') {
             $this->answerCallback($callbackId, "Loading list...");
             $this->showStoppedUsers($chatId);
@@ -98,37 +201,33 @@ class TelegramWebhookController extends Controller
 
     private function showStoppedUsers($chatId)
     {
-        // ১. যারা পজ করা আছে তাদের বের করা (নাম ও ফোন সহ)
-        $users = OrderSession::where('is_human_agent_active', true)
-            ->limit(10) // ১০ জনের বেশি দেখালে লিস্ট বড় হয়ে যাবে
-            ->get();
+        $users = OrderSession::where('is_human_agent_active', true)->limit(10)->get();
 
         if ($users->isEmpty()) {
-            $this->sendMessage($chatId, "✅ **No users are currently stopped.**\nAI is active for everyone.");
+            $this->sendMessage($chatId, "✅ **সবাই একটিভ আছে।** কোনো ইউজার স্টপ নেই।");
             return;
         }
 
-        $msg = "📋 **Stopped Users List:**\n\n";
+        $msg = "📋 **AI বন্ধ থাকা ইউজার লিস্ট:**\n\n";
         $keyboard = [];
 
         foreach ($users as $user) {
-            // ডাটাবেস থেকে নাম/ফোন বের করা (যদি থাকে)
             $info = $user->customer_info ?? [];
             $name = $info['name'] ?? 'Unknown';
             $phone = $info['phone'] ?? 'No Phone';
             $id = $user->sender_id;
 
-            $msg .= "👤 **Name:** $name\n📞 **Phone:** $phone\n🆔 `$id`\n------------------\n";
-            
-            // প্রতি ইউজারের জন্য আলাদা Resume বাটন
+            $msg .= "👤 $name ($phone)\n";
             $keyboard[] = [['text' => "▶️ Resume ($name)", 'callback_data' => "resume_ai_{$id}"]];
         }
 
-        // বাটন সহ লিস্ট পাঠানো
-        $this->sendMessageWithKeyboard($chatId, $msg, $keyboard);
+        // Inline বাটন সহ লিস্ট পাঠানো
+        $this->sendMessageWithInlineKeyboard($chatId, $msg, $keyboard);
     }
 
-    // --- HELPER METHODS ---
+    // ==========================================
+    // 📨 API HELPERS
+    // ==========================================
 
     private function sendMessage($chatId, $text)
     {
@@ -139,7 +238,23 @@ class TelegramWebhookController extends Controller
         ]);
     }
 
-    private function sendMessageWithKeyboard($chatId, $text, $keyboard)
+    // ফিক্সড মেনু বাটন (Fixed Keyboard)
+    private function sendMessageWithReplyKeyboard($chatId, $text, $keyboard)
+    {
+        Http::post("https://api.telegram.org/bot{$this->token}/sendMessage", [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'Markdown',
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => false // এটি false রাখলে মেনু সবসময় থাকবে
+            ])
+        ]);
+    }
+
+    // ইনলাইন বাটন (Inline Keyboard - মেসেজের সাথে)
+    private function sendMessageWithInlineKeyboard($chatId, $text, $keyboard)
     {
         Http::post("https://api.telegram.org/bot{$this->token}/sendMessage", [
             'chat_id' => $chatId,
