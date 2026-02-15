@@ -37,7 +37,7 @@ class ChatbotService
     {
         Log::info("🤖 AI Service Started for User: $senderId");
 
-        // 🔥 NULL SAFETY GUARD: Ensure message is never null
+        // 🔥 NULL SAFETY GUARD
         $userMessage = $userMessage ?? '';
 
         // 🚀 1. IMAGE HANDLING (Robust)
@@ -52,8 +52,6 @@ class ChatbotService
                     $mime = $imgResponse->header('Content-Type') ?: 'image/jpeg';
                     $base64Image = "data:" . $mime . ";base64," . base64_encode($imgResponse->body());
                     Log::info("Image downloaded successfully for User: $senderId");
-                } else {
-                    Log::error("Image download failed: " . $imgResponse->status());
                 }
             } catch (\Exception $e) {
                 Log::error("Image Pre-fetch Error: " . $e->getMessage());
@@ -70,7 +68,6 @@ class ChatbotService
         }
 
         // 🔥 2. SAFETY CHECK (Hate Speech / Abuse)
-        // এআই কল করার আগেই চেক করা হবে, যাতে টোকেন সেভ হয় এবং সিস্টেম নিরাপদ থাকে
         if ($this->detectHateSpeech($userMessage)) {
             Log::warning("🚫 Hate speech detected from User: $senderId");
             $this->sendTelegramAlert($clientId, $senderId, "⚠️ Abusive Language Detected: '$userMessage'");
@@ -79,7 +76,7 @@ class ChatbotService
 
         return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image) {
 
-            // Session Lock
+            // Session Lock & Creation
             $session = OrderSession::firstOrCreate(
                 ['sender_id' => $senderId],
                 ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'history' => []]]
@@ -92,21 +89,32 @@ class ChatbotService
                 return null;
             }
 
+            // 🔥 3. LOOP DETECTION (New Feature)
+            // ইউজার বা AI যদি একই কথা বারবার বলে, তবে লুপ ব্রেক করা হবে
+            $history = $session->customer_info['history'] ?? [];
+            if (count($history) >= 4) {
+                $lastUserMsgs = array_slice(array_column($history, 'user'), -3);
+                if (count(array_unique($lastUserMsgs)) === 1 && end($lastUserMsgs) == $userMessage) {
+                    $this->sendTelegramAlert($clientId, $senderId, "⚠️ **Loop Detected:** User repeating '{$userMessage}'. AI Paused.");
+                    $session->update(['is_human_agent_active' => true]);
+                    return "দুঃখিত, আমি আপনার কথা বুঝতে পারছি না। আমাদের একজন প্রতিনিধি শীঘ্রই আপনার সাথে যোগাযোগ করবেন।";
+                }
+            }
+
+            // ক্লায়েন্ট লোড করা
             $client = Client::find($clientId);
             $customerInfo = $session->customer_info;
 
-            // 🔥 3. SMART ORDER TRACKING SHORTCUT (Token Saver)
-            // যদি ইউজার ফোন নম্বর দেয় বা অর্ডারের স্ট্যাটাস জানতে চায়, এআই ছাড়াই উত্তর দিন
+            // 🔥 4. SMART ORDER TRACKING (Database First)
             if ($this->isTrackingIntent($userMessage) || preg_match('/01[3-9]\d{8}/', $userMessage)) {
                 $orderStatusMsg = $this->lookupOrderByPhone($clientId, $userMessage);
                 if ($orderStatusMsg && str_contains($orderStatusMsg, 'FOUND_ORDER')) {
-                    // সুন্দর ফরম্যাটে উত্তর রিটার্ন করুন
                     $cleanMsg = str_replace('FOUND_ORDER:', '', $orderStatusMsg);
-                    return "আপনার অর্ডারের তথ্য পেয়েছি: \n" . $cleanMsg . "\nধন্যবাদ আমাদের সাথে থাকার জন্য!";
+                    return "স্যার/ম্যাম, আপনার অর্ডারের তথ্য পেয়েছি: \n" . $cleanMsg . "\nআমাদের সাথে থাকার জন্য ধন্যবাদ!";
                 }
             }
             
-            // 🔄 SMART RESET: Check if user is asking for a SPECIFIC product
+            // 🔄 5. PRODUCT SEARCH & RESET LOGIC
             $newProduct = $this->findProductSystematically($clientId, $userMessage);
             
             if ($newProduct) {
@@ -125,8 +133,8 @@ class ChatbotService
                     ]);
                 }
             } else {
-                // 🔥 GENERIC QUERY RESET
-                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার', 'price koto', 'dam koto', 'menu'];
+                // GENERIC RESET (Menu/Offer/Start Over)
+                $genericPhrases = ['ki ace', 'ki ase', 'product ace', 'offer', 'collection', 'list', 'show', 'কি আছে', 'অফার', 'price koto', 'dam koto', 'menu', 'start'];
                 foreach ($genericPhrases as $phrase) {
                     if (stripos(strtolower($userMessage), $phrase) !== false) {
                         Log::info("🔄 Generic Query Reset Triggered.");
@@ -141,7 +149,7 @@ class ChatbotService
                 }
             }
 
-            // Step Processing
+            // ✅ 6. ORDER FLOW PROCESSING
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
             Log::info("👣 Processing Step: $stepName");
@@ -150,28 +158,28 @@ class ChatbotService
                 'start' => new StartStep(),
                 'select_variant' => new VariantStep(),
                 'collect_info' => new AddressStep(),
-                'confirm_order' => new ConfirmStep(), // Updated Logic included here
+                'confirm_order' => new ConfirmStep(),
                 'completed' => new StartStep(),
             ];
 
             $handler = $steps[$stepName] ?? $steps['start'];
             
-            // Safe Call
+            // Execute Step Logic
             $result = $handler->process($session, (string)$userMessage);
             
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
-            // Order Creation Action
+            // 🔥 7. ORDER CREATION ACTION
             if (isset($result['action']) && $result['action'] === 'create_order') {
                 Log::info("🚀 Action Triggered: create_order");
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
                     
-                    // 🔥 AI কে অর্ডার আইডি জানিয়ে দেওয়া হচ্ছে
-                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. You MUST tell the user this Order ID immediately.)";
+                    // AI-কে অর্ডার আইডি জানিয়ে দেওয়া হচ্ছে
+                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. Congratulate user and share Order ID.)";
                     
-                    // Telegram Notification (Dynamic Token)
+                    // Telegram Notification (SaaS Dynamic Token)
                     $this->sendTelegramAlert($clientId, $senderId, "✅ Order Placed: #{$order->id} - {$order->total_amount} Tk");
                 } catch (\Exception $e) {
                     $instruction = "Technical error creating order. Please apologize.";
@@ -179,20 +187,25 @@ class ChatbotService
                 }
             }
 
-            // Context Loading
+            // ✅ 8. CONTEXT LOADING (Inventory, History, Knowledge Base)
             $inventoryData = $this->getInventoryData($clientId, $userMessage); 
             $orderHistory = $this->buildOrderContext($clientId, $senderId);
             $currentTime = now()->format('l, h:i A');
-            $userName = $session->customer_info['name'] ?? 'Unknown';
+            $userName = $session->customer_info['name'] ?? 'Sir/Ma\'am';
 
-            // Prompt Generation (Dynamic)
-            $systemPrompt = $this->generateSystemPrompt($instruction, $contextData, $orderHistory, $inventoryData, $currentTime, $userName, $clientId, $senderId);
+            // 🔥 Knowledge Base & Delivery Info (From Dashboard)
+            $knowledgeBase = $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।";
+            $deliveryInfo = "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk";
+
+            // 🔥 DYNAMIC PROMPT GENERATION (Salesman Brain)
+            $systemPrompt = $this->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, $currentTime, $userName, $knowledgeBase, $deliveryInfo);
+            
             Log::info("📝 System Prompt Generated.");
 
             // Message Building
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             
-            // Add History (Limit context window)
+            // History Injection
             $history = $session->customer_info['history'] ?? [];
             foreach (array_slice($history, -6) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
@@ -216,21 +229,16 @@ class ChatbotService
             Log::info("📡 Calling LLM...");
             $aiResponse = $this->callLlmChain($messages);
             
-            // Fallback if LLM fails
             if (!$aiResponse) {
                 Log::error("❌ LLM returned null.");
                 return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
             }
 
-            Log::info("🗣️ AI Response: " . Str::limit($aiResponse, 50));
-
             // Save History
-            if ($aiResponse) {
-                $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
-                $info = $session->customer_info;
-                $info['history'] = array_slice($history, -20);
-                $session->update(['customer_info' => $info]);
-            }
+            $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
+            $info = $session->customer_info;
+            $info['history'] = array_slice($history, -20);
+            $session->update(['customer_info' => $info]);
 
             return $aiResponse;
         });
@@ -242,15 +250,90 @@ class ChatbotService
     // =====================================
 
     /**
-     * [OPTIMIZED] ইনভেন্টরি সার্চ (Price, Description, Image সহ)
+     * 🔥 DYNAMIC PROMPT GENERATOR WITH TAGS (The Heart of Salesman Logic)
+     */
+    private function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo)
+    {
+        // 1. সেলারের কাস্টম প্রম্পট আছে কিনা চেক করা
+        $customPrompt = $client->custom_prompt;
+
+        // 2. যদি কাস্টম প্রম্পট না থাকে, তবে ডিফল্ট সেলসম্যান প্রম্পট ব্যবহার করা
+        if (empty($customPrompt)) {
+            $customPrompt = <<<EOT
+তুমি হলে **{{shop_name}}**-এর একজন দক্ষ এবং স্মার্ট অনলাইন সেলস এক্সিকিউটিভ।
+
+**твоমার নলেজ বেস (দোকানের নিয়মকানুন):**
+{{knowledge_base}}
+**ডেলিভারি চার্জ:** {{delivery_info}}
+
+**তোমার নিয়মাবলী (Rules):**
+১. সবসময় ভদ্র এবং প্রফেশনাল ভাষায় (বাংলায়) কথা বলবে। "তুমি" না বলে "আপনি" বলবে।
+২. কাস্টমার কোনো পণ্যের ব্যাপারে জানতে চাইলে **{{inventory}}** চেক করে সঠিক তথ্য দিবে।
+৩. অর্ডার কনফার্ম করার আগে অবশ্যই পণ্যের নাম, দাম এবং ডেলিভারি চার্জ সহ সামারি দেখাবে।
+৪. কাস্টমার "হ্যাঁ" বললে অর্ডার কনফার্ম করবে।
+৫. অর্ডার কনফার্ম হলে অবশ্যই **{{last_order}}** চেক করে অর্ডার আইডি কাস্টমারকে দিবে।
+৬. যদি কোনো প্রশ্নের উত্তর জানা না থাকে, তবে **{{knowledge_base}}** ফলো করবে।
+
+**বর্তমান পরিস্থিতি:**
+{{instruction}}
+
+**প্রয়োজনীয় তথ্য:**
+- বর্তমান সময়: {{time}}
+- কাস্টমার: {{customer_name}}
+- অর্ডার ইতিহাস: {{order_history}}
+- প্রোডাক্ট প্রসঙ্গ: {{product_context}}
+- ইনভেন্টরি: {{inventory}}
+EOT;
+        }
+
+        // 3. লেটেস্ট অর্ডারের তথ্য (Last Order Tag)
+        $recentOrder = Order::where('client_id', $client->id)
+            ->where('sender_id', request('sender_id') ?? 0)
+            ->latest()
+            ->first();
+            
+        $recentOrderInfo = $recentOrder 
+            ? "সর্বশেষ অর্ডার আইডি: #{$recentOrder->id} (অবস্থা: {$recentOrder->order_status}, মোট: {$recentOrder->total_amount} টাকা)" 
+            : "কোনো সাম্প্রতিক অর্ডার নেই।";
+
+        // 4. Tag Replacement Map (Data Injection)
+        $tags = [
+            '{{shop_name}}'       => $client->shop_name,
+            '{{knowledge_base}}'  => $knowledgeBase,
+            '{{delivery_info}}'   => $deliveryInfo,
+            '{{instruction}}'     => $instruction,
+            '{{product_context}}' => $prodCtx,
+            '{{order_history}}'   => $ordCtx,
+            '{{inventory}}'       => $invData,
+            '{{time}}'            => $time,
+            '{{customer_name}}'   => $userName,
+            '{{last_order}}'      => $recentOrderInfo,
+            
+            // Fallback Support
+            '{shop_name}'       => $client->shop_name,
+            '{knowledge_base}'  => $knowledgeBase,
+            '{delivery_info}'   => $deliveryInfo,
+            '{instruction}'     => $instruction,
+            '{product_context}' => $prodCtx,
+            '{order_history}'   => $ordCtx,
+            '{inventory}'       => $invData,
+            '{time}'            => $time,
+            '{customer_name}'   => $userName,
+            '{last_order}'      => $recentOrderInfo,
+        ];
+
+        return strtr($customPrompt, $tags);
+    }
+
+    /**
+     * [OPTIMIZED] ইনভেন্টরি সার্চ
      */
     private function getInventoryData($clientId, $userMessage)
     {
         $cacheKey = "inv_{$clientId}_" . md5(Str::limit($userMessage, 20));
 
         return Cache::remember($cacheKey, 60, function () use ($clientId, $userMessage) {
-            $stopWords = ['product', 'products', 'item', 'items', 'offer', 'offers', 'collection', 'list', 'show', 'dekhann', 'janan', 'bolen', 'ki', 'ace', 'ase', 'store', 'shop', 'kicu', 'kichu', 'stock', 'available', 'details', 'pic', 'picture'];
-            
+            $stopWords = ['product', 'offer', 'collection', 'list', 'show', 'ki', 'ace', 'store', 'shop', 'stock', 'pic'];
             $keywords = array_filter(explode(' ', $userMessage), fn($w) => mb_strlen($w) > 2 && !in_array(strtolower($w), $stopWords));
             
             $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
@@ -259,7 +342,6 @@ class ChatbotService
                 $query->where(function($q) use ($keywords) {
                     foreach ($keywords as $word) {
                         $q->orWhere('name', 'like', "%{$word}%")
-                          ->orWhere('tags', 'like', "%{$word}%")
                           ->orWhereHas('category', function($cq) use ($word){
                               $cq->where('name', 'like', "%{$word}%");
                           });
@@ -271,7 +353,6 @@ class ChatbotService
 
             $products = $query->limit(5)->get();
             
-            // Fallback Logic
             if ($products->isEmpty()) {
                 $products = Product::where('client_id', $clientId)
                     ->where('stock_status', 'in_stock')
@@ -284,145 +365,13 @@ class ChatbotService
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'sale_price' => $p->sale_price,
-                    'regular_price' => $p->regular_price,
-                    'stock_available' => $p->stock_quantity,
-                    'description' => Str::limit(strip_tags($p->short_description ?? $p->description), 150),
-                    'image_url' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null
+                    'price' => $p->sale_price ?? $p->regular_price,
+                    'stock' => $p->stock_quantity,
+                    'desc' => Str::limit(strip_tags($p->description), 100),
+                    'image' => $p->thumbnail ? asset('storage/' . $p->thumbnail) : null
                 ];
             })->toJson();
         });
-    }
-
-    private function updateRecentOrderNote($clientId, $senderId, $note)
-    {
-        $recentOrder = Order::where('client_id', $clientId)
-            ->where('sender_id', $senderId)
-            ->where('created_at', '>=', now()->subMinutes(15))
-            ->latest()
-            ->first();
-
-        if ($recentOrder) {
-            $existingNote = $recentOrder->admin_note ?? $recentOrder->notes ?? '';
-            $newNote = $existingNote ? "$existingNote | $note" : $note;
-
-            if (\Schema::hasColumn('orders', 'admin_note')) {
-                $recentOrder->update(['admin_note' => $newNote]);
-            } elseif (\Schema::hasColumn('orders', 'notes')) {
-                $recentOrder->update(['notes' => $newNote]);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 🔥 DYNAMIC PROMPT GENERATION (FUTURE PROOF)
-     */
-    private function generateSystemPrompt($instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $clientId, $senderId)
-    {
-        // লেটেস্ট অর্ডারের তথ্য নিয়ে আসা (যাতে ইউজার জিজ্ঞেস করলেই আইডি বলা যায়)
-        $recentOrder = Order::where('client_id', $clientId)
-            ->where('sender_id', $senderId)
-            ->latest()
-            ->first();
-            
-        $recentOrderInfo = $recentOrder 
-            ? "LAST ORDER: #{$recentOrder->id} (Status: {$recentOrder->order_status}, Total: {$recentOrder->total_amount})" 
-            : "No recent order";
-
-        return <<<EOT
-{$instruction}
-
-**System Role:** Elite AI Sales Associate for an E-commerce Brand in Bangladesh.
-**Objective:** Convert inquiries into orders politely and efficiently.
-**Customer Name:** {$userName}
-**Current Time:** {$time}
-
-### 🛑 CRITICAL LOGIC RULES (DO NOT IGNORE):
-1. **CONFIRMATION:** Before creating an order, ALWAYS show a summary (Product, Price, Address) and ask: "Is this correct?".
-2. **CREATE:** Only create order if user says "Yes", "Ji", "Confirm" AFTER seeing the summary.
-3. **ORDER ID:** If user asks for Order ID, check [LATEST ORDER DB] below and tell them immediately.
-4. **PICS vs TAKA:** "200 pics" = QUANTITY. "200 tk" = PRICE.
-5. **INVENTORY:** Use [Inventory Match] to answer "ki ace" or "offer". Use [CAROUSEL: id1, id2] for multiple products.
-6. **IMAGES:** If user asks for picture, output 'image_url' from inventory.
-
-### 📂 DATA PACKETS:
-- [Product Context]: {$prodCtx}
-- [Inventory Match]: {$invData}
-- [Customer History]: {$ordCtx}
-- [LATEST ORDER DB]: {$recentOrderInfo} 👈 (Use this for status/ID check)
-
-Reply in friendly Bangla (using English terms for Price, Size, etc).
-EOT;
-    }
-
-    private function isTrackingIntent($msg)
-    {
-        $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking', 'order status'];
-        $msgLower = mb_strtolower($msg, 'UTF-8');
-        foreach ($trackingKeywords as $kw) {
-            if (mb_strpos($msgLower, $kw) !== false) return true;
-        }
-        return false;
-    }
-
-    private function isOrderRelatedMessage($msg)
-    {
-        $orderKeywords = ['order', 'অর্ডার', 'buy', 'কিনবো', 'purchase', 'কেনা', 'product', 'প্রোডাক্ট', 'item', 'জিনিস'];
-        $msgLower = strtolower($msg);
-        foreach ($orderKeywords as $kw) {
-            if (stripos($msgLower, $kw) !== false) return true;
-        }
-        return false;
-    }
-
-    private function detectDeliveryNote($msg)
-    {
-        $noteKeywords = [
-            'friday', 'শুক্রবার', 'saturday', 'শনিবার', 'sunday', 'রবিবার',
-            'monday', 'সোমবার', 'tuesday', 'মঙ্গলবার', 'wednesday', 'বুধবার', 'thursday', 'বৃহস্পতিবার',
-            'delivery', 'ডেলিভারি', 'দিবেন', 'দিবে', 'দিয়েন', 'দিয়ে', 'পৌছে', 'urgent', 'দ্রুত', 'সকালে', 'রাতে'
-        ];
-        $msgLower = strtolower($msg);
-        foreach ($noteKeywords as $kw) {
-            if (stripos($msgLower, $kw) !== false) return true;
-        }
-        return false;
-    }
-
-    private function extractDeliveryNote($msg)
-    {
-        $commonWords = ['ami', 'amra', 'tumi', 'apni', 'she', 'i', 'you', 'we', 'want', 'need', 'please', 'kindly', 'দয়া', 'করে', 'চাই', 'লাগবে'];
-        $words = explode(' ', strtolower($msg));
-        $filtered = array_filter($words, function($w) use ($commonWords) {
-            return !in_array(strtolower(trim($w)), $commonWords) && strlen(trim($w)) > 2;
-        });
-        return implode(' ', $filtered);
-    }
-
-    private function detectOrderCancellation($msg, $senderId)
-    {
-        if (empty($msg)) return false;
-        $cancelPhrases = ['cancel', 'বাতিল', 'cancel koro', 'নিবো না', 'লাগবে না', 'চাই না', 'change mind', 'ভুল হয়েছে'];
-        $msgLower = mb_strtolower($msg, 'UTF-8');
-        foreach ($cancelPhrases as $phrase) {
-            if (mb_strpos($msgLower, mb_strtolower($phrase, 'UTF-8')) !== false) {
-                return Order::where('sender_id', $senderId)->whereIn('order_status', ['processing', 'pending'])->exists();
-            }
-        }
-        return false;
-    }
-
-    private function detectHateSpeech($message)
-    {
-        if (!$message) return false;
-        $badWords = ['fucker', 'idiot', 'stupid', 'bastard', 'scam', 'shala', 'kutta', 'harami', 'shuor', 'magi', 'khananki', 'chuda', 'bal', 'boka', 'faltu', 'butpar', 'chor', 'sala', 'khankir', 'madarchod', 'tor mare', 'fuck', 'shit', 'bitch', 'asshole'];
-        $lowerMsg = strtolower($message);
-        foreach ($badWords as $word) {
-            if (str_contains($lowerMsg, $word)) return true;
-        }
-        return false;
     }
 
     private function lookupOrderByPhone($clientId, $message)
@@ -439,10 +388,17 @@ EOT;
                 ->first();
 
             if ($order) {
-                $status = strtoupper($order->order_status);
-                $note = $order->admin_note ?? $order->notes ?? '';
-                $noteInfo = $note ? " (Note: {$note})" : "";
-                return "FOUND_ORDER: Phone {$phone} matched Order #{$order->id}. Status: {$status} {$noteInfo}. Total: {$order->total_amount} Tk.";
+                $statusMap = [
+                    'pending' => 'অপেমান (Pending)',
+                    'processing' => 'প্রক্রিয়াধীন (Processing)',
+                    'shipped' => 'শিপ করা হয়েছে (Shipped)',
+                    'delivered' => 'ডেলিভারি সম্পন্ন (Delivered)',
+                    'cancelled' => 'বাতিল (Cancelled)',
+                    'hold' => 'হোল্ডে আছে (On Hold)'
+                ];
+                $status = $statusMap[$order->order_status] ?? ucfirst($order->order_status);
+                
+                return "FOUND_ORDER: অর্ডার #{$order->id}। বর্তমান অবস্থা: {$status}। মোট বিল: {$order->total_amount} টাকা।";
             }
         }
         return null;
@@ -456,51 +412,10 @@ EOT;
             ->take(1)
             ->get();
 
-        if ($orders->isEmpty()) return "No previous orders.";
+        if ($orders->isEmpty()) return "নতুন কাস্টমার (কোনো পূর্ববর্তী অর্ডার নেই)।";
         
         $o = $orders->first();
-        return "Last Order: #{$o->id} ({$o->order_status}) - {$o->total_amount} Tk";
-    }
-
-    public function convertVoiceToText($audioUrl)
-    {
-        // (Existing Logic Kept Same for Stability)
-        $tempPath = null;
-        try {
-            Log::info("Starting Voice Transcription for: " . $audioUrl);
-            $audioResponse = Http::get($audioUrl);
-            if (!$audioResponse->successful()) return null;
-
-            $contentType = $audioResponse->header('Content-Type');
-            $extension = 'mp3';
-            // Map content type to extension logic...
-            if (strpos($contentType, 'ogg') !== false) $extension = 'ogg';
-            elseif (strpos($contentType, 'mp4') !== false) $extension = 'mp4';
-            elseif (strpos($contentType, 'm4a') !== false) $extension = 'm4a';
-
-            $tempFileName = 'voice_' . time() . '_' . uniqid() . '.' . $extension;
-            $tempPath = storage_path('app/' . $tempFileName);
-            file_put_contents($tempPath, $audioResponse->body());
-
-            $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
-            $response = Http::withToken($apiKey)
-                ->attach('file', fopen($tempPath, 'r'), $tempFileName)
-                ->post('https://api.openai.com/v1/audio/transcriptions', [
-                    'model' => 'whisper-1',
-                    'prompt' => 'This is a Bengali voice message about ordering products.',
-                ]);
-
-            if ($response->successful()) {
-                return $response->json()['text'] ?? null;
-            }
-            Log::error("Whisper API Error: " . $response->body());
-            return null;
-        } catch (\Exception $e) {
-            Log::error("Voice Conversion Failed: " . $e->getMessage());
-            return null;
-        } finally {
-            if ($tempPath && file_exists($tempPath)) @unlink($tempPath);
-        }
+        return "সর্বশেষ অর্ডার: #{$o->id} ({$o->order_status}) - {$o->total_amount} টাকা।";
     }
 
     private function callLlmChain($messages) {
@@ -509,8 +424,8 @@ EOT;
             $response = Http::withToken($apiKey)->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
-                'max_tokens' => 450, 
-                'temperature' => 0.2, 
+                'max_tokens' => 500, 
+                'temperature' => 0.3, 
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
@@ -519,12 +434,33 @@ EOT;
         }
     }
 
+    private function isTrackingIntent($msg) {
+        $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অর্ডার কি', 'অর্ডার চেক', 'অবস্থা', 'জানতে চাই', 'পৌঁছাবে', 'কবে পাব', 'tracking', 'order status'];
+        $msgLower = mb_strtolower($msg, 'UTF-8');
+        foreach ($trackingKeywords as $kw) {
+            if (mb_strpos($msgLower, $kw) !== false) return true;
+        }
+        return false;
+    }
+
+    private function detectHateSpeech($message) {
+        if (!$message) return false;
+        $badWords = ['fucker', 'idiot', 'stupid', 'bastard', 'scam', 'shala', 'kutta', 'harami', 'shuor', 'magi', 'khananki', 'chuda', 'bal', 'boka', 'faltu', 'butpar', 'chor', 'sala', 'khankir', 'madarchod', 'tor mare', 'fuck', 'shit', 'bitch', 'asshole'];
+        $lowerMsg = strtolower($message);
+        foreach ($badWords as $word) {
+            if (str_contains($lowerMsg, $word)) return true;
+        }
+        return false;
+    }
+
+    public function convertVoiceToText($url) { return null; } 
+
     /**
      * 🔥 SAAS ENABLED: Sends Telegram alert using CLIENT'S token
      */
     public function sendTelegramAlert($clientId, $senderId, $message) {
         try {
-            // 1. সেলার খুঁজে বের করা (Config থেকে নয়, DB থেকে)
+            // 1. সেলার খুঁজে বের করা (DB থেকে)
             $client = Client::find($clientId);
 
             // 2. টোকেন চেক করা
@@ -535,7 +471,7 @@ EOT;
             $token = $client->telegram_bot_token;
             $chatId = $client->telegram_chat_id;
 
-            // 3. ডাইনামিক টোকেন দিয়ে মেসেজ পাঠানো
+            // 3. ডাইনামিক টোকেন দিয়ে মেসেজ পাঠানো
             Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
                 'text' => "🔔 **New Alert**\nShop: {$client->shop_name}\nUser: `{$senderId}`\n{$message}",
@@ -550,7 +486,7 @@ EOT;
                 ])
             ]);
         } catch (\Exception $e) { 
-            Log::error("Telegram Notification Error: " . $e->getMessage()); 
+            Log::error("Telegram Error: " . $e->getMessage()); 
         }
     }
 }

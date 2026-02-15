@@ -39,11 +39,13 @@ class ClientResource extends Resource
     
     protected static ?int $navigationSort = 1;
 
+    // [UX] ড্যাশবোর্ডে ব্যাজ (শুধুমাত্র সুপার অ্যাডমিনের জন্য)
     public static function getNavigationBadge(): ?string
     {
         return auth()->id() === 1 ? (string) static::getModel()::count() : null;
     }
 
+    // [UX] গ্লোবাল সার্চ (যেকোনো জায়গা থেকে শপ খোঁজা যাবে)
     public static function getGloballySearchableAttributes(): array
     {
         return ['shop_name', 'slug', 'fb_page_id'];
@@ -53,6 +55,7 @@ class ClientResource extends Resource
     {
         return $form
             ->schema([
+                // --- সেকশন ১: সাবস্ক্রিপশন প্ল্যান (Admin Only) ---
                 Section::make('Subscription Plan')
                     ->description('User subscription & limitations control.')
                     ->icon('heroicon-m-credit-card')
@@ -74,16 +77,17 @@ class ClientResource extends Resource
                             ->disabled(fn () => auth()->id() !== 1)
                             ->dehydrated(fn () => auth()->id() === 1),
                     ])
-                    ->columns(['default' => 1, 'sm' => 2])
+                    ->columns(['default' => 1, 'sm' => 2]) // রেস্পন্সিভ কলাম
                     ->visible(fn () => auth()->id() === 1),
 
+                // --- সেকশন ২: শপ কনফিগারেশন ---
                 Forms\Components\Group::make()
                     ->schema([
                         Tabs::make('Shop Configuration')
-                            ->persistTabInQueryString()
+                            ->persistTabInQueryString() // রিফ্রেশ দিলেও ট্যাব হারাবে না
                             ->tabs([
                                 
-                                // ১. সাধারণ তথ্য
+                                // ১. সাধারণ তথ্য (General Info)
                                 Tabs\Tab::make('General Info')
                                     ->icon('heroicon-m-information-circle')
                                     ->schema([
@@ -108,6 +112,7 @@ class ClientResource extends Resource
                                             ->dehydrated()
                                             ->helperText('Unique link for the shop.'),
 
+                                        // Webhook Token with UI Enhancements
                                         TextInput::make('fb_verify_token')
                                             ->label('Webhook Verify Token')
                                             ->helperText('Keep this token secret. Used for Facebook verification.')
@@ -132,6 +137,7 @@ class ClientResource extends Resource
                                                     }),
                                             ]),
 
+                                        // ✅ [FIXED & OPTIMIZED] Webhook Status Logic
                                         Placeholder::make('webhook_status')
                                             ->label('Connection Status')
                                             ->content(function ($record) {
@@ -140,6 +146,8 @@ class ClientResource extends Resource
                                                 }
 
                                                 $isVerified = (bool) $record->webhook_verified_at;
+                                                
+                                                // Tailwind Classes for better UI
                                                 $class = $isVerified 
                                                     ? 'bg-green-100 text-green-700 border-green-200' 
                                                     : 'bg-yellow-100 text-yellow-700 border-yellow-200';
@@ -175,27 +183,44 @@ class ClientResource extends Resource
                                             ->visible(fn () => auth()->id() === 1),
                                     ]),
 
-                                // ২. এআই কনফিগারেশন
+                                // ২. এআই কনফিগারেশন (AI & Chatbot) - 🔥 UPGRADED
                                 Tabs\Tab::make('AI & Chatbot')
                                     ->icon('heroicon-m-cpu-chip')
                                     ->schema([
-                                        Section::make('Bot Personality')
-                                            ->description('Instruct the AI on how to behave.')
+                                        
+                                        // 🔥 Knowledge Base Section (New Feature)
+                                        Section::make('Knowledge Base (AI-এর মগজ)')
+                                            ->description('দোকানের পলিসি, রিটার্ন রুলস বা অফার ডিটেইলস এখানে লিখুন। AI এটি পড়ে উত্তর দিবে।')
+                                            ->icon('heroicon-m-book-open')
+                                            ->schema([
+                                                Textarea::make('knowledge_base')
+                                                    ->label('Shop Policies & FAQs')
+                                                    ->placeholder("উদাহরণ:\n১. ডেলিভারি চার্জ ঢাকার মধ্যে ৮০ টাকা।\n২. কোনো রিটার্ন পলিসি নেই।\n৩. শুক্রবার বন্ধ থাকে।")
+                                                    ->rows(5)
+                                                    ->helperText('AI এই তথ্যগুলো ব্যবহার করে কাস্টমারের প্রশ্নের উত্তর দিবে।'),
+                                            ]),
+
+                                        // 🔥 Bot Personality
+                                        Section::make('Bot Personality & Instructions')
+                                            ->description('AI কাস্টমারের সাথে কীভাবে আচরণ করবে তা নির্ধারণ করুন।')
+                                            ->icon('heroicon-m-face-smile')
+                                            ->collapsed()
                                             ->schema([
                                                 Textarea::make('custom_prompt')
-                                                    ->label('System Instruction')
-                                                    ->placeholder("Example:\n- Always be polite.\n- Address user as 'Brother'.")
+                                                    ->label('Custom Salesman Prompt')
+                                                    ->placeholder("তুমি একজন দক্ষ সেলসম্যান। কাস্টমারকে 'স্যার' বলে সম্বোধন করবে...")
                                                     ->rows(6)
                                                     ->maxLength(2000)
-                                                    ->columnSpanFull(),
+                                                    ->helperText('Advanced users only. Leave blank to use the default professional salesman persona.'),
                                             ]),
                                     ]),
 
-                                // ৩. লজিস্টিকস
+                                // ৩. লজিস্টিকস (Logistics)
                                 Tabs\Tab::make('Logistics')
                                     ->icon('heroicon-m-truck')
                                     ->schema([
                                         Section::make('Delivery Charges')
+                                            ->description('Shipping costs for orders.')
                                             ->schema([
                                                 TextInput::make('delivery_charge_inside')
                                                     ->label('Inside Dhaka')
@@ -212,10 +237,10 @@ class ClientResource extends Resource
                                                     ->default(150)
                                                     ->minValue(0)
                                                     ->required(),
-                                            ])->columns(['default' => 1, 'sm' => 2]),
+                                            ])->columns(['default' => 1, 'sm' => 2]), // মোবাইল রেস্পন্সিভ
                                     ]),
 
-                                // ৪. মেটা (ফেসবুক) ইন্টিগ্রেশন
+                                // ৪. মেটা (ফেসবুক) ইন্টিগ্রেশন (Meta Integration)
                                 Tabs\Tab::make('Meta Integration')
                                     ->icon('heroicon-m-link')
                                     ->schema([
@@ -254,6 +279,13 @@ class ClientResource extends Resource
                                                     ->label('Page Access Token')
                                                     ->rows(2),
 
+                                                // App Secret Field (Security Upgrade)
+                                                TextInput::make('fb_app_secret')
+                                                    ->label('App Secret')
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->helperText('Used for webhook signature verification (Highly Recommended).'),
+
                                                 Actions::make([
                                                     Actions\Action::make('test_connection')
                                                         ->label('Test Manual Connection')
@@ -283,26 +315,24 @@ class ClientResource extends Resource
                                             ]),
                                     ]),
 
-                                // 🔥 ৫. টেলিগ্রাম ইন্টিগ্রেশন (IMPROVED with VERIFICATION)
+                                // 🔥 ৫. টেলিগ্রাম ইন্টিগ্রেশন (Telegram Integration - SAAS FEATURE)
                                 Tabs\Tab::make('Telegram Integration')
                                     ->icon('heroicon-m-paper-airplane')
                                     ->schema([
-                                        Section::make('Instructions (কিভাবে পাবেন?)')
-                                            ->description('Follow these steps to connect your Telegram.')
+                                        Section::make('Instructions (কিভাবে কানেক্ট করবেন?)')
+                                            ->description('অর্ডারের নোটিফিকেশন পেতে নিচের ধাপগুলো অনুসরণ করুন।')
                                             ->schema([
                                                 Placeholder::make('tutorial')
                                                     ->label('')
                                                     ->content(new HtmlString('
                                                         <div class="text-sm text-gray-600 space-y-3 bg-gray-50 p-4 rounded-lg border">
-                                                            <p class="font-bold text-primary-600">📌 How to connect Telegram?</p>
+                                                            <p class="font-bold text-primary-600">📌 Telegram Setup Guide:</p>
                                                             <ul class="list-disc ml-4 space-y-1">
-                                                                <li><strong>Option A: Create New Bot</strong> - Go to <code>@BotFather</code> → Type <code>/newbot</code> → Follow steps → Copy Token.</li>
-                                                                <li><strong>Option B: Use Existing Bot</strong> - Go to <code>@BotFather</code> → Type <code>/mybots</code> → Select bot → API Token.</li>
+                                                                <li><strong>ধাপ ১:</strong> টেলিগ্রামে <code>@BotFather</code> সার্চ করুন এবং একটি নতুন বট খুলুন।</li>
+                                                                <li><strong>ধাপ ২:</strong> পাওয়া <strong>API Token</strong> টি নিচের "Bot Token" বক্সে দিন।</li>
+                                                                <li><strong>ধাপ ৩:</strong> টেলিগ্রামে <code>@userinfobot</code> সার্চ করে আপনার <strong>Chat ID</strong> বের করুন এবং নিচের বক্সে দিন।</li>
                                                             </ul>
-                                                            <div class="mt-2 pt-2 border-t border-gray-200">
-                                                                <p><strong>Step 2: Get Chat ID</strong> - Search <code>@userinfobot</code> → Click Start → Copy ID.</p>
-                                                            </div>
-                                                            <p class="text-red-500 font-bold mt-2">⚠️ Must Do: Search your bot on Telegram & click START button.</p>
+                                                            <p class="text-red-500 font-bold mt-2">⚠️ জরুরী: সেভ করার আগে আপনার বটের চ্যাটে গিয়ে START বাটন চাপতে ভুলবেন না!</p>
                                                         </div>
                                                     ')),
                                             ]),
@@ -314,14 +344,14 @@ class ClientResource extends Resource
                                                     ->password()
                                                     ->revealable()
                                                     ->placeholder('123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11')
-                                                    ->helperText('Paste the token from BotFather here.'),
+                                                    ->helperText('BotFather থেকে পাওয়া টোকেন এখানে দিন।'),
 
                                                 TextInput::make('telegram_chat_id')
                                                     ->label('Admin Chat ID')
                                                     ->placeholder('123456789')
-                                                    ->helperText('Paste your ID from @userinfobot here.'),
+                                                    ->helperText('আপনার বা গ্রুপের চ্যাট আইডি।'),
 
-                                                // 🔥 ভেরিফাই এবং কানেক্ট বাটন
+                                                // 🔥 ভেরিফাই এবং কানেক্ট বাটন (Smart Verify)
                                                 Actions::make([
                                                     Actions\Action::make('connect_telegram')
                                                         ->label('Verify & Connect')
@@ -329,7 +359,7 @@ class ClientResource extends Resource
                                                         ->color('success')
                                                         ->requiresConfirmation()
                                                         ->modalHeading('Test Connection')
-                                                        ->modalDescription('We will send a test message to your Telegram to verify credentials.')
+                                                        ->modalDescription('আমরা আপনার টেলিগ্রামে একটি টেস্ট মেসেজ পাঠাব।')
                                                         ->action(function ($get, $record) {
                                                             $token = $get('telegram_bot_token');
                                                             $chatId = $get('telegram_chat_id');
@@ -343,14 +373,14 @@ class ClientResource extends Resource
                                                             try {
                                                                 $testMsg = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                                                                     'chat_id' => $chatId,
-                                                                    'text' => "✅ **Connection Successful!**\nYour shop is now connected to this bot.",
+                                                                    'text' => "✅ **Connection Successful!**\nShop: " . ($record->shop_name ?? 'Unknown') . " is now connected.",
                                                                     'parse_mode' => 'Markdown'
                                                                 ]);
 
                                                                 if (!$testMsg->successful()) {
                                                                     Notification::make()
                                                                         ->title('Verification Failed!')
-                                                                        ->body('Could not send message. Check Chat ID or ensure you started the bot.')
+                                                                        ->body('মেসেজ পাঠানো যায়নি। দয়া করে দেখুন আপনি বট Start করেছেন কিনা বা চ্যাট আইডি সঠিক কিনা।')
                                                                         ->danger()
                                                                         ->send();
                                                                     return; // ডাটা ভুল হলে এখানেই থামবে
@@ -369,8 +399,8 @@ class ClientResource extends Resource
                                                                 ]);
                                                             }
 
-                                                            // 3. ওয়েবহুক সেট করা
-                                                            $webhookUrl = "https://asianhost.net/telegram/webhook/" . $token;
+                                                            // 3. ওয়েবহুক সেট করা (Automatic)
+                                                            $webhookUrl = config('app.url') . "/telegram/webhook/" . $token;
                                                             
                                                             try {
                                                                 $response = Http::get("https://api.telegram.org/bot{$token}/setWebhook?url={$webhookUrl}");
@@ -427,12 +457,21 @@ class ClientResource extends Resource
                     })
                     ->sortable(),
 
+                // Status Badge for Webhook
                 TextColumn::make('webhook_verified_at')
-                    ->label('Webhook')
+                    ->label('FB Webhook')
                     ->formatStateUsing(fn ($state) => $state ? 'Verified' : 'Pending')
                     ->badge()
                     ->color(fn ($state) => $state ? 'success' : 'danger')
                     ->icon(fn ($state) => $state ? 'heroicon-m-check-badge' : 'heroicon-m-clock'),
+
+                // Telegram Status Badge [NEW]
+                TextColumn::make('telegram_bot_token')
+                    ->label('Telegram')
+                    ->formatStateUsing(fn ($state) => $state ? 'Connected' : 'Not Connected')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->icon(fn ($state) => $state ? 'heroicon-m-paper-airplane' : 'heroicon-m-x-circle'),
 
                 ToggleColumn::make('status')
                     ->label('Active')

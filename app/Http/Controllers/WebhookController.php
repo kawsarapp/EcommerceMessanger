@@ -17,6 +17,7 @@ class WebhookController extends Controller
 {
     /**
      * 1. Facebook Webhook Verification
+     * (ফেসবুক যখন প্রথমবার আপনার ইউআরএল ভেরিফাই করবে)
      */
     public function verify(Request $request)
     {
@@ -41,211 +42,271 @@ class WebhookController extends Controller
 
     /**
      * 2. Handle Incoming Messages (All Types)
+     * (মেসেজ প্রসেসিং এর মেইন ফাংশন)
      */
     public function handle(Request $request, ChatbotService $chatbot)
     {
-        Log::info("-------------- WEBHOOK MESSAGE RECEIVED --------------");
-        // Log::debug("Raw Payload:", $request->all()); // Uncomment for deep debug
-
+        // Log::info("-------------- WEBHOOK MESSAGE RECEIVED --------------"); 
+        
         $data = $request->all();
+        $content = $request->getContent(); // Raw content for signature check
 
         // =====================================
-        // WEBHOOK SIGNATURE VERIFICATION
+        // 🔒 WEBHOOK SIGNATURE SECURITY CHECK
         // =====================================
         $pageId = $data['entry'][0]['id'] ?? null;
         
         if ($pageId) {
             $clientForVerification = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
-            if ($clientForVerification && $clientForVerification->fb_app_secret) {
+            
+            // যদি ক্লায়েন্ট অ্যাপ সিক্রেট সেট করে রাখে তবেই চেক হবে (Security Upgrade)
+            if ($clientForVerification && !empty($clientForVerification->fb_app_secret)) {
                 $signature = $request->header('X-Hub-Signature');
-                $body = $request->getContent();
                 $appSecret = $clientForVerification->fb_app_secret;
-
-                $expected = 'sha1=' . hash_hmac('sha1', $body, $appSecret);
+                
+                // SHA1 হ্যাশ তৈরি করে চেক করা হচ্ছে
+                $expected = 'sha1=' . hash_hmac('sha1', $content, $appSecret);
+                
                 if (!hash_equals($expected, $signature ?? '')) {
-                    Log::warning("⚠️ Invalid Signature for Page ID: $pageId");
+                    Log::warning("⚠️ Security Warning: Invalid Signature for Page ID: $pageId");
                     return response('Forbidden', 403);
                 }
             }
-        } else {
-            Log::warning("⚠️ Page ID missing in webhook data.");
         }
 
-        if (isset($data['entry'][0]['messaging'][0])) {
-            $messaging = $data['entry'][0]['messaging'][0];
-            $senderId  = $messaging['sender']['id'] ?? null;
-            $pageId    = $data['entry'][0]['id'] ?? null;
-            $mid       = $messaging['message']['mid'] ?? null;
-
-            Log::info("📩 Processing Message - Sender: $senderId | Page: $pageId");
-
-            // [Deduplication]
-            if ($mid && Cache::has("fb_mid_{$mid}")) {
-                Log::info("⏭️ Duplicate Message Skipped: $mid");
-                return response('OK', 200);
-            }
-            if ($mid) Cache::put("fb_mid_{$mid}", true, 300);
-
-            /* ================= MESSAGE PRE-PROCESSING ================= */
-
-            $client = Client::where('fb_page_id', $pageId)->where('status', 'active')->first();
-            if (!$client) {
-                Log::error("❌ Client not found or inactive for Page ID: $pageId");
-                return response('OK', 200);
-            }
-
-            $messageText = null;
-            $incomingImageUrl = null;
-
-            // Text / Payload Extraction
-            if (isset($messaging['message']['text'])) {
-                $messageText = $messaging['message']['text'];
-                Log::info("📝 Text Message: " . Str::limit($messageText, 50));
-            } elseif (isset($messaging['message']['quick_reply']['payload'])) {
-                $messageText = $messaging['message']['quick_reply']['payload'];
-                Log::info("🔘 Quick Reply Payload: $messageText");
-            } elseif (isset($messaging['postback']['payload'])) {
-                $messageText = $messaging['postback']['payload'];
-                Log::info("🔙 Postback Payload: $messageText");
-            }
-
-            // Image / Audio Extraction
-            if (isset($messaging['message']['attachments'][0])) {
-                $attachment = $messaging['message']['attachments'][0];
-                $type = $attachment['type'] ?? null;
-                $url  = $attachment['payload']['url'] ?? null;
-
-                if ($type === 'image') {
-                    $incomingImageUrl = $url;
-                    Log::info("📷 Image Attachment Received: $url");
-                } elseif ($type === 'audio') {
-                    Log::info("🎤 Audio Attachment Received. Converting...");
-                    $messageText = $chatbot->convertVoiceToText($url);
-                    
-                    if (!$messageText) {
-                        Log::warning("⚠️ Audio conversion failed.");
-                        $this->sendMessengerMessage($senderId, "দুঃখিত, ভয়েসটি বুঝতে পারিনি। দয়া করে টাইপ করুন।", $client->fb_page_token);
-                        return response('OK', 200);
-                    }
-                    Log::info("🗣️ Audio Converted: $messageText");
+        // =====================================
+        // 📩 MESSAGE PROCESSING LOOP
+        // =====================================
+        if (isset($data['entry'][0]['messaging'])) {
+            
+            foreach ($data['entry'][0]['messaging'] as $messaging) {
+                
+                $senderId = $messaging['sender']['id'] ?? null;
+                $recipientId = $messaging['recipient']['id'] ?? null; // Page ID (From FB)
+                
+                // 🛑 1. SELF-REPLY & SYSTEM MESSAGE CHECK (Loop Prevention)
+                // ডেলিভারি রিপোর্ট, রিড রিসিপ্ট বা পেজের নিজের মেসেজ (is_echo) ইগনোর করা
+                if (isset($messaging['delivery']) || isset($messaging['read']) || ($messaging['message']['is_echo'] ?? false)) {
+                    continue;
                 }
-            }
 
-            // Carousel Click Handling
-            if (Str::startsWith($messageText, 'ORDER_PRODUCT_')) {
-                $productId = str_replace('ORDER_PRODUCT_', '', $messageText);
-                $product = Product::find($productId);
-                $messageText = "আমি " . ($product->name ?? 'এই প্রোডাক্টটি') . " অর্ডার করতে চাই।";
-                Log::info("🛒 Product Selection Intent: $messageText");
-            }
+                // ক্লায়েন্ট ভেরিফিকেশন (Double Check)
+                $client = Client::where('fb_page_id', $recipientId)->where('status', 'active')->first();
+                if (!$client) {
+                    Log::error("❌ Client not found or inactive for Page ID: $recipientId");
+                    continue;
+                }
 
-            /* ================= MAIN PROCESS ================= */
-
-            // NULL SAFETY: Ensure messageText is never null
-            $finalMessage = $messageText ?? '';
-
-            if ($senderId && ($finalMessage !== '' || $incomingImageUrl)) {
-                
-                // Typing Indicator ON
-                try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_on'); } catch (\Exception $e) {}
-
-                Log::info("🤖 Calling ChatbotService...");
-                
-                // 🔥 CALL AI SERVICE
-                $reply = $chatbot->getAiResponse($finalMessage, $client->id, $senderId, $incomingImageUrl);
-                
-                Log::info("🤖 AI Reply Generated: " . Str::limit($reply, 100));
-
-                // Typing Indicator OFF
-                try { $this->sendTypingAction($senderId, $client->fb_page_token, 'typing_off'); } catch (\Exception $e) {}
-
-                // Send Response
-                if ($reply) {
-                    $outgoingImage = null;
-                    $quickReplies = [];
-
-                    // 🔥 FIX: IMAGE EXTRACTION (Link Detection)
-                    // If AI replies with an image URL, extract it and send as attachment
-                    if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
-                        $outgoingImage = $matches[1];
-                        $reply = str_replace($outgoingImage, '', $reply); // Remove URL from text
-                        Log::info("🖼️ Image Response Detected: $outgoingImage");
+                // 🔄 2. DEDUPLICATION (Cache Check)
+                // একই মেসেজ দুইবার আসলে আটকানো হবে
+                $mid = $messaging['message']['mid'] ?? $messaging['postback']['mid'] ?? null;
+                if ($mid) {
+                    if (Cache::has("fb_mid_{$mid}")) {
+                        Log::info("⏭️ Skipped Duplicate Message ID: $mid");
+                        continue;
                     }
+                    Cache::put("fb_mid_{$mid}", true, 300); // 5 minutes cache
+                }
 
-                    // Carousel
-                    if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
-                        Log::info("🖼️ Carousel Triggered: " . $matches[1]);
-                        $productIds = explode(',', $matches[1]);
-                        $reply = str_replace($matches[0], "", $reply);
-                        $this->sendMessengerCarousel($senderId, $productIds, $client->fb_page_token);
+                // 👁️ 3. MARK SEEN & TYPING ON (User Experience Upgrade)
+                // মেসেজ পাওয়ার সাথে সাথে 'Seen' এবং 'Typing...' দেখাবে
+                $this->sendSenderAction($senderId, $client->fb_page_token, 'mark_seen');
+                $this->sendSenderAction($senderId, $client->fb_page_token, 'typing_on');
+
+                // 📦 4. PAYLOAD EXTRACTION
+                $messageText = null;
+                $incomingImageUrl = null;
+                
+                // A. Postback Buttons (Get Started / Menu)
+                if (isset($messaging['postback'])) {
+                    $messageText = $messaging['postback']['payload'];
+                    $title = $messaging['postback']['title'] ?? 'Menu Click';
+                    Log::info("🔙 Postback: $title ($messageText)");
+                    
+                    // 🔥 Referral Handling (Ads click -> Get Started) - [NEW FEATURE]
+                    if (isset($messaging['postback']['referral'])) {
+                        $ref = $messaging['postback']['referral']['ref'] ?? '';
+                        $source = $messaging['postback']['referral']['source'] ?? 'ad';
+                        $messageText .= " [Referral: $ref, Source: $source]";
+                        Log::info("📢 User came from AD/Referral: $ref");
                     }
+                }
+                // B. Quick Replies
+                elseif (isset($messaging['message']['quick_reply'])) {
+                    $messageText = $messaging['message']['quick_reply']['payload'];
+                    Log::info("🔘 Quick Reply: $messageText");
+                }
+                // C. Normal Text
+                elseif (isset($messaging['message']['text'])) {
+                    $messageText = $messaging['message']['text'];
+                    Log::info("📝 Text Message: " . Str::limit($messageText, 50));
+                }
+                // D. Attachments (Image/Audio/File)
+                elseif (isset($messaging['message']['attachments'])) {
+                    foreach ($messaging['message']['attachments'] as $attachment) {
+                        $type = $attachment['type'];
+                        $url = $attachment['payload']['url'] ?? null;
 
-                    // Quick Replies
-                    if (preg_match('/\[QUICK_REPLIES:\s*([^\]]+)\]/', $reply, $matches)) {
-                        Log::info("🔘 Quick Replies Triggered.");
-                        $reply = str_replace($matches[0], "", $reply);
-                        $buttons = explode(',', $matches[1]);
-                        foreach ($buttons as $btn) {
-                            $cleanBtn = trim(str_replace(['"', "'"], '', $btn));
-                            $quickReplies[] = [
-                                'content_type' => 'text',
-                                'title' => $cleanBtn,
-                                'payload' => 'QR_' . strtoupper(Str::slug($cleanBtn, '_')),
-                            ];
+                        if ($type === 'image') {
+                            $incomingImageUrl = $url;
+                            // টেক্সট না থাকলে [Image] স্ট্রিং যোগ করা, যাতে AI বুঝতে পারে
+                            $messageText = $messageText ? $messageText . " [Image]" : "[Image]"; 
+                            Log::info("📷 Image Received: $url");
+                        } elseif ($type === 'audio') {
+                            Log::info("🎤 Audio Received: Converting...");
+                            // Voice to Text Conversion Call
+                            $convertedText = $chatbot->convertVoiceToText($url);
+                            
+                            if ($convertedText) {
+                                $messageText = $convertedText;
+                                Log::info("🗣️ Audio Converted: $messageText");
+                            } else {
+                                $this->sendMessengerMessage($senderId, "দুঃখিত, ভয়েসটি বুঝতে পারিনি। দয়া করে টাইপ করুন।", $client->fb_page_token);
+                                return response('OK', 200);
+                            }
+                        } elseif ($type === 'fallback' || $type === 'file' || $type === 'video') {
+                            $messageText = "[Sent an Attachment/Sticker]";
+                            Log::info("📂 Other Attachment Received: $type");
                         }
                     }
+                }
 
-                    // Send Final Message
-                    if (!empty(trim($reply)) || $outgoingImage) {
-                        Log::info("📤 Sending Final Response.");
-                        $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
+                // E. Carousel Button Click (Custom Payload Logic)
+                if (Str::startsWith($messageText, 'ORDER_PRODUCT_')) {
+                    $productId = str_replace('ORDER_PRODUCT_', '', $messageText);
+                    $product = Product::find($productId);
+                    $productName = $product ? $product->name : 'এই পণ্যটি';
+                    $messageText = "আমি {$productName} অর্ডার করতে চাই।";
+                    Log::info("🛒 Product Selection Intent: $messageText");
+                }
+
+                // =====================================
+                // 🤖 AI PROCESSING & RESPONSE
+                // =====================================
+                
+                // NULL SAFETY: Ensure we have something to process
+                if ($messageText || $incomingImageUrl) {
+                    
+                    // Call AI Service
+                    $reply = $chatbot->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl);
+
+                    // Stop Typing Indicator
+                    $this->sendSenderAction($senderId, $client->fb_page_token, 'typing_off');
+
+                    if ($reply) {
+                        $outgoingImage = null;
+                        $quickReplies = [];
+                        $carouselIds = null;
+
+                        // ১. টেক্সট থেকে ইমেজ লিংক আলাদা করা (Regex Upgrade)
+                        if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
+                            $outgoingImage = $matches[1];
+                            $reply = str_replace($outgoingImage, '', $reply);
+                            Log::info("🖼️ Image Response Detected: $outgoingImage");
+                        }
+
+                        // ২. ক্যারোসেল ডিটেকশন [CAROUSEL: 1, 2, 3]
+                        if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
+                            $carouselIds = explode(',', $matches[1]);
+                            $reply = str_replace($matches[0], "", $reply);
+                            Log::info("🖼️ Carousel Triggered: " . $matches[1]);
+                        }
+
+                        // ৩. কুইক রিপ্লাই ডিটেকশন [QUICK_REPLIES: Yes, No]
+                        if (preg_match('/\[QUICK_REPLIES:\s*([^\]]+)\]/', $reply, $matches)) {
+                            $reply = str_replace($matches[0], "", $reply);
+                            $options = explode(',', $matches[1]);
+                            foreach ($options as $opt) {
+                                $cleanOpt = trim(str_replace(['"', "'"], '', $opt));
+                                $quickReplies[] = [
+                                    'content_type' => 'text',
+                                    'title' => Str::limit($cleanOpt, 20),
+                                    'payload' => $cleanOpt
+                                ];
+                            }
+                            Log::info("🔘 Quick Replies Triggered.");
+                        }
+
+                        // ৪. মেসেজ পাঠানো (Priority: Carousel > Text+Image)
+                        if ($carouselIds) {
+                            // যদি ক্যারোসেলের আগে কোনো টেক্সট থাকে, সেটা আগে পাঠানো
+                            if (!empty(trim($reply))) {
+                                $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token);
+                            }
+                            $this->sendMessengerCarousel($senderId, $carouselIds, $client->fb_page_token);
+                        } else {
+                            // সাধারণ মেসেজ (ইমেজ সহ বা ছাড়া)
+                            $this->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
+                        }
+
+                        // ৫. লগ সংরক্ষণ
+                        $this->logConversation($client->id, $senderId, $messageText, $reply, $incomingImageUrl);
+                    } else {
+                        Log::info("⚠️ No reply from AI (Human agent active or empty response).");
                     }
-
-                    // Log Conversation
-                    $this->logConversation($client->id, $senderId, $finalMessage, $reply, $incomingImageUrl);
-                } else {
-                    Log::info("⚠️ No reply from AI (Human agent active or empty response).");
                 }
             }
         }
 
-        Log::info("-------------- WEBHOOK END --------------");
         return response('EVENT_RECEIVED', 200);
     }
 
     // ==========================================
-    // HELPER METHODS (Keep strictly for API calls)
+    // 🛠️ HELPER METHODS (Optimized & Robust)
     // ==========================================
+
+    private function sendSenderAction($recipientId, $token, $action) {
+        try {
+            Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
+                'recipient' => ['id' => $recipientId],
+                'sender_action' => $action
+            ]);
+        } catch (\Exception $e) {
+            // অ্যাকশন ফেইল করলে লগ করার দরকার নেই, ইউজার এক্সপেরিয়েন্স নষ্ট হবে না
+        }
+    }
 
     private function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
         
-        // Image Send logic
+        // আগে ছবি পাঠাই (যদি থাকে)
         if ($imageUrl) {
-            try { 
+            try {
                 $response = Http::post($url, [
                     'recipient' => ['id' => $recipientId],
-                    'message' => ['attachment' => ['type' => 'image', 'payload' => ['url' => $imageUrl, 'is_reusable' => true]]]
+                    'message' => [
+                        'attachment' => [
+                            'type' => 'image', 
+                            'payload' => ['url' => $imageUrl, 'is_reusable' => true]
+                        ]
+                    ]
                 ]);
                 if ($response->failed()) Log::error("❌ Failed to send image: " . $response->body());
             } catch (\Exception $e) {
-                Log::error("❌ Exception sending image: " . $e->getMessage());
+                Log::error("❌ Image Send Error: " . $e->getMessage());
             }
         }
 
+        // এরপর টেক্সট পাঠাই
         if (!empty(trim($message))) {
-            $payload = ['recipient' => ['id' => $recipientId], 'message' => ['text' => trim($message)]];
-            if (!empty($quickReplies)) $payload['message']['quick_replies'] = $quickReplies;
-            
+            $payload = [
+                'recipient' => ['id' => $recipientId],
+                'message' => ['text' => trim($message)]
+            ];
+
+            if (!empty($quickReplies)) {
+                $payload['message']['quick_replies'] = $quickReplies;
+            }
+
             try {
                 $response = Http::post($url, $payload);
                 if ($response->failed()) {
-                    Log::error("❌ Failed to send message: " . $response->body());
+                    Log::error("❌ Message Send Error: " . $response->body());
                 } else {
                     Log::info("✅ Message sent successfully.");
                 }
             } catch (\Exception $e) {
-                Log::error("❌ Exception sending message: " . $e->getMessage());
+                Log::error("❌ Message Exception: " . $e->getMessage());
             }
         }
     }
@@ -256,30 +317,42 @@ class WebhookController extends Controller
             Log::warning("Carousel: No products found for IDs " . implode(',', $productIds));
             return;
         }
-        
+
         $elements = [];
         foreach ($products as $product) {
             $elements[] = [
                 'title' => $product->name,
-                'image_url' => asset('storage/' . $product->thumbnail),
-                'subtitle' => "Price: ৳" . number_format($product->sale_price),
+                'image_url' => $product->thumbnail ? asset('storage/' . $product->thumbnail) : null,
+                'subtitle' => "Price: ৳" . number_format($product->sale_price ?? $product->regular_price),
                 'buttons' => [
-                    ['type' => 'postback', 'title' => 'অর্ডার করবো', 'payload' => "ORDER_PRODUCT_" . $product->id],
-                    ['type' => 'web_url', 'url' => url('/shop/' . $product->client->slug), 'title' => 'বিস্তারিত দেখুন']
+                    [
+                        'type' => 'postback',
+                        'title' => 'অর্ডার করুন',
+                        'payload' => "ORDER_PRODUCT_" . $product->id
+                    ],
+                    [
+                        'type' => 'web_url',
+                        'url' => url('/shop/' . $product->client->slug),
+                        'title' => 'ওয়েবসাইটে দেখুন'
+                    ]
                 ]
             ];
         }
 
+        // Facebook Carousel Limit is 10 elements
+        $elements = array_slice($elements, 0, 10);
         Log::info("Sending Carousel with " . count($elements) . " elements.");
 
         try {
-            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
-            $response = Http::post($url, [
+            $response = Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
                 'recipient' => ['id' => $recipientId],
                 'message' => [
                     'attachment' => [
                         'type' => 'template',
-                        'payload' => ['template_type' => 'generic', 'elements' => $elements]
+                        'payload' => [
+                            'template_type' => 'generic',
+                            'elements' => $elements
+                        ]
                     ]
                 ]
             ]);
@@ -287,24 +360,12 @@ class WebhookController extends Controller
                 Log::error("❌ Failed to send carousel: " . $response->body());
             }
         } catch (\Exception $e) {
-            Log::error("❌ Exception sending carousel: " . $e->getMessage());
-        }
-    }
-
-    private function sendTypingAction($recipientId, $token, $action) {
-        try {
-            $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
-            Http::post($url, [
-                'recipient' => ['id' => $recipientId],
-                'sender_action' => $action
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Failed to send typing action: " . $e->getMessage());
+            Log::error("❌ Carousel Error: " . $e->getMessage());
         }
     }
 
     private function logConversation($clientId, $senderId, $userMsg, $botMsg, $imgUrl) {
-        try { 
+        try {
             Conversation::create([
                 'client_id' => $clientId, 
                 'sender_id' => $senderId, 
@@ -316,7 +377,7 @@ class WebhookController extends Controller
             ]); 
             Log::info("✅ Conversation Logged.");
         } catch (\Exception $e) {
-            Log::error("❌ Conversation Log Error: " . $e->getMessage()); 
+            Log::error("❌ Conversation Log Error: " . $e->getMessage());
         }
     }
 }

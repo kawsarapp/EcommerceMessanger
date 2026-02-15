@@ -6,39 +6,41 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::create('clients', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Laravel Auth User
-        $table->string('shop_name');
-        $table->string('slug')->unique(); // shop-name
-        
-        // মেটা (Facebook/WhatsApp) সেটিংস
-        $table->string('fb_page_id')->nullable();
-        $table->text('fb_page_token')->nullable(); // Page Access Token
-        $table->string('fb_verify_token')->nullable(); // Webhook ভেরিফিকেশনের জন্য
-        
-        $table->string('wa_phone_number_id')->nullable();
-        $table->string('wa_business_account_id')->nullable();
-        $table->text('wa_access_token')->nullable();
-        
-        // বট কনফিগারেশন
-        $table->boolean('is_ai_enabled')->default(true);
-        $table->string('ai_model')->default('gemini-pro'); // gemini or gpt-4
-        $table->text('bot_persona')->nullable(); // বটের কথা বলার স্টাইল/নির্দেশনা
-        
-        $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('clients', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('shop_name');
+            $table->string('slug')->unique();
+            
+            // Meta Settings
+            $table->string('fb_page_id')->nullable();
+            $table->text('fb_page_token')->nullable();
+            $table->string('fb_verify_token')->nullable();
+            
+            $table->string('wa_phone_number_id')->nullable();
+            $table->string('wa_business_account_id')->nullable();
+            $table->text('wa_access_token')->nullable();
+            
+            // Bot Config
+            $table->boolean('is_ai_enabled')->default(true);
+            $table->string('ai_model')->default('gemini-pro');
+            $table->text('bot_persona')->nullable();
+            
+            // 🔥 NEW: Custom Prompt for Salesman Persona
+            $table->text('custom_prompt')->nullable()->after('shop_name'); 
+            $table->text('knowledge_base')->nullable()->after('custom_prompt');
 
-    /**
-     * Reverse the migrations.
-     */
+            // 🔥 NEW: Telegram Config (Previous Step)
+            $table->string('telegram_bot_token')->nullable();
+            $table->string('telegram_chat_id')->nullable();
+            
+            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+            $table->timestamps();
+        });
+    }
+
     public function down(): void
     {
         Schema::dropIfExists('clients');

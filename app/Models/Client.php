@@ -16,15 +16,34 @@ class Client extends Model
         'shop_name', 
         'slug', 
         'status', // active / inactive
+
+        // Plan & Limits
         'plan_id',
         'plan_ends_at',
+
+        // Delivery Settings
         'delivery_charge_inside',
         'delivery_charge_outside',
+
+        // Meta (Facebook) Keys
         'fb_page_id', 
         'fb_page_token', 
         'fb_verify_token',
-        'webhook_verified_at', // এটি মিসিং ছিল, তাই এড করে দিলাম
-        'custom_prompt', 
+        'fb_app_secret', // 🔥 Security Upgrade
+        'webhook_verified_at',
+
+        // Knowledge for AI
+        'knowledge_base',
+
+        // 🔥 AI & Persona Settings (Salesman Feature)
+        'is_ai_enabled',
+        'ai_model',
+        'bot_persona',
+        'custom_prompt', // ✅ Dynamic Prompt
+
+        // 🔥 Telegram Settings (SaaS Feature)
+        'telegram_bot_token',
+        'telegram_chat_id',
     ];
 
     /**
@@ -33,6 +52,7 @@ class Client extends Model
     protected $casts = [
         'plan_ends_at' => 'datetime',
         'webhook_verified_at' => 'datetime',
+        'is_ai_enabled' => 'boolean',
     ];
 
     // ==========================================
@@ -118,7 +138,6 @@ class Client extends Model
 
     /**
      * [FIXED] এই মাসের এআই মেসেজ লিমিট ক্রস করেছে কিনা
-     * (এই মেথডটি মিসিং থাকার কারণে এরর আসছিল)
      */
     public function hasReachedAiLimit(): bool
     {
@@ -167,5 +186,15 @@ class Client extends Model
             ->count();
             
         return min(100, round(($count / $this->plan->ai_message_limit) * 100));
+    }
+
+    // ==========================================
+    // ALTERNATIVE CHECKS
+    // ==========================================
+
+    public function hasActiveSubscription(): bool
+    {
+        if ($this->user_id === 1) return true; // Super Admin always active
+        return $this->plan_ends_at && $this->plan_ends_at->isFuture();
     }
 }
