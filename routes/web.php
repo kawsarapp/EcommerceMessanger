@@ -27,5 +27,5 @@ Route::get('/webhook', [WebhookController::class, 'verify'])->name('webhook.veri
 Route::post('/webhook', [WebhookController::class, 'handle'])->name('webhook.handle');
 
 // Telegram Webhook
-Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
-
+//Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
+Route::post('/telegram/webhook/{token}', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');

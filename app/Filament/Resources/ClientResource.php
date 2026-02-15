@@ -386,6 +386,31 @@ class ClientResource extends Resource
         ];
     }
 
+
+
+
+    public function updateSettings(Request $request, $id)
+{
+    $client = Client::find($id);
+    $client->telegram_bot_token = $request->bot_token;
+    $client->telegram_chat_id = $request->chat_id;
+    $client->save();
+
+    // 🔥 অটোমেটিক ওয়েবহুক সেট করা (SAAS Magic)
+    if ($request->bot_token) {
+        $webhookUrl = "https://asianhost.net/telegram/webhook/" . $request->bot_token;
+        
+        Http::get("https://api.telegram.org/bot{$request->bot_token}/setWebhook?url={$webhookUrl}");
+    }
+
+    return back()->with('success', 'Telegram Bot Connected!');
+}
+
+
+
+
+
+
     public static function canCreate(): bool 
     { 
         return false; 
