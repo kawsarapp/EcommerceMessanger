@@ -22,9 +22,10 @@ Route::get('/auth/facebook/redirect', [FacebookConnectController::class, 'redire
 Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callback']);
 
 
-// ✅ Facebook Webhook (Verify & Handle)
+// Facebook Webhook
 Route::get('/webhook', [WebhookController::class, 'verify'])->name('webhook.verify');
 Route::post('/webhook', [WebhookController::class, 'handle'])->name('webhook.handle');
 
-// ✅ Telegram Webhook (এই রাউটটি এখানে থাকতে হবে)
+// Telegram Webhook
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
+
