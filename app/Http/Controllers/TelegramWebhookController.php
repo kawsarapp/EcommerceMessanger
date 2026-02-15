@@ -41,6 +41,7 @@ class TelegramWebhookController extends Controller
             $text = $data['message']['text'];
 
             // 🔒 সিকিউরিটি চেক: শুধু ওই সেলারের চ্যাট আইডি থেকেই এক্সেস পাবে
+            // গ্রুপ চ্যাটের জন্য আমরা স্ট্রিক্ট টাইপ চেক (string conversion) করছি
             if ((string)$chatId !== (string)$adminChatId) {
                 $this->sendMessage($token, $chatId, "⛔ Unauthorized Access. This bot belongs to {$client->shop_name}.");
                 return response('OK', 200);
@@ -61,11 +62,11 @@ class TelegramWebhookController extends Controller
                     $this->showPendingOrders($token, $chatId, $client->id);
                     break;
                 
-                case '❌ বাতিল অর্ডার': // এটি মিসিং ছিল
+                case '❌ বাতিল অর্ডার': // নতুন ফিচার
                     $this->showCancelledOrders($token, $chatId, $client->id);
                     break;
 
-                case '🚚 শিপিং স্ট্যাটাস': // এটি মিসিং ছিল
+                case '🚚 শিপিং স্ট্যাটাস': // নতুন ফিচার
                     $this->showShippingStatus($token, $chatId, $client->id);
                     break;
 
@@ -74,8 +75,8 @@ class TelegramWebhookController extends Controller
                     break;
 
                 default:
-                    // অন্য কিছু লিখলে মেনু শো করবে না (যাতে চ্যাটিং এ সমস্যা না হয়), চাইলে অন করতে পারেন
-                    //$this->showMainMenu($token, $chatId);
+                    // অন্য কিছু লিখলে মেনু শো করবে না (যাতে সাধারণ চ্যাটিং এ সমস্যা না হয়)
+                    // তবে চাইলে এখানেও showMainMenu কল করতে পারেন
                     break;
             }
         }
@@ -228,6 +229,7 @@ class TelegramWebhookController extends Controller
 
     private function showShippingStatus($token, $chatId, $clientId)
     {
+        // Shipped status চেক করা
         $shipping = Order::where('client_id', $clientId)
             ->where('order_status', 'shipped')
             ->count();
@@ -238,6 +240,7 @@ class TelegramWebhookController extends Controller
 
     private function showStoppedUsers($token, $chatId, $clientId)
     {
+        // SAAS Logic: শুধু এই ক্লায়েন্টের ইউজারদের দেখাবে
         $users = OrderSession::where('client_id', $clientId)
             ->where('is_human_agent_active', true)
             ->limit(10)
