@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\FacebookConnectController;
+use App\Http\Controllers\TelegramWebhookController; // ✅ এই লাইনটি জরুরি
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,3 +22,9 @@ Route::get('/auth/facebook/redirect', [FacebookConnectController::class, 'redire
 Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callback']);
 
 
+// ✅ Facebook Webhook (Verify & Handle)
+Route::get('/webhook', [WebhookController::class, 'verify'])->name('webhook.verify');
+Route::post('/webhook', [WebhookController::class, 'handle'])->name('webhook.handle');
+
+// ✅ Telegram Webhook (এই রাউটটি এখানে থাকতে হবে)
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
