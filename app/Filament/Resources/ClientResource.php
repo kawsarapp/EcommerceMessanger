@@ -45,7 +45,7 @@ class ClientResource extends Resource
         return auth()->id() === 1 ? (string) static::getModel()::count() : null;
     }
 
-    // [UX] গ্লোবাল সার্চ (যেকোনো জায়গা থেকে শপ খোঁজা যাবে)
+    // [UX] গ্লোবাল সার্চ (যেকোনো জায়গা থেকে শপ খোঁজা যাবে)
     public static function getGloballySearchableAttributes(): array
     {
         return ['shop_name', 'slug', 'fb_page_id'];
@@ -102,7 +102,7 @@ class ClientResource extends Resource
                                             ->afterStateUpdated(fn ($state, callable $set, $operation) => 
                                                 $operation === 'create' ? $set('slug', Str::slug($state)) : null
                                             ),
-                                        
+                                    
                                         TextInput::make('slug')
                                             ->label('Shop URL Slug')
                                             ->prefix(config('app.url') . '/shop/')
@@ -163,7 +163,7 @@ class ClientResource extends Resource
                                                     </div>
                                                 ");
                                             }),
-                                        
+                                    
                                         ToggleButtons::make('status')
                                             ->label('Shop Status')
                                             ->options([
@@ -223,12 +223,10 @@ class ClientResource extends Resource
                                             ])->columns(['default' => 1, 'sm' => 2]), // মোবাইল রেস্পন্সিভ
                                     ]),
 
-                                // ৪. মেটা (ফেসবুক) ইন্টিগ্রেশন - [SaaS Optimized]
+                                // ৪. মেটা (ফেসবুক) ইন্টিগ্রেশন
                                 Tabs\Tab::make('Meta Integration')
                                     ->icon('heroicon-m-link')
                                     ->schema([
-                                        
-                                        // ১. অটোমেটিক কানেকশন বাটন (SaaS এর জন্য মেইন মেথড)
                                         Actions::make([
                                             Actions\Action::make('connect_facebook')
                                                 ->label('Connect with Facebook')
@@ -236,7 +234,7 @@ class ClientResource extends Resource
                                                 ->color('info')
                                                 ->url(fn ($record) => route('auth.facebook', ['client_id' => $record->id]))
                                                 ->openUrlInNewTab(false)
-                                                ->visible(fn ($record) => !$record->fb_page_id), // কানেক্ট না থাকলে দেখাবে
+                                                ->visible(fn ($record) => !$record->fb_page_id),
 
                                             Actions\Action::make('disconnect_facebook')
                                                 ->label('Disconnect Page')
@@ -248,13 +246,12 @@ class ClientResource extends Resource
                                                     'fb_page_token' => null, 
                                                     'webhook_verified_at' => null
                                                 ]))
-                                                ->visible(fn ($record) => $record->fb_page_id), // কানেক্ট থাকলে দেখাবে
+                                                ->visible(fn ($record) => $record->fb_page_id),
                                         ])->columnSpanFull(),
 
-                                        // ২. ম্যানুয়াল সেটিংস (Show only if needed or connected)
                                         Section::make('Manual Configuration (Advanced)')
                                             ->description('Use these only if automatic connection fails.')
-                                            ->collapsed() // ডিফল্টভাবে বন্ধ থাকবে যাতে ইউজার ভয় না পায়
+                                            ->collapsed()
                                             ->schema([
                                                 TextInput::make('fb_page_id')
                                                     ->label('Facebook Page ID')
@@ -265,7 +262,6 @@ class ClientResource extends Resource
                                                     ->label('Page Access Token')
                                                     ->rows(2),
 
-                                                // Test Button
                                                 Actions::make([
                                                     Actions\Action::make('test_connection')
                                                         ->label('Test Manual Connection')
@@ -294,6 +290,73 @@ class ClientResource extends Resource
                                                 ]),
                                             ]),
                                     ]),
+
+                                // 🔥 ৫. টেলিগ্রাম ইন্টিগ্রেশন (NEW ADDED TAB)
+                                Tabs\Tab::make('Telegram Integration')
+                                    ->icon('heroicon-m-paper-airplane')
+                                    ->schema([
+                                        Section::make('Bot Configuration')
+                                            ->description('Manage your Telegram Bot settings here.')
+                                            ->schema([
+                                                TextInput::make('telegram_bot_token')
+                                                    ->label('Bot Token')
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->helperText('Get this from @BotFather'),
+
+                                                TextInput::make('telegram_chat_id')
+                                                    ->label('Admin Chat ID')
+                                                    ->helperText('Your personal Chat ID to receive orders.'),
+
+                                                // 🔥 কানেক্ট বাটন (SAAS Magic Logic Here)
+                                                Actions::make([
+                                                    Actions\Action::make('connect_telegram')
+                                                        ->label('Set/Update Webhook')
+                                                        ->icon('heroicon-m-bolt')
+                                                        ->color('primary')
+                                                        ->requiresConfirmation()
+                                                        ->action(function ($get, $record) {
+                                                            $token = $get('telegram_bot_token');
+                                                            
+                                                            if (!$token) {
+                                                                Notification::make()->title('Error')->body('Please enter a Bot Token first.')->danger()->send();
+                                                                return;
+                                                            }
+
+                                                            // ডাটাবেসে সেভ করা (যদি ইউজার সেভ না করে বাটন চাপ দেয়)
+                                                            if ($record) {
+                                                                $record->update([
+                                                                    'telegram_bot_token' => $token,
+                                                                    'telegram_chat_id' => $get('telegram_chat_id'),
+                                                                ]);
+                                                            }
+
+                                                            // ওয়েবহুক সেট করা
+                                                            $webhookUrl = "https://asianhost.net/telegram/webhook/" . $token;
+                                                            
+                                                            try {
+                                                                $response = Http::get("https://api.telegram.org/bot{$token}/setWebhook?url={$webhookUrl}");
+                                                                
+                                                                if ($response->successful() && $response->json()['ok']) {
+                                                                    Notification::make()
+                                                                        ->title('Webhook Connected!')
+                                                                        ->body('Telegram Bot is now active for this shop.')
+                                                                        ->success()
+                                                                        ->send();
+                                                                } else {
+                                                                    Notification::make()
+                                                                        ->title('Connection Failed')
+                                                                        ->body($response->json()['description'] ?? 'Unknown Error')
+                                                                        ->danger()
+                                                                        ->send();
+                                                                }
+                                                            } catch (\Exception $e) {
+                                                                Notification::make()->title('Network Error')->body($e->getMessage())->danger()->send();
+                                                            }
+                                                        })
+                                                ])->columnSpanFull(),
+                                            ])->columns(2),
+                                    ]),
                             ])
                             ->columnSpanFull(),
                     ])
@@ -315,7 +378,7 @@ class ClientResource extends Resource
                     ->color('primary')
                     ->copyable()
                     ->limit(15)
-                    ->toggleable(isToggledHiddenByDefault: true), // মোবাইলে জায়গা বাঁচানোর জন্য হাইড রাখা হলো
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('plan.name')
                     ->badge()
@@ -345,7 +408,7 @@ class ClientResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('created_at', 'desc') // নতুন শপ সবার আগে দেখাবে
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
@@ -386,30 +449,9 @@ class ClientResource extends Resource
         ];
     }
 
-
-
-
-    public function updateSettings(Request $request, $id)
-{
-    $client = Client::find($id);
-    $client->telegram_bot_token = $request->bot_token;
-    $client->telegram_chat_id = $request->chat_id;
-    $client->save();
-
-    // 🔥 অটোমেটিক ওয়েবহুক সেট করা (SAAS Magic)
-    if ($request->bot_token) {
-        $webhookUrl = "https://asianhost.net/telegram/webhook/" . $request->bot_token;
-        
-        Http::get("https://api.telegram.org/bot{$request->bot_token}/setWebhook?url={$webhookUrl}");
-    }
-
-    return back()->with('success', 'Telegram Bot Connected!');
-}
-
-
-
-
-
+    // ❌ OLD CONTROLLER CODE REMOVED
+    // ফিলামেন্টে রিসোর্স ক্লাসের নিচে সরাসরি কন্ট্রোলার ফাংশন রাখা যায় না।
+    // সেটি আমরা "Telegram Integration" ট্যাবের অ্যাকশনের মধ্যে নিয়ে গেছি।
 
     public static function canCreate(): bool 
     { 
