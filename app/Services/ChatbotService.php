@@ -507,22 +507,47 @@ EOT;
         }
     }
 
+
+
     public function sendTelegramAlert($clientId, $senderId, $message) {
         try {
             $token = config('services.telegram.bot_token');
             $chatId = config('services.telegram.chat_id');
             if (!$token || !$chatId) return;
+
             Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
-                'text' => "🔔 **নতুন আপডেট**\nUser: {$senderId}\n{$message}",
+                'text' => "🔔 **New Alert**\nUser: `{$senderId}`\n{$message}",
                 'parse_mode' => 'Markdown',
                 'reply_markup' => json_encode([
-                    'inline_keyboard' => [[
-                        ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
-                        ['text' => '▶️ Resume AI', 'callback_data' => "resume_ai_{$senderId}"]
-                    ]]
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '⏸️ Stop AI', 'callback_data' => "pause_ai_{$senderId}"],
+                            ['text' => '📋 Stopped List', 'callback_data' => "list_stopped_users"]
+                        ]
+                    ]
                 ])
             ]);
         } catch (\Exception $e) { Log::error("Telegram Error: " . $e->getMessage()); }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
