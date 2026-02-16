@@ -174,7 +174,7 @@ class ClientResource extends Resource
                                                 TextInput::make('announcement_text')
                                                     ->label('Announcement Bar')
                                                     ->placeholder('🎉 Eid Sale is Live! Get 10% Off.')
-                                                    ->helperText('Shows at the top of your shop.'),
+                                                    ->helperText('Shows at the top of your shop header.'),
                                             ])->columns(2),
                                     ]),
 
@@ -224,12 +224,17 @@ class ClientResource extends Resource
                                                     ->label('Shop Policies & FAQs')
                                                     ->placeholder("উদাহরণ:\n১. ডেলিভারি চার্জ ৮০ টাকা।\n২. রিটার্ন পলিসি নেই।\n৩. শুক্রবার বন্ধ।")
                                                     ->rows(6),
-                                                
+                                            ]),
+                                        
+                                        // ✅ FIXED: Textarea থেকে collapsed() সরিয়ে Section এ দেওয়া হয়েছে
+                                        Section::make('Bot Personality')
+                                            ->description('Advanced: AI behavior control.')
+                                            ->collapsed()
+                                            ->schema([
                                                 Textarea::make('custom_prompt')
                                                     ->label('Salesman Personality')
                                                     ->placeholder("তুমি একজন ভদ্র সেলসম্যান। কাস্টমারকে 'স্যার' বলে সম্বোধন করবে...")
-                                                    ->rows(3)
-                                                    ->collapsed(),
+                                                    ->rows(3),
                                             ]),
                                     ]),
 
@@ -285,9 +290,19 @@ class ClientResource extends Resource
                                                 Section::make('Advanced Manual Setup')
                                                     ->collapsed()
                                                     ->schema([
-                                                        TextInput::make('fb_verify_token')->readOnly(),
-                                                        TextInput::make('fb_page_id')->numeric(),
-                                                        Textarea::make('fb_page_token')->rows(2),
+                                                        TextInput::make('fb_verify_token')
+                                                            ->label('Webhook Token')
+                                                            ->readOnly()
+                                                            ->suffixActions([
+                                                                Action::make('regenerate')
+                                                                    ->icon('heroicon-m-arrow-path')
+                                                                    ->action(fn ($set) => $set('fb_verify_token', Str::random(40))),
+                                                                Action::make('copy')
+                                                                    ->icon('heroicon-m-clipboard')
+                                                                    ->action(fn ($livewire, $state) => $livewire->js("window.navigator.clipboard.writeText('{$state}')")),
+                                                            ]),
+                                                        TextInput::make('fb_page_id')->label('Page ID')->numeric(),
+                                                        Textarea::make('fb_page_token')->label('Access Token')->rows(2),
                                                     ]),
                                             ]),
 
