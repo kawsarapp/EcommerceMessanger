@@ -167,33 +167,42 @@ class ShopController extends Controller
      * 🔥 ডাইনামিক পেজ ভিউয়ার (Terms, Policy, etc.)
      */
     public function showPage(Request $request, $slug = null, $pageSlug = null)
-    {
-        if ($request->has('current_client')) {
-            $client = $request->current_client;
-            $pageSlug = $slug; 
-        } else {
-            $client = $this->getSafeClient($request, $slug);
-        }
-
-        if (!$client->exists) return redirect('/');
-
-        $page = Page::where('client_id', $client->id)
-            ->where('slug', $pageSlug)
-            ->where('is_active', true)
-            ->first();
-
-        // 🔥 Safe Fix: পেজ না পাওয়া গেলে হোমপেজে রিডাইরেক্ট
-        if (!$page) {
-            if($request->has('current_client')){
-                return redirect()->route('shop.index');
-            }
-            return $client->slug ? redirect()->route('shop.index', $client->slug) : redirect('/');
-        }
-
-        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
-
-        return view('shop.page', compact('client', 'page', 'pages'));
+{
+    // ১. ক্লায়েন্ট এবং স্লাগ ডিটেকশন
+    if ($request->has('current_client')) {
+        // কাস্টম ডোমেইন (e.g., fashionbd.com/privacy-policy)
+        $client = $request->current_client;
+        $actualPageSlug = $slug; 
+    } elseif ($slug && $pageSlug) {
+        // মেইন ডোমেইন (e.g., asianhost.net/shop/fashion/page/privacy-policy)
+        $client = Client::where('slug', $slug)->where('status', 'active')->first();
+        $actualPageSlug = $pageSlug;
+    } else {
+        // স্লাগ মোড কিন্তু /page/ ছাড়া সরাসরি এক্সেস করলে (e.g., /page/privacy-policy)
+        $actualPageSlug = $slug;
+        $client = Client::where('status', 'active')->first(); // ফলব্যাক ক্লায়েন্ট বা ৪MD ৪
     }
+
+    if (!$client) abort(404);
+
+    // ২. পেজ খোঁজা
+    $page = Page::where('client_id', $client->id)
+        ->where('slug', $actualPageSlug)
+        ->where('is_active', true)
+        ->first();
+
+    // 🔥 ৩. এরর ফিক্স: পেজ না থাকলে ৪MD ৪ অথবা হোমে রিডাইরেক্ট
+    if (!$page) {
+        if ($request->has('current_client')) {
+            return redirect()->route('home');
+        }
+        return redirect()->route('shop.show', $client->slug);
+    }
+
+    $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+
+    return view('shop.page', compact('client', 'page', 'pages'));
+}
 
     /**
      * অর্ডার ট্র্যাকিং পেজ
