@@ -21,9 +21,7 @@ class ShopController extends Controller
         if ($request->has('current_client')) {
             $client = $request->current_client;
         } elseif ($slug) {
-            $client = Client::where('slug', $slug)
-                ->where('status', 'active')
-                ->firstOrFail();
+            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
         } else {
             abort(404, 'Shop Not Found');
         }
@@ -106,21 +104,14 @@ class ShopController extends Controller
     {
         if ($request->has('current_client')) {
             $client = $request->current_client;
-
-            // single parameter case (custom domain)
-            if (!$productSlug) {
-                $productSlug = $slug;
-                $slug = null;
-            }
+            $productSlug = $slug; 
         } else {
-            $client = Client::where('slug', $slug)
-                ->where('status', 'active')
-                ->firstOrFail();
+            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
         }
 
         $product = Product::where('client_id', $client->id)
             ->where('slug', $productSlug)
-            ->with('category')
+            ->with(['category'])
             ->firstOrFail();
 
         // রিলেটেড প্রোডাক্ট
@@ -132,9 +123,7 @@ class ShopController extends Controller
             ->take(4)
             ->get();
 
-        $pages = Page::where('client_id', $client->id)
-            ->where('is_active', true)
-            ->get();
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
 
         return view('shop.product', compact('client', 'product', 'relatedProducts', 'pages'));
     }
@@ -146,26 +135,27 @@ class ShopController extends Controller
     {
         if ($request->has('current_client')) {
             $client = $request->current_client;
-
-            // single parameter case (custom domain)
-            if (!$pageSlug) {
-                $pageSlug = $slug;
-                $slug = null;
-            }
+            $pageSlug = $slug; 
         } else {
-            $client = Client::where('slug', $slug)
-                ->where('status', 'active')
-                ->firstOrFail();
+            $client = $this->getSafeClient($request, $slug);
         }
+
+        if (!$client->id) return redirect('/');
 
         $page = Page::where('client_id', $client->id)
             ->where('slug', $pageSlug)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first(); // Safe check
 
-        $pages = Page::where('client_id', $client->id)
-            ->where('is_active', true)
-            ->get();
+        // 🔥 Safe Fix: পেজ না পাওয়া গেলে হোমপেজে রিডাইরেক্ট
+        if (!$page) {
+            if($request->has('current_client')){
+                return redirect()->route('shop.index');
+            }
+            return redirect()->route('shop.index', $client->slug);
+        }
+
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
 
         return view('shop.page', compact('client', 'page', 'pages'));
     }
@@ -178,15 +168,11 @@ class ShopController extends Controller
         if ($request->has('current_client')) {
             $client = $request->current_client;
         } else {
-            $client = Client::where('slug', $slug)
-                ->where('status', 'active')
-                ->firstOrFail();
+            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
         }
-
-        $pages = Page::where('client_id', $client->id)
-            ->where('is_active', true)
-            ->get();
-
+        
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+        
         return view('shop.tracking', compact('client', 'pages'));
     }
 
@@ -195,23 +181,15 @@ class ShopController extends Controller
      */
     public function trackOrderSubmit(Request $request, $slug = null)
     {
-        $request->validate([
-            'phone' => 'required|min:11'
-        ]);
+        $request->validate(['phone' => 'required|min:11']);
 
         if ($request->has('current_client')) {
             $client = $request->current_client;
         } else {
-            $client = Client::where('slug', $slug)
-                ->where('status', 'active')
-                ->firstOrFail();
+            $client = Client::where('slug', $slug)->firstOrFail();
         }
-
-        $phone = str_replace(
-            ["১","২","৩","৪","৫","৬","৭","৮","৯","০"],
-            ["1","2","3","4","5","6","7","8","9","0"],
-            $request->phone
-        );
+        
+        $phone = str_replace(["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"], ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], $request->phone);
 
         $orders = Order::where('client_id', $client->id)
             ->where('customer_phone', 'LIKE', "%{$phone}%")
@@ -220,9 +198,7 @@ class ShopController extends Controller
             ->take(5)
             ->get();
 
-        $pages = Page::where('client_id', $client->id)
-            ->where('is_active', true)
-            ->get();
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
 
         return view('shop.tracking', compact('client', 'orders', 'phone', 'pages'));
     }
