@@ -55,7 +55,8 @@
             </div>
             <!-- decorative pill – no registration, just a subtle badge -->
             <div class="text-xs px-4 py-1.5 rounded-full bg-white/70 dark:bg-[#161615]/80 border border-[#e3e3e0] dark:border-[#3E3E3A] shadow-sm font-medium text-[#F53003] hidden sm:block">
-                ⚡ AI · beta
+                 <p><a href="https://asianhost.net/pricing">⚡Pricing</a></p>
+
             </div>
         </div>
     </header>
