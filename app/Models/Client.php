@@ -44,6 +44,18 @@ class Client extends Model
         // 🔥 Telegram Settings (SaaS Feature)
         'telegram_bot_token',
         'telegram_chat_id',
+
+        //New logo banner social links
+        'logo',
+        'banner',
+        'primary_color',
+        'announcement_text',
+        'pixel_id',
+        'social_facebook',
+        'social_instagram',
+        'social_youtube',
+        'knowledge_base',
+        'custom_prompt',
     ];
 
     /**
