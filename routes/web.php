@@ -14,122 +14,84 @@ use App\Http\Controllers\ClientSettingsController;
 |--------------------------------------------------------------------------
 */
 
-
-// ==========================================
-// 🌐 MAIN LANDING (Main Domain Only)
-// ==========================================
-Route::get('/', function () {
-    return view('welcome');
-})->name('landing');
-
-
-// ==========================================
-// 🛒 PUBLIC SHOP ROUTES (Slug Based - Main Domain)
-// ==========================================
-Route::prefix('shop')->group(function () {
-
-    // ১. দোকানের মেইন পেজ
-    Route::get('/{slug}', [ShopController::class, 'show'])
-        ->name('shop.show');
-
-    // ২. সিঙ্গেল প্রোডাক্ট ডিটেইলস
-    Route::get('/{slug}/product/{productSlug}', [ShopController::class, 'productDetails'])
-        ->name('shop.product.details');
-
-    // ৩. অর্ডার ট্র্যাকিং
-    Route::get('/{slug}/track', [ShopController::class, 'trackOrder'])
-        ->name('shop.track');
-
-    Route::post('/{slug}/track', [ShopController::class, 'trackOrderSubmit'])
-        ->name('shop.track.submit');
-
-    // ৪. Ajax Features
-    Route::post('/load-more', [ShopController::class, 'loadMore'])
-        ->name('shop.load-more');
-
-    Route::get('/category-counts', [ShopController::class, 'getCategoryCounts'])
-        ->name('shop.category-counts');
-
-    // 🔥 Dynamic Page Route (Sub-path)
-    // Example: asianhost.net/shop/fashion-bd/page/terms-condition
-    Route::get('/{slug}/page/{pageSlug}', [ShopController::class, 'showPage'])
-        ->name('shop.page.slug');
-});
-
-
-// ==========================================
-// 🔗 FACEBOOK OAUTH (Seller Connection)
-// ==========================================
-Route::get('/auth/facebook/redirect', [FacebookConnectController::class, 'redirect'])
-    ->name('auth.facebook');
-
-Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callback'])
-    ->name('auth.facebook.callback');
-
-
-// ==========================================
-// 🤖 CHATBOT WEBHOOKS
-// ==========================================
-
-// 🔵 Facebook Messenger Webhook
-Route::prefix('webhook/messenger')->group(function () {
-    Route::get('/', [WebhookController::class, 'verify'])
-        ->name('webhook.verify');
-
-    Route::post('/', [WebhookController::class, 'handle'])
-        ->name('webhook.handle');
-});
-
-// 🔴 Telegram Webhook (Dynamic Token)
-Route::post('/webhook/telegram/{token}', [TelegramWebhookController::class, 'handle'])
-    ->name('telegram.webhook');
-
-
-// ==========================================
-// 🌍 DYNAMIC SHOP ROUTES (Custom Domain Support)
-// ==========================================
+// =============================================================
+// 🌍 DYNAMIC SHOP ENGINE (Custom Domain & Slug Management)
+// =============================================================
 Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(function () {
 
-    // ১. Custom Domain Home
+    // ১. মেইন ল্যান্ডিং অথবা কাস্টম ডোমেইন হোম
     Route::get('/', function (Request $request) {
-
         if ($request->has('current_client')) {
-            return app(ShopController::class)
-                ->show($request, null);
+            return app(ShopController::class)->show($request, null);
         }
-
         return view('welcome');
     })->name('home');
 
-    // ২. Custom Domain Product
-    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])
-        ->name('shop.product.custom');
+    // ২. সাব-প্যাথ বা স্লাগ ভিত্তিক রাউটস (maindomain.com/shop/...)
+    // নোটিফিকেশন: এখানে ডাইনামিক পেজকে মেইন শপ রাউটের উপরে রাখা হয়েছে যাতে কনফ্লিক্ট না হয়।
+    Route::prefix('shop/{slug}')->group(function () {
+        
+        // 🔥 ডাইনামিক পেজ রাউট (অবশ্যই মেইন শপের উপরে থাকবে)
+        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
 
-    // ৩. Custom Domain Order Tracking
-    Route::match(['get', 'post'], '/track', [ShopController::class, 'trackOrder'])
-        ->name('shop.track.custom');
+        // দোকানের মেইন পেজ
+        Route::get('/', [ShopController::class, 'show'])->name('shop.show');
 
-    // 🔥 Dynamic Page Route (Custom Domain)
-    // Example: example.com/terms-condition
+        // সিঙ্গেল প্রোডাক্ট ডিটেইলস
+        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
+
+        // অর্ডার ট্র্যাকিং
+        Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
+        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
+    });
+
+    // ৩. কাস্টম ডোমেইন ভিত্তিক রাউটস (example.com/...)
+    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
+    
+    Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
+    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
+
+    // ৪. 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
+    // এটি সবার শেষে রাখা হয়েছে যাতে /track বা /product রাউটগুলো আগে চেক হয়।
     Route::get('/{pageSlug}', [ShopController::class, 'showPage'])
-        ->where('pageSlug', '^(?!shop|auth|dashboard|login|register|webhook).*$')
+        ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images).*$')
         ->name('shop.page.custom');
 });
 
 
 // ==========================================
-// 🧑‍💼 DASHBOARD ROUTES
+// ⚡ AJAX & UTILITY FEATURES
 // ==========================================
-Route::middleware(['auth', 'verified'])
-    ->prefix('dashboard')
-    ->group(function () {
+Route::prefix('shop-api')->group(function () {
+    Route::post('/load-more', [ShopController::class, 'loadMore'])->name('shop.load-more');
+    Route::get('/category-counts', [ShopController::class, 'getCategoryCounts'])->name('shop.category-counts');
+});
 
-        // ডোমেইন সেটিংস পেজ
-        Route::get('/settings/domain', [ClientSettingsController::class, 'domainPage'])
-            ->name('dashboard.domain');
 
-        // ডোমেইন আপডেট রিকোয়েস্ট
-        Route::post('/settings/domain', [ClientSettingsController::class, 'updateDomain'])
-            ->name('dashboard.domain.update');
-    });
+// ==========================================
+// 🔗 OAUTH & INTEGRATIONS
+// ==========================================
 
+// Facebook Connect
+Route::get('/auth/facebook/redirect', [FacebookConnectController::class, 'redirect'])->name('auth.facebook');
+Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callback'])->name('auth.facebook.callback');
+
+// Webhooks
+Route::prefix('webhook')->group(function () {
+    // Messenger
+    Route::get('/messenger', [WebhookController::class, 'verify'])->name('webhook.verify');
+    Route::post('/messenger', [WebhookController::class, 'handle'])->name('webhook.handle');
+    
+    // Telegram (Dynamic Token)
+    Route::post('/telegram/{token}', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
+});
+
+
+// ==========================================
+// 🧑‍💼 SELLER DASHBOARD (Authenticated)
+// ==========================================
+Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
+    // ডোমেইন সেটিংস
+    Route::get('/settings/domain', [ClientSettingsController::class, 'domainPage'])->name('dashboard.domain');
+    Route::post('/settings/domain', [ClientSettingsController::class, 'updateDomain'])->name('dashboard.domain.update');
+});
