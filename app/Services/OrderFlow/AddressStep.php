@@ -27,91 +27,111 @@ class AddressStep implements OrderStepInterface
         }
 
         // =========================
-        // 2️⃣ Name Extraction (Basic NLP)
+        // 2️⃣ Name Extraction (Enhanced NLP)
         // =========================
-        // যদি মেসেজে "Name:" বা "Nam:" থাকে অথবা ৩টি অংশের প্রথম অংশ নাম হয়
-        $name = $this->extractName($cleanMessage);
-        if ($name) {
-            $customerInfo['name'] = $name;
-            // নাম বাদে বাকি অংশ ঠিকানার জন্য রাখা
-            $cleanMessage = trim(str_ireplace(["Name:", "Nam:", $name], '', $cleanMessage));
+        // A. Explicit Extraction (Name: Rahim)
+        $explicitName = $this->extractName($cleanMessage);
+        if ($explicitName) {
+            $customerInfo['name'] = $explicitName;
+            $cleanMessage = trim(str_ireplace(["Name:", "Nam:", "Naam:", "আমার নাম", "My name is", $explicitName], '', $cleanMessage));
+        } 
+        // B. 🔥 Smart Fallback: যদি ফোন নম্বর আগে থেকেই থাকে, কিন্তু নাম না থাকে, 
+        // এবং মেসেজটি খুব ছোট হয় (ঠিকানা নয়), তবে এটিই নাম হওয়ার সম্ভাবনা বেশি।
+        elseif (!empty($customerInfo['phone']) && empty($customerInfo['name']) && !$this->isValidAddress($cleanMessage) && mb_strlen($cleanMessage) > 2 && mb_strlen($cleanMessage) < 20) {
+            // নাম হিসেবে সেভ করা হচ্ছে
+            $customerInfo['name'] = $cleanMessage;
+            $cleanMessage = ""; // নাম নিয়ে নিলাম, তাই ক্লিয়ার করে দিলাম
         }
 
         // =========================
-        // 3️⃣ Address & Location Analysis
+        // 3️⃣ Payment Method Detection (Bonus Feature)
+        // =========================
+        $paymentMethod = $this->detectPaymentIntent($cleanMessage);
+        if ($paymentMethod) {
+            $customerInfo['payment_method'] = $paymentMethod;
+        }
+
+        // =========================
+        // 4️⃣ Address & Location Analysis
         // =========================
         if ($this->isValidAddress($cleanMessage)) {
-            // আগের অ্যাড্রেসের সাথে নতুন তথ্য যোগ করা (যদি ইউজার ভেঙে ভেঙে দেয়)
+            // আগের অ্যাড্রেসের সাথে নতুন তথ্য যোগ করা (যদি ইউজার ভেঙে ভেঙে দেয়)
             $existingAddress = $customerInfo['address'] ?? '';
-            $newAddress = $existingAddress ? "$existingAddress, $cleanMessage" : $cleanMessage;
             
-            $customerInfo['address'] = $newAddress;
+            // ডুপ্লিকেট এড়ানো
+            if (!str_contains($existingAddress, $cleanMessage)) {
+                $newAddress = $existingAddress ? "$existingAddress, $cleanMessage" : $cleanMessage;
+                $customerInfo['address'] = $newAddress;
 
-            // 🔥 Location Intelligence (Dhaka vs Outside)
-            $locationData = $this->analyzeLocation($newAddress);
-            $customerInfo['location_type'] = $locationData['type']; // inside_dhaka / outside_dhaka
-            $customerInfo['district'] = $locationData['district']; // Potential district
+                // 🔥 Location Intelligence (Dhaka vs Outside & District Detection)
+                $locationData = $this->analyzeLocation($newAddress);
+                
+                $customerInfo['location_type'] = $locationData['type']; // inside_dhaka / outside_dhaka
+                $customerInfo['district'] = $locationData['district']; // Specific District Name
+                $customerInfo['division'] = $locationData['division'] ?? null; // Division info
+            }
         }
 
-        // Check completeness
+        // =========================
+        // 5️⃣ Completeness Check (Strict)
+        // =========================
+        $hasName = !empty($customerInfo['name']);
         $hasPhone = !empty($customerInfo['phone']);
         $hasAddress = !empty($customerInfo['address']);
 
-        // =========================
-        // 4️⃣ Decision Logic
-        // =========================
-        if ($hasPhone && $hasAddress) {
+        // সেশন আপডেট
+        $session->update(['customer_info' => $customerInfo]);
 
+        // ✅ সব তথ্য থাকলে কনফার্মেশন স্টেপে পাঠাও
+        if ($hasName && $hasPhone && $hasAddress) {
             $customerInfo['step'] = 'confirm_order';
             $session->update(['customer_info' => $customerInfo]);
 
             // ডেলিভারি চার্জের হিন্টস তৈরি
             $locType = $customerInfo['location_type'] === 'inside_dhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে';
+            $districtTxt = $customerInfo['district'] !== 'Other' ? "({$customerInfo['district']})" : "";
             
             return [
-                'instruction' =>
-                    "ফোন ({$customerInfo['phone']}) এবং ঠিকানা ({$customerInfo['address']}) পেয়েছি। লোকেশন ডিটেক্টেড: {$locType}। এখন অর্ডারের সামারি দেখিয়ে কনফার্ম করতে বলো।",
-                'context' => json_encode([
-                    'product_id' => $productId,
-                    'name' => $customerInfo['name'] ?? 'Guest',
-                    'phone' => $customerInfo['phone'],
-                    'address' => $customerInfo['address'],
-                    'location' => $locType
-                ])
+                'instruction' => 
+                    "নাম ({$customerInfo['name']}), ফোন ({$customerInfo['phone']}) এবং ঠিকানা পেয়েছি। লোকেশন: {$locType} {$districtTxt}। এখন অর্ডারের সামারি দেখিয়ে কনফার্ম করতে বলো।",
+                'context' => json_encode($customerInfo)
             ];
         }
 
-        // Update session
-        $session->update(['customer_info' => $customerInfo]);
-
+        // ❌ কিছু মিসিং থাকলে স্পেসিফিক ভাবে চাও
         $missing = [];
-        if (!$hasPhone) $missing[] = "ফোন নম্বর";
+        if (!$hasName) $missing[] = "আপনার নাম"; // নাম আগে চেক করবে
+        if (!$hasPhone) $missing[] = "মোবাইল নম্বর";
         if (!$hasAddress) $missing[] = "পূর্ণ ঠিকানা (জেলা ও থানা সহ)";
 
         return [
-            'instruction' =>
-                "অর্ডার প্রসেস করার জন্য " . implode(' এবং ', $missing) . " প্রয়োজন। বিনয়ের সাথে চাও।",
+            'instruction' => 
+                "অর্ডার প্রসেস করার জন্য " . implode(' এবং ', $missing) . " প্রয়োজন। বিনয়ের সাথে চাও।",
             'context' => json_encode([
-                'product_id' => $productId,
-                'captured_phone' => $customerInfo['phone'] ?? null,
-                'captured_address' => $customerInfo['address'] ?? null
+                'missing_fields' => $missing,
+                'captured_info' => $customerInfo
             ])
         ];
     }
 
     // =========================
-    // Strict Address Validation (Advanced)
+    // Helpers
     // =========================
+
+    /**
+     * স্মার্ট অ্যাড্রেস ভ্যালিডেশন
+     */
     private function isValidAddress(string $text): bool
     {
         $text = trim($text);
         if (empty($text)) return false;
 
-        // নেগেটিভ কিওয়ার্ড চেক
+        // নেগেটিভ কিওয়ার্ড চেক (Greeting বা Question যাতে ঠিকানা হিসেবে না ধরে)
         $invalidTriggers = [
             'price', 'dam', 'koto', 'picture', 'send', 'pic daw',
             'delivery charge', 'available', 'details', 'price koto',
-            'ace', 'ase', 'আছে', 'product', 'pic', 'chobi', 'kobe pabo'
+            'ace', 'ase', 'আছে', 'product', 'pic', 'chobi', 'kobe pabo',
+            'hello', 'hi', 'kemon acen', 'order korbo'
         ];
 
         $lower = mb_strtolower($text);
@@ -121,27 +141,30 @@ class AddressStep implements OrderStepInterface
             }
         }
 
-        // 🔥 Smart Check: যদি ৫ ক্যারেক্টারের কম হয় কিন্তু ভ্যালিড লোকেশন কিওয়ার্ড থাকে, তবে গ্রহন করো
-        // (আগে শুধু ১৫ ক্যারেক্টার চেক ছিল, এখন স্মার্ট করা হলো)
-        $validLocationKeywords = ['dhaka', 'road', 'house', 'sector', 'block', 'zilla', 'thana', 'district', 'sadar', 'town', 'village', 'street', 'area', 'bazar', 'more'];
+        // 🔥 Smart Check: যদি ৫ ক্যারেক্টারের কম হয় কিন্তু ভ্যালিড লোকেশন কিওয়ার্ড থাকে
+        $validLocationKeywords = [
+            'dhaka', 'road', 'house', 'sector', 'block', 'zilla', 'thana', 'district', 
+            'sadar', 'town', 'village', 'street', 'area', 'bazar', 'more', 'flat', 'floor',
+            'বাসা', 'রোড', 'থানা', 'জেলা', 'গ্রাম', 'ফ্ল্যাট'
+        ];
         
         foreach ($validLocationKeywords as $kw) {
             if (str_contains($lower, $kw)) {
-                return true; // ছোট হলেও ভ্যালিড
+                return true; 
             }
         }
 
         // সাধারণ চেক (Length Based)
-        if (mb_strlen($text) < 5) { // ১৫ থেকে কমিয়ে ৫ করা হলো যাতে "Dhaka" বা "Savar" এর মতো ছোট ইনপুট নেয়
+        if (mb_strlen($text) < 5) { 
             return false;
         }
 
         return true;
     }
 
-    // =========================
-    // BD Phone Extractor (Stable)
-    // =========================
+    /**
+     * ফোন নম্বর বের করা (Bangla & English Digit Support)
+     */
     private function extractPhoneNumber(string $msg): ?string
     {
         $bn = ["১","২","৩","৪","৫","৬","৭","৮","৯","০"];
@@ -158,27 +181,46 @@ class AddressStep implements OrderStepInterface
         return null;
     }
 
-    // =========================
-    // 🔥 NEW: Name Extractor
-    // =========================
+    /**
+     * 🔥 নাম বের করা (More Patterns Added)
+     */
     private function extractName(string $msg): ?string
     {
         // 1. Explicit Prefix Check
-        if (preg_match('/(name|nam|naam)[:\s]+([a-zA-Z\s\x{0980}-\x{09FF}]+)/iu', $msg, $matches)) {
+        // Supports: Name: X, Amar nam X, My name is X
+        if (preg_match('/(name|nam|naam|amar nam|my name is)[:\s]+([a-zA-Z\s\x{0980}-\x{09FF}]+)/iu', $msg, $matches)) {
             return trim($matches[2]);
         }
 
-        return null; // অটোমেটিক নাম বের করা রিস্কি, তাই আপাতত শুধু এক্সপ্লিসিট নাম ধরবে
+        return null; 
     }
 
-    // =========================
-    // 🔥 NEW: Location Analyzer (Dhaka vs Outside)
-    // =========================
+    /**
+     * 🔥 পেমেন্ট ইনটেন্ট ডিটেকশন (New Feature)
+     */
+    private function detectPaymentIntent(string $msg): ?string
+    {
+        $msg = mb_strtolower($msg);
+        if (str_contains($msg, 'cash') || str_contains($msg, 'cod') || str_contains($msg, 'home delivery')) {
+            return 'cod';
+        }
+        if (str_contains($msg, 'bkash') || str_contains($msg, 'bikash')) {
+            return 'bkash';
+        }
+        if (str_contains($msg, 'nagad')) {
+            return 'nagad';
+        }
+        return null;
+    }
+
+    /**
+     * 🔥 লোকেশন অ্যানালাইজার (Advanced District Detection)
+     */
     private function analyzeLocation(string $address): array
     {
         $lowerAddr = mb_strtolower($address);
         
-        // ঢাকার ভেতরের কিওয়ার্ড
+        // ১. ঢাকার ভেতরের কিওয়ার্ড (Priority)
         $dhakaKeywords = [
             'dhaka', 'mirpur', 'uttara', 'banani', 'gulshan', 'dhanmondi', 
             'mohammadpur', 'badda', 'rampura', 'khilgaon', 'basabo', 'jatrabari', 
@@ -188,10 +230,41 @@ class AddressStep implements OrderStepInterface
 
         foreach ($dhakaKeywords as $area) {
             if (str_contains($lowerAddr, $area)) {
-                return ['type' => 'inside_dhaka', 'district' => 'Dhaka'];
+                return ['type' => 'inside_dhaka', 'district' => 'Dhaka', 'division' => 'Dhaka'];
             }
         }
 
-        return ['type' => 'outside_dhaka', 'district' => 'Other'];
+        // ২. 🔥 জেলা ডিটেকশন (৬৪টি জেলা)
+        // এটি ডাটাবেস বা কনফিগ ফাইল থেকেও আনা যেতে পারে, তবে পারফরমেন্সের জন্য এখানে হার্ডকোড করা হলো
+        $districts = [
+            'chittagong' => 'Chittagong', 'chatogram' => 'Chittagong', 'চট্টগ্রাম' => 'Chittagong',
+            'sylhet' => 'Sylhet', 'সিলেট' => 'Sylhet',
+            'khulna' => 'Khulna', 'খুলনা' => 'Khulna',
+            'rajshahi' => 'Rajshahi', 'রাজশাহী' => 'Rajshahi',
+            'barisal' => 'Barisal', 'barishal' => 'Barisal', 'বরিশাল' => 'Barisal',
+            'rangpur' => 'Rangpur', 'রংপুর' => 'Rangpur',
+            'mymensingh' => 'Mymensingh', 'ময়মনসিংহ' => 'Mymensingh',
+            'comilla' => 'Comilla', 'cumilla' => 'Comilla', 'কুমিল্লা' => 'Comilla',
+            'gazipur' => 'Gazipur', 'গাজীপুর' => 'Gazipur',
+            'narayanganj' => 'Narayanganj', 'নারায়ণগঞ্জ' => 'Narayanganj',
+            'bogra' => 'Bogra', 'bogan' => 'Bogra', 'বগুড়া' => 'Bogra',
+            'cox' => 'Cox\'s Bazar', 'coxs bazar' => 'Cox\'s Bazar', 'কক্সবাজার' => 'Cox\'s Bazar',
+            'jessore' => 'Jessore', 'jashore' => 'Jessore', 'যশোর' => 'Jessore',
+            'feni' => 'Feni', 'ফেনী' => 'Feni',
+            'tangail' => 'Tangail', 'টাঙ্গাইল' => 'Tangail',
+            'pabna' => 'Pabna', 'পাবনা' => 'Pabna',
+            'noakhali' => 'Noakhali', 'নোয়াখালী' => 'Noakhali'
+            // প্রয়োজনে আরও জেলা যোগ করা যাবে
+        ];
+
+        foreach ($districts as $key => $name) {
+            if (str_contains($lowerAddr, $key)) {
+                // জেলা পাওয়া গেলে ঢাকার বাইরে হিসেবে মার্ক করা হবে
+                return ['type' => 'outside_dhaka', 'district' => $name, 'division' => 'Other'];
+            }
+        }
+
+        // ৩. ডিফল্ট (যদি কিছু না মেলে)
+        return ['type' => 'outside_dhaka', 'district' => 'Other', 'division' => 'Other'];
     }
 }
