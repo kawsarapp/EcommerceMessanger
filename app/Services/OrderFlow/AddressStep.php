@@ -93,7 +93,7 @@ class AddressStep implements OrderStepInterface
             
             return [
                 'instruction' => 
-                    "নাম ({$customerInfo['name']}), ফোন ({$customerInfo['phone']}) এবং ঠিকানা পেয়েছি। লোকেশন: {$locType} {$districtTxt}। এখন অর্ডারের সামারি দেখিয়ে কনফার্ম করতে বলো।",
+                    "নাম ({$customerInfo['name']}), ফোন ({$customerInfo['phone']}) এবং ঠিকানা পেয়েছি। লোকেশন: {$locType} {$districtTxt}। এখন অর্ডারের সামারি দেখিয়ে কনফার্ম করতে বলো।",
                 'context' => json_encode($customerInfo)
             ];
         }
@@ -104,9 +104,13 @@ class AddressStep implements OrderStepInterface
         if (!$hasPhone) $missing[] = "মোবাইল নম্বর";
         if (!$hasAddress) $missing[] = "পূর্ণ ঠিকানা (জেলা ও থানা সহ)";
 
+        $missingStr = implode(' এবং ', $missing);
+
         return [
             'instruction' => 
-                "অর্ডার প্রসেস করার জন্য " . implode(' এবং ', $missing) . " প্রয়োজন। বিনয়ের সাথে চাও।",
+                "সতর্কতা: অর্ডার কনফার্ম করার জন্য এখনো [ {$missingStr} ] পাওয়া যায়নি।
+                কাস্টমারকে বলো: 'দয়া করে আপনার {$missingStr} দিন।'
+                ⚠️ এই স্টেপে ভুলেও 'Confirm' বা 'Ji' লিখতে বলবে না। আগে তথ্য নাও, তারপর কনফার্মেশন চাইবে।",
             'context' => json_encode([
                 'missing_fields' => $missing,
                 'captured_info' => $customerInfo
@@ -131,7 +135,7 @@ class AddressStep implements OrderStepInterface
             'price', 'dam', 'koto', 'picture', 'send', 'pic daw',
             'delivery charge', 'available', 'details', 'price koto',
             'ace', 'ase', 'আছে', 'product', 'pic', 'chobi', 'kobe pabo',
-            'hello', 'hi', 'kemon acen', 'order korbo'
+            'hello', 'hi', 'kemon acen', 'order korbo', 'nibo', 'shirt'
         ];
 
         $lower = mb_strtolower($text);
@@ -145,7 +149,7 @@ class AddressStep implements OrderStepInterface
         $validLocationKeywords = [
             'dhaka', 'road', 'house', 'sector', 'block', 'zilla', 'thana', 'district', 
             'sadar', 'town', 'village', 'street', 'area', 'bazar', 'more', 'flat', 'floor',
-            'বাসা', 'রোড', 'থানা', 'জেলা', 'গ্রাম', 'ফ্ল্যাট'
+            'বাসা', 'রোড', 'থানা', 'জেলা', 'গ্রাম', 'ফ্ল্যাট', 'office'
         ];
         
         foreach ($validLocationKeywords as $kw) {
