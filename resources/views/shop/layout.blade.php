@@ -13,76 +13,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-    /* 🎨 Dynamic Theme Variables */
-    :root {
-        /* সেলারের প্রাইমারি কালার (ডিফল্ট: Indigo-600) */
-        --primary-color: {{ $client->primary_color ?? '#4f46e5' }};
+        :root {
+            --primary-color: {{ $client->primary_color ?? '#4f46e5' }};
+            /* Auto Darken Primary Color for Hover State */
+            --primary-dark: color-mix(in srgb, var(--primary-color), black 10%);
+            /* Light Background Color */
+            --primary-light: color-mix(in srgb, var(--primary-color), white 90%);
+        }
         
-        /* 🔥 CSS Magic: প্রাইমারি কালারের সাথে ১০% কালো মিশিয়ে অটোমেটিক ডার্ক কালার তৈরি */
-        --primary-dark: color-mix(in srgb, var(--primary-color), black 10%);
+        /* Custom Utilities */
+        [x-cloak] { display: none !important; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         
-        /* হালকা ব্যাকগ্রাউন্ডের জন্য (যেমন: ব্যাজ বা বাটন হোভার) */
-        --primary-light: color-mix(in srgb, var(--primary-color), white 90%);
-    }
+        /* Video Aspect Ratio */
+        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; background: #000; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 
-    /* 🛠️ Custom Utilities */
-    [x-cloak] { display: none !important; }
-    
-    /* Glassmorphism Header */
-    .glass { 
-        background: rgba(255, 255, 255, 0.95); 
-        backdrop-filter: blur(12px); 
-        border-bottom: 1px solid rgba(0,0,0,0.05); 
-    }
-
-    /* Scrollbar Hide */
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* iPhone Safe Area */
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-    
-    /* Responsive Video */
-    .video-wrapper { 
-        position: relative; 
-        padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-        height: 0; 
-        overflow: hidden; 
-        border-radius: 12px; 
-        background: #000; 
-    }
-    .video-wrapper iframe { 
-        position: absolute; 
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        height: 100%; 
-        border: 0; 
-    }
-
-    /* Loading Spinner */
-    .loader { 
-        border: 3px solid #f3f3f3; 
-        border-radius: 50%; 
-        border-top: 3px solid var(--primary-color); 
-        width: 24px; 
-        height: 24px; 
-        -webkit-animation: spin 1s linear infinite; /* Safari */
-        animation: spin 1s linear infinite; 
-    }
-
-    /* Animations */
-    @keyframes spin { 
-        0% { transform: rotate(0deg); } 
-        100% { transform: rotate(360deg); } 
-    }
-
-    /* Text Selection Color */
-    ::selection {
-        background-color: var(--primary-color);
-        color: white;
-    }
-</style>
+        /* Loading Spinner */
+        .loader { border-top-color: var(--primary-color); -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 
     <script>
         tailwind.config = {

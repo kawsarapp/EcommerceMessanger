@@ -261,9 +261,29 @@ class ClientResource extends Resource
                                     ]),
 
                                 // 🔗 Tab 6: Integrations
-                                Tabs\Tab::make('Integrations')
-                                    ->icon('heroicon-m-link')
+                                    Tabs\Tab::make('Integrations & Social')
+                            ->icon('heroicon-m-share')
+                            ->schema([
+                                // নতুন সোশ্যাল মিডিয়া সেকশন
+                                Section::make('Social Media Links')
+                                    ->description('লিংক দিলে ফুটারে আইকন দেখাবে।')
                                     ->schema([
+                                        TextInput::make('social_facebook')
+                                            ->label('Facebook Page URL')
+                                            ->prefixIcon('heroicon-m-globe-alt')
+                                            ->placeholder('https://facebook.com/your-page'),
+                                        
+                                        TextInput::make('social_instagram')
+                                            ->label('Instagram Profile URL')
+                                            ->prefixIcon('heroicon-m-camera')
+                                            ->placeholder('https://instagram.com/your-brand'),
+
+                                        TextInput::make('social_youtube')
+                                            ->label('YouTube Channel URL')
+                                            ->prefixIcon('heroicon-m-play')
+                                            ->placeholder('https://youtube.com/@channel'),
+                                    ])->columns(2),
+
                                         Section::make('Facebook Connection')
                                             ->schema([
                                                 Placeholder::make('fb_status')
