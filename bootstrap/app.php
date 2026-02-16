@@ -13,8 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
-            'webhook',           // Facebook Webhook এর জন্য
+            //'webhook',           // Facebook Webhook এর জন্য
             'telegram/webhook',  // ✅ Telegram Webhook এর জন্য (শুধুমাত্র এই দুটিই দরকার)
+            'webhook/*',          // ✅ Facebook এবং Telegram সব ওয়েবহুক এর জন্য একবারে কাজ করবে
+            'shop-api/*'
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

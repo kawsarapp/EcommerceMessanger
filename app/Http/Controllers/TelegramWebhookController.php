@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\OrderSession;
 use App\Models\Order;
-use App\Models\Product; // ✅ Added for Stock Check
+use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -27,7 +27,6 @@ class TelegramWebhookController extends Controller
             return response('Unauthorized', 401);
         }
 
-        $adminChatId = $client->telegram_chat_id;
         $data = $request->all();
 
         // ২. বাটন ক্লিক হ্যান্ডলিং (Callback Query - Inline Buttons)
@@ -38,14 +37,29 @@ class TelegramWebhookController extends Controller
 
         // ৩. টেক্সট মেসেজ ও মেনু হ্যান্ডলিং
         if (isset($data['message']['text'])) {
-            $chatId = $data['message']['chat']['id'];
+            $incomingChatId = $data['message']['chat']['id'];
             $text = trim($data['message']['text']);
 
+            // 🔥 ফিক্স: অটোমেটিক চ্যাট আইডি রেজিস্ট্রেশন (প্রথমবার /start দিলে)
+            if ($text === '/start') {
+                // যদি ডাটাবেসে চ্যাট আইডি না থাকে বা ভিন্ন থাকে, তবে আপডেট করে দাও
+                if (empty($client->telegram_chat_id) || (string)$client->telegram_chat_id !== (string)$incomingChatId) {
+                    $client->update(['telegram_chat_id' => $incomingChatId]);
+                    $this->sendMessage($token, $incomingChatId, "✅ **বট সেটআপ সফল!**\nআপনার চ্যাট আইডি সংযুক্ত করা হয়েছে। এখন আপনি মেনু দেখতে পারবেন।");
+                }
+            }
+
+            $adminChatId = $client->telegram_chat_id;
+
             // 🔒 সিকিউরিটি চেক: শুধু ওই সেলারের চ্যাট আইডি থেকেই এক্সেস পাবে
-            if ((string)$chatId !== (string)$adminChatId) {
-                $this->sendMessage($token, $chatId, "⛔ Unauthorized Access. This bot belongs to **{$client->shop_name}**.");
+            // (নোট: যদি কেউ নতুন করে /start দেয় এবং আমরা উপরে আপডেট করে দেই, তাহলে এই চেক পাস করবে)
+            if ((string)$incomingChatId !== (string)$adminChatId) {
+                $this->sendMessage($token, $incomingChatId, "⛔ Unauthorized Access. This bot belongs to **{$client->shop_name}**.");
                 return response('OK', 200);
             }
+
+            // এখন চ্যাট আইডি কনফার্ম, তাই ভেরিয়েবল সেট
+            $chatId = $incomingChatId;
 
             // 🔍 অর্ডার সার্চ (Command: /order 123)
             if (Str::startsWith($text, '/order ')) {
@@ -61,16 +75,15 @@ class TelegramWebhookController extends Controller
                 return response('OK', 200);
             }
 
-            // 📦 স্টক চেক (Command: /stock panjabi) - 🔥 NEW
+            // 📦 স্টক চেক (Command: /stock panjabi)
             if (Str::startsWith($text, '/stock ')) {
                 $keyword = Str::after($text, '/stock ');
                 $this->searchProductStock($token, $chatId, $client->id, $keyword);
                 return response('OK', 200);
             }
 
-            // 📨 ম্যানুয়াল রিপ্লাই (Command: /reply 12345 Hello) - 🔥 NEW
+            // 📨 ম্যানুয়াল রিপ্লাই (Command: /reply 12345 Hello)
             if (Str::startsWith($text, '/reply ')) {
-                // Format: /reply [sender_id] [message]
                 $parts = explode(' ', $text, 3);
                 if (count($parts) >= 3) {
                     $this->sendManualReply($client, $parts[1], $parts[2], $token, $chatId);
@@ -169,9 +182,8 @@ class TelegramWebhookController extends Controller
             ]);
         }
 
-        // --- CHANGE ORDER STATUS (🔥 NEW) ---
+        // --- CHANGE ORDER STATUS ---
         elseif (Str::startsWith($callbackData, 'status_')) {
-            // format: status_{status}_{order_id}
             $parts = explode('_', $callbackData);
             if(count($parts) == 3) {
                 $status = $parts[1]; // shipped, delivered, cancelled
@@ -195,7 +207,7 @@ class TelegramWebhookController extends Controller
     }
 
     // ==========================================
-    // 📊 DASHBOARD FEATURES (SAAS Enabled)
+    // 📊 DASHBOARD FEATURES
     // ==========================================
 
     private function showMainMenu($token, $chatId, $shopName)
@@ -224,7 +236,6 @@ class TelegramWebhookController extends Controller
         $processing = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'processing')->count();
         $completed = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'completed')->count();
 
-        // 🔥 Low Stock Warning
         $lowStock = Product::where('client_id', $client->id)->where('stock_quantity', '<', 5)->count();
 
         $msg = "📊 **{$client->shop_name} - আজকের রিপোর্ট**\n📅 তারিখ: " . $today->format('d M, Y') . "\n\n";
@@ -260,7 +271,6 @@ class TelegramWebhookController extends Controller
         $this->sendMessage($token, $chatId, $msg);
     }
 
-    // 🔥 UPDATED: Search Order By ID with Action Buttons
     private function searchOrderById($token, $chatId, $clientId, $orderId)
     {
         $order = Order::where('client_id', $clientId)->where('id', trim($orderId))->first();
@@ -277,7 +287,6 @@ class TelegramWebhookController extends Controller
         $msg .= "💰 মোট বিল: ৳{$order->total_amount}\n";
         $msg .= "📊 স্ট্যাটাস: " . strtoupper($order->order_status) . "\n";
         
-        // প্রডাক্ট লিস্ট
         $products = $order->orderItems;
         foreach($products as $item) {
             $pName = $item->product->name ?? 'Unknown Product';
@@ -286,7 +295,6 @@ class TelegramWebhookController extends Controller
 
         $msg .= "\n👇 **স্ট্যাটাস পরিবর্তন করুন:**";
 
-        // 🔥 Action Buttons
         $keyboard = [
             [
                 ['text' => '🚚 Ship', 'callback_data' => "status_shipped_{$order->id}"],
@@ -300,7 +308,6 @@ class TelegramWebhookController extends Controller
         $this->sendMessageWithInlineKeyboard($token, $chatId, $msg, $keyboard);
     }
 
-    // 🔥 NEW: Search Customer By Phone
     private function searchCustomerByPhone($token, $chatId, $clientId, $phone)
     {
         $orders = Order::where('client_id', $clientId)
@@ -322,7 +329,6 @@ class TelegramWebhookController extends Controller
         $this->sendMessage($token, $chatId, $msg);
     }
 
-    // 🔥 NEW: Check Stock
     private function searchProductStock($token, $chatId, $clientId, $keyword)
     {
         $products = Product::where('client_id', $clientId)
@@ -343,7 +349,6 @@ class TelegramWebhookController extends Controller
         $this->sendMessage($token, $chatId, $msg);
     }
 
-    // 🔥 NEW: Manual Reply via Messenger
     private function sendManualReply($client, $senderId, $message, $token, $chatId) {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$client->fb_page_token}";
         
@@ -418,7 +423,7 @@ class TelegramWebhookController extends Controller
     }
 
     // ==========================================
-    // 📨 API HELPERS (Robust & Secure)
+    // 📨 API HELPERS
     // ==========================================
 
     private function sendMessage($token, $chatId, $text)

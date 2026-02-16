@@ -22,63 +22,62 @@ class VariantStep implements OrderStepInterface
             return ['instruction' => 'দুঃখিত, প্রোডাক্টটি ডাটাবেসে পাওয়া যাচ্ছে না। নতুন করে শুরু করো।', 'context' => 'Error: Product Not Found'];
         }
 
-        // 🔥 ২. ভেরিয়েন্ট চেক (অটো স্কিপ ফিচার)
-        // যদি প্রোডাক্টের কোনো কালার বা সাইজ না থাকে, তবে সরাসরি অ্যাড্রেস স্টেপে পাঠিয়ে দাও
+        // 🔥 ২. ভেরিয়েন্ট রিকোয়ারমেন্ট এনালাইসিস
+        // প্রোডাক্টে আদেও কালার বা সাইজ সেট করা আছে কিনা তা চেক করা হচ্ছে
         $dbColors = $this->decodeVariants($product->colors);
         $dbSizes = $this->decodeVariants($product->sizes);
         $hasColors = !empty($dbColors);
         $hasSizes = !empty($dbSizes);
 
+        // যদি কোনো ভেরিয়েন্টই না থাকে, সরাসরি পরবর্তী স্টেপে (ঠিকানা চাওয়া) পাঠিয়ে দাও
         if (!$hasColors && !$hasSizes) {
-            Log::info("⏭️ No variants found for product {$product->name}. Auto-skipping to Address Step.");
+            Log::info("⏭️ No variants required for product {$product->name}. Auto-skipping to info collection.");
             $customerInfo['step'] = 'collect_info';
-            $customerInfo['variant'] = 'Default'; // ডিফল্ট ভ্যালু
+            $customerInfo['variant'] = 'Default';
             $session->update(['customer_info' => $customerInfo]);
             
             return [
-                'instruction' => "এই প্রোডাক্টের কোনো কালার বা সাইজ নেই। সরাসরি কাস্টমারের নাম, ফোন নম্বর এবং ঠিকানা চাও।",
-                'context' => json_encode(['product' => $product->name, 'variant' => 'N/A'])
+                'instruction' => "এই প্রোডাক্টের কোনো কালার বা সাইজ নেই। কাস্টমারের কাছে সরাসরি নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা চাও।",
+                'context' => json_encode(['product' => $product->name, 'variant' => 'None'])
             ];
         }
 
-        // 🔥 ৩. অ্যাডভান্সড ভেরিয়েন্ট এক্সট্রাকশন
-        // কাস্টমার মেসেজ থেকে কালার এবং সাইজ বের করা
+        // 🔥 ৩. ভেরিয়েন্ট এক্সট্রাকশন ও আপডেট
+        // মেসেজ থেকে কালার এবং সাইজ বের করা
         $extracted = $this->extractVariant($userMessage, $product);
         
-        // আগের কোনো ভেরিয়েন্ট সিলেক্ট করা থাকলে সেগুলোর সাথে মার্জ করা
         $currentVariant = $customerInfo['variant'] ?? [];
-        if (!is_array($currentVariant)) $currentVariant = []; // সেফটি চেক
+        if (!is_array($currentVariant)) $currentVariant = []; 
         
+        // আগে পাওয়া এবং বর্তমানে পাওয়া তথ্যগুলো একসাথে করা
         $finalVariant = array_merge($currentVariant, $extracted);
 
-        // ভ্যালিডেশন লজিক
+        // কি কি তথ্য এখনও মিসিং আছে তা চেক করা
         $missing = [];
         if ($hasColors && empty($finalVariant['color'])) $missing[] = "কালার (Color)";
         if ($hasSizes && empty($finalVariant['size'])) $missing[] = "সাইজ (Size)";
 
-        // ✅ ৪. ডিসিশন লজিক (সব তথ্য আছে কিনা)
+        // ✅ ৪. সব তথ্য পাওয়া গেলে পরবর্তী স্টেপে ট্রানজিশন
         if (empty($missing)) {
-            // সব তথ্য পাওয়া গেছে
             $customerInfo['variant'] = $finalVariant;
-            $customerInfo['step'] = 'collect_info'; // পরের স্টেপে পাঠাও
+            $customerInfo['step'] = 'collect_info'; // নাম-ঠিকানা চাওয়ার স্টেপে পাঠাও
             $session->update(['customer_info' => $customerInfo]);
             
             $variantStr = implode(', ', array_filter($finalVariant));
             return [
-                'instruction' => "ভেরিয়েশন কনফার্ম হয়েছে: [{$variantStr}]। এখন অর্ডারের জন্য কাস্টমারের নাম, ফোন নম্বর এবং পূর্ণ ঠিকানা চাও।",
+                'instruction' => "প্রোডাক্টের ভেরিয়েশন [{$variantStr}] কনফার্ম হয়েছে। এখন অর্ডারের জন্য কাস্টমারের নাম, মোবাইল নম্বর এবং ঠিকানা জানাও।",
                 'context' => json_encode(['selected_variant' => $finalVariant])
             ];
         } 
         
-        // ⚠️ ৫. যদি কিছু মিসিং থাকে (Partial Input Handling)
+        // ⚠️ ৫. আংশিক তথ্য পাওয়া গেলে (Partial Selection)
         elseif (!empty($extracted)) {
-            // ইউজার কিছু একটা দিয়েছে, কিন্তু সব দেয়নি (যেমন: শুধু কালার দিয়েছে, সাইজ দেয়নি)
-            $customerInfo['variant'] = $finalVariant; // যা পেয়েছে তা সেভ রাখো
+            $customerInfo['variant'] = $finalVariant; 
             $session->update(['customer_info' => $customerInfo]);
 
             $missingStr = implode(' এবং ', $missing);
             return [
-                'instruction' => "কাস্টমার ভেরিয়েশন দিয়েছে কিন্তু {$missingStr} সিলেক্ট করেনি। কাস্টমারকে বলো {$missingStr} জানাতে।",
+                'instruction' => "কাস্টমার ভেরিয়েশন দিয়েছে কিন্তু এখনও {$missingStr} বাকি আছে। বিনয়ের সাথে তাকে {$missingStr} জানাতে বলো।",
                 'context' => json_encode([
                     'received' => $finalVariant,
                     'missing' => $missing,
@@ -90,13 +89,13 @@ class VariantStep implements OrderStepInterface
             ];
         }
 
-        // ❌ ৬. যদি কিছুই ম্যাচ না করে (Invalid Input)
+        // ❌ ৬. ভুল ইনপুট বা তথ্য না দিলে (Invalid/Missing Input)
         $optionsStr = "";
-        if ($hasColors) $optionsStr .= "Colors: " . implode(', ', $dbColors) . ". ";
-        if ($hasSizes) $optionsStr .= "Sizes: " . implode(', ', $dbSizes) . ".";
+        if ($hasColors && empty($finalVariant['color'])) $optionsStr .= "উপলব্ধ কালার: " . implode(', ', $dbColors) . ". ";
+        if ($hasSizes && empty($finalVariant['size'])) $optionsStr .= "উপলব্ধ সাইজ: " . implode(', ', $dbSizes) . ".";
 
         return [
-            'instruction' => "কাস্টমার এখনো সঠিক ভেরিয়েশন সিলেক্ট করেনি। তাকে নিচের অপশনগুলো থেকে বেছে নিতে বলো।\n{$optionsStr}",
+            'instruction' => "কাস্টমার এখনও সঠিক ভেরিয়েশন (কালার বা সাইজ) পছন্দ করেনি। তাকে নিচের অপশনগুলো থেকে বেছে নিতে সাহায্য করো।\n{$optionsStr}",
             'context' => json_encode([
                 'id' => $product->id, 
                 'name' => $product->name, 
@@ -106,20 +105,17 @@ class VariantStep implements OrderStepInterface
     }
 
     // ==========================================
-    // HELPER METHODS (Enhanced)
+    // HELPER METHODS
     // ==========================================
 
     private function hasVariantInMessage($msg, $product)
     {
-        // এই ফাংশনটি এখন extractVariant এর মাধ্যমে হ্যান্ডেল হচ্ছে, 
-        // তবে backward compatibility এর জন্য রাখা হলো।
         $extracted = $this->extractVariant($msg, $product);
         return !empty($extracted);
     }
 
     /**
      * 🔥 Advanced Extraction: একসাথে Color এবং Size ডিটেক্ট করতে পারে
-     * যেমন: "Red XL", "Blue shirt large size"
      */
     private function extractVariant($msg, $product)
     {
@@ -129,32 +125,33 @@ class VariantStep implements OrderStepInterface
         // 1. Color Extraction
         $dbColors = $this->decodeVariants($product->colors);
         foreach ($dbColors as $color) {
-            // Exact match or contains logic
             if (str_contains($msg, strtolower($color))) {
                 $variant['color'] = $color;
-                break; // একটা কালার পেলেই হবে
+                break; 
             }
         }
 
-        // 2. Size Extraction
+        // 2. Size Extraction (Regex ব্যবহার করা হয়েছে নির্ভুলতার জন্য)
         $dbSizes = $this->decodeVariants($product->sizes);
         foreach ($dbSizes as $size) {
-            // সাইজের ক্ষেত্রে Exact word match জরুরি (নাহলে 'small' এর 's' ম্যাচ করে ফেলবে)
-            // তাই আমরা স্পেস দিয়ে চেক করব অথবা Exact Match
             $s = strtolower($size);
+            // Word boundary (\b) নিশ্চিত করে যে "S" যেন "Small" এর ভেতরের "s" কে না ধরে
             if (preg_match("/\b{$s}\b/", $msg) || $msg === $s) {
                 $variant['size'] = $size;
                 break;
             }
         }
 
-        // 3. Fallback Synonyms (Optional Feature)
-        // যদি কাস্টমার 'Large' লেখে কিন্তু ডাটাবেসে 'L' থাকে
+        // 3. Fallback Synonyms: যদি কাস্টমার কোড বা পূর্ণ নাম লেখে
         if (empty($variant['size']) && !empty($dbSizes)) {
-            $synonyms = ['large' => 'L', 'medium' => 'M', 'small' => 'S', 'extra large' => 'XL'];
+            $synonyms = [
+                'large' => 'L', 'medium' => 'M', 'small' => 'S', 
+                'extra large' => 'XL', 'double excel' => 'XXL'
+            ];
             foreach ($synonyms as $key => $val) {
                 if (str_contains($msg, $key) && in_array($val, $dbSizes)) {
                     $variant['size'] = $val;
+                    break;
                 }
             }
         }
