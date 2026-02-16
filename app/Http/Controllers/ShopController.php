@@ -12,18 +12,40 @@ use Illuminate\Http\Request;
 class ShopController extends Controller
 {
     /**
+     * 🔥 নিরাপদ ক্লায়েন্ট ডিটেকশন হেল্পার (Safe Fallback)
+     * এটি 404 এরর আটকাবে এবং ডিফল্ট শপ লোড করবে।
+     */
+    private function getSafeClient(Request $request, $slug = null)
+    {
+        // ১. যদি রিকোয়েস্টে অলরেডি ক্লায়েন্ট থাকে (Custom Domain Middleware)
+        if ($request->has('current_client')) {
+            return $request->current_client;
+        }
+
+        // ২. যদি URL এ স্লাগ থাকে, সেটা খোঁজার চেষ্টা করা
+        if ($slug) {
+            $client = Client::where('slug', $slug)->where('status', 'active')->first();
+            if ($client) {
+                return $client;
+            }
+        }
+
+        // ৩. 🔥 Fallback: যদি কিছুই না পাওয়া যায়, প্রথম অ্যাক্টিভ ক্লায়েন্ট লোড হবে
+        // যদি ডাটাবেসে কোনো ক্লায়েন্টই না থাকে, তবে একটি খালি অবজেক্ট রিটার্ন করবে যাতে কোড ক্র্যাশ না করে
+        return Client::where('status', 'active')->first() ?? new Client(); 
+    }
+
+    /**
      * দোকানের হোমপেজ (প্রোডাক্ট লিস্ট + পেজ লিংক)
-     * Custom Domain & Slug Supported
      */
     public function show(Request $request, $slug = null)
     {
-        // ১. ক্লায়েন্ট ডিটেকশন (Custom Domain or Slug)
-        if ($request->has('current_client')) {
-            $client = $request->current_client;
-        } elseif ($slug) {
-            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
-        } else {
-            abort(404, 'Shop Not Found');
+        // ১. সেফ ক্লায়েন্ট ডিটেকশন
+        $client = $this->getSafeClient($request, $slug);
+
+        // যদি ডাটাবেসে একদমই কোনো ক্লায়েন্ট না থাকে
+        if (!$client->exists) {
+            abort(404, 'No Active Shop Found');
         }
 
         // ২. প্রোডাক্ট কুয়েরি বিল্ডার (শুধুমাত্র ইন-স্টক)
@@ -102,17 +124,30 @@ class ShopController extends Controller
      */
     public function productDetails(Request $request, $slug = null, $productSlug = null)
     {
+        // URL হ্যান্ডলিং (Custom Domain vs Path)
         if ($request->has('current_client')) {
             $client = $request->current_client;
             $productSlug = $slug; 
         } else {
-            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
+            $client = $this->getSafeClient($request, $slug);
         }
+
+        // সেফ চেক: ক্লায়েন্ট যদি ভ্যালিড না হয়
+        if (!$client->exists) return redirect('/');
 
         $product = Product::where('client_id', $client->id)
             ->where('slug', $productSlug)
             ->with(['category'])
-            ->firstOrFail();
+            ->first(); 
+
+        // 🔥 Safe Fix: যদি প্রোডাক্ট না পাওয়া যায়, শপ হোমপেজে রিডাইরেক্ট করবে
+        if (!$product) {
+            if($request->has('current_client')){
+                return redirect()->route('shop.index');
+            }
+            // স্লাগ না থাকলে রুটে, থাকলে স্লাগ সহ রিডাইরেক্ট
+            return $client->slug ? redirect()->route('shop.index', $client->slug) : redirect('/');
+        }
 
         // রিলেটেড প্রোডাক্ট
         $relatedProducts = Product::where('client_id', $client->id)
@@ -161,18 +196,28 @@ class ShopController extends Controller
     }
 
     /**
+     * অর্ডার ট্র্যাকিং পেজ
+     */
+    public function trackOrder(Request $request, $slug = null)
+    {
+        $client = $this->getSafeClient($request, $slug);
+        if (!$client->exists) return redirect('/');
+       
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+       
+        return view('shop.tracking', compact('client', 'pages'));
+    }
+
+    /**
      * অর্ডার খোঁজার লজিক
      */
     public function trackOrderSubmit(Request $request, $slug = null)
     {
         $request->validate(['phone' => 'required|min:11']);
 
-        if ($request->has('current_client')) {
-            $client = $request->current_client;
-        } else {
-            $client = Client::where('slug', $slug)->firstOrFail();
-        }
-        
+        $client = $this->getSafeClient($request, $slug);
+        if (!$client->exists) return redirect('/');
+       
         $phone = str_replace(["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"], ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], $request->phone);
 
         $orders = Order::where('client_id', $client->id)
