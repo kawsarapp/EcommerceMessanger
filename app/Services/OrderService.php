@@ -31,25 +31,22 @@ class OrderService
         // 🔥 DATABASE TRANSACTION (নিরাপদ অর্ডার প্রসেসিং)
         return DB::transaction(function () use ($info, $clientId, $senderId, $product, $clientModel, $session) {
             
-            // 🛑 1. STOCK GUARD (Advanced Feature)
-            // অর্ডার কনফার্ম করার ঠিক আগ মুহূর্তে স্টক চেক করা
+            // 🛑 1. STOCK GUARD
             if ($product->manage_stock && ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0)) {
                 throw new \Exception("Stock finished just now! Cannot process order.");
             }
 
-            $qty = 1; // বর্তমানে ১টি করে অর্ডার হচ্ছে, ভবিষ্যতে এটি ডাইনামিক করা যাবে
+            $qty = 1; 
             
             // 🔥 2. ADVANCED DELIVERY CALCULATION
-            // AddressStep থেকে আসা লোকেশন টাইপ চেক করা (সবচেয়ে নির্ভুল)
             $locationType = $info['location_type'] ?? null;
-            $delivery = 120; // Default fallback
+            $delivery = 120; // Default
 
             if ($locationType === 'inside_dhaka') {
                 $delivery = $clientModel->delivery_charge_inside ?? 80;
             } elseif ($locationType === 'outside_dhaka') {
                 $delivery = $clientModel->delivery_charge_outside ?? 150;
             } else {
-                // Fallback: যদি লোকেশন টাইপ না থাকে, টেক্সট সার্চ করা (Legacy Support)
                 $isDhaka = str_contains(strtolower($info['address'] ?? ''), 'dhaka') || str_contains($info['address'] ?? '', 'ঢাকা');
                 $delivery = $isDhaka ? ($clientModel->delivery_charge_inside ?? 80) : ($clientModel->delivery_charge_outside ?? 150);
             }
@@ -57,8 +54,7 @@ class OrderService
             $price = $product->sale_price ?? $product->regular_price;
             $total = ($price * $qty) + $delivery;
 
-            // ১. অর্ডার ডাটা প্রস্তুত (Smart Mapping)
-            // নোট: Schema::hasColumn চেক করে ডাটা বসাচ্ছি যাতে মাইগ্রেশন না থাকলেও এরর না দেয়
+            // ১. অর্ডার ডাটা প্রস্তুত
             $orderData = [
                 'client_id'       => $clientId,
                 'sender_id'       => $senderId,
@@ -72,7 +68,7 @@ class OrderService
                 'payment_method'  => $info['payment_method'] ?? 'cod',
             ];
 
-            // 🔥 Optional Columns Mapping (যদি ডাটাবেসে থাকে তবেই বসাবে)
+            // Optional Columns Mapping
             if (Schema::hasColumn('orders', 'district')) {
                 $orderData['district'] = $info['district'] ?? null;
             }
@@ -80,14 +76,12 @@ class OrderService
                 $orderData['division'] = $info['division'] ?? null;
             }
             
-            // নোট হ্যান্ডলিং (Variant & User Note)
+            // নোট হ্যান্ডলিং
             $notes = [];
-            // ভেরিয়েন্ট টেক্সট তৈরি
             if (!empty($info['variant'])) {
                 $vText = is_array($info['variant']) ? implode(', ', array_filter($info['variant'])) : $info['variant'];
                 $notes[] = "Variant: " . $vText;
             }
-            // ইউজার নোট
             if (!empty($info['user_note'])) {
                 $notes[] = "User Note: " . $info['user_note'];
             }
@@ -104,35 +98,39 @@ class OrderService
             // ২. অর্ডার তৈরি
             $order = Order::create($orderData);
 
-            // ৩. আইটেম তৈরি
-            // OrderItem টেবিলে কলামের নাম ভিন্ন হতে পারে, তাই চেক করে নেওয়া ভালো
+            // ৩. আইটেম তৈরি (🔥 FIXED HERE)
             $itemData = [
                 'order_id'   => $order->id,
                 'product_id' => $product->id,
                 'quantity'   => $qty,
-                'unit_price' => $price,
-                'subtotal'   => $price * $qty // অনেক সিস্টেমে subtotal বা total_price থাকে
+                'unit_price' => $price, 
+                'price'      => $price, // ✅ এই লাইনটি যোগ করা হয়েছে (আপনার DB তে এই কলামটি Required)
+                'subtotal'   => $price * $qty
             ];
             
-            // যদি variant কলাম থাকে
             if (Schema::hasColumn('order_items', 'variant')) {
                 $itemData['variant'] = isset($info['variant']) ? (is_array($info['variant']) ? json_encode($info['variant']) : $info['variant']) : null;
             }
 
+            // Check which price column exists to be safe
+            if (!Schema::hasColumn('order_items', 'price')) {
+                unset($itemData['price']); // যদি price কলাম না থাকে, তবে বাদ দাও
+            }
+            if (!Schema::hasColumn('order_items', 'unit_price')) {
+                unset($itemData['unit_price']); // যদি unit_price না থাকে, বাদ দাও
+            }
+
             OrderItem::create($itemData);
 
-            // ৪. স্টক আপডেট (Decrement)
+            // ৪. স্টক আপডেট
             if ($product->manage_stock) {
                 $product->decrement('stock_quantity', $qty);
-
-                // স্টক যদি ০ হয়ে যায়, স্ট্যাটাস আপডেট করা
                 if ($product->stock_quantity <= 0) {
                     $product->update(['stock_status' => 'out_of_stock']);
                 }
             }
 
-            // ৫. সেশন আপডেট (অর্ডার কমপ্লিট - ক্লিনআপ)
-            // চ্যাট হিস্ট্রি রাখা হচ্ছে যাতে কাস্টমার কনফার্মেশন মেসেজ দেখতে পায়
+            // ৫. সেশন আপডেট
             $session->update([
                 'customer_info' => [
                     'step' => 'completed', 
