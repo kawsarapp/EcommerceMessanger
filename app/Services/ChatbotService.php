@@ -60,7 +60,7 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         // 🔥 1. MULTIPLE MESSAGE HANDLING (Race Condition Fix)
-        // একই ইউজার থেকে দ্রুত একাধিক রিকোয়েস্ট আসলে এটি হ্যান্ডেল করবে
+        // একই ইউজার থেকে দ্রুত একাধিক রিকোয়েস্ট আসলে এটি হ্যান্ডেল করবে
         $lock = Cache::lock("processing_user_{$senderId}", 5);
         
         Log::info("🤖 AI Service Started for User: $senderId");
@@ -71,14 +71,14 @@ class ChatbotService
 
         // 🚀 2. MEDIA HANDLING (via MediaService)
         if ($imageUrl) {
-            // A. ভয়েস মেসেজ চেক (Whisper API)
+            // A. ভয়েস মেসেজ চেক (Whisper API)
             // MediaService অটোমেটিক ডিটেক্ট করবে এটি অডিও কি না
             $voiceText = $this->media->convertVoiceToText($imageUrl);
             
             if ($voiceText) {
                 $userMessage = $voiceText . " [Voice Message Transcribed]";
                 Log::info("🗣️ Voice Converted: $userMessage");
-                $imageUrl = null; // অডিও প্রসেস হয়ে গেলে ইমেজ হিসেবে আর ট্রিট করব না
+                $imageUrl = null; // অডিও প্রসেস হয়ে গেলে ইমেজ হিসেবে আর ট্রিট করব না
             } 
             // B. ইমেজ প্রসেসিং (Vision API)
             else {
@@ -145,39 +145,48 @@ class ChatbotService
                 }
             }
             
-            // 🔄 6. PRODUCT SEARCH & RESET LOGIC (Traits Used)
-            $newProduct = $this->findProductSystematically($clientId, $userMessage);
-            
-            if ($newProduct) {
-                $currentProductId = $session->customer_info['product_id'] ?? null;
-                $currentStep = $session->customer_info['step'] ?? '';
-
-                if ($newProduct->id != $currentProductId || $currentStep === 'collect_info') {
-                    Log::info("🔄 Product Switch: Found ({$newProduct->name})");
-                    $session->update([
-                        'customer_info' => array_merge($session->customer_info, [
-                            'step' => 'start', 
-                            'product_id' => $newProduct->id
-                        ])
-                    ]);
-                }
-            } else {
-                // রিসেট কিওয়ার্ড চেক
-                $resetWords = ['menu', 'start', 'offer', 'ki ace', 'home', 'suru'];
-                foreach ($resetWords as $word) {
-                    if (stripos($userMessage, $word) !== false) {
-                        Log::info("🔄 Generic Query Reset.");
-                        $session->update(['customer_info' => array_merge($session->customer_info, ['step' => 'start'])]);
-                        break;
-                    }
-                }
-            }
-
-            // ✅ 7. ORDER FLOW PROCESSING
+            // ✅ 6. ORDER FLOW PROCESSING & PRODUCT SEARCH LOGIC
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
             Log::info("👣 Processing Step: $stepName");
 
+            // 🔥 FIX: কনফার্মেশন বা ইনফো কালেকশন স্টেপে থাকলে নতুন প্রোডাক্ট খুঁজবে না
+            // এটি আপনার 'Product Switch' সমস্যা সমাধান করবে
+            if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
+                
+                // 🔄 PRODUCT SEARCH (Traits Used)
+                $newProduct = $this->findProductSystematically($clientId, $userMessage);
+                
+                if ($newProduct) {
+                    $currentProductId = $session->customer_info['product_id'] ?? null;
+                    
+                    // শুধু যদি নতুন প্রোডাক্ট হয়, তবেই সুইচ করো
+                    if ($newProduct->id != $currentProductId) {
+                        Log::info("🔄 Product Switch: Found ({$newProduct->name})");
+                        $session->update([
+                            'customer_info' => array_merge($session->customer_info, [
+                                'step' => 'start', 
+                                'product_id' => $newProduct->id
+                            ])
+                        ]);
+                        // স্টেপ রিসেট করে আবার স্টার্ট এ পাঠাও
+                        $stepName = 'start'; 
+                    }
+                } else {
+                    // রিসেট কিওয়ার্ড চেক
+                    $resetWords = ['menu', 'start', 'offer', 'ki ace', 'home', 'suru'];
+                    foreach ($resetWords as $word) {
+                        if (stripos($userMessage, $word) !== false) {
+                            Log::info("🔄 Generic Query Reset.");
+                            $session->update(['customer_info' => array_merge($session->customer_info, ['step' => 'start'])]);
+                            $stepName = 'start';
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // ✅ 7. EXECUTE STEP HANDLER
             $steps = [
                 'start' => new StartStep(),
                 'select_variant' => new VariantStep(),
@@ -199,7 +208,7 @@ class ChatbotService
                 Log::info("🚀 Action Triggered: create_order");
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. Congratulate user.)";
+                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}. Congratulate user and give ID.)";
                     
                     // Auto Alert via NotificationService
                     $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
@@ -269,16 +278,12 @@ class ChatbotService
     // =====================================
 
     /**
-     * 🔥 DYNAMIC PROMPT GENERATOR
-     */
-    /**
-     * 🔥 DYNAMIC PROMPT GENERATOR (Updated with Strict Rules)
+     * 🔥 DYNAMIC PROMPT GENERATOR (Updated with Anti-Hallucination Rules)
      */
     private function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo)
     {
         $customPrompt = $client->custom_prompt;
 
-        // যদি কাস্টম প্রম্পট না থাকে, তবে ডিফল্ট প্রম্পট ব্যবহার হবে
         if (empty($customPrompt)) {
             $customPrompt = <<<EOT
 তুমি হলে **{{shop_name}}**-এর একজন স্মার্ট অনলাইন সেলস এক্সিকিউটিভ।
@@ -290,7 +295,7 @@ class ChatbotService
 **⚠️ কঠোর নিয়মাবলী (Strict Rules - Must Follow):**
 ১. **NO FAKE ORDERS:** তুমি নিজে থেকে কখনো বলবে না "অর্ডার কনফার্ম হয়েছে" বা "অর্ডার আইডি X", যতক্ষণ না 'Current Instruction' সেকশনে সিস্টেম তোমাকে স্পষ্ট লিখে দেয় **"Order Created Successfully"**।
 ২. **REVIEW FIRST:** কাস্টমার যখন নাম ও ঠিকানা দিয়ে দেয়, তখন তাকে অর্ডারের সামারি (পণ্য, দাম ও ডেলিভারি চার্জ) দেখাও এবং বলো: **"সব ঠিক থাকলে 'Ji' বা 'Confirm' লিখে রিপ্লাই দিন"**।
-৩. **WAITING MODE:** কাস্টমার "Ji", "Yes" বা "Confirm" বললে তুমি শুধু বলবে: **"ধন্যবাদ, আপনার অর্ডারটি প্রসেস করছি..."**। এই মুহূর্তে কোনো অর্ডার আইডি বানাবে না।
+৩. **WAITING MODE:** কাস্টমার "Ji", "Yes" বা "Confirm" বললে তুমি শুধু বলবে: **"ধন্যবাদ, আপনার অর্ডারটি প্রসেস করছি..."**। এই মুহূর্তে কোনো অর্ডার আইডি বানাবে না বা কনফার্মেশন দিবে না।
 ৪. **OFFER & PRICE:** ইনভেন্টরিতে `price_info` চেক করো। অফার থাকলে বলো: "স্যার, এটার রেগুলার প্রাইস... কিন্তু অফারে পাচ্ছেন... টাকায়!"।
 ৫. **VIDEO & QUALITY:** কাস্টমার কোয়ালিটি দেখতে চাইলে `video` লিংক দাও।
 ৬. **LINK:** কাস্টমার লিংক চাইলে `link` ফিল্ড থেকে লিংক দিবে।
@@ -308,7 +313,6 @@ class ChatbotService
 EOT;
         }
 
-        // সাম্প্রতিক অর্ডার খুঁজে বের করা (যাতে কাস্টমার স্ট্যাটাস জানতে চাইলে AI বলতে পারে)
         $recentOrder = Order::where('client_id', $client->id)
             ->where('sender_id', request('sender_id') ?? 0)
             ->latest()
@@ -328,12 +332,13 @@ EOT;
             '{{inventory}}'       => $invData,
             '{{time}}'            => $time,
             '{{customer_name}}'   => $userName,
-            '{{last_order}}'      => $recentOrderInfo, // এটি প্রম্পটে যুক্ত করা হয়েছে
+            '{{last_order}}'      => $recentOrderInfo,
             '{shop_name}' => $client->shop_name, '{inventory}' => $invData 
         ];
 
         return strtr($customPrompt, $tags);
     }
+
     // ==========================================
     // LEGACY HELPERS (To satisfy "No remove" rule)
     // ==========================================
