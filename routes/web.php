@@ -17,42 +17,64 @@ use App\Http\Controllers\ClientSettingsController;
 // =============================================================
 // 🌍 DYNAMIC SHOP ENGINE (Custom Domain & Slug Management)
 // =============================================================
+// আমরা পুরো শপ লজিককে একটি মিডলওয়্যার গ্রুপের মধ্যে রাখছি যাতে কোড ক্লিন থাকে
 Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(function () {
 
     // ১. মেইন ল্যান্ডিং অথবা কাস্টম ডোমেইন হোম
     Route::get('/', function (Request $request) {
+        // যদি কাস্টম ডোমেইন থাকে, তাহলে শপ হোমপেজ দেখাবে
         if ($request->has('current_client')) {
             return app(ShopController::class)->show($request, null);
         }
+        // না হলে মেইন সাইটের ওয়েলকাম পেজ
         return view('welcome');
     })->name('home');
 
-    // ২. সাব-প্যাথ বা স্লাগ ভিত্তিক রাউটস (maindomain.com/shop/...)
-    // নোটিফিকেশন: এখানে ডাইনামিক পেজকে মেইন শপ রাউটের উপরে রাখা হয়েছে যাতে কনফ্লিক্ট না হয়।
+
+    // ==========================================
+    // 🛒 SUB-PATH ROUTING (maindomain.com/shop/...)
+    // ==========================================
+    // নোট: রাউটের অর্ডার এখানে খুব গুরুত্বপূর্ণ!
     Route::prefix('shop/{slug}')->group(function () {
         
-        // 🔥 ডাইনামিক পেজ রাউট (অবশ্যই মেইন শপের উপরে থাকবে)
-        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
+        // 🔥 ডাইনামিক পেজ রাউট (সবার উপরে রাখতে হবে)
+        // URL: asianhost.net/shop/fashion-bd/page/terms
+        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])
+            ->name('shop.page.slug');
 
-        // দোকানের মেইন পেজ
-        Route::get('/', [ShopController::class, 'show'])->name('shop.show');
+        // দোকানের মেইন হোমপেজ
+        Route::get('/', [ShopController::class, 'show'])
+            ->name('shop.show');
 
         // সিঙ্গেল প্রোডাক্ট ডিটেইলস
-        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
+        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])
+            ->name('shop.product.details');
 
         // অর্ডার ট্র্যাকিং
-        Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
-        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
+        Route::get('/track', [ShopController::class, 'trackOrder'])
+            ->name('shop.track');
+        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])
+            ->name('shop.track.submit');
     });
 
-    // ৩. কাস্টম ডোমেইন ভিত্তিক রাউটস (example.com/...)
-    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
-    
-    Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
-    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
 
-    // ৪. 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
-    // এটি সবার শেষে রাখা হয়েছে যাতে /track বা /product রাউটগুলো আগে চেক হয়।
+    // ==========================================
+    // 🌍 CUSTOM DOMAIN ROUTING (example.com/...)
+    // ==========================================
+    
+    // সিঙ্গেল প্রোডাক্ট (Custom Domain)
+    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])
+        ->name('shop.product.custom');
+
+    // অর্ডার ট্র্যাকিং (Custom Domain)
+    Route::get('/track', [ShopController::class, 'trackOrder'])
+        ->name('shop.track.custom');
+    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])
+        ->name('shop.track.submit.custom');
+
+    // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
+    // URL: example.com/terms-condition
+    // এটি সবার শেষে রাখা হয়েছে যাতে /product বা /track এর সাথে কনফ্লিক্ট না করে
     Route::get('/{pageSlug}', [ShopController::class, 'showPage'])
         ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images).*$')
         ->name('shop.page.custom');
