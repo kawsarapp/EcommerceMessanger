@@ -8,53 +8,55 @@ use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\FacebookConnectController;
 use App\Http\Controllers\ClientSettingsController;
 use App\Models\Plan;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
 
+// ==========================================
+// 🌍 PUBLIC GLOBAL ROUTES (Landing, Pricing)
+// ==========================================
+
+Route::get('/', function (Request $request) {
+    // যদি কাস্টম ডোমেইন থাকে, তাহলে শপ হোমপেজ দেখাবে
+    if ($request->has('current_client')) {
+        return app(ShopController::class)->show($request, null);
+    }
+    // না হলে মেইন সাইটের ওয়েলকাম পেজ
+    return view('welcome');
+})->middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->name('home');
+
+// 🔥 Pricing Page (Catch-All এর আগে রাখতে হবে অথবা Regex এ exclude করতে হবে)
+Route::get('/pricing', function () {
+    $plans = Plan::where('is_active', true)->orderBy('price', 'asc')->get();
+    return view('pricing', compact('plans'));
+})->name('pricing');
+
+
 // =============================================================
-// 🌍 DYNAMIC SHOP ENGINE (Custom Domain & Slug Management)
+// 🛍️ DYNAMIC SHOP ENGINE
 // =============================================================
-// আমরা পুরো শপ লজিককে একটি মিডলওয়্যার গ্রুপের মধ্যে রাখছি যাতে কোড ক্লিন থাকে
 Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(function () {
-
-    // ১. মেইন ল্যান্ডিং অথবা কাস্টম ডোমেইন হোম
-    Route::get('/', function (Request $request) {
-        // যদি কাস্টম ডোমেইন থাকে, তাহলে শপ হোমপেজ দেখাবে
-        if ($request->has('current_client')) {
-            return app(ShopController::class)->show($request, null);
-        }
-        // না হলে মেইন সাইটের ওয়েলকাম পেজ
-        return view('welcome');
-    })->name('home');
-
 
     // ==========================================
     // 🛒 SUB-PATH ROUTING (maindomain.com/shop/...)
     // ==========================================
-    // নোট: রাউটের অর্ডার এখানে খুব গুরুত্বপূর্ণ!
     Route::prefix('shop/{slug}')->group(function () {
         
-        // 🔥 ডাইনামিক পেজ রাউট (সবার উপরে রাখতে হবে)
-        // URL: asianhost.net/shop/fashion-bd/page/terms
-        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])
-            ->name('shop.page.slug');
+        // 🔥 ডাইনামিক পেজ রাউট (সবার উপরে)
+        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
 
         // দোকানের মেইন হোমপেজ
-        Route::get('/', [ShopController::class, 'show'])
-            ->name('shop.show');
+        Route::get('/', [ShopController::class, 'show'])->name('shop.show');
 
         // সিঙ্গেল প্রোডাক্ট ডিটেইলস
-        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])
-            ->name('shop.product.details');
+        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
 
         // অর্ডার ট্র্যাকিং
-        Route::get('/track', [ShopController::class, 'trackOrder'])
-            ->name('shop.track');
-        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])
-            ->name('shop.track.submit');
+        Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
+        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
     });
 
 
@@ -63,20 +65,17 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
     // ==========================================
     
     // সিঙ্গেল প্রোডাক্ট (Custom Domain)
-    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])
-        ->name('shop.product.custom');
+    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
 
     // অর্ডার ট্র্যাকিং (Custom Domain)
-    Route::get('/track', [ShopController::class, 'trackOrder'])
-        ->name('shop.track.custom');
-    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])
-        ->name('shop.track.submit.custom');
+    Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
+    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
 
     // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
     // URL: example.com/terms-condition
-    // এটি সবার শেষে রাখা হয়েছে যাতে /product বা /track এর সাথে কনফ্লিক্ট না করে
+    // এখানে 'pricing' শব্দটিকে বাদ দেওয়া হয়েছে যাতে কনফ্লিক্ট না হয়
     Route::get('/{pageSlug}', [ShopController::class, 'showPage'])
-        ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images).*$')
+        ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images|pricing).*$') 
         ->name('shop.page.custom');
 });
 
@@ -100,11 +99,8 @@ Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callba
 
 // Webhooks
 Route::prefix('webhook')->group(function () {
-    // Messenger
     Route::get('/messenger', [WebhookController::class, 'verify'])->name('webhook.verify');
     Route::post('/messenger', [WebhookController::class, 'handle'])->name('webhook.handle');
-    
-    // Telegram (Dynamic Token)
     Route::post('/telegram/{token}', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
 });
 
@@ -113,14 +109,6 @@ Route::prefix('webhook')->group(function () {
 // 🧑‍💼 SELLER DASHBOARD (Authenticated)
 // ==========================================
 Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
-    // ডোমেইন সেটিংস
     Route::get('/settings/domain', [ClientSettingsController::class, 'domainPage'])->name('dashboard.domain');
     Route::post('/settings/domain', [ClientSettingsController::class, 'updateDomain'])->name('dashboard.domain.update');
 });
-
-
-
-Route::get('/pricing', function () {
-    $plans = Plan::where('is_active', true)->orderBy('price', 'asc')->get();
-    return view('pricing', compact('plans'));
-})->name('pricing');
