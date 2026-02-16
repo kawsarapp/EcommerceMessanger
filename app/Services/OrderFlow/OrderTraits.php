@@ -5,6 +5,7 @@ namespace App\Services\OrderFlow;
 use App\Models\Product;
 use App\Models\OrderSession;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 trait OrderTraits
 {
@@ -31,8 +32,8 @@ trait OrderTraits
     /**
      * 🔥 EXTREME PRODUCT SEARCH SYSTEM
      * ১. ID & SKU Priority Search
-     * ২. Strict Context Check (Avoid wrong products)
-     * ৩. Keyword Mapping with Stop-word Logic
+     * ২. Smart Keyword Search with Synonyms
+     * ৩. Fuzzy Logic (Typo Correction)
      */
     public function findProductSystematically($clientId, $message)
     {
@@ -40,7 +41,6 @@ trait OrderTraits
         if (empty($message)) return null;
 
         // ১. সরাসরি প্রোডাক্ট আইডি বা SKU (High Priority)
-        // কাস্টমার যদি লিখে "123" বা "SKU-456"
         $fastMatch = Product::where('client_id', $clientId)
             ->where(function($q) use ($message) {
                 $q->where('id', $message)
@@ -59,13 +59,34 @@ trait OrderTraits
             'ami', 'kinbo', 'chai', 'korte', 'jonno', 'ace', 'ase', 'nibo', 
             'product', 'koto', 'dam', 'price', 'hi', 'hello', 'akta', 'ekta', 
             'ki', 'kivabe', 'order', 'please', 'details', 'pic', 'picture',
-            'আছে', 'নাই', 'কত', 'দাম', 'অর্ডার', 'চাই', 'নিতে', 'হবে'
+            'আছে', 'নাই', 'কত', 'দাম', 'অর্ডার', 'চাই', 'নিতে', 'হবে', 'দেখি', 'দেখান'
         ];
         
-        $keywords = array_filter(explode(' ', $message), function($word) use ($stopWords) {
-            $word = strtolower(trim($word));
-            return mb_strlen($word) >= 2 && !in_array($word, $stopWords);
-        });
+        // 🔥 NEW: Synonym Mapping (সমার্থক শব্দ)
+        $synonyms = [
+            'mobile' => 'phone',
+            'pant' => 'trousers',
+            'shirt' => 'top',
+            'juta' => 'shoe',
+            'ghori' => 'watch',
+            'tup' => 'cap',
+            'moila' => 'waste',
+            'chob' => 'photo'
+        ];
+
+        $rawKeywords = explode(' ', strtolower($message));
+        $keywords = [];
+
+        foreach ($rawKeywords as $word) {
+            $word = trim($word);
+            if (mb_strlen($word) < 2 || in_array($word, $stopWords)) continue;
+            
+            $keywords[] = $word;
+            // সমার্থক শব্দ থাকলে সেটাও সার্চে যোগ করা হবে
+            if (isset($synonyms[$word])) {
+                $keywords[] = $synonyms[$word];
+            }
+        }
 
         if (empty($keywords)) return null;
 
@@ -73,7 +94,7 @@ trait OrderTraits
         $query = Product::where('client_id', $clientId)->where('stock_status', 'in_stock');
 
         $query->where(function($q) use ($keywords, $message) {
-            // A. সম্পূর্ণ বাক্যের সাথে আংশিক মিল (যেমন: "Black T-shirt")
+            // A. সম্পূর্ণ বাক্যের সাথে আংশিক মিল
             $q->where('name', 'LIKE', "%{$message}%")
               ->orWhere('tags', 'LIKE', "%{$message}%");
 
@@ -88,20 +109,63 @@ trait OrderTraits
             }
         });
 
-        // কাস্টমার যেটা লেটেস্ট দেখেছে বা যেটা বেশি জনপ্রিয় সেটা আগে দেখানো (ঐচ্ছিক)
         $product = $query->latest()->first();
         
         if ($product) {
             Log::info("✅ Product Found by Smart Keywords: {$product->name}");
+            return $product;
         }
 
-        return $product;
+        // 🔥 ৪. FUZZY SEARCH (Typo Correction) - Fallback
+        // যদি ডাটাবেসে সরাসরি না পাওয়া যায়, তবে বানানের ভুল চেক করবে
+        return $this->findProductWithFuzzyLogic($clientId, $keywords);
+    }
+
+    /**
+     * 🔥 NEW: Fuzzy Logic Search (Levenshtein Distance)
+     * কাস্টমার "Pnjabi" লিখলে "Panjabi" খুঁজে বের করবে
+     */
+    private function findProductWithFuzzyLogic($clientId, $keywords)
+    {
+        // সব পণ্যের নাম এবং আইডি ক্যাশে থেকে বা ডিবি থেকে আনা (অপ্টিমাইজড)
+        // ছোট ইনভেন্টরির জন্য এটি ঠিক আছে, বড় ইনভেন্টরির জন্য ElasticSearch বা Scout ভালো
+        $allProducts = Product::where('client_id', $clientId)
+            ->where('stock_status', 'in_stock')
+            ->select('id', 'name')
+            ->get();
+
+        $bestMatch = null;
+        $shortestDistance = -1;
+
+        foreach ($allProducts as $product) {
+            foreach ($keywords as $keyword) {
+                // পণ্যের নামের প্রতিটি শব্দের সাথে কাস্টমারের কিওয়ার্ড তুলনা করা
+                $productWords = explode(' ', strtolower($product->name));
+                foreach ($productWords as $pWord) {
+                    $distance = levenshtein($keyword, $pWord);
+                    
+                    // যদি পার্থক্য ৩ অক্ষরের কম হয় (অর্থাৎ বানান খুব কাছাকাছি)
+                    if ($distance <= 2) { 
+                        if ($shortestDistance < 0 || $distance < $shortestDistance) {
+                            $shortestDistance = $distance;
+                            $bestMatch = $product;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($bestMatch) {
+            Log::info("✅ Product Found by Fuzzy Logic (Typo Fix): {$bestMatch->name}");
+            return Product::find($bestMatch->id); // ফুল ডিটেইলস রিটার্ন
+        }
+
+        return null;
     }
 
     /**
      * 🔥 INTELLIGENT VARIANT EXTRACTION
      * কাস্টমার কি কোনো কালার বা সাইজের কথা মেসেজেই বলেছে?
-     * যেমন: "L size er red color hobe?"
      */
     public function extractVariantsFromMessage($message, $product)
     {
@@ -111,16 +175,18 @@ trait OrderTraits
         // কালার ডিটেকশন
         $availableColors = $this->decodeVariants($product->colors);
         foreach ($availableColors as $color) {
+            // বাংলিশ কালার সাপোর্ট ( লাল = Red, etc. if needed map)
             if (str_contains($msg, strtolower($color))) {
                 $detected['color'] = $color;
                 break;
             }
         }
 
-        // সাইজ ডিটেকশন (Word boundary match for sizes like S, M, L)
+        // সাইজ ডিটেকশন (Word boundary match for sizes like S, M, L, XL)
         $availableSizes = $this->decodeVariants($product->sizes);
         foreach ($availableSizes as $size) {
             $s = strtolower($size);
+            // \b ensures "XL" doesn't match inside "ExtraLarge" incorrectly without context
             if (preg_match("/\b{$s}\b/", $msg)) {
                 $detected['size'] = $size;
                 break;
@@ -132,7 +198,6 @@ trait OrderTraits
 
     /**
      * 🔥 SESSION RECOVERY SYSTEM
-     * যদি ইউজার প্রোডাক্ট ছাড়া কথা বলে, তবে আগের মেসেজ থেকে প্রোডাক্ট রিকভার করবে
      */
     public function getProductFromSession($senderId, $clientId)
     {
@@ -142,10 +207,24 @@ trait OrderTraits
 
         if ($session && !empty($session->customer_info['product_id'])) {
             $product = Product::find($session->customer_info['product_id']);
-            if ($product && $product->stock_status === 'in_stock') {
+            
+            // স্টক চেক যুক্ত করা হয়েছে
+            if ($product && $product->stock_quantity > 0 && $product->stock_status === 'in_stock') {
                 Log::info("🔄 Retrieved Product from Session Context: {$product->name}");
                 return $product;
             }
+        }
+        return null;
+    }
+
+    /**
+     * 🔥 NEW: Price Range Extraction
+     * কাস্টমার যদি বলে "500 takar moddhe"
+     */
+    public function extractPriceConstraint($message)
+    {
+        if (preg_match('/(\d+)\s*(taka|tk)/i', $message, $matches)) {
+            return (int)$matches[1];
         }
         return null;
     }

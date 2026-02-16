@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\OrderSession;
 use App\Models\Order;
+use App\Models\Product; // ✅ Added for Stock Check
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -60,6 +61,25 @@ class TelegramWebhookController extends Controller
                 return response('OK', 200);
             }
 
+            // 📦 স্টক চেক (Command: /stock panjabi) - 🔥 NEW
+            if (Str::startsWith($text, '/stock ')) {
+                $keyword = Str::after($text, '/stock ');
+                $this->searchProductStock($token, $chatId, $client->id, $keyword);
+                return response('OK', 200);
+            }
+
+            // 📨 ম্যানুয়াল রিপ্লাই (Command: /reply 12345 Hello) - 🔥 NEW
+            if (Str::startsWith($text, '/reply ')) {
+                // Format: /reply [sender_id] [message]
+                $parts = explode(' ', $text, 3);
+                if (count($parts) >= 3) {
+                    $this->sendManualReply($client, $parts[1], $parts[2], $token, $chatId);
+                } else {
+                    $this->sendMessage($token, $chatId, "⚠️ ফরম্যাট ভুল। লিখুন: `/reply [User_ID] [Message]`");
+                }
+                return response('OK', 200);
+            }
+
             // 📋 মেনু কমান্ড হ্যান্ডলিং
             switch ($text) {
                 case '/start':
@@ -90,7 +110,7 @@ class TelegramWebhookController extends Controller
                 default:
                     // হেল্প মেসেজ (যদি কমান্ড না মিলে)
                     if (Str::startsWith($text, '/')) {
-                        $this->sendMessage($token, $chatId, "⚠️ কমান্ডটি সঠিক নয়। মেনু দেখতে `/menu` লিখুন।");
+                        $this->sendMessage($token, $chatId, "⚠️ কমান্ডটি সঠিক নয়। মেনু দেখতে `/menu` লিখুন।");
                     }
                     break;
             }
@@ -149,6 +169,24 @@ class TelegramWebhookController extends Controller
             ]);
         }
 
+        // --- CHANGE ORDER STATUS (🔥 NEW) ---
+        elseif (Str::startsWith($callbackData, 'status_')) {
+            // format: status_{status}_{order_id}
+            $parts = explode('_', $callbackData);
+            if(count($parts) == 3) {
+                $status = $parts[1]; // shipped, delivered, cancelled
+                $orderId = $parts[2];
+
+                $order = Order::where('client_id', $client->id)->find($orderId);
+                if($order) {
+                    $order->update(['order_status' => $status]);
+                    
+                    $this->answerCallback($token, $callbackId, "Order Marked as " . ucfirst($status));
+                    $this->sendMessage($token, $chatId, "✅ **Order #{$orderId} Updated!**\nNew Status: " . strtoupper($status));
+                }
+            }
+        }
+
         // --- LIST STOPPED USERS ---
         elseif ($callbackData === 'list_stopped_users') {
             $this->answerCallback($token, $callbackId, "Loading list...");
@@ -168,7 +206,7 @@ class TelegramWebhookController extends Controller
             ['⚙️ সেটিংস / স্টপ লিস্ট']
         ];
 
-        $msg = "👋 **স্বাগতম, {$shopName} অ্যাডমিন!**\nনিচের অপশনগুলো চেক করুন অথবা সার্চ করুন:\n`/order [ID]` - অর্ডার খুঁজতে\n`/search [Phone]` - কাস্টমার খুঁজতে";
+        $msg = "👋 **স্বাগতম, {$shopName} অ্যাডমিন!**\n\n👇 **শর্টকাট কমান্ড:**\n`/order [ID]` - অর্ডার স্ট্যাটাস বদলান\n`/stock [Name]` - প্রডাক্ট স্টক চেক\n`/search [Phone]` - কাস্টমার হিস্ট্রি\n`/reply [ID] [Text]` - কাস্টমারকে মেসেজ";
 
         $this->sendMessageWithReplyKeyboard($token, $chatId, $msg, $keyboard);
     }
@@ -186,11 +224,18 @@ class TelegramWebhookController extends Controller
         $processing = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'processing')->count();
         $completed = Order::where('client_id', $client->id)->whereDate('created_at', $today)->where('order_status', 'completed')->count();
 
-        $msg = "📊 **{$client->shop_name} - আজকের রিপোর্ট**\n📅 তারিক: " . $today->format('d M, Y') . "\n\n";
+        // 🔥 Low Stock Warning
+        $lowStock = Product::where('client_id', $client->id)->where('stock_quantity', '<', 5)->count();
+
+        $msg = "📊 **{$client->shop_name} - আজকের রিপোর্ট**\n📅 তারিখ: " . $today->format('d M, Y') . "\n\n";
         $msg .= "💰 **মোট সেল:** ৳" . number_format($totalSales) . "\n";
         $msg .= "📦 **মোট অর্ডার:** $totalOrders টি\n";
         $msg .= "⏳ **প্রসেসিং:** $processing টি\n";
         $msg .= "✅ **কমপ্লিট:** $completed টি\n";
+        
+        if ($lowStock > 0) {
+            $msg .= "\n⚠️ **Low Stock Alert:** {$lowStock} টি পণ্যের স্টক কম!";
+        }
 
         $this->sendMessage($token, $chatId, $msg);
     }
@@ -208,20 +253,20 @@ class TelegramWebhookController extends Controller
             return;
         }
 
-        $msg = "📦 **সর্বশেষ ৫টি পেন্ডিং অর্ডার:**\n\n";
+        $msg = "📦 **সর্বশেষ ৫টি পেন্ডিং অর্ডার:**\n(ডিটেইলস দেখতে `/order ID` লিখুন)\n\n";
         foreach ($orders as $order) {
             $msg .= "🔹 **#{$order->id}** - {$order->customer_name}\n📞 `{$order->customer_phone}`\n💰 ৳{$order->total_amount}\n------------------\n";
         }
         $this->sendMessage($token, $chatId, $msg);
     }
 
-    // 🔥 NEW: Search Order By ID
+    // 🔥 UPDATED: Search Order By ID with Action Buttons
     private function searchOrderById($token, $chatId, $clientId, $orderId)
     {
         $order = Order::where('client_id', $clientId)->where('id', trim($orderId))->first();
 
         if (!$order) {
-            $this->sendMessage($token, $chatId, "❌ অর্ডার #{$orderId} খুঁজে পাওয়া যায়নি।");
+            $this->sendMessage($token, $chatId, "❌ অর্ডার #{$orderId} খুঁজে পাওয়া যায়নি।");
             return;
         }
 
@@ -231,9 +276,28 @@ class TelegramWebhookController extends Controller
         $msg .= "📍 ঠিকানা: {$order->shipping_address}\n";
         $msg .= "💰 মোট বিল: ৳{$order->total_amount}\n";
         $msg .= "📊 স্ট্যাটাস: " . strtoupper($order->order_status) . "\n";
-        $msg .= "📅 সময়: " . $order->created_at->format('d M, h:i A');
+        
+        // প্রডাক্ট লিস্ট
+        $products = $order->orderItems;
+        foreach($products as $item) {
+            $pName = $item->product->name ?? 'Unknown Product';
+            $msg .= "🛒 {$pName} x {$item->quantity}\n";
+        }
 
-        $this->sendMessage($token, $chatId, $msg);
+        $msg .= "\n👇 **স্ট্যাটাস পরিবর্তন করুন:**";
+
+        // 🔥 Action Buttons
+        $keyboard = [
+            [
+                ['text' => '🚚 Ship', 'callback_data' => "status_shipped_{$order->id}"],
+                ['text' => '✅ Deliver', 'callback_data' => "status_delivered_{$order->id}"],
+            ],
+            [
+                ['text' => '❌ Cancel', 'callback_data' => "status_cancelled_{$order->id}"],
+            ]
+        ];
+
+        $this->sendMessageWithInlineKeyboard($token, $chatId, $msg, $keyboard);
     }
 
     // 🔥 NEW: Search Customer By Phone
@@ -246,7 +310,7 @@ class TelegramWebhookController extends Controller
             ->get();
 
         if ($orders->isEmpty()) {
-            $this->sendMessage($token, $chatId, "❌ এই নম্বরে কোনো অর্ডার পাওয়া যায়নি।");
+            $this->sendMessage($token, $chatId, "❌ এই নম্বরে কোনো অর্ডার পাওয়া যায়নি।");
             return;
         }
 
@@ -256,6 +320,43 @@ class TelegramWebhookController extends Controller
         }
 
         $this->sendMessage($token, $chatId, $msg);
+    }
+
+    // 🔥 NEW: Check Stock
+    private function searchProductStock($token, $chatId, $clientId, $keyword)
+    {
+        $products = Product::where('client_id', $clientId)
+            ->where('name', 'LIKE', "%{$keyword}%")
+            ->take(5)
+            ->get();
+
+        if ($products->isEmpty()) {
+            $this->sendMessage($token, $chatId, "❌ '{$keyword}' নামে কোনো পণ্য পাওয়া যায়নি।");
+            return;
+        }
+
+        $msg = "🔍 **স্টক রেজাল্ট ({$keyword})**\n\n";
+        foreach ($products as $p) {
+            $stockIcon = $p->stock_quantity > 0 ? "✅" : "⚠️";
+            $msg .= "{$stockIcon} **{$p->name}**\n📦 স্টক: {$p->stock_quantity}\n💰 দাম: ৳{$p->regular_price}\n------------------\n";
+        }
+        $this->sendMessage($token, $chatId, $msg);
+    }
+
+    // 🔥 NEW: Manual Reply via Messenger
+    private function sendManualReply($client, $senderId, $message, $token, $chatId) {
+        $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$client->fb_page_token}";
+        
+        $response = Http::post($url, [
+            'recipient' => ['id' => $senderId],
+            'message' => ['text' => "👨‍💼 অ্যাডমিন: " . $message]
+        ]);
+
+        if ($response->successful()) {
+            $this->sendMessage($token, $chatId, "✅ মেসেজ পাঠানো হয়েছে!");
+        } else {
+            $this->sendMessage($token, $chatId, "❌ মেসেজ পাঠানো যায়নি। কাস্টমার ২৪ ঘন্টার বেশি সময় আগে মেসেজ দিয়েছিল?");
+        }
     }
 
     private function showCancelledOrders($token, $chatId, $clientId)
@@ -276,7 +377,7 @@ class TelegramWebhookController extends Controller
                 $msg .= "🔸 #{$order->id} - {$order->customer_name}\n";
             }
         } else {
-            $msg .= "✅ আজ কোনো অর্ডার বাতিল হয়নি।";
+            $msg .= "✅ আজ কোনো অর্ডার বাতিল হয়নি।";
         }
         
         $this->sendMessage($token, $chatId, $msg);
