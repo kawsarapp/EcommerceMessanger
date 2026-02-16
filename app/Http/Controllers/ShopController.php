@@ -140,40 +140,24 @@ class ShopController extends Controller
             $client = $this->getSafeClient($request, $slug);
         }
 
-        if (!$client->id) return redirect('/');
+        if (!$client->exists) return redirect('/');
 
         $page = Page::where('client_id', $client->id)
             ->where('slug', $pageSlug)
             ->where('is_active', true)
-            ->first(); // Safe check
+            ->first();
 
         // 🔥 Safe Fix: পেজ না পাওয়া গেলে হোমপেজে রিডাইরেক্ট
         if (!$page) {
             if($request->has('current_client')){
                 return redirect()->route('shop.index');
             }
-            return redirect()->route('shop.index', $client->slug);
+            return $client->slug ? redirect()->route('shop.index', $client->slug) : redirect('/');
         }
 
         $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
 
         return view('shop.page', compact('client', 'page', 'pages'));
-    }
-
-    /**
-     * অর্ডার ট্র্যাকিং পেজ
-     */
-    public function trackOrder(Request $request, $slug = null)
-    {
-        if ($request->has('current_client')) {
-            $client = $request->current_client;
-        } else {
-            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
-        }
-        
-        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
-        
-        return view('shop.tracking', compact('client', 'pages'));
     }
 
     /**
