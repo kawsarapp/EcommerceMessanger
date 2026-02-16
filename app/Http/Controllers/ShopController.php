@@ -166,43 +166,58 @@ class ShopController extends Controller
     /**
      * 🔥 ডাইনামিক পেজ ভিউয়ার (Terms, Policy, etc.)
      */
+    /**
+     * 🔥 ডাইনামিক পেজ ভিউয়ার (Terms, Policy, etc.)
+     * FIXED VERSION
+     */
     public function showPage(Request $request, $slug = null, $pageSlug = null)
-{
-    // ১. ক্লায়েন্ট এবং স্লাগ ডিটেকশন
-    if ($request->has('current_client')) {
-        // কাস্টম ডোমেইন (e.g., fashionbd.com/privacy-policy)
-        $client = $request->current_client;
-        $actualPageSlug = $slug; 
-    } elseif ($slug && $pageSlug) {
-        // মেইন ডোমেইন (e.g., asianhost.net/shop/fashion/page/privacy-policy)
-        $client = Client::where('slug', $slug)->where('status', 'active')->first();
-        $actualPageSlug = $pageSlug;
-    } else {
-        // স্লাগ মোড কিন্তু /page/ ছাড়া সরাসরি এক্সেস করলে (e.g., /page/privacy-policy)
-        $actualPageSlug = $slug;
-        $client = Client::where('status', 'active')->first(); // ফলব্যাক ক্লায়েন্ট বা ৪MD ৪
-    }
+    {
+        $client = null;
+        $actualPageSlug = null;
 
-    if (!$client) abort(404);
+        // ১. কোন রাউট থেকে এসেছে চেক করি
+        $routeName = $request->route()->getName();
 
-    // ২. পেজ খোঁজা
-    $page = Page::where('client_id', $client->id)
-        ->where('slug', $actualPageSlug)
-        ->where('is_active', true)
-        ->first();
-
-    // 🔥 ৩. এরর ফিক্স: পেজ না থাকলে ৪MD ৪ অথবা হোমে রিডাইরেক্ট
-    if (!$page) {
-        if ($request->has('current_client')) {
-            return redirect()->route('home');
+        if ($routeName === 'shop.page.custom') {
+            // A. কাস্টম ডোমেইন রাউট (example.com/terms)
+            if ($request->has('current_client')) {
+                $client = $request->current_client;
+                // কাস্টম রাউটে প্যারামিটার একাই আসে, তাই প্রথম আর্গুমেন্ট ($slug) কেই পেজ স্লাগ হিসেবে ধরে
+                $actualPageSlug = $request->route('pageSlug') ?? $slug; 
+            }
+        } 
+        elseif ($routeName === 'shop.page.slug') {
+            // B. সাব-পাথ রাউট (domain.com/shop/fashion/page/terms)
+            $client = Client::where('slug', $slug)->where('status', 'active')->first();
+            $actualPageSlug = $pageSlug;
         }
-        return redirect()->route('shop.show', $client->slug);
+
+        // ২. যদি ক্লায়েন্ট বা স্লাগ না থাকে -> 404
+        if (!$client || !$actualPageSlug) {
+            abort(404, 'Shop or Page Not Found');
+        }
+
+        // ৩. পেজ ডাটাবেসে খোঁজা
+        $page = Page::where('client_id', $client->id)
+            ->where('slug', $actualPageSlug)
+            ->where('is_active', true)
+            ->first();
+
+        // ৪. পেজ না পাওয়া গেলে রিডাইরেক্ট (Redirect Logic)
+        if (!$page) {
+            // কাস্টম ডোমেইন হলে হোমে
+            if ($request->has('current_client')) {
+                return redirect()->route('home');
+            }
+            // সাব-পাথ হলে সেই শপের হোমপেজে
+            return redirect()->route('shop.show', $client->slug);
+        }
+
+        // ৫. ফুটার লিংকস
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+
+        return view('shop.page', compact('client', 'page', 'pages'));
     }
-
-    $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
-
-    return view('shop.page', compact('client', 'page', 'pages'));
-}
 
     /**
      * অর্ডার ট্র্যাকিং পেজ

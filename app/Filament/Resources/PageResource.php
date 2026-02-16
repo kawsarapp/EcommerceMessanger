@@ -3,69 +3,31 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PageResource\Pages;
+use App\Filament\Resources\PageResource\RelationManagers;
 use App\Models\Page;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Set;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PageResource extends Resource
 {
     protected static ?string $model = Page::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    
-    protected static ?string $navigationGroup = 'Shop Management';
-    
-    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // অটোমেটিক Client ID সেট হবে
-                Hidden::make('client_id')
-                    ->default(fn() => Auth::user()->client_id ?? Auth::user()->client->id),
-
-                Forms\Components\Section::make('Page Details')
-                    ->schema([
-                        TextInput::make('title')
-                            ->label('Page Title')
-                            ->placeholder('e.g. Return Policy')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
-
-                        TextInput::make('slug')
-                            ->label('URL Slug')
-                            ->prefix(url('/page/'))
-                            ->required()
-                            ->disabled() // অটো জেনারেট হবে
-                            ->dehydrated(),
-                        
-                        Toggle::make('is_active')
-                            ->label('Publish Page')
-                            ->default(true),
-
-                        RichEditor::make('content')
-                            ->label('Page Content')
-                            ->required()
-                            ->columnSpanFull()
-                            ->fileAttachmentsDirectory('pages/images'),
-                    ])->columns(2),
+                //
             ]);
     }
 
-    public static function table(Table $table): Table
+   public static function table(Table $table): Table
     {
         return $table
             ->columns([
@@ -89,9 +51,24 @@ class PageResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                
+                // 🔥 URL GENERATION FIX
                 Tables\Actions\Action::make('View')
                     ->icon('heroicon-m-eye')
-                    ->url(fn (Page $record) => url('/page/' . $record->slug)) // এখানে আপনার ডোমেইন লজিক বসবে
+                    ->url(function (Page $record) {
+                        $client = $record->client;
+                        
+                        // যদি কাস্টম ডোমেইন থাকে
+                        if ($client->custom_domain) {
+                            return "https://{$client->custom_domain}/{$record->slug}";
+                        }
+
+                        // যদি মেইন ডোমেইন (সাব-পাথ) হয়
+                        return route('shop.page.slug', [
+                            'slug' => $client->slug, 
+                            'pageSlug' => $record->slug
+                        ]);
+                    })
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
@@ -99,13 +76,11 @@ class PageResource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): Builder
+    public static function getRelations(): array
     {
-        // সুপার অ্যাডমিন সব দেখবে, সেলার শুধু তার পেজ দেখবে
-        $query = parent::getEloquentQuery();
-        if (Auth::id() === 1) return $query;
-        
-        return $query->where('client_id', Auth::user()->client->id ?? 0);
+        return [
+            //
+        ];
     }
 
     public static function getPages(): array
