@@ -10,13 +10,20 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::table('clients', function (Blueprint $table) {
-        $table->string('social_facebook')->nullable();
-        $table->string('social_instagram')->nullable();
-        $table->string('social_youtube')->nullable();
-    });
-}
+    {
+        Schema::table('clients', function (Blueprint $table) {
+            // চেক করা হচ্ছে কলামগুলো আগে থেকেই আছে কি না
+            if (!Schema::hasColumn('clients', 'social_facebook')) {
+                $table->string('social_facebook')->nullable();
+            }
+            if (!Schema::hasColumn('clients', 'social_instagram')) {
+                $table->string('social_instagram')->nullable();
+            }
+            if (!Schema::hasColumn('clients', 'social_youtube')) {
+                $table->string('social_youtube')->nullable();
+            }
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -24,7 +31,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            //
+            $table->dropColumn(['social_facebook', 'social_instagram', 'social_youtube']);
         });
     }
 };
