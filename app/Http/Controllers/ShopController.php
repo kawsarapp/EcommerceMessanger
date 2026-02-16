@@ -6,12 +6,14 @@ use App\Models\Client;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\Page;
 use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
     /**
-     * দোকানের হোমপেজ (প্রোডাক্ট লিস্ট) - Custom Domain & Slug Supported
+     * দোকানের হোমপেজ (প্রোডাক্ট লিস্ট + পেজ লিংক)
+     * Custom Domain & Slug Supported
      */
     public function show(Request $request, $slug = null)
     {
@@ -24,10 +26,11 @@ class ShopController extends Controller
             abort(404, 'Shop Not Found');
         }
 
-        // ২. প্রোডাক্ট কুয়েরি বিল্ডার
-        $query = Product::where('client_id', $client->id)->where('stock_status', 'in_stock');
+        // ২. প্রোডাক্ট কুয়েরি বিল্ডার (শুধুমাত্র ইন-স্টক)
+        $query = Product::where('client_id', $client->id)
+            ->where('stock_status', 'in_stock');
 
-        // 🔥 ফিচার ১: সার্চ (Search)
+        // 🔥 সার্চ ফিল্টার
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -37,14 +40,14 @@ class ShopController extends Controller
             });
         }
 
-        // 🔥 ফিচার ২: ক্যাটাগরি ফিল্টার
+        // 🔥 ক্যাটাগরি ফিল্টার
         if ($request->filled('category') && $request->category !== 'all') {
             $query->whereHas('category', function ($q) use ($request) {
                 $q->where('slug', $request->category);
             });
         }
 
-        // 🔥 ফিচার ৩: প্রাইস রেঞ্জ
+        // 🔥 প্রাইস রেঞ্জ ফিল্টার
         if ($request->filled('min_price')) {
             $query->where('regular_price', '>=', $request->min_price);
         }
@@ -52,7 +55,7 @@ class ShopController extends Controller
             $query->where('regular_price', '<=', $request->max_price);
         }
 
-        // 🔥 ফিচার ৪: সর্টিং
+        // 🔥 সর্টিং লজিক
         switch ($request->sort) {
             case 'price_asc':
                 $query->orderBy('sale_price', 'asc')->orderBy('regular_price', 'asc');
@@ -76,25 +79,32 @@ class ShopController extends Controller
             return view('shop.partials.product_list', compact('products'))->render();
         }
 
-        // ৪. ক্যাটাগরি এবং কাউন্ট লোড করা
+        // ৪. সাইডবারের জন্য ক্যাটাগরি এবং কাউন্ট লোড করা
         $categories = Category::whereHas('products', function ($q) use ($client) {
             $q->where('client_id', $client->id)->where('stock_status', 'in_stock');
         })->withCount(['products' => function ($q) use ($client) {
             $q->where('client_id', $client->id)->where('stock_status', 'in_stock');
-        }])->get();
+        }])
+        ->orderBy('name')
+        ->get();
 
-        return view('shop.index', compact('client', 'products', 'categories'));
+        // ৫. ফুটার লিংক (Dynamic Pages) লোড করা
+        $pages = Page::where('client_id', $client->id)
+            ->where('is_active', true)
+            ->select('title', 'slug')
+            ->get();
+
+        return view('shop.index', compact('client', 'products', 'categories', 'pages'));
     }
 
     /**
-     * 🔥 ফিচার ৫: সিঙ্গেল প্রোডাক্ট ডিটেইলস পেজ
+     * 🔥 সিঙ্গেল প্রোডাক্ট ডিটেইলস পেজ
      */
     public function productDetails(Request $request, $slug = null, $productSlug = null)
     {
-        // Custom Domain এ $slug প্যারামিটার থাকে না, তাই শিফট করা হচ্ছে
         if ($request->has('current_client')) {
             $client = $request->current_client;
-            $productSlug = $slug; // ১ম প্যারামিটারই প্রোডাক্ট স্লাগ হয়ে যায়
+            $productSlug = $slug; 
         } else {
             $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
         }
@@ -113,7 +123,31 @@ class ShopController extends Controller
             ->take(4)
             ->get();
 
-        return view('shop.product', compact('client', 'product', 'relatedProducts'));
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+
+        return view('shop.product', compact('client', 'product', 'relatedProducts', 'pages'));
+    }
+
+    /**
+     * 🔥 ডাইনামিক পেজ ভিউয়ার (Terms, Policy, etc.)
+     */
+    public function showPage(Request $request, $slug = null, $pageSlug = null)
+    {
+        if ($request->has('current_client')) {
+            $client = $request->current_client;
+            $pageSlug = $slug; 
+        } else {
+            $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
+        }
+
+        $page = Page::where('client_id', $client->id)
+            ->where('slug', $pageSlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+
+        return view('shop.page', compact('client', 'page', 'pages'));
     }
 
     /**
@@ -126,7 +160,10 @@ class ShopController extends Controller
         } else {
             $client = Client::where('slug', $slug)->where('status', 'active')->firstOrFail();
         }
-        return view('shop.tracking', compact('client'));
+        
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+        
+        return view('shop.tracking', compact('client', 'pages'));
     }
 
     /**
@@ -142,38 +179,22 @@ class ShopController extends Controller
             $client = Client::where('slug', $slug)->firstOrFail();
         }
         
-        // বাংলা নম্বরকে ইংরেজিতে কনভার্ট
-        $phone = $request->phone;
-        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
-        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-        $phone = str_replace($bn, $en, $phone);
+        $phone = str_replace(["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"], ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], $request->phone);
 
-        // শেষ ৫টি অর্ডার বের করা
         $orders = Order::where('client_id', $client->id)
             ->where('customer_phone', 'LIKE', "%{$phone}%")
-            ->with('orderItems.product') // রিলেশনশিপ ফিক্সড (orderItems)
+            ->with('orderItems.product')
             ->latest()
             ->take(5)
             ->get();
 
-        return view('shop.tracking', compact('client', 'orders', 'phone'));
+        $pages = Page::where('client_id', $client->id)->where('is_active', true)->get();
+
+        return view('shop.tracking', compact('client', 'orders', 'phone', 'pages'));
     }
 
-    /**
-     * 🔥 Optional: Load More API (যদি আলাদা রাউট থাকে)
-     */
     public function loadMore(Request $request)
     {
-        // এই লজিকটি show মেথডের Ajax ব্লকেই হ্যান্ডেল করা হয়েছে
         return $this->show($request, $request->slug);
-    }
-
-    /**
-     * 🔥 Optional: Category API
-     */
-    public function getCategoryCounts(Request $request)
-    {
-        // এটি ফ্রন্টএন্ডে ডাইনামিক ফিল্টারের জন্য লাগতে পারে
-        return response()->json(['status' => 'ok']);
     }
 }
