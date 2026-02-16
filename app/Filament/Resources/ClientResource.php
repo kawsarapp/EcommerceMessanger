@@ -18,12 +18,13 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\FileUpload; // ✅ Logo/Banner এর জন্য
+use Filament\Forms\Components\FileUpload; 
+use Filament\Forms\Components\ColorPicker; // ✅ New Feature
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Actions;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
-use Filament\Tables\Columns\ImageColumn; // ✅ Table এ লোগো দেখার জন্য
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -47,7 +48,7 @@ class ClientResource extends Resource
         return auth()->id() === 1 ? (string) static::getModel()::count() : null;
     }
 
-    // [UX] গ্লোবাল সার্চ (Domain, Name, Slug দিয়ে খোঁজা যাবে)
+    // [UX] গ্লোবাল সার্চ
     public static function getGloballySearchableAttributes(): array
     {
         return ['shop_name', 'slug', 'fb_page_id', 'custom_domain', 'phone'];
@@ -82,143 +83,153 @@ class ClientResource extends Resource
                     ->columns(['default' => 1, 'sm' => 2])
                     ->visible(fn () => auth()->id() === 1),
 
-                // --- সেকশন ২: শপ কনফিগারেশন (All Tabs) ---
+                // --- সেকশন ২: শপ কনফিগারেশন ---
                 Forms\Components\Group::make()
                     ->schema([
                         Tabs::make('Shop Configuration')
-                            ->persistTabInQueryString() // রিফ্রেশ দিলেও ট্যাব হারাবে না
+                            ->persistTabInQueryString()
                             ->tabs([
                                 
-                                // 🏠 Tab 1: General Info & Contact
-                                Tabs\Tab::make('General Info')
+                                // 🏠 Tab 1: General Info
+                                Tabs\Tab::make('Basic Info')
                                     ->icon('heroicon-m-information-circle')
                                     ->schema([
                                         Hidden::make('user_id')->default(auth()->id()), 
 
-                                        TextInput::make('shop_name')
-                                            ->label('Shop Name')
-                                            ->placeholder('E.g. Fashion BD')
-                                            ->required()
-                                            ->live(onBlur: true)
-                                            ->maxLength(255)
-                                            ->afterStateUpdated(fn ($state, callable $set, $operation) => 
-                                                $operation === 'create' ? $set('slug', Str::slug($state)) : null
-                                            ),
-                                    
-                                        TextInput::make('slug')
-                                            ->label('Shop URL Slug')
-                                            ->prefix(config('app.url') . '/shop/')
-                                            ->required()
-                                            ->unique(Client::class, 'slug', ignoreRecord: true)
-                                            ->disabled(fn ($operation) => $operation !== 'create')
-                                            ->dehydrated()
-                                            ->helperText('Unique link for the shop.'),
+                                        Section::make('Identity')
+                                            ->schema([
+                                                TextInput::make('shop_name')
+                                                    ->label('Shop Name')
+                                                    ->placeholder('E.g. Fashion BD')
+                                                    ->required()
+                                                    ->live(onBlur: true)
+                                                    ->maxLength(255)
+                                                    ->afterStateUpdated(fn ($state, callable $set, $operation) => 
+                                                        $operation === 'create' ? $set('slug', Str::slug($state)) : null
+                                                    ),
+                                            
+                                                TextInput::make('slug')
+                                                    ->label('Shop URL')
+                                                    ->prefix(config('app.url') . '/shop/')
+                                                    ->required()
+                                                    ->unique(Client::class, 'slug', ignoreRecord: true)
+                                                    ->disabled(fn ($operation) => $operation !== 'create')
+                                                    ->dehydrated()
+                                                    ->helperText('Unique link for your shop.'),
+                                            ])->columns(2),
 
-                                        // 🔥 Contact Info
-                                        TextInput::make('phone')
-                                            ->label('Support Phone')
-                                            ->tel()
-                                            ->prefixIcon('heroicon-m-phone'),
+                                        Section::make('Contact Details')
+                                            ->schema([
+                                                TextInput::make('phone')
+                                                    ->label('Support Phone')
+                                                    ->tel()
+                                                    ->prefixIcon('heroicon-m-phone')
+                                                    ->placeholder('017XXXXXXXX'),
 
-                                        Textarea::make('address')
-                                            ->label('Shop Address')
-                                            ->rows(2)
-                                            ->columnSpanFull(),
+                                                Textarea::make('address')
+                                                    ->label('Shop Address')
+                                                    ->rows(2)
+                                                    ->placeholder('Full address for invoice...'),
+                                            ])->columns(2),
                                         
-                                        // Status Control
                                         ToggleButtons::make('status')
                                             ->label('Shop Status')
-                                            ->options([
-                                                'active' => 'Active',
-                                                'inactive' => 'Inactive',
-                                            ])
-                                            ->colors([
-                                                'active' => 'success',
-                                                'inactive' => 'danger',
-                                            ])
-                                            ->icons([
-                                                'active' => 'heroicon-o-check-circle',
-                                                'inactive' => 'heroicon-o-x-circle',
-                                            ])
+                                            ->options(['active' => 'Active', 'inactive' => 'Inactive'])
+                                            ->colors(['active' => 'success', 'inactive' => 'danger'])
+                                            ->icons(['active' => 'heroicon-o-check-circle', 'inactive' => 'heroicon-o-x-circle'])
                                             ->default('active')
                                             ->inline()
                                             ->visible(fn () => auth()->id() === 1),
-                                    ])->columns(2),
+                                    ]),
 
-                                // 🎨 Tab 2: Storefront & Branding (Logo/Domain)
-                                Tabs\Tab::make('Storefront & Branding')
+                                // 🎨 Tab 2: Branding & Design (New Features Added)
+                                Tabs\Tab::make('Storefront')
                                     ->icon('heroicon-m-paint-brush')
+                                    ->schema([
+                                        Section::make('Visual Identity')
+                                            ->description('Upload logo and banner to make your shop look professional.')
+                                            ->schema([
+                                                FileUpload::make('logo')
+                                                    ->label('Shop Logo (Square)')
+                                                    ->image()
+                                                    ->avatar()
+                                                    ->directory('shops/logos')
+                                                    ->maxSize(2048),
+
+                                                FileUpload::make('banner')
+                                                    ->label('Cover Banner (Wide)')
+                                                    ->image()
+                                                    ->directory('shops/banners')
+                                                    ->maxSize(5120)
+                                                    ->columnSpanFull(),
+                                            ])->columns(2),
+
+                                        Section::make('Theme & Announcements') // 🔥 New Feature
+                                            ->schema([
+                                                ColorPicker::make('primary_color')
+                                                    ->label('Brand Color')
+                                                    ->default('#4f46e5')
+                                                    ->helperText('This color will be used for buttons and links.'),
+
+                                                TextInput::make('announcement_text')
+                                                    ->label('Announcement Bar')
+                                                    ->placeholder('🎉 Eid Sale is Live! Get 10% Off.')
+                                                    ->helperText('Shows at the top of your shop.'),
+                                            ])->columns(2),
+                                    ]),
+
+                                // 🌐 Tab 3: Domain & SEO
+                                Tabs\Tab::make('Domain & SEO')
+                                    ->icon('heroicon-m-globe-alt')
                                     ->schema([
                                         Section::make('Custom Domain')
                                             ->description('Connect your own domain (e.g. www.brand.com)')
                                             ->schema([
                                                 TextInput::make('custom_domain')
-                                                    ->label('Domain Name')
+                                                    ->label('Your Domain Name')
                                                     ->placeholder('www.yourbrand.com')
                                                     ->prefixIcon('heroicon-m-globe-alt')
-                                                    ->helperText('Point A Record to Server IP. Do not add http/https.')
+                                                    ->helperText(new HtmlString('<strong>Setup:</strong> Point your domain\'s <code>A Record</code> to our server IP.'))
                                                     ->unique(Client::class, 'custom_domain', ignoreRecord: true),
                                             ]),
 
-                                        Section::make('Visuals')
+                                        Section::make('SEO & Analytics')
                                             ->schema([
-                                                FileUpload::make('logo')
-                                                    ->label('Shop Logo')
-                                                    ->image()
-                                                    ->avatar()
-                                                    ->directory('shops/logos')
-                                                    ->maxSize(2048), // 2MB
+                                                TextInput::make('meta_title')
+                                                    ->label('Meta Title')
+                                                    ->placeholder('Best Online Shop in BD')
+                                                    ->maxLength(60),
 
-                                                FileUpload::make('banner')
-                                                    ->label('Shop Banner (Cover)')
-                                                    ->image()
-                                                    ->directory('shops/banners')
-                                                    ->maxSize(5120) // 5MB
+                                                TextInput::make('pixel_id') // 🔥 New Feature
+                                                    ->label('Facebook Pixel ID')
+                                                    ->placeholder('1234567890')
+                                                    ->numeric(),
+
+                                                Textarea::make('meta_description')
+                                                    ->label('Meta Description')
+                                                    ->placeholder('Short description for Google search...')
+                                                    ->rows(2)
                                                     ->columnSpanFull(),
                                             ])->columns(2),
                                     ]),
 
-                                // 🔍 Tab 3: SEO & Marketing
-                                Tabs\Tab::make('SEO Settings')
-                                    ->icon('heroicon-m-magnifying-glass')
-                                    ->schema([
-                                        TextInput::make('meta_title')
-                                            ->label('Meta Title')
-                                            ->placeholder('Best Online Shop in BD')
-                                            ->maxLength(60),
-
-                                        Textarea::make('meta_description')
-                                            ->label('Meta Description')
-                                            ->placeholder('Short description for Google search results...')
-                                            ->rows(3)
-                                            ->maxLength(160),
-                                    ]),
-
-                                // 🤖 Tab 4: AI & Automation
-                                Tabs\Tab::make('AI & Chatbot')
+                                // 🤖 Tab 4: AI Brain
+                                Tabs\Tab::make('AI Brain')
                                     ->icon('heroicon-m-cpu-chip')
                                     ->schema([
-                                        Section::make('Knowledge Base (AI-এর মগজ)')
-                                            ->description('দোকানের পলিসি, রিটার্ন রুলস বা অফার ডিটেইলস এখানে লিখুন। AI এটি পড়ে উত্তর দিবে।')
-                                            ->icon('heroicon-m-book-open')
+                                        Section::make('Knowledge Base')
+                                            ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')
                                             ->schema([
                                                 Textarea::make('knowledge_base')
                                                     ->label('Shop Policies & FAQs')
-                                                    ->placeholder("উদাহরণ:\n১. ডেলিভারি চার্জ ঢাকার মধ্যে ৮০ টাকা।\n২. কোনো রিটার্ন পলিসি নেই।\n৩. শুক্রবার বন্ধ থাকে।")
-                                                    ->rows(5)
-                                                    ->helperText('AI এই তথ্যগুলো ব্যবহার করে কাস্টমারের প্রশ্নের উত্তর দিবে।'),
-                                            ]),
-
-                                        Section::make('Bot Personality')
-                                            ->description('AI কাস্টমারের সাথে কীভাবে আচরণ করবে তা নির্ধারণ করুন।')
-                                            ->icon('heroicon-m-face-smile')
-                                            ->collapsed()
-                                            ->schema([
+                                                    ->placeholder("উদাহরণ:\n১. ডেলিভারি চার্জ ৮০ টাকা।\n২. রিটার্ন পলিসি নেই।\n৩. শুক্রবার বন্ধ।")
+                                                    ->rows(6),
+                                                
                                                 Textarea::make('custom_prompt')
-                                                    ->label('Custom Salesman Prompt')
-                                                    ->placeholder("তুমি একজন দক্ষ সেলসম্যান। কাস্টমারকে 'স্যার' বলে সম্বোধন করবে...")
-                                                    ->rows(4)
-                                                    ->helperText('Advanced users only. Leave blank to use default.'),
+                                                    ->label('Salesman Personality')
+                                                    ->placeholder("তুমি একজন ভদ্র সেলসম্যান। কাস্টমারকে 'স্যার' বলে সম্বোধন করবে...")
+                                                    ->rows(3)
+                                                    ->collapsed(),
                                             ]),
                                     ]),
 
@@ -226,8 +237,7 @@ class ClientResource extends Resource
                                 Tabs\Tab::make('Logistics')
                                     ->icon('heroicon-m-truck')
                                     ->schema([
-                                        Section::make('Delivery Charges')
-                                            ->description('Shipping costs for orders.')
+                                        Section::make('Delivery Fees')
                                             ->schema([
                                                 TextInput::make('delivery_charge_inside')
                                                     ->label('Inside Dhaka')
@@ -245,113 +255,74 @@ class ClientResource extends Resource
                                             ])->columns(2),
                                     ]),
 
-                                // 🔗 Tab 6: Integrations (FB & Telegram)
+                                // 🔗 Tab 6: Integrations
                                 Tabs\Tab::make('Integrations')
                                     ->icon('heroicon-m-link')
                                     ->schema([
-                                        Section::make('Facebook & Messenger')
+                                        Section::make('Facebook Connection')
                                             ->schema([
-                                                TextInput::make('fb_verify_token')
-                                                    ->label('Webhook Token')
-                                                    ->default(fn () => Str::random(40))
-                                                    ->readOnly()
-                                                    ->suffixActions([
-                                                        Action::make('regenerate')
-                                                            ->icon('heroicon-m-arrow-path')
-                                                            ->color('warning')
-                                                            ->requiresConfirmation()
-                                                            ->action(fn ($set) => $set('fb_verify_token', Str::random(40))),
-                                                        Action::make('copy')
-                                                            ->icon('heroicon-m-clipboard')
-                                                            ->action(fn ($livewire, $state) => $livewire->js("window.navigator.clipboard.writeText('{$state}')")),
-                                                    ]),
-                                                
                                                 Placeholder::make('fb_status')
                                                     ->label('Status')
-                                                    ->content(fn ($record) => $record && $record->fb_page_id ? '✅ Connected' : '❌ Not Connected'),
+                                                    ->content(fn ($record) => $record && $record->fb_page_id 
+                                                        ? new HtmlString('<span class="text-green-600 font-bold flex items-center gap-1">✅ Connected to Page ID: ' . $record->fb_page_id . '</span>') 
+                                                        : new HtmlString('<span class="text-gray-500">❌ Not Connected</span>')),
 
                                                 Actions::make([
                                                     Action::make('connect_facebook')
-                                                        ->label('Connect Facebook')
+                                                        ->label('Connect with Facebook')
                                                         ->url(fn ($record) => route('auth.facebook', ['client_id' => $record->id]))
+                                                        ->color('info')
                                                         ->visible(fn ($record) => !$record->fb_page_id),
                                                     
                                                     Action::make('disconnect_facebook')
-                                                        ->label('Disconnect')
+                                                        ->label('Disconnect Page')
                                                         ->color('danger')
                                                         ->requiresConfirmation()
-                                                        ->action(fn ($record) => $record->update(['fb_page_id' => null]))
+                                                        ->action(fn ($record) => $record->update(['fb_page_id' => null, 'fb_page_token' => null]))
                                                         ->visible(fn ($record) => $record->fb_page_id),
                                                 ]),
-                                                
-                                                Section::make('Manual Config (Advanced)')
+
+                                                Section::make('Advanced Manual Setup')
                                                     ->collapsed()
                                                     ->schema([
-                                                        TextInput::make('fb_page_id')->label('Facebook Page ID')->numeric(),
-                                                        Textarea::make('fb_page_token')->label('Access Token')->rows(2),
-                                                        TextInput::make('fb_app_secret')->label('App Secret')->password()->revealable(),
-                                                        Actions::make([
-                                                            Action::make('test_connection')
-                                                                ->label('Test Manual Connection')
-                                                                ->icon('heroicon-m-signal')
-                                                                ->action(function ($get) {
-                                                                    // Simple Test Logic
-                                                                    if (!$get('fb_page_id') || !$get('fb_page_token')) {
-                                                                        Notification::make()->title('Missing Info')->warning()->send();
-                                                                        return;
-                                                                    }
-                                                                    Notification::make()->title('Test Request Sent')->success()->send();
-                                                                })
-                                                        ]),
+                                                        TextInput::make('fb_verify_token')->readOnly(),
+                                                        TextInput::make('fb_page_id')->numeric(),
+                                                        Textarea::make('fb_page_token')->rows(2),
                                                     ]),
                                             ]),
 
                                         Section::make('Telegram Notification')
+                                            ->description('Get order alerts on Telegram.')
                                             ->collapsed()
                                             ->schema([
                                                 Placeholder::make('tutorial')
                                                     ->label('')
-                                                    ->content(new HtmlString('<div class="text-sm text-gray-600">1. @BotFather থেকে টোকেন নিন।<br>2. @userinfobot থেকে চ্যাট আইডি নিন।</div>')),
+                                                    ->content(new HtmlString('<div class="text-sm text-gray-600 bg-gray-50 p-2 rounded">Step 1: Create bot on @BotFather.<br>Step 2: Get Token & Chat ID from @userinfobot.</div>')),
 
-                                                TextInput::make('telegram_bot_token')
-                                                    ->label('Bot Token')
-                                                    ->password()
-                                                    ->revealable()
-                                                    ->placeholder('12345:ABC-DEF...'),
-
-                                                TextInput::make('telegram_chat_id')
-                                                    ->label('Chat ID')
-                                                    ->placeholder('123456789'),
-
+                                                TextInput::make('telegram_bot_token')->label('Bot Token')->password()->revealable(),
+                                                TextInput::make('telegram_chat_id')->label('Chat ID'),
+                                                
                                                 Actions::make([
-                                                    Action::make('connect_telegram')
-                                                        ->label('Test Connection')
-                                                        ->icon('heroicon-m-paper-airplane')
+                                                    Action::make('test_telegram')
+                                                        ->label('Test Message')
                                                         ->color('success')
+                                                        ->icon('heroicon-m-paper-airplane')
                                                         ->action(function ($get) {
                                                             $token = $get('telegram_bot_token');
                                                             $chatId = $get('telegram_chat_id');
-                                                            
                                                             if (!$token || !$chatId) {
-                                                                Notification::make()->title('Error')->body('Token & Chat ID required.')->danger()->send();
+                                                                Notification::make()->title('Missing Info')->danger()->send();
                                                                 return;
                                                             }
-
                                                             try {
-                                                                $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                                                                    'chat_id' => $chatId,
-                                                                    'text' => "✅ **Test Success!** Your shop is connected."
+                                                                Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                                                                    'chat_id' => $chatId, 'text' => "✅ Test Successful!"
                                                                 ]);
-
-                                                                if ($response->successful()) {
-                                                                    Notification::make()->title('Connected!')->success()->send();
-                                                                } else {
-                                                                    Notification::make()->title('Failed')->body('Check token/chat ID or start the bot.')->danger()->send();
-                                                                }
+                                                                Notification::make()->title('Sent! Check Telegram.')->success()->send();
                                                             } catch (\Exception $e) {
-                                                                Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                                                                Notification::make()->title('Failed')->body($e->getMessage())->danger()->send();
                                                             }
-                                                        })
+                                                        }),
                                                 ]),
                                             ]),
                                     ]),
@@ -366,7 +337,7 @@ class ClientResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('logo') // 🔥 Logo in Table
+                ImageColumn::make('logo')
                     ->circular()
                     ->defaultImageUrl(url('/images/placeholder-shop.png'))
                     ->label('Logo'),
@@ -375,7 +346,7 @@ class ClientResource extends Resource
                     ->searchable()
                     ->weight('bold')
                     ->sortable()
-                    ->description(fn (Client $record) => $record->custom_domain ?: $record->slug), // 🔥 Domain Show
+                    ->description(fn (Client $record) => $record->custom_domain ?: $record->slug),
                     
                 TextColumn::make('plan.name')
                     ->badge()
@@ -387,16 +358,16 @@ class ClientResource extends Resource
 
                 TextColumn::make('telegram_bot_token')
                     ->label('Telegram')
-                    ->formatStateUsing(fn ($state) => $state ? 'Connected' : 'Pending')
+                    ->formatStateUsing(fn ($state) => $state ? 'Active' : 'Setup Needed')
                     ->badge()
                     ->color(fn ($state) => $state ? 'success' : 'gray'),
 
-                // Webhook Status
                 TextColumn::make('webhook_verified_at')
-                    ->label('FB Status')
+                    ->label('Facebook')
                     ->formatStateUsing(fn ($state) => $state ? 'Verified' : 'Pending')
                     ->badge()
-                    ->color(fn ($state) => $state ? 'success' : 'danger'),
+                    ->color(fn ($state) => $state ? 'success' : 'danger')
+                    ->icon(fn ($state) => $state ? 'heroicon-m-check-badge' : 'heroicon-m-clock'),
 
                 ToggleColumn::make('status')
                     ->label('Active')
@@ -413,10 +384,10 @@ class ClientResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('Visit')
+                Tables\Actions\Action::make('Visit Shop')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    // 🔥 Smart URL Logic
-                    ->url(fn (Client $record) => $record->custom_domain ? "https://{$record->custom_domain}" : url('/shop/' . $record->slug))
+                    ->color('gray')
+                    ->url(fn (Client $record) => $record->custom_domain ? "https://{$record->custom_domain}" : route('shop.show', $record->slug))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
