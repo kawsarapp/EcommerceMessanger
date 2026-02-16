@@ -13,7 +13,11 @@ protected $fillable = [
     'price', 
     'product_limit', 
     'order_limit', 
-    'ai_message_limit'
+    'ai_message_limit',
+    'description', 
+    'color', 
+    'is_featured', 
+    'is_active'
 ];
 
 public function clients()

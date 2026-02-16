@@ -7,7 +7,7 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\FacebookConnectController;
 use App\Http\Controllers\ClientSettingsController;
-
+use App\Models\Plan;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -117,3 +117,10 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::get('/settings/domain', [ClientSettingsController::class, 'domainPage'])->name('dashboard.domain');
     Route::post('/settings/domain', [ClientSettingsController::class, 'updateDomain'])->name('dashboard.domain.update');
 });
+
+
+
+Route::get('/pricing', function () {
+    $plans = Plan::where('is_active', true)->orderBy('price', 'asc')->get();
+    return view('pricing', compact('plans'));
+})->name('pricing');
