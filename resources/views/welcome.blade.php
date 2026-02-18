@@ -347,7 +347,7 @@
                                     <p class="text-2xl font-bold text-green-400">৯৬% সাশ্রয়!</p>
                                 </div>
                             </div>
-                            <a href="#pricing" class="block mt-6 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-center rounded-xl font-bold transition">
+                            <a href="https://asianhost.net/pricing" class="block mt-6 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-center rounded-xl font-bold transition">
                                 Get Started Now
                             </a>
                         </div>
@@ -437,7 +437,7 @@
                         আর দেরি করবেন না। আজই ফ্রি ট্রায়াল শুরু করুন এবং দেখুন AI কিভাবে আপনার সেল দ্বিগুণ করে।
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="#pricing" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
+                        <a href="https://asianhost.net/pricing" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
                             Get Started Free
                         </a>
                         <a href="tel:01771545972" class="bg-brand-700 text-white border border-brand-400 px-8 py-4 rounded-full font-bold text-lg hover:bg-brand-800 transition">
@@ -471,7 +471,7 @@
                     <h4 class="font-bold text-gray-900 dark:text-white mb-6">Product</h4>
                     <ul class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
                         <li><a href="#" class="hover:text-brand-500">Features</a></li>
-                        <li><a href="#" class="hover:text-brand-500">Pricing</a></li>
+                        <li><a href="https://asianhost.net/pricing" class="hover:text-brand-500">Pricing</a></li>
                         <li><a href="#" class="hover:text-brand-500">API Docs</a></li>
                         <li><a href="#" class="hover:text-brand-500">Integrations</a></li>
                     </ul>
