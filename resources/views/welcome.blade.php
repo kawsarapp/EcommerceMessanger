@@ -1,241 +1,498 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>NeuralCart · AI sales assistant</title>
-    <!-- font & tailwind (inline for portability) -->
+    <title>NeuralCart · Automate Your F-Commerce Sales</title>
+    
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700,800" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- additional micro-interactions (no alpine heavy) -->
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Instrument Sans', 'sans-serif'],
+                        bangla: ['Hind Siliguri', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff2f2',
+                            100: '#ffe1e1',
+                            500: '#F53003',
+                            600: '#d92902',
+                            900: '#1a0500',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        * { font-family: 'Instrument Sans', system-ui, sans-serif; }
-        [x-cloak] { display: none !important; } /* kept for compatibility */
+        /* Custom Styles */
         .gradient-text {
             background: linear-gradient(135deg, #F53003 0%, #FF750F 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
-        .hover-lift:hover { transform: translateY(-4px); }
-        .transition-all { transition: all 0.2s ease; }
-        /* smooth card hover */
-        .feature-card {
-            transition: transform 0.15s ease, box-shadow 0.2s;
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
-        .feature-card:hover {
-            box-shadow: 0 20px 30px -10px rgba(245, 48, 3, 0.15);
+        .dark .glass-card {
+            background: rgba(22, 22, 21, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        /* blobs animation for right side */
-        .pulse-glow {
-            animation: pulseGlow 4s infinite alternate;
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        @keyframes pulseGlow {
-            0% { opacity: 0.4; transform: scale(0.95); }
-            100% { opacity: 0.8; transform: scale(1.2); }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
         }
-        /* right card dummy elements move */
-        .mock-order {
-            background: linear-gradient(145deg, #fff2f2, #ffe8e8);
+        ::-webkit-scrollbar-thumb {
+            background: #ccc; 
+            border-radius: 4px;
         }
-        .dark .mock-order {
-            background: linear-gradient(145deg, #2a0a0a, #1D0002);
+        ::-webkit-scrollbar-thumb:hover {
+            background: #F53003; 
         }
     </style>
 </head>
-<body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] flex p-5 md:p-8 items-center justify-center min-h-screen flex-col font-['Instrument_Sans'] antialiased">
+<body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] font-sans antialiased selection:bg-brand-500 selection:text-white">
 
-    <!-- simple header – no login/register, just brand -->
-    <header class="w-full max-w-7xl mx-auto mb-8 md:mb-12 px-2">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 bg-gradient-to-br from-[#F53003] to-[#FF750F] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">NC</div>
-                <span class="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1b1b18] to-[#F53003] dark:from-white dark:to-[#FF914D]">Neural<span class="text-[#F53003] dark:text-[#FFA500]">Cart</span></span>
-            </div>
-            <!-- decorative pill – no registration, just a subtle badge -->
-            <div class="text-xs px-4 py-1.5 rounded-full bg-white/70 dark:bg-[#161615]/80 border border-[#e3e3e0] dark:border-[#3E3E3A] shadow-sm font-medium text-[#F53003] hidden sm:block">
-                 <p><a href="https://asianhost.net/pricing">⚡Pricing</a></p>
+    <header class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="#" class="flex items-center gap-2 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:rotate-12 transition-transform">N</div>
+                    <span class="text-2xl font-bold tracking-tight">Neural<span class="text-brand-500">Cart</span></span>
+                </a>
 
+                <nav class="hidden md:flex gap-8 items-center font-medium text-sm text-gray-600 dark:text-gray-300">
+                    <a href="#features" class="hover:text-brand-500 transition">Features</a>
+                    <a href="#comparison" class="hover:text-brand-500 transition">Savings Calculator</a>
+                    <a href="#pricing" class="hover:text-brand-500 transition">Pricing</a>
+                    <a href="https://asianhost.net/login" class="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 transition-all shadow-md">
+                        Login Dashboard
+                    </a>
+                </nav>
+
+                <button class="md:hidden text-2xl text-gray-600">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- main content -->
-    <main class="w-full max-w-7xl mx-auto px-3 md:px-4">
-        <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            
-            <!-- LEFT: content area (fully responsive) -->
-            <div class="space-y-7 md:space-y-8 order-2 lg:order-1">
+    <main class="pt-24">
+        
+        <section class="relative overflow-hidden pt-10 pb-20 lg:pt-20 lg:pb-32">
+            <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
 
-                <!-- tag + headline -->
-                <div class="space-y-4">
-                    <span class="inline-block px-4 py-1.5 bg-[#fff2f2] dark:bg-[#1D0002] text-[#F53003] rounded-full text-xs font-semibold uppercase tracking-wider border border-red-200 dark:border-red-900/40">
-                        🧠 Next‑Gen SaaS · বাংলায় smart
-                    </span>
-                    <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
-                        Sell Smarter with <br> 
-                        <span class="gradient-text text-5xl sm:text-6xl lg:text-7xl">AI Assistants</span>
-                    </h1>
-                    <p class="text-base sm:text-lg text-[#706f6c] dark:text-[#B0B0A8] max-w-lg leading-relaxed">
-                        সয়ংক্রিয় চ্যাটবট, স্মার্ট ইনভেন্টরি এবং পার্সোনালাইজড শপিং পেজ—সবকিছু এখন এক প্ল্যাটফর্মে। 
-                        আপনার ব্যবসা পরিচালনা করুন AI এর শক্তি দিয়ে। — <span class="italic">no login, just explore</span>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+                    
+                    <div class="space-y-8 text-center lg:text-left">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-900 text-brand-600 dark:text-brand-400 text-sm font-semibold font-bangla">
+                            <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                            বাংলাদেশে এই প্রথম - Next Gen AI Sales
+                        </div>
+                        
+                        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+                            আপনার বিজনেসকে করুন <br>
+                            <span class="gradient-text">Automated Machine</span>
+                        </h1>
+                        
+                        <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto lg:mx-0 font-bangla leading-relaxed">
+                            ২৪/৭ কাস্টমার সাপোর্ট, অটো অর্ডার কনফার্মেশন এবং নির্ভুল ইনভেন্টরি ম্যানেজমেন্ট। 
+                            মানুষ ঘুমালেও, আপনার <span class="text-brand-500 font-bold">NeuralCart AI</span> ঘুমাবে না।
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                            <a href="#pricing" class="px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-full font-bold text-lg shadow-xl shadow-brand-500/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+                                🚀 Start Free Trial <i class="fas fa-arrow-right text-sm"></i>
+                            </a>
+                            <a href="#comparison" class="px-8 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2 font-bangla">
+                                💰 খরচের হিসাব দেখুন
+                            </a>
+                        </div>
+
+                        <div class="pt-6 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-500 font-medium">
+                            <span class="flex items-center gap-1"><i class="fas fa-check text-green-500"></i> No Credit Card</span>
+                            <span class="flex items-center gap-1"><i class="fas fa-check text-green-500"></i> Instant Setup</span>
+                        </div>
+                    </div>
+
+                    <div class="relative lg:h-[600px] flex items-center justify-center animate-float">
+                        <div class="relative w-full max-w-md glass-card rounded-3xl p-6 shadow-2xl border-t border-white/50">
+                            <div class="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                        <img src="https://ui-avatars.com/api/?name=Customer&background=random" alt="User">
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-sm">Sharmin Akter</h3>
+                                        <p class="text-xs text-green-500 flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-mono text-gray-400">12:42 PM</span>
+                            </div>
+
+                            <div class="space-y-4 font-bangla text-sm">
+                                <div class="flex gap-3">
+                                    <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[80%]">
+                                        ভাইয়া, এই নীল শাড়িটার দাম কত? স্টকে আছে?
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2 text-xs text-brand-500 font-medium pl-2">
+                                    <i class="fas fa-bolt animate-pulse"></i> AI Checking Stock...
+                                </div>
+
+                                <div class="flex gap-3 justify-end">
+                                    <div class="bg-gradient-to-r from-brand-500 to-orange-500 text-white p-3 rounded-2xl rounded-tr-none max-w-[90%] shadow-lg">
+                                        জি ম্যাম! 😍 এই শাড়িটি আমাদের স্টকে আছে। <br>
+                                        দাম: ১,২৫০ টাকা। <br>
+                                        সাথে পাচ্ছেন <span class="font-bold bg-white/20 px-1 rounded">ফ্রি ডেলিভারি</span>। অর্ডার কনফার্ম করতে "Order Now" বাটনে ক্লিক করুন! 👇
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end">
+                                    <div class="bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm w-48">
+                                        <div class="h-24 bg-gray-200 rounded-lg mb-2 relative overflow-hidden">
+                                           <div class="absolute inset-0 bg-gray-300 animate-pulse"></div> 
+                                        </div>
+                                        <button class="w-full py-1.5 bg-black dark:bg-white text-white dark:text-black text-xs font-bold rounded-lg">
+                                            Confirm Order
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="absolute -right-4 top-20 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 animate-[bounce_3s_infinite]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Today's Sales</p>
+                                    <p class="text-lg font-bold">৳ ২৫,৪০০</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="absolute -left-8 bottom-32 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">AI Replied</p>
+                                    <p class="text-lg font-bold">1,240 Msgs</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-20 bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-gray-900">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-12 font-bangla">
+                    কেন ম্যানুয়াল সিস্টেমে আপনি <span class="text-red-500">পিছিয়ে পড়ছেন?</span>
+                </h2>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="p-8 rounded-3xl bg-gray-50 dark:bg-[#111] hover:bg-red-50 dark:hover:bg-red-900/10 transition duration-300 group text-left">
+                        <div class="w-14 h-14 bg-red-100 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">স্লো রেসপন্স = সেল লস</h3>
+                        <p class="text-gray-500 font-bangla leading-relaxed">
+                            আপনি যখন ঘুমাচ্ছেন বা ব্যস্ত, তখন কাস্টমার মেসেজ দিচ্ছে। ১ ঘণ্টা পর রিপ্লাই দিলে সেই কাস্টমার আর থাকে না, চলে যায় অন্য পেজে।
+                        </p>
+                    </div>
+
+                    <div class="p-8 rounded-3xl bg-gray-50 dark:bg-[#111] hover:bg-red-50 dark:hover:bg-red-900/10 transition duration-300 group text-left">
+                        <div class="w-14 h-14 bg-red-100 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">অতিরিক্ত স্টাফ খরচ</h3>
+                        <p class="text-gray-500 font-bangla leading-relaxed">
+                            ২৪ ঘণ্টা সাপোর্ট দিতে গেলে ৩ শিফটে মানুষ লাগে। বেতন, বোনাস, ইন্টারনেট খরচ মিলিয়ে আপনার প্রফিটের অর্ধেক চলে যায় স্টাফ খরচে।
+                        </p>
+                    </div>
+
+                    <div class="p-8 rounded-3xl bg-gray-50 dark:bg-[#111] hover:bg-red-50 dark:hover:bg-red-900/10 transition duration-300 group text-left">
+                        <div class="w-14 h-14 bg-red-100 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">ভুল অর্ডার ও ফ্রড</h3>
+                        <p class="text-gray-500 font-bangla leading-relaxed">
+                            মানুষের ভুলে ভুল প্রোডাক্ট ডেলিভারি হয়। এছাড়া ফেইক অর্ডার আইডেন্টিফাই করতে না পারায় ডেলিভারি চার্জ লস হয়।
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="py-24 bg-gray-900 text-white relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                <div class="absolute top-10 left-10 w-72 h-72 bg-blue-500 rounded-full blur-[100px]"></div>
+                <div class="absolute bottom-10 right-10 w-96 h-96 bg-brand-500 rounded-full blur-[120px]"></div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 relative z-10">
+                <div class="text-center mb-16">
+                    <span class="text-brand-400 font-bold tracking-wider uppercase text-sm">Real Data Analysis</span>
+                    <h2 class="text-3xl md:text-5xl font-bold mt-2 mb-6 font-bangla">ম্যানুয়াল টিম vs AI সিস্টেম</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto font-bangla text-lg">
+                        ধরি, আপনার টার্গেট প্রতিদিন **৫০০টি অর্ডার**। এই অপারেশন চালাতে আপনার খরচের পার্থক্য দেখুন।
                     </p>
                 </div>
 
-                <!-- feature cards: 2x2 grid (responsive: mobile 1 col, sm 2 col) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-                    <!-- card 1 -->
-                    <div class="feature-card p-4 bg-white dark:bg-[#161615] rounded-2xl shadow-sm border border-[#e3e3e0] dark:border-[#3E3E3A] hover:shadow-xl hover:border-[#F53003]/30 transition-all">
-                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mb-3 text-2xl">💬</div>
-                        <h3 class="font-bold text-base mb-1">AI Chatbot</h3>
-                        <p class="text-xs text-[#706f6c] dark:text-[#B0B0A8] leading-relaxed">মেসেঞ্জারে অটোমেটিক অর্ডার এবং রিপ্লাই, ২৪/৭ সক্রিয়।</p>
-                    </div>
-                    <!-- card 2 -->
-                    <div class="feature-card p-4 bg-white dark:bg-[#161615] rounded-2xl shadow-sm border border-[#e3e3e0] dark:border-[#3E3E3A] hover:shadow-xl hover:border-[#F53003]/30 transition-all">
-                        <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-xl flex items-center justify-center mb-3 text-2xl">🛒</div>
-                        <h3 class="font-bold text-base mb-1">Smart Shop</h3>
-                        <p class="text-xs text-[#706f6c] dark:text-[#B0B0A8] leading-relaxed">প্রতিটি ইউজারের জন্য আলাদা স্টোর ফ্রন্ট ও রিকমেন্ডেশন।</p>
-                    </div>
-                    <!-- card 3 -->
-                    <div class="feature-card p-4 bg-white dark:bg-[#161615] rounded-2xl shadow-sm border border-[#e3e3e0] dark:border-[#3E3E3A] hover:shadow-xl hover:border-[#F53003]/30 transition-all">
-                        <div class="w-10 h-10 bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center mb-3 text-2xl">🎤</div>
-                        <h3 class="font-bold text-base mb-1">Voice & Vision</h3>
-                        <p class="text-xs text-[#706f6c] dark:text-[#B0B0A8] leading-relaxed">AI এখন ছবি এবং ভয়েস মেসেজও বোঝে, অর্ডার করলে চলে।</p>
-                    </div>
-                    <!-- card 4 -->
-                    <div class="feature-card p-4 bg-white dark:bg-[#161615] rounded-2xl shadow-sm border border-[#e3e3e0] dark:border-[#3E3E3A] hover:shadow-xl hover:border-[#F53003]/30 transition-all">
-                        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center mb-3 text-2xl">📍</div>
-                        <h3 class="font-bold text-base mb-1">Live Tracking</h3>
-                        <p class="text-xs text-[#706f6c] dark:text-[#B0B0A8] leading-relaxed">কাস্টমার নিজেই অর্ডারের অবস্থা দেখতে পারবেリアルタイムে।</p>
-                    </div>
-                </div>
-
-                <!-- CTA group (no register links, just explore & docs) -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5 pt-2">
-                    <a href="#" class="group px-7 py-3.5 bg-[#F53003] text-white rounded-full font-semibold shadow-xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:scale-[1.03] transition inline-flex items-center gap-2 text-sm sm:text-base">
-                        🚀 Explore AI demo
-                        <svg class="w-4 h-4 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </a>
-                    <a href="#" class="flex items-center gap-2 font-semibold text-[#706f6c] dark:text-gray-300 hover:text-[#F53003] dark:hover:text-[#FF914D] transition text-sm sm:text-base group">
-                        <span>📖 API docs</span>
-                        <svg class="w-4 h-4 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </a>
-                </div>
-
-                <!-- tiny note: no login/register required -->
-                <div class="flex items-center gap-2 text-xs text-[#A1A09A] pt-2 border-t border-dashed border-[#e3e3e0] dark:border-[#3E3E3A] w-full">
-                    <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                    <span>instant preview — zero signup, full responsive</span>
-                </div>
-            </div>
-
-            <!-- RIGHT: visual (hidden on mobile, visible md:block) but with responsive improvements -->
-            <div class="relative order-1 lg:order-2 hidden md:block">
-                <!-- background glow animated -->
-                <div class="absolute -inset-6 bg-gradient-to-tr from-orange-500/20 to-red-500/20 blur-3xl rounded-full pulse-glow"></div>
-                
-                <!-- main card mockup -->
-                <div class="relative bg-white dark:bg-[#161615] rounded-[2rem] border border-[#e3e3e0] dark:border-[#3E3E3A] shadow-2xl overflow-hidden p-6 md:p-8 backdrop-blur-sm bg-white/70 dark:bg-[#161615]/90">
+                <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
                     
-                    <!-- inner content: live preview style -->
-                    <div class="space-y-6">
-                        <!-- top bar -->
-                        <div class="flex items-center gap-2">
-                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
-                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
-                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
-                            <span class="text-xs text-gray-400 ml-2 font-mono">AI dashboard · live</span>
-                        </div>
+                    <div class="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10 relative">
+                        <h3 class="text-2xl font-bold text-red-400 mb-2 flex items-center gap-3">
+                            <i class="fas fa-users"></i> Manual Human Team
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-8 border-b border-gray-700 pb-4">১৫ জন মডারেটর (৩ শিফট)</p>
 
-                        <!-- header skeleton with bengali text -->
-                        <div class="h-8 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-[#3E3E3A] dark:to-[#2b2b28] rounded-full w-2/3 flex items-center px-4 text-[10px] text-gray-500 dark:text-gray-300">
-                            আজকের অর্ডার: ১৪২টি
-                        </div>
-
-                        <!-- message bubbles (ai chatting) -->
-                        <div class="space-y-3">
-                            <div class="flex gap-2 items-start">
-                                <div class="w-6 h-6 rounded-full bg-[#F53003]/20 flex items-center justify-center text-xs">🤖</div>
-                                <div class="h-8 bg-gray-100 dark:bg-[#3E3E3A] rounded-2xl rounded-tl-none w-3/5 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300">আপনার প্রোডাক্ট প্রস্তুত</div>
+                        <div class="space-y-6 font-bangla">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">স্টাফ স্যালারি (১৫ জন)</span>
+                                <span class="font-bold text-xl">১,৫০,০০০ ৳</span>
                             </div>
-                            <div class="flex gap-2 items-start justify-end">
-                                <div class="h-8 bg-[#F53003]/10 border border-[#F53003]/30 rounded-2xl rounded-tr-none w-2/3 px-3 py-1.5 text-xs text-gray-700 dark:text-orange-100">ছবি পাঠান, আমি দেখছি 🖼️</div>
-                                <div class="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs">👤</div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">শিফট, নাস্তা ও বিল</span>
+                                <span class="font-bold text-xl">৮০,০০০ ৳</span>
+                            </div>
+                            <div class="flex justify-between items-center text-red-400">
+                                <span class="">হিউম্যান এরর (Loss)</span>
+                                <span class="font-bold text-xl">+২০,০০০ ৳</span>
                             </div>
                         </div>
 
-                        <!-- card grid mock (two boxes) -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="aspect-square bg-[#fff2f2] dark:bg-[#1D0002] rounded-xl border border-red-200 dark:border-red-900/50 flex flex-col items-center justify-center p-2 text-center">
-                                <span class="text-xs font-bold text-[#F53003]">NEW</span>
-                                <span class="text-lg font-bold">৪টি</span>
-                                <span class="text-[9px] text-gray-500">অর্ডার পেন্ডিং</span>
+                        <div class="mt-10 pt-6 border-t border-gray-700">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-sm text-gray-500 uppercase">Total Monthly Cost</p>
+                                    <p class="text-3xl font-bold text-white">৳ ২,৫০,০০০</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-500 uppercase">Yearly Loss</p>
+                                    <p class="text-xl font-bold text-red-500">৳ ৩০,০০,০০০</p>
+                                </div>
                             </div>
-                            <div class="aspect-square bg-gray-50 dark:bg-[#0a0a0a] rounded-xl border border-gray-200 dark:border-[#3E3E3A] flex flex-col items-center justify-center p-2">
-                                <span class="text-xs text-gray-500">AI 🧠</span>
-                                <span class="text-base font-semibold mt-1">ভয়েস অন</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-b from-brand-900 to-black rounded-3xl p-8 border border-brand-500/50 shadow-2xl relative overflow-hidden transform md:-translate-y-4">
+                        <div class="absolute top-0 right-0 bg-brand-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">BEST CHOICE</div>
+                        
+                        <h3 class="text-2xl font-bold text-brand-400 mb-2 flex items-center gap-3">
+                            <i class="fas fa-robot"></i> NeuralCart AI
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-8 border-b border-gray-800 pb-4">Full Automation (24/7)</p>
+
+                        <div class="space-y-6 font-bangla">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">স্যালারি ও বোনাস</span>
+                                <span class="font-bold text-xl text-green-400">০ ৳ (জিরো)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">ক্যাপাসিটি</span>
+                                <span class="font-bold text-xl">আনলিমিটেড</span>
+                            </div>
+                            <div class="flex justify-between items-center text-brand-400">
+                                <span class="">সফটওয়্যার খরচ (ফিক্সড)</span>
+                                <span class="font-bold text-xl">সামান্য*</span>
                             </div>
                         </div>
 
-                        <!-- bottom bar (like input) -->
-                        <div class="h-12 bg-[#1b1b18] dark:bg-white/90 rounded-xl w-full flex items-center px-4 text-white dark:text-black text-xs gap-2">
-                            <span class="opacity-70">⚡</span> 
-                            <span class="opacity-80">"শাড়ির ছবি দেখাও" — AI typing...</span>
+                        <div class="mt-10 pt-6 border-t border-gray-800">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-sm text-gray-500 uppercase">Total Monthly Cost</p>
+                                    <p class="text-3xl font-bold text-white">৳ ৫,০০০ - ১০,০০০</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-500 uppercase">Total Savings</p>
+                                    <p class="text-2xl font-bold text-green-400">৯৬% সাশ্রয়!</p>
+                                </div>
+                            </div>
+                            <a href="#pricing" class="block mt-6 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-center rounded-xl font-bold transition">
+                                Get Started Now
+                            </a>
                         </div>
+                    </div>
 
-                        <!-- extra small indicator (responsive: shows on mobile as fallback within card) -->
-                        <div class="text-[8px] text-center text-gray-400 dark:text-gray-500 flex justify-center items-center gap-1">
-                            <span class="inline-block w-1 h-1 bg-green-400 rounded-full"></span> realtime demo · no login wall
-                        </div>
-                    </div>
-                </div>
-
-                <!-- floating badge (decor) -->
-                <div class="absolute -bottom-3 -right-3 bg-white dark:bg-[#20201E] rounded-full px-4 py-2 shadow-lg border border-[#e3e3e0] dark:border-[#4a4a46] text-xs font-bold flex gap-1">
-                    <span class="text-[#F53003]">🇧🇩</span> বাংলা ready
-                </div>
-            </div>
-
-            <!-- mobile fallback (small card visible only on small screens) – replicates right side simply -->
-            <div class="block md:hidden order-1 mt-4 w-full">
-                <div class="relative bg-white dark:bg-[#161615] rounded-2xl border border-[#e3e3e0] dark:border-[#3E3E3A] shadow-xl overflow-hidden p-5">
-                    <div class="flex items-center gap-3 mb-3">
-                        <span class="bg-[#F53003] text-white text-xs px-3 py-1 rounded-full">⚡ AI LIVE</span>
-                        <span class="text-xs text-gray-500">order: ১৪২</span>
-                    </div>
-                    <div class="flex gap-2 text-sm">
-                        <div class="bg-red-50 dark:bg-red-950/40 p-2 rounded-xl w-1/2 text-center">
-                            <span class="text-[#F53003] font-bold">৪ pending</span>
-                        </div>
-                        <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl w-1/2 text-center text-xs">
-                            🎤 voice enabled
-                        </div>
-                    </div>
-                    <div class="mt-3 h-8 bg-black/10 dark:bg-white/10 rounded-lg flex items-center px-3 text-xs">
-                        <span class="opacity-60">🤖 "লাল জামা দেখান"</span>
-                    </div>
-                    <p class="text-[10px] text-right text-gray-400 mt-2">no login · full responsive</p>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <section id="features" class="py-24 bg-[#FDFDFC] dark:bg-[#0a0a0a]">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold mb-4 font-bangla">Core AI Features</h2>
+                    <p class="text-gray-500 dark:text-gray-400">সবকিছু এক প্ল্যাটফর্মে। আলাদা কোনো টুলের প্রয়োজন নেই।</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Instant Reply (0 Sec)</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            কাস্টমার হাই দেওয়া মাত্রই রিপ্লাই। প্রোডাক্টের দাম, সাইজ, ছবি—সব অটোমেটিক সেন্ড করবে।
+                        </p>
+                    </div>
+
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Smart Inventory</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            স্টকে পণ্য না থাকলে অর্ডার নিবে না, বরং "Restock Alert" সেট করবে। আপনার ম্যানুয়াল চেক করার দরকার নেই।
+                        </p>
+                    </div>
+
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Fraud Detection</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            যারা আগে অর্ডার করে পণ্য নেয়নি, তাদের চিনে রাখবে এবং আপনাকে সতর্ক করবে। ডেলিভারি চার্জ লস হবে না।
+                        </p>
+                    </div>
+
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Visual Search</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            কাস্টমার কোনো জামার ছবি দিলে AI সেটা দেখে আপনার স্টকের সাথে মিলিয়ে বের করে দিবে।
+                        </p>
+                    </div>
+
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 text-pink-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Human Psychology</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            রোবটের মতো নয়, মানুষের মতো কথা বলে। কাস্টমার দাম বেশি বললে কনভেন্স করে সেল ক্লোজ করে।
+                        </p>
+                    </div>
+
+                    <div class="group p-8 rounded-[2rem] bg-white dark:bg-[#161615] border border-gray-200 dark:border-[#333] hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-300">
+                        <div class="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 rounded-xl flex items-center justify-center text-xl mb-6">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 font-bangla">Daily Report</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
+                            দিন শেষে টেলিগ্রামে রিপোর্ট পাঠাবে—কত টাকা সেল হলো, কতটি অর্ডার পেন্ডিং।
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-10 px-4">
+            <div class="max-w-7xl mx-auto rounded-3xl bg-brand-500 text-white p-10 md:p-16 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div class="relative z-10">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6 font-bangla">ব্যবসা বড় করতে প্রস্তুত?</h2>
+                    <p class="text-lg opacity-90 mb-10 max-w-2xl mx-auto font-bangla">
+                        আর দেরি করবেন না। আজই ফ্রি ট্রায়াল শুরু করুন এবং দেখুন AI কিভাবে আপনার সেল দ্বিগুণ করে।
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="#pricing" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
+                            Get Started Free
+                        </a>
+                        <a href="tel:01771545972" class="bg-brand-700 text-white border border-brand-400 px-8 py-4 rounded-full font-bold text-lg hover:bg-brand-800 transition">
+                            Call Us: 01771545972
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- minimal footer (no login, just ™) -->
-    <footer class="mt-16 md:mt-24 py-6 border-t border-[#e3e3e0] dark:border-[#3E3E3A] w-full max-w-7xl mx-auto text-center text-xs text-[#706f6c] dark:text-[#A1A09A] px-3">
-        <p class="leading-relaxed">
-            © 2026 NeuralCart — AI Commerce Concept. All rights reserved.<br class="sm:hidden"> 
-            <span class="inline-block mt-1">Powered by Artificial Intelligence. <span class="text-[#F53003]">সহজ অর্ডার, সহজ বিক্রি।</span></span>
-        </p>
+    <footer class="bg-gray-50 dark:bg-[#111] pt-20 pb-10 border-t border-gray-200 dark:border-gray-800 mt-20">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-2">
+                    <a href="#" class="flex items-center gap-2 mb-6">
+                        <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold">N</div>
+                        <span class="text-xl font-bold dark:text-white">NeuralCart</span>
+                    </a>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6 font-bangla max-w-sm">
+                        বাংলাদেশের ক্ষুদ্র ও মাঝারি উদ্যোক্তাদের জন্য তৈরি #১ AI সেলস অ্যাসিস্ট্যান্ট। আমরা প্রযুক্তির মাধ্যমে আপনার ব্যবসাকে সহজ করি।
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-brand-500 hover:border-brand-500 transition"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-brand-500 hover:border-brand-500 transition"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white mb-6">Product</h4>
+                    <ul class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
+                        <li><a href="#" class="hover:text-brand-500">Features</a></li>
+                        <li><a href="#" class="hover:text-brand-500">Pricing</a></li>
+                        <li><a href="#" class="hover:text-brand-500">API Docs</a></li>
+                        <li><a href="#" class="hover:text-brand-500">Integrations</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white mb-6">Company</h4>
+                    <ul class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
+                        <li><a href="#" class="hover:text-brand-500">About Us</a></li>
+                        <li><a href="#" class="hover:text-brand-500">Contact</a></li>
+                        <li><a href="#" class="hover:text-brand-500">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-brand-500">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-gray-400 text-sm">
+                <p>&copy; 2026 NeuralCart AI. Developed by <span class="text-brand-500">Kawsar Ahmed</span>.</p>
+            </div>
+        </div>
     </footer>
 
-    <!-- tiny script for dark mode toggle (just for demo convenience) – but we keep system pref, no extra ui -->
-    <script>
-        (function() {
-            // just to ensure dark mode works with class, but system already respected.
-            // add a tiny listener? not needed — but we can add a hidden toggle? no, better keep clean.
-            console.log('✨ NeuralCart – pure responsive, no login');
-        })();
-    </script>
 </body>
 </html>
