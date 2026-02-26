@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('payment_status')->default('pending');
             
             // 🔥 NEW: Admin Note for AI
-            $table->text('admin_note')->nullable()->after('payment_status');
+            $table->text('admin_note')->nullable();
 
             $table->string('order_status')->default('processing');
             $table->timestamps();

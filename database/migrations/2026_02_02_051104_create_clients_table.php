@@ -28,11 +28,11 @@ return new class extends Migration
             $table->string('ai_model')->default('gemini-pro');
             $table->text('bot_persona')->nullable();
             
-            // 🔥 NEW: Custom Prompt for Salesman Persona
-            $table->text('custom_prompt')->nullable()->after('shop_name'); 
-            $table->text('knowledge_base')->nullable()->after('custom_prompt');
+            // Custom Prompt + Knowledge Base
+            $table->text('custom_prompt')->nullable();
+            $table->text('knowledge_base')->nullable();
 
-            // 🔥 NEW: Telegram Config (Previous Step)
+            // Telegram Config
             $table->string('telegram_bot_token')->nullable();
             $table->string('telegram_chat_id')->nullable();
             

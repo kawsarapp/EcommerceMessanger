@@ -7,7 +7,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Illuminate\Support\Str;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -57,28 +56,24 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Boot method for model events
-     */
-    protected static function booted()
-    {
-        static::created(function ($user) {
-            // নতুন ইউজার রেজিস্টার করলেই তার জন্য একটি ডিফল্ট শপ তৈরি হবে
-            \App\Models\Client::create([
-                'user_id' => $user->id,
-                'shop_name' => $user->name . "'s Shop",
-                'slug' => Str::slug($user->name . "-" . rand(100, 999)),
-                'status' => 'active',
-            ]);
-        });
-    }
-
-    /**
      * Relationship with Client
      */
     public function client()
     {
-        return $this->hasOne(\App\Models\Client::class);
+        return $this->hasOne(Client::class);
     }
 
-    
+    /**
+     * Boot method for model events
+     */
+    protected static function booted()
+    {
+        // 🛑 [BUG FIX]: ডাবল শপ তৈরি হওয়া ঠেকাতে এখান থেকে অটো-শপ ক্রিয়েট কোডটি মুছে দেওয়া হলো।
+        // এখন শুধুমাত্র CustomRegister (Filament) থেকেই শপ তৈরি হবে, 
+        // যাতে সেলার রেজিস্ট্রেশনের সময় যে নাম দিবে, ঠিক সেই নামেই ১টি মাত্র শপ তৈরি হয়।
+        
+        static::created(function ($user) {
+            // ভবিষ্যতে যদি অন্য কোনো ইউজার ইভেন্ট যুক্ত করতে চান, তবে এখানে করবেন।
+        });
+    }
 }

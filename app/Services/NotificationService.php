@@ -63,4 +63,67 @@ class NotificationService
             Log::error("Messenger Reply Failed: " . $e->getMessage());
         }
     }
+
+
+    //--------
+
+    /**
+     * ইনস্টাগ্রামে রিপ্লাই পাঠানো
+     */
+    public function sendInstagramReply($client, $recipientId, $message)
+    {
+        if (!$client || empty($client->fb_page_token)) return;
+
+        try {
+            // Instagram এর মেসেজও Page Token দিয়েই যায়, তবে Endpoint একই থাকে
+            $response = Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$client->fb_page_token}", [
+                'recipient' => ['id' => $recipientId],
+                'message' => ['text' => $message]
+            ]);
+
+            if ($response->failed()) {
+                Log::error("❌ Instagram Reply Failed: " . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error("❌ Instagram Reply Error: " . $e->getMessage());
+        }
+    }
+
+    //----------
+
+    /**
+     * Telegram Customer k AI Reply pathano
+     */
+    public function sendTelegramCustomerReply($token, $chatId, $message)
+    {
+        if (empty($token) || empty($chatId)) return;
+
+        try {
+            Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id' => $chatId,
+                'text' => $message
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("❌ Telegram Customer Reply Error: " . $e->getMessage());
+        }
+    }
+
+    //-----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
