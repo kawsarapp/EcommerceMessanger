@@ -36,6 +36,11 @@ class Order extends Model
         'payment_method',
         'transaction_id',
 
+        //---
+        'courier_name',
+        'tracking_code',
+        //---
+
         // Notes
         'customer_note',
         'admin_note', // 🔥 AI Note (Size/Color info here)

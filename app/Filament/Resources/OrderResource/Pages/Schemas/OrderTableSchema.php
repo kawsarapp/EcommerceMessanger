@@ -58,6 +58,8 @@ class OrderTableSchema
                 ->dateTime('d M, Y')
                 ->sortable(),
         ];
+
+
     }
 
     public static function filters(): array
@@ -82,6 +84,36 @@ class OrderTableSchema
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]),
+            // OrderTableSchema.php এর actions() মেথডের ভেতরে:
+            Tables\Actions\Action::make('send_to_courier')
+                ->label('Send to Courier')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn ($record) => $record->order_status === 'processing') // শুধু প্রসেসিং অর্ডারগুলো কুরিয়ারে পাঠানো যাবে
+                ->action(function ($record) {
+                    // এখানে আমরা Courier API Service কে কল করব
+                    $result = app(\App\Services\Courier\CourierIntegrationService::class)->sendParcel($record);
+                    
+                    if ($result['status'] === 'success') {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Parcel Sent to ' . ucfirst($record->client->default_courier))
+                            ->success()
+                            ->send();
+                        
+                        // স্ট্যাটাস আপডেট করে Shipped করে দেওয়া
+                        $record->update(['order_status' => 'shipped']);
+                    } else {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Courier API Error')
+                            ->body($result['message'])
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+
+
         ];
     }
 

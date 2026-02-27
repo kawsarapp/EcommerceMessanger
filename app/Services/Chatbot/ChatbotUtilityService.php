@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotUtilityService
 {
-    public function lookupOrderByPhone($clientId, $message)
+    
+
+public function lookupOrderByPhone($clientId, $message)
     {
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
@@ -16,13 +18,28 @@ class ChatbotUtilityService
         if (preg_match('/01[3-9]\d{8,9}/', $message, $matches)) {
             $phone = substr($matches[0], 0, 11);
             $order = Order::where('client_id', $clientId)->where('customer_phone', $phone)->latest()->first();
+            
             if ($order) {
                 $status = ucfirst($order->order_status);
-                return "FOUND_ORDER: অর্ডার #{$order->id}। অবস্থা: {$status}। বিল: {$order->total_amount} টাকা।";
+                
+                // 🔥 ম্যাজিক: admin_note থেকে Steadfast, Pathao এবং RedX এর ট্র্যাকিং কোড খুঁজে বের করা
+                $trackingInfo = "";
+                if (!empty($order->admin_note)) {
+                    if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $order->admin_note, $match)) {
+                        $trackingInfo = "। Steadfast Tracking Code: {$match[1]}";
+                    } elseif (preg_match('/Pathao Tracking:\s*([A-Za-z0-9\-]+)/i', $order->admin_note, $match)) {
+                        $trackingInfo = "। Pathao Tracking Code: {$match[1]}";
+                    } elseif (preg_match('/RedX Tracking:\s*([A-Za-z0-9\-]+)/i', $order->admin_note, $match)) {
+                        $trackingInfo = "। RedX Tracking Code: {$match[1]}";
+                    }
+                }
+
+                return "FOUND_ORDER: অর্ডার #{$order->id}। অবস্থা: {$status}। বিল: {$order->total_amount} টাকা{$trackingInfo}";
             }
         }
         return null;
     }
+    
 
     public function isTrackingIntent($msg) {
         $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অবস্থা', 'কবে পাব', 'tracking'];

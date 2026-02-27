@@ -6,7 +6,7 @@ use App\Models\Order;
 class ChatbotPromptService
 {
     /**
-     * 🔥 DYNAMIC PROMPT GENERATOR (Updated with Anti-Hallucination Rules)
+     * 🔥 DYNAMIC PROMPT GENERATOR (Updated with Pathao & RedX Tracking)
      */
     public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo)
     {
@@ -27,6 +27,11 @@ class ChatbotPromptService
 ৪. **OFFER & PRICE:** ইনভেন্টরিতে `price_info` চেক করো। অফার থাকলে বলো: "স্যার, এটার রেগুলার প্রাইস... কিন্তু অফারে পাচ্ছেন... টাকায়!"।
 ৫. **VIDEO & QUALITY:** কাস্টমার কোয়ালিটি দেখতে চাইলে `video` লিংক দাও।
 ৬. **LINK:** কাস্টমার লিংক চাইলে `link` ফিল্ড থেকে লিংক দিবে।
+৭. **🔥 TRACKING (Updated):** 'Current Instruction' বা 'সাম্প্রতিক অর্ডার' অংশে যদি কোনো Tracking Code পাও, তবে কুরিয়ার অনুযায়ী নিচের ট্র্যাকিং লিংকটি বানিয়ে দিবে:
+   - Steadfast হলে: `https://steadfast.com.bd/t/[TRACKING_CODE]`
+   - Pathao হলে: `https://pathao.com/bn/courier-tracking/?consignment_id=[TRACKING_CODE]`
+   - RedX হলে: `https://redx.com.bd/track-parcel/?trackingId=[TRACKING_CODE]`
+   লিংকটি দেওয়ার পর সুন্দর করে বলবে যে এই লিংকে ক্লিক করে সে তার পার্সেলের বর্তমান অবস্থা জানতে পারবে।
 
 **বর্তমান অবস্থা ও নির্দেশ (Current Instruction):**
 {{instruction}}
@@ -49,6 +54,17 @@ EOT;
         $recentOrderInfo = $recentOrder 
             ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" 
             : "কোনো সাম্প্রতিক অর্ডার নেই।";
+
+        // 🔥 অর্ডারের নোটে ট্র্যাকিং কোড থাকলে সেটাও এআইকে জানিয়ে দেওয়া (Steadfast, Pathao, RedX)
+        if ($recentOrder && !empty($recentOrder->admin_note)) {
+            if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
+                $recentOrderInfo .= "। Steadfast Tracking Code: " . $match[1];
+            } elseif (preg_match('/Pathao Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
+                $recentOrderInfo .= "। Pathao Tracking Code: " . $match[1];
+            } elseif (preg_match('/RedX Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
+                $recentOrderInfo .= "। RedX Tracking Code: " . $match[1];
+            }
+        }
 
         $tags = [
             '{{shop_name}}'       => $client->shop_name,

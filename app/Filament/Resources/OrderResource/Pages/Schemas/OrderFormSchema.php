@@ -20,7 +20,7 @@ class OrderFormSchema
         return [
             Grid::make(3)
                 ->schema([
-                    // বাম পাশের বড় অংশ (২ কলাম)
+                    // বাম পাশের বড় অংশ (২ কলাম)
                     Group::make()
                         ->schema([
                             // ১. কাস্টমার ইনফো
@@ -36,7 +36,7 @@ class OrderFormSchema
                                             ->tel()
                                             ->required(),
                                         
-                                        // ম্যানুয়াল অর্ডারের জন্য স্মার্ট ক্লায়েন্ট সিলেকশন
+                                        // ম্যানুয়াল অর্ডারের জন্য স্মার্ট ক্লায়েন্ট সিলেকশন
                                         Select::make('client_id')
                                             ->label('Shop/Merchant')
                                             ->relationship('client', 'shop_name', function (Builder $query) {
@@ -45,7 +45,7 @@ class OrderFormSchema
                                                 }
                                             })
                                             ->default(fn () => Client::where('user_id', auth()->id())->first()?->id)
-                                            ->disabled(fn () => auth()->id() !== 1) // ক্লায়েন্ট নিজে এটা বদলাতে পারবে না
+                                            ->disabled(fn () => auth()->id() !== 1) // ক্লায়েন্ট নিজে এটা বদলাতে পারবে না
                                             ->dehydrated() // ডিসেবল থাকলেও ডাটা সেভ হবে
                                             ->searchable()
                                             ->required(),
@@ -87,7 +87,8 @@ class OrderFormSchema
                                                 ->required()
                                                 ->reactive()
                                                 ->afterStateUpdated(fn ($state, $set) => 
-                                                    $set('unit_price', Product::find($state)?->sale_price ?? 0)
+                                                    // 🔥 ডাটাবেসের কলাম অনুযায়ী unit_price কে price করা হলো
+                                                    $set('price', Product::find($state)?->sale_price ?? 0)
                                                 ),
                                                 
                                             TextInput::make('quantity')
@@ -96,7 +97,8 @@ class OrderFormSchema
                                                 ->required()
                                                 ->reactive(),
                                                 
-                                            TextInput::make('unit_price')
+                                            // 🔥 ডাটাবেসের কলাম অনুযায়ী ফিল্ডের নাম price করা হলো
+                                            TextInput::make('price')
                                                 ->label('Unit Price')
                                                 ->numeric()
                                                 ->prefix('৳')

@@ -46,3 +46,7 @@ Route::post('/telegram/webhook/{token}', [TelegramWebhookController::class, 'han
 Route::prefix('v1')->group(function () {
     // এখানে আপনার অন্যান্য API এন্ডপয়েন্ট রাখতে পারেন
 });
+
+
+// Courier Webhook Route (Multi-tenant)
+Route::post('/webhook/courier/{client_id}/{courier_name}', [\App\Http\Controllers\CourierWebhookController::class, 'handle'])->name('webhook.courier');

@@ -73,8 +73,35 @@ class ClientFormSchema
                         // 🚚 Tab 5: Logistics
                         Tabs\Tab::make('Logistics')->icon('heroicon-m-truck')->schema(self::logistics()),
 
+                        // 📦 Tab: Courier API Integrations
+                        Tabs\Tab::make('Courier API')
+                            ->icon('heroicon-m-archive-box-arrow-down')
+                            ->schema(self::courierApi()),
+
                         // 🔗 Tab 6: Omnichannel & Integrations
                         Tabs\Tab::make('Integrations & Social')->icon('heroicon-m-share')->schema(self::integrations()),
+
+                        // 💬 Tab 7: Inbox Automation (Fixed Structure)
+                        Tabs\Tab::make('Inbox Automation')
+                            ->icon('heroicon-m-chat-bubble-left-right')
+                            ->schema([
+                                \Filament\Forms\Components\Section::make('AI Comment & Inbox Automation')
+                                    ->description('ফেসবুক পেইজের কমেন্টে অটো-রিপ্লাই এবং ইনবক্স মেসেজ সেটআপ করুন।')
+                                    ->icon('heroicon-o-chat-bubble-left-right')
+                                    ->schema([
+                                        \Filament\Forms\Components\Grid::make(2)->schema([
+                                            \Filament\Forms\Components\Toggle::make('auto_comment_reply')
+                                                ->label('Auto Comment Reply')
+                                                ->helperText('AI নিজে থেকে কাস্টমারের কমেন্টের নিচে রিপ্লাই দিবে।')
+                                                ->default(true),
+
+                                            \Filament\Forms\Components\Toggle::make('auto_private_reply')
+                                                ->label('Auto Inbox Message (PM)')
+                                                ->helperText('কমেন্টকারীকে AI সরাসরি মেসেঞ্জারে মেসেজ পাঠাবে।')
+                                                ->default(true),
+                                        ]),
+                                    ]),
+                            ]),
                     ])
                     ->columnSpanFull(),
             ])->columnSpanFull(),
@@ -85,7 +112,7 @@ class ClientFormSchema
         return [
             Hidden::make('user_id')->default(auth()->id()), 
             Section::make('Identity')->schema([
-                TextInput::make('shop_name')->label('Shop Name')->placeholder('E.g. Fashion BD')->required()->live(onBlur: true)->maxLength(255)
+                TextInput::make('shop_name')->label('Shop Name')->placeholder('Eg. Fashion BD')->required()->live(onBlur: true)->maxLength(255)
                     ->afterStateUpdated(fn ($state, callable $set, $operation) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 TextInput::make('slug')->label('Shop URL')->prefix(config('app.url') . '/shop/')->required()->unique(Client::class, 'slug', ignoreRecord: true)
                     ->disabled(fn ($operation) => $operation !== 'create')->dehydrated()->helperText('Unique link for your shop.'),
@@ -152,6 +179,95 @@ class ClientFormSchema
             ])->columns(2),
         ];
     }
+
+
+
+    //---Courier
+    private static function courierApi(): array {
+        return [
+
+        // 📖 HELP NOTE & WEBHOOK URL (সবার জন্য আলাদা)
+            \Filament\Forms\Components\Section::make('📖 কুরিয়ার এপিআই নির্দেশিকা (Help Note)')
+                ->description('অটোমেটিক পার্সেল এন্ট্রি এবং স্ট্যাটাস আপডেটের জন্য নিচের নিয়মগুলো মেনে চলুন।')
+                ->schema([
+                    \Filament\Forms\Components\Placeholder::make('instruction')
+                        ->label('')
+                        ->content(new \Illuminate\Support\HtmlString('
+                            <ul class="list-disc pl-5 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                                <li><strong>API Key:</strong> আপনার কুরিয়ার প্যানেল (Steadfast/Pathao) থেকে API Key কপি করে নিচের ফর্মে বসান।</li>
+                                <li><strong>অটো স্ট্যাটাস আপডেট:</strong> কুরিয়ার যখন পার্সেল ডেলিভারি করবে, ড্যাশবোর্ডে স্ট্যাটাস নিজে থেকেই আপডেট হওয়ার জন্য নিচের Webhook URL টি আপনার কুরিয়ার প্যানেলের Webhook সেটিংসে বসান।</li>
+                                <li class="text-red-500"><strong>সতর্কতা:</strong> আপনার Webhook URL টি কাউকে শেয়ার করবেন না। এটি শুধু আপনার দোকানের জন্যই তৈরি করা হয়েছে।</li>
+                            </ul>
+                        ')),
+                    
+                    // ডাইনামিক ওয়েবহুক ইউআরএল (প্রত্যেক সেলারের আলাদা)
+                    \Filament\Forms\Components\TextInput::make('webhook_url_display')
+                        ->label('Your Unique Steadfast Webhook URL')
+                        ->default(fn ($record) => $record ? url("/api/webhook/courier/{$record->id}/steadfast") : 'দোকান সেভ করার পর URL তৈরি হবে')
+                        ->readOnly()
+                        ->suffixAction(
+                            \Filament\Forms\Components\Actions\Action::make('copy')
+                                ->icon('heroicon-m-clipboard')
+                                ->action(fn ($livewire, $state) => $livewire->js("window.navigator.clipboard.writeText('{$state}')"))
+                        ),
+                ]),
+
+
+
+            \Filament\Forms\Components\Section::make('Default Courier')
+                ->description('অর্ডার শিপমেন্টের জন্য ডিফল্ট কুরিয়ার সিলেক্ট করুন।')
+                ->schema([
+                    \Filament\Forms\Components\Select::make('default_courier')
+                        ->options([
+                            'steadfast' => 'Steadfast Courier',
+                            'pathao' => 'Pathao Courier',
+                            'redx' => 'RedX Courier',
+                        ])
+                        ->placeholder('Select your preferred courier')
+                        ->columnSpanFull(),
+                ]),
+
+            \Filament\Forms\Components\Section::make('Steadfast Setup')
+                ->collapsed()
+                ->icon('heroicon-o-key')
+                ->schema([
+                    \Filament\Forms\Components\TextInput::make('steadfast_api_key')
+                        ->label('Api Key')
+                        ->password()
+                        ->revealable(),
+                    \Filament\Forms\Components\TextInput::make('steadfast_secret_key')
+                        ->label('Secret Key')
+                        ->password()
+                        ->revealable(),
+                ])->columns(2),
+
+            \Filament\Forms\Components\Section::make('Pathao Setup')
+                ->collapsed()
+                ->icon('heroicon-o-key')
+                ->schema([
+                    \Filament\Forms\Components\TextInput::make('pathao_api_key')
+                        ->label('Client ID / API Key')
+                        ->password()
+                        ->revealable(),
+                    \Filament\Forms\Components\TextInput::make('pathao_store_id')
+                        ->label('Store ID'),
+                ])->columns(2),
+
+
+                \Filament\Forms\Components\Section::make('RedX Setup')
+                ->collapsed()
+                ->icon('heroicon-o-key')
+                ->schema([
+                    \Filament\Forms\Components\TextInput::make('redx_api_token')
+                        ->label('API Access Token')
+                        ->password()
+                        ->revealable()
+                        ->columnSpanFull(),
+                ]),
+        
+        ];
+    }
+    //---
 
     private static function integrations(): array {
         return [

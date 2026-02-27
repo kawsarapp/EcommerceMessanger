@@ -56,6 +56,26 @@ class Client extends Model
         'social_youtube',
         'knowledge_base',
         'custom_prompt',
+
+        //-- for courier
+
+        'default_courier',
+        'steadfast_api_key',
+        'steadfast_secret_key',
+        'pathao_api_key',
+        'pathao_store_id',
+        'redx_api_token',
+
+        //--end
+
+        //---
+        'auto_comment_reply',
+        'auto_private_reply',
+        //---
+
+
+
+
     ];
 
     /**

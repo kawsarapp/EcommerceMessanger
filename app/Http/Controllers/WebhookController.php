@@ -11,7 +11,6 @@ class WebhookController extends Controller
 {
     /**
      * 1. Facebook Webhook Verification
-     * (ফেসবুক যখন প্রথমবার আপনার ইউআরএল ভেরিফাই করবে)
      */
     public function verify(Request $request)
     {
@@ -35,7 +34,7 @@ class WebhookController extends Controller
     }
 
     /**
-     * 2. Handle Incoming Messages (Clean & Short Controller)
+     * 2. Handle Incoming Messages & Comments
      */
     public function handle(Request $request, MessengerWebhookService $messengerService)
     {
@@ -46,8 +45,50 @@ class WebhookController extends Controller
             return app(InstagramWebhookController::class)->process($request);
         }
 
-        // 2. FACEBOOK MESSENGER LOGIC (Passed to Service)
+        // 2. FACEBOOK MESSENGER & COMMENTS LOGIC
         if (($data['object'] ?? '') === 'page') {
+            
+            $entries = $data['entry'] ?? [];
+
+            foreach ($entries as $entry) {
+                $pageId = $entry['id'] ?? null;
+
+                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
+                if (isset($entry['changes'])) {
+                    $client = Client::where('page_id', $pageId)->first();
+                    
+                    if ($client) {
+                        foreach ($entry['changes'] as $change) {
+                            if (
+                                isset($change['field']) && $change['field'] === 'feed' &&
+                                isset($change['value']['item']) && $change['value']['item'] === 'comment' &&
+                                isset($change['value']['verb']) && $change['value']['verb'] === 'add'
+                            ) {
+                                $commentData = $change['value'];
+                                $senderId = $commentData['from']['id'] ?? null;
+                                
+                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
+                                if ($senderId && $senderId != $pageId) {
+                                    $commentId = $commentData['comment_id'];
+                                    $commentText = $commentData['message'];
+                                    $senderName = $commentData['from']['name'] ?? 'Customer';
+
+                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
+                                    app(\App\Services\FacebookCommentService::class)->handleComment(
+                                        $client->id, 
+                                        $commentId, 
+                                        $commentText, 
+                                        $senderId, 
+                                        $senderName
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // আপনার আগের ইনবক্স মেসেজ হ্যান্ডেল করার সার্ভিস (এটি entry -> messaging এর জন্য কাজ করবে)
             return $messengerService->processPayload($request);
         }
 
