@@ -29,23 +29,17 @@ class Client extends Model
         'fb_page_id', 
         'fb_page_token', 
         'fb_verify_token',
-        'fb_app_secret', // 🔥 Security Upgrade
+        'fb_app_secret',
         'webhook_verified_at',
 
-        // Knowledge for AI
-        'knowledge_base',
-
-        // 🔥 AI & Persona Settings (Salesman Feature)
+        // Knowledge for AI & Persona Settings
         'is_ai_enabled',
         'ai_model',
         'bot_persona',
-        'custom_prompt', // ✅ Dynamic Prompt
+        'knowledge_base',
+        'custom_prompt',
 
-        // 🔥 Telegram Settings (SaaS Feature)
-        'telegram_bot_token',
-        'telegram_chat_id',
-
-        //New logo banner social links
+        // Appearance & Social links
         'logo',
         'banner',
         'primary_color',
@@ -54,11 +48,8 @@ class Client extends Model
         'social_facebook',
         'social_instagram',
         'social_youtube',
-        'knowledge_base',
-        'custom_prompt',
 
-        //-- for courier
-
+        // Courier API Settings
         'default_courier',
         'steadfast_api_key',
         'steadfast_secret_key',
@@ -66,18 +57,20 @@ class Client extends Model
         'pathao_store_id',
         'redx_api_token',
 
-        //--end
-
-        //---
+        // AI Automation Toggles
         'auto_comment_reply',
         'auto_private_reply',
-        //---
+        'auto_status_update_msg', // ✅ এখানে কমা দেওয়া হয়েছে
 
-        'auto_status_update_msg'
+        // Instagram Settings
+        'is_instagram_active',
+        'instagram_page_id',
+        'ig_account_id',
 
-
-
-
+        // Telegram Settings
+        'is_telegram_active',
+        'telegram_bot_token',
+        'telegram_chat_id',
     ];
 
     /**
