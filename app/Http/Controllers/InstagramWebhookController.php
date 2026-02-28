@@ -34,10 +34,10 @@ class InstagramWebhookController extends Controller
         foreach ($data['entry'] as $entry) {
             $igAccountId = $entry['id']; 
             
-            // ক্লায়েন্ট বের করা
+            // ক্লায়েন্ট বের করা (page_id এর বদলে fb_page_id করা হয়েছে)
             $client = Client::where('instagram_page_id', $igAccountId)
                             ->orWhere('ig_account_id', $igAccountId)
-                            ->orWhere('page_id', $igAccountId)
+                            ->orWhere('fb_page_id', $igAccountId)
                             ->first();
 
             if (!$client) {
