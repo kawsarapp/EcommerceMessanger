@@ -14,6 +14,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+
+    \App\Models\Order::observe(\App\Observers\OrderObserver::class);
         // লজিক: যদি প্রোডাকশন এনভায়রনমেন্ট হয় অথবা URL এর মধ্যে 'ngrok' শব্দটি থাকে
         if ($this->app->environment('production') || str_contains(config('app.url'), 'ngrok')) {
             

@@ -116,17 +116,20 @@ class ChatbotService
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
 
+            // 🔥 HISTORY RESET LOGIC (Prevent Loop/Confusion)
             if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
                 $newProduct = $this->findProductSystematically($clientId, $userMessage);
+                
                 if ($newProduct && $newProduct->id != ($session->customer_info['product_id'] ?? null)) {
+                    // কাস্টমার নতুন প্রোডাক্ট সিলেক্ট করেছে, তাই আগের হিস্ট্রি এবং ভেরিয়েন্ট মুছে ফেলা হচ্ছে
                     $session->update([
-                        'customer_info' => array_merge($session->customer_info, ['step' => 'start', 'product_id' => $newProduct->id])
+                        'customer_info' => ['step' => 'start', 'product_id' => $newProduct->id, 'history' => [], 'variant' => []]
                     ]);
                     $stepName = 'start'; 
                 } elseif (!$newProduct) {
                     foreach (['menu', 'start', 'offer', 'ki ace', 'home', 'suru'] as $word) {
                         if (stripos($userMessage, $word) !== false) {
-                            $session->update(['customer_info' => array_merge($session->customer_info, ['step' => 'start'])]);
+                            $session->update(['customer_info' => ['step' => 'start', 'history' => []]]); // Reset
                             $stepName = 'start';
                             break;
                         }
@@ -161,17 +164,21 @@ class ChatbotService
             $inventoryData = $this->inventory->getFormattedInventory($client, $userMessage);
             $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId);
             
+            // 🔥 এখানে $stepName পাস করা হয়েছে
             $systemPrompt = $this->promptService->generateDynamicSystemPrompt(
                 $client, $instruction, $contextData, $orderHistory, $inventoryData, 
                 now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Sir/Ma\'am', 
                 $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", 
-                "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk"
+                "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk",
+                $stepName 
             );
             
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             
             $history = $session->customer_info['history'] ?? [];
-            foreach (array_slice($history, -6) as $chat) {
+            
+            // 🔥 AI যেন লুপে না পড়ে, তাই শুধুমাত্র শেষের ৪টি মেসেজ পাঠানো হচ্ছে (আগে ৬টি ছিল)
+            foreach (array_slice($history, -20) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
@@ -186,7 +193,9 @@ class ChatbotService
             if (!$aiResponse) return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
-            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -20)])]);
+            
+            // DB-তেও মাত্র ১০টি মেসেজ সেভ হবে (আগে ২০টি ছিল), যাতে মেমোরি ক্লিয়ার থাকে
+            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -50)])]);
 
             return $aiResponse;
         });

@@ -73,6 +73,8 @@ class Client extends Model
         'auto_private_reply',
         //---
 
+        'auto_status_update_msg'
+
 
 
 
