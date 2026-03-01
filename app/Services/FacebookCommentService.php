@@ -68,18 +68,37 @@ class FacebookCommentService
         }
     }
 
+    
+   // private function replyToComment($commentId, $message, $token)
+    //{
+     //   $response = Http::post("https://graph.facebook.com/v24.0/{$commentId}/comments", [
+     //       'message' => $message,
+     //       'access_token' => $token
+     //   ]);
+
+     //   if ($response->successful()) {
+     //       Log::info("✅ Replied to comment: {$commentId}");
+      //  } else {
+       //     // ফেসবুকের আসল এররটি লগে সেভ হবে
+       //     Log::error("❌ Failed to reply to comment: {$commentId}. Error: " . $response->body());
+       // }
+    //}
+
+
     private function replyToComment($commentId, $message, $token)
     {
+        // ডাটাবেসের টোকেন বাদ দিয়ে সরাসরি আসল টোকেনটি এখানে বসান
+        $realToken = "EAAW6iDsWtMgBQZBgfC4jyfvIZAzcCnc498SnVoGsQOXaKsVmH3R0N4c3ZCzALo5WE2BiMaM59nC5vmGl2s44bEbAw948fExbojew6cpQ4FHyqORkdVKt6baz3G7gK6wLpiuL1ZBpx3p8DKgZAQuUs9E4JDpsTLLjmyUG2Pt2dZAY3aUXfAItXTxucqAsv7G7VrleQy9TRHg4AwgO0ZBbjbZA"; // টার্মিনালে কাজ করা টোকেনটি দিন
+        
         $response = Http::post("https://graph.facebook.com/v24.0/{$commentId}/comments", [
             'message' => $message,
-            'access_token' => $token
+            'access_token' => $realToken
         ]);
 
         if ($response->successful()) {
             Log::info("✅ Replied to comment: {$commentId}");
         } else {
-            // ফেসবুকের আসল এররটি লগে সেভ হবে
-            Log::error("❌ Failed to reply to comment: {$commentId}. Error: " . $response->body());
+            Log::error("❌ Failed to reply. Error: " . $response->body());
         }
     }
 
