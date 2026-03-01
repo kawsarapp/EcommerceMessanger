@@ -25,13 +25,13 @@ class FacebookCommentService
             return;
         }
 
-        // AI-কে দিয়ে কমেন্টের উত্তর এবং ইনবক্স মেসেজ বানানো
+        // AI-কে দিয়ে কমেন্টের উত্তর এবং ইনবক্স মেসেজ বানানো
         $messages = [
             [
                 'role' => 'system', 
                 'content' => "তুমি {$client->shop_name} এর স্মার্ট সেলস এক্সিকিউটিভ। একজন কাস্টমার (নাম: {$senderName}) তোমার ফেসবুক পোস্টে কমেন্ট করেছে: '{$commentText}'। 
                 তুমি তাকে দুটি রিপ্লাই দিবে:
-                ১. কমেন্টের রিপ্লাই (খুব ছোট, ১ লাইনে। যেমন: 'ইনবক্সে চেক করুন' বা 'বিস্তারিত ইনবক্সে দিয়েছি')।
+                ১. কমেন্টের রিপ্লাই (খুব ছোট, ১ লাইনে। যেমন: 'ইনবক্সে চেক করুন' বা 'বিস্তারিত ইনবক্সে দিয়েছি')।
                 ২. প্রাইভেট মেসেজ (ইনবক্সে বিস্তারিত উত্তর দিবে)।
                 
                 তোমার উত্তর ঠিক নিচের ফরম্যাটে দিবে:
@@ -70,19 +70,31 @@ class FacebookCommentService
 
     private function replyToComment($commentId, $message, $token)
     {
-        Http::post("https://graph.facebook.com/v18.0/{$commentId}/comments", [
+        $response = Http::post("https://graph.facebook.com/v24.0/{$commentId}/comments", [
             'message' => $message,
             'access_token' => $token
         ]);
-        Log::info("✅ Replied to comment: {$commentId}");
+
+        if ($response->successful()) {
+            Log::info("✅ Replied to comment: {$commentId}");
+        } else {
+            // ফেসবুকের আসল এররটি লগে সেভ হবে
+            Log::error("❌ Failed to reply to comment: {$commentId}. Error: " . $response->body());
+        }
     }
 
     private function sendPrivateReply($commentId, $message, $token)
     {
-        Http::post("https://graph.facebook.com/v18.0/{$commentId}/private_replies", [
+        $response = Http::post("https://graph.facebook.com/v24.0/{$commentId}/private_replies", [
             'message' => $message,
             'access_token' => $token
         ]);
-        Log::info("📩 Sent Private Message for comment: {$commentId}");
+
+        if ($response->successful()) {
+            Log::info("📩 Sent Private Message for comment: {$commentId}");
+        } else {
+            // ফেসবুকের আসল এররটি লগে সেভ হবে
+            Log::error("❌ Failed to send private message: {$commentId}. Error: " . $response->body());
+        }
     }
 }
