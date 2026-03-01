@@ -53,9 +53,10 @@ class WebhookController extends Controller
             foreach ($entries as $entry) {
                 $pageId = $entry['id'] ?? null;
 
-                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
+                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
                 if (isset($entry['changes'])) {
-                    $client = Client::where('page_id', $pageId)->first();
+                    // 🔥 page_id এর বদলে fb_page_id করা হয়েছে
+                    $client = Client::where('fb_page_id', $pageId)->first();
                     
                     if ($client) {
                         foreach ($entry['changes'] as $change) {
@@ -67,13 +68,13 @@ class WebhookController extends Controller
                                 $commentData = $change['value'];
                                 $senderId = $commentData['from']['id'] ?? null;
                                 
-                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
+                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];
                                     $senderName = $commentData['from']['name'] ?? 'Customer';
 
-                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
+                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
                                     app(\App\Services\FacebookCommentService::class)->handleComment(
                                         $client->id, 
                                         $commentId, 
