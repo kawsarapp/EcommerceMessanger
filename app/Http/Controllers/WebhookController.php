@@ -40,9 +40,6 @@ class WebhookController extends Controller
     {
         $data = $request->all();
 
-        // 🔴 এই লাইনটি আগেরবার বাদ পড়েছিল! এখন আবার লগ জেনারেট হবে
-        Log::info("📸 Incoming Facebook Webhook Payload", $data);
-
         // 1. OMNICHANNEL ROUTING (Instagram)
         if (($data['object'] ?? '') === 'instagram') {
             return app(InstagramWebhookController::class)->process($request);
@@ -52,14 +49,13 @@ class WebhookController extends Controller
         if (($data['object'] ?? '') === 'page') {
             
             $entries = $data['entry'] ?? [];
-            $hasMessaging = false; // ইনবক্স মেসেজ ট্র্যাক করার জন্য
 
             foreach ($entries as $entry) {
                 $pageId = $entry['id'] ?? null;
 
-                // 💬 কমেন্ট রিসিভ করার লজিক (যেহেতু কমেন্ট কাজ করছে, এটা এভাবেই থাক)
+                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
                 if (isset($entry['changes'])) {
-                    $client = Client::where('fb_page_id', $pageId)->first();
+                    $client = Client::where('page_id', $pageId)->first();
                     
                     if ($client) {
                         foreach ($entry['changes'] as $change) {
@@ -71,11 +67,13 @@ class WebhookController extends Controller
                                 $commentData = $change['value'];
                                 $senderId = $commentData['from']['id'] ?? null;
                                 
+                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];
                                     $senderName = $commentData['from']['name'] ?? 'Customer';
 
+                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
                                     app(\App\Services\FacebookCommentService::class)->handleComment(
                                         $client->id, 
                                         $commentId, 
@@ -88,18 +86,10 @@ class WebhookController extends Controller
                         }
                     }
                 }
-
-                // ✉️ ইনবক্স মেসেজ আছে কিনা চেক করা (messaging)
-                if (isset($entry['messaging'])) {
-                    $hasMessaging = true;
-                }
             }
 
-            // শুধুমাত্র যদি ইনবক্স মেসেজ থাকে, তবেই MessengerWebhookService কল হবে
-            if ($hasMessaging) {
-                Log::info("📨 Inbox Message Detected! Forwarding to MessengerWebhookService...");
-                $messengerService->processPayload($request);
-            }
+            // আপনার আগের ইনবক্স মেসেজ হ্যান্ডেল করার সার্ভিস (এটি entry -> messaging এর জন্য কাজ করবে)
+            return $messengerService->processPayload($request);
         }
 
         return response('EVENT_RECEIVED', 200);
