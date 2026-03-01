@@ -22,7 +22,6 @@ class WebhookController extends Controller
 
         if ($mode === 'subscribe' && $token) {
             $client = Client::where('fb_verify_token', $token)->first();
-            
             if ($client) {
                 $client->update(['webhook_verified_at' => now()]);
                 Log::info("✅ Webhook Verified for Client ID: " . $client->id);
@@ -40,9 +39,6 @@ class WebhookController extends Controller
     public function handle(Request $request, MessengerWebhookService $messengerService)
     {
         $data = $request->all();
-        
-        // ইনকামিং পে-লোড লগে দেখার জন্য
-        Log::info("📸 Incoming Facebook Webhook Payload", $data);
 
         // 1. OMNICHANNEL ROUTING (Instagram)
         if (($data['object'] ?? '') === 'instagram') {
@@ -53,20 +49,16 @@ class WebhookController extends Controller
         if (($data['object'] ?? '') === 'page') {
             
             $entries = $data['entry'] ?? [];
-            $hasMessaging = false; // ইনবক্স মেসেজ ট্র্যাক করার জন্য
 
             foreach ($entries as $entry) {
                 $pageId = $entry['id'] ?? null;
 
-                if (!$pageId) continue; // Page ID না থাকলে স্কিপ করবে
-
-                // 💬 কমেন্ট রিসিভ করার লজিক (changes)
+                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
                 if (isset($entry['changes'])) {
-                    $client = Client::where('fb_page_id', $pageId)->first();
+                    $client = Client::where('page_id', $pageId)->first();
                     
                     if ($client) {
                         foreach ($entry['changes'] as $change) {
-                            // শুধুমাত্র কমেন্ট অ্যাড হলে প্রসেস করবে (রিঅ্যাকশন বা অন্য কিছু ইগনোর করবে)
                             if (
                                 isset($change['field']) && $change['field'] === 'feed' &&
                                 isset($change['value']['item']) && $change['value']['item'] === 'comment' &&
@@ -75,15 +67,13 @@ class WebhookController extends Controller
                                 $commentData = $change['value'];
                                 $senderId = $commentData['from']['id'] ?? null;
                                 
-                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
+                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];
                                     $senderName = $commentData['from']['name'] ?? 'Customer';
 
-                                    Log::info("💬 Valid Facebook Comment Detected from: {$senderName}");
-
-                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
+                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
                                     app(\App\Services\FacebookCommentService::class)->handleComment(
                                         $client->id, 
                                         $commentId, 
@@ -94,25 +84,14 @@ class WebhookController extends Controller
                                 }
                             }
                         }
-                    } else {
-                        Log::warning("❌ Facebook Comment Client not found for fb_page_id: {$pageId}");
                     }
                 }
-
-                // ✉️ ইনবক্স মেসেজ আছে কিনা চেক করা (messaging)
-                if (isset($entry['messaging'])) {
-                    $hasMessaging = true;
-                }
             }
 
-            // শুধুমাত্র যদি ইনবক্স মেসেজ থাকে, তবেই MessengerWebhookService কল হবে
-            if ($hasMessaging) {
-                // এখানে return তুলে দেওয়া হয়েছে, যাতে মেসেজ প্রসেস করে শেষে 200 OK পাঠাতে পারে
-                $messengerService->processPayload($request);
-            }
+            // আপনার আগের ইনবক্স মেসেজ হ্যান্ডেল করার সার্ভিস (এটি entry -> messaging এর জন্য কাজ করবে)
+            return $messengerService->processPayload($request);
         }
 
-        // ফেসবুককে সবসময় 200 OK পাঠাতে হবে, নাহলে ফেসবুক বারবার রিকোয়েস্ট পাঠাবে
         return response('EVENT_RECEIVED', 200);
     }
 }
