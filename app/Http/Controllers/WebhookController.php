@@ -49,13 +49,15 @@ class WebhookController extends Controller
         if (($data['object'] ?? '') === 'page') {
             
             $entries = $data['entry'] ?? [];
+            $hasMessaging = false; // ইনবক্স মেসেজ ট্র্যাক করার জন্য
 
             foreach ($entries as $entry) {
                 $pageId = $entry['id'] ?? null;
 
-                // 💬 [NEW]: কমেন্ট রিসিভ করার লজিক (ফেসবুক কমেন্ট changes এর ভেতরে পাঠায়)
+                // 💬 কমেন্ট রিসিভ করার লজিক
                 if (isset($entry['changes'])) {
-                    $client = Client::where('page_id', $pageId)->first();
+                    // 🟢 সমাধান: page_id এর বদলে fb_page_id করা হয়েছে
+                    $client = Client::where('fb_page_id', $pageId)->first();
                     
                     if ($client) {
                         foreach ($entry['changes'] as $change) {
@@ -67,13 +69,13 @@ class WebhookController extends Controller
                                 $commentData = $change['value'];
                                 $senderId = $commentData['from']['id'] ?? null;
                                 
-                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
+                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];
                                     $senderName = $commentData['from']['name'] ?? 'Customer';
 
-                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
+                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
                                     app(\App\Services\FacebookCommentService::class)->handleComment(
                                         $client->id, 
                                         $commentId, 
@@ -84,12 +86,21 @@ class WebhookController extends Controller
                                 }
                             }
                         }
+                    } else {
+                        Log::warning("❌ Facebook Comment Client not found for fb_page_id: {$pageId}");
                     }
+                }
+
+                // ✉️ ইনবক্স মেসেজ আছে কিনা চেক করা (messaging)
+                if (isset($entry['messaging'])) {
+                    $hasMessaging = true;
                 }
             }
 
-            // আপনার আগের ইনবক্স মেসেজ হ্যান্ডেল করার সার্ভিস (এটি entry -> messaging এর জন্য কাজ করবে)
-            return $messengerService->processPayload($request);
+            // শুধুমাত্র যদি ইনবক্স মেসেজ থাকে, তবেই MessengerWebhookService কল হবে
+            if ($hasMessaging) {
+                $messengerService->processPayload($request);
+            }
         }
 
         return response('EVENT_RECEIVED', 200);
