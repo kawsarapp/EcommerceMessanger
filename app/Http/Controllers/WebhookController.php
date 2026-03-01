@@ -40,6 +40,9 @@ class WebhookController extends Controller
     {
         $data = $request->all();
 
+        // 🔴 এই লাইনটি আগেরবার বাদ পড়েছিল! এখন আবার লগ জেনারেট হবে
+        Log::info("📸 Incoming Facebook Webhook Payload", $data);
+
         // 1. OMNICHANNEL ROUTING (Instagram)
         if (($data['object'] ?? '') === 'instagram') {
             return app(InstagramWebhookController::class)->process($request);
@@ -54,9 +57,8 @@ class WebhookController extends Controller
             foreach ($entries as $entry) {
                 $pageId = $entry['id'] ?? null;
 
-                // 💬 কমেন্ট রিসিভ করার লজিক
+                // 💬 কমেন্ট রিসিভ করার লজিক (যেহেতু কমেন্ট কাজ করছে, এটা এভাবেই থাক)
                 if (isset($entry['changes'])) {
-                    // 🟢 সমাধান: page_id এর বদলে fb_page_id করা হয়েছে
                     $client = Client::where('fb_page_id', $pageId)->first();
                     
                     if ($client) {
@@ -69,13 +71,11 @@ class WebhookController extends Controller
                                 $commentData = $change['value'];
                                 $senderId = $commentData['from']['id'] ?? null;
                                 
-                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];
                                     $senderName = $commentData['from']['name'] ?? 'Customer';
 
-                                    // FacebookCommentService এ ডাটা পাঠিয়ে দেওয়া
                                     app(\App\Services\FacebookCommentService::class)->handleComment(
                                         $client->id, 
                                         $commentId, 
@@ -86,8 +86,6 @@ class WebhookController extends Controller
                                 }
                             }
                         }
-                    } else {
-                        Log::warning("❌ Facebook Comment Client not found for fb_page_id: {$pageId}");
                     }
                 }
 
@@ -99,6 +97,7 @@ class WebhookController extends Controller
 
             // শুধুমাত্র যদি ইনবক্স মেসেজ থাকে, তবেই MessengerWebhookService কল হবে
             if ($hasMessaging) {
+                Log::info("📨 Inbox Message Detected! Forwarding to MessengerWebhookService...");
                 $messengerService->processPayload($request);
             }
         }
