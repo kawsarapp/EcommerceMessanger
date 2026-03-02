@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Client;
+use App\Models\SocialComment;
 use App\Services\Chatbot\ChatbotUtilityService;
 
 class FacebookCommentService
@@ -18,25 +19,40 @@ class FacebookCommentService
 
     public function handleComment($clientId, $commentId, $commentText, $senderId, $senderName)
     {
+        // ডুপ্লিকেট কমেন্ট চেক (ফেসবুক অনেক সময় একই ওয়েবহুক ২ বার পাঠায়)
+        $existing = SocialComment::where('comment_id', $commentId)->first();
+        if ($existing) return;
+
         $client = Client::find($clientId);
-        
-        // সেলার যদি ফিচার অফ করে রাখে, তাহলে কাজ করবে না
-        if (!$client || (!$client->auto_comment_reply && !$client->auto_private_reply)) {
+        if (!$client) return;
+
+        // ১. ডাটাবেসে প্রথমে কমেন্ট সেভ করা (Status: Pending)
+        $socialComment = SocialComment::create([
+            'client_id' => $clientId,
+            'platform' => 'facebook',
+            'comment_id' => $commentId,
+            'sender_id' => $senderId,
+            'sender_name' => $senderName,
+            'comment_text' => $commentText,
+            'status' => 'pending'
+        ]);
+
+        // সেলার যদি অটো রিপ্লাই অফ করে রাখে, তবে শুধু সেভ হয়েই থাকবে।
+        if (!$client->auto_comment_reply && !$client->auto_private_reply) {
             return;
         }
 
-        // AI-কে দিয়ে কমেন্টের উত্তর এবং ইনবক্স মেসেজ বানানো
+        // ২. AI-কে ফিল্টার এবং রিপ্লাই করার প্রম্পট দেওয়া
         $messages = [
             [
                 'role' => 'system', 
-                'content' => "তুমি {$client->shop_name} এর স্মার্ট সেলস এক্সিকিউটিভ। একজন কাস্টমার (নাম: {$senderName}) তোমার ফেসবুক পোস্টে কমেন্ট করেছে: '{$commentText}'। 
-                তুমি তাকে দুটি রিপ্লাই দিবে:
-                ১. কমেন্টের রিপ্লাই (খুব ছোট, ১ লাইনে। যেমন: 'ইনবক্সে চেক করুন' বা 'বিস্তারিত ইনবক্সে দিয়েছি')।
-                ২. প্রাইভেট মেসেজ (ইনবক্সে বিস্তারিত উত্তর দিবে)।
+                'content' => "তুমি {$client->shop_name} এর সেলস এক্সিকিউটিভ। কাস্টমার কমেন্ট করেছে: '{$commentText}'। 
                 
-                তোমার উত্তর ঠিক নিচের ফরম্যাটে দিবে:
-                COMMENT_REPLY: [এখানে কমেন্টের ছোট রিপ্লাই]
-                PRIVATE_REPLY: [এখানে ইনবক্সের বিস্তারিত রিপ্লাই]"
+                🚨 STRICT RULE: যদি এই কমেন্টটি কোনো প্রোডাক্ট কেনা, দাম, ডেলিভারি, সাইজ, কালার বা শপ সম্পর্কিত কোনো প্রশ্ন না হয় (যেমন: কেউ শুধু 'wow', 'nice', 'hi' লিখেছে বা বন্ধুদের মেনশন করেছে), তাহলে তুমি শুধু একটি শব্দ আউটপুট দিবে: IGNORE
+                
+                আর যদি এটি সেলস রিলেটেড হয়, তবে আগের মত নিচের ফরম্যাটে উত্তর দিবে:
+                COMMENT_REPLY: [ছোট রিপ্লাই]
+                PRIVATE_REPLY: [বিস্তারিত ইনবক্স মেসেজ]"
             ]
         ];
 
@@ -44,9 +60,16 @@ class FacebookCommentService
 
         if (!$aiResponse) return;
 
-        // AI এর রেসপন্স থেকে Comment Reply এবং Private Reply আলাদা করা
+        // ৩. ইগনোর লজিক চেক
+        if (trim($aiResponse) === 'IGNORE' || str_contains($aiResponse, 'IGNORE')) {
+            $socialComment->update(['status' => 'ignored']);
+            Log::info("🚫 AI Ignored non-sales comment: {$commentId}");
+            return;
+        }
+
+        // ৪. সেলস কমেন্ট হলে রিপ্লাই এক্সট্রাক্ট করা
         $commentReply = "আপনার ইনবক্স চেক করুন।"; 
-        $privateReply = "হ্যালো! আপনার কমেন্টের জন্য ধন্যবাদ। আমরা কীভাবে সাহায্য করতে পারি?";
+        $privateReply = "হ্যালো! আপনার কমেন্টের জন্য ধন্যবাদ।";
 
         if (preg_match('/COMMENT_REPLY:\s*(.+)/', $aiResponse, $cMatch)) {
             $commentReply = trim($cMatch[1]);
@@ -55,37 +78,36 @@ class FacebookCommentService
             $privateReply = trim($pMatch[1]);
         }
 
-        // 🔴 BUG FIX: page_access_token এর পরিবর্তে fb_page_token ব্যবহার করা হলো
-        $token = $client->fb_page_token; // সেলারের পেজ টোকেন
+        $token = $client->fb_page_token;
 
-        // ১. পাবলিক কমেন্ট রিপ্লাই করা
         if ($client->auto_comment_reply) {
             $this->replyToComment($commentId, $commentReply, $token);
         }
 
-        // ২. প্রাইভেট মেসেজ (ইনবক্সে) পাঠানো
         if ($client->auto_private_reply) {
             $this->sendPrivateReply($commentId, $privateReply, $token);
         }
+
+        // ডাটাবেসে স্ট্যাটাস আপডেট
+        $socialComment->update([
+            'reply_text' => $commentReply,
+            'status' => 'auto_replied'
+        ]);
     }
 
     private function replyToComment($commentId, $message, $token)
     {
-        // API Version v19.0 তে আপডেট করা হলো
         Http::post("https://graph.facebook.com/v19.0/{$commentId}/comments", [
             'message' => $message,
             'access_token' => $token
         ]);
-        Log::info("✅ Replied to comment: {$commentId}");
     }
 
     private function sendPrivateReply($commentId, $message, $token)
     {
-        // API Version v19.0 তে আপডেট করা হলো
         Http::post("https://graph.facebook.com/v19.0/{$commentId}/private_replies", [
             'message' => $message,
             'access_token' => $token
         ]);
-        Log::info("📩 Sent Private Message for comment: {$commentId}");
     }
 }
