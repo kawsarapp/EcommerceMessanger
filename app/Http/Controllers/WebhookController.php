@@ -48,33 +48,26 @@ class WebhookController extends Controller
             return app(InstagramWebhookController::class)->process($request);
         }
 
-        // 2. FACEBOOK MESSENGER & COMMENTS LOGIC
+        // 2. FACEBOOK MESSENGER LOGIC
         if (($data['object'] ?? '') === 'page') {
             
-            $entries = $data['entry'] ?? [];
-            $hasMessaging = false; // ইনবক্স মেসেজ ট্র্যাক করার জন্য
+            // 🔴 BUG FIX: ডিফল্টভাবে false সেট করা হলো, যাতে undefined variable এরর না আসে
+            $hasMessaging = false; 
 
-            foreach ($entries as $entry) {
-                $pageId = $entry['id'] ?? null;
+            foreach ($data['entry'] as $entry) {
+                $pageId = $entry['id'];
 
-                if (!$pageId) continue;
-
-                // 💬 কমেন্ট রিসিভ করার লজিক
+                // 💬 কমেন্ট রিসিভ করার লজিক (changes)
                 if (isset($entry['changes'])) {
-                    // 🔴 এখানে fb_page_id ব্যবহার করা হয়েছে (যা আপনার এরর সলভ করবে)
                     $client = Client::where('fb_page_id', $pageId)->first();
                     
                     if ($client) {
                         foreach ($entry['changes'] as $change) {
-                            if (
-                                isset($change['field']) && $change['field'] === 'feed' &&
-                                isset($change['value']['item']) && $change['value']['item'] === 'comment' &&
-                                isset($change['value']['verb']) && $change['value']['verb'] === 'add'
-                            ) {
+                            if (isset($change['field']) && $change['field'] === 'feed' && isset($change['value']['item']) && $change['value']['item'] === 'comment') {
                                 $commentData = $change['value'];
-                                $senderId = $commentData['from']['id'] ?? null;
                                 
-                                // যদি পেইজ নিজে রিপ্লাই দেয়, তবে সেটি ইগনোর করব
+                                // যদি পেজ নিজেই রিপ্লাই দেয়, তবে ইগনোর করব
+                                $senderId = $commentData['from']['id'] ?? null;
                                 if ($senderId && $senderId != $pageId) {
                                     $commentId = $commentData['comment_id'];
                                     $commentText = $commentData['message'];

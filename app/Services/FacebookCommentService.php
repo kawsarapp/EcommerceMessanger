@@ -55,7 +55,8 @@ class FacebookCommentService
             $privateReply = trim($pMatch[1]);
         }
 
-        $token = $client->page_access_token; // সেলারের পেজ টোকেন
+        // 🔴 BUG FIX: page_access_token এর পরিবর্তে fb_page_token ব্যবহার করা হলো
+        $token = $client->fb_page_token; // সেলারের পেজ টোকেন
 
         // ১. পাবলিক কমেন্ট রিপ্লাই করা
         if ($client->auto_comment_reply) {
@@ -70,7 +71,8 @@ class FacebookCommentService
 
     private function replyToComment($commentId, $message, $token)
     {
-        Http::post("https://graph.facebook.com/v18.0/{$commentId}/comments", [
+        // API Version v19.0 তে আপডেট করা হলো
+        Http::post("https://graph.facebook.com/v19.0/{$commentId}/comments", [
             'message' => $message,
             'access_token' => $token
         ]);
@@ -79,7 +81,8 @@ class FacebookCommentService
 
     private function sendPrivateReply($commentId, $message, $token)
     {
-        Http::post("https://graph.facebook.com/v18.0/{$commentId}/private_replies", [
+        // API Version v19.0 তে আপডেট করা হলো
+        Http::post("https://graph.facebook.com/v19.0/{$commentId}/private_replies", [
             'message' => $message,
             'access_token' => $token
         ]);
