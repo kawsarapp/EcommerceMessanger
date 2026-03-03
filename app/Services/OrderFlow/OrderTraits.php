@@ -117,18 +117,17 @@ trait OrderTraits
         }
 
         // 🔥 ৪. FUZZY SEARCH (Typo Correction) - Fallback
-        // যদি ডাটাবেসে সরাসরি না পাওয়া যায়, তবে বানানের ভুল চেক করবে
+        // যদি ডাটাবেসে সরাসরি না পাওয়া যায়, তবে বানানের ভুল চেক করবে
         return $this->findProductWithFuzzyLogic($clientId, $keywords);
     }
 
     /**
-     * 🔥 NEW: Fuzzy Logic Search (Levenshtein Distance)
-     * কাস্টমার "Pnjabi" লিখলে "Panjabi" খুঁজে বের করবে
+     * 🔥 NEW & IMPROVED: Fuzzy Logic Search (Levenshtein Distance)
+     * কাস্টমার "Pnjabi" লিখলে "Panjabi" খুঁজে বের করবে। 
+     * কিন্তু ছোট বা সাধারণ শব্দকে ভুল করে প্রোডাক্ট হিসেবে ধরবে না।
      */
     private function findProductWithFuzzyLogic($clientId, $keywords)
     {
-        // সব পণ্যের নাম এবং আইডি ক্যাশে থেকে বা ডিবি থেকে আনা (অপ্টিমাইজড)
-        // ছোট ইনভেন্টরির জন্য এটি ঠিক আছে, বড় ইনভেন্টরির জন্য ElasticSearch বা Scout ভালো
         $allProducts = Product::where('client_id', $clientId)
             ->where('stock_status', 'in_stock')
             ->select('id', 'name')
@@ -138,14 +137,25 @@ trait OrderTraits
         $shortestDistance = -1;
 
         foreach ($allProducts as $product) {
+            $productWords = explode(' ', strtolower($product->name));
+            
             foreach ($keywords as $keyword) {
-                // পণ্যের নামের প্রতিটি শব্দের সাথে কাস্টমারের কিওয়ার্ড তুলনা করা
-                $productWords = explode(' ', strtolower($product->name));
+                // 🔥 STRICT FIX 1: কাস্টমারের মেসেজের শব্দ ৪ অক্ষরের চেয়ে ছোট হলে ইগনোর করো
+                // (যাতে "to", "den", "ace" এগুলো কোনো প্রোডাক্টের সাথে ম্যাচ না করে)
+                if (mb_strlen($keyword) <= 4) continue;
+
                 foreach ($productWords as $pWord) {
+                    // 🔥 STRICT FIX 2: প্রোডাক্টের নামও ৪ অক্ষরের চেয়ে ছোট হলে ইগনোর করো
+                    if (mb_strlen($pWord) <= 4) continue;
+
                     $distance = levenshtein($keyword, $pWord);
                     
-                    // যদি পার্থক্য ৩ অক্ষরের কম হয় (অর্থাৎ বানান খুব কাছাকাছি)
-                    if ($distance <= 2) { 
+                    // 🔥 STRICT FIX 3: শব্দের সাইজের ওপর ভিত্তি করে ভুলের মাত্রা (Distance) নির্ধারণ
+                    // যদি শব্দ অনেক বড় হয় (৬ অক্ষরের বেশি), তবে সর্বোচ্চ ২টা লেটার ভুল হতে পারবে।
+                    // যদি শব্দ ছোট হয়, তবে শুধু ১টা লেটার ভুল হতে পারবে।
+                    $maxAllowedDistance = (mb_strlen($pWord) > 6) ? 2 : 1; 
+
+                    if ($distance <= $maxAllowedDistance) { 
                         if ($shortestDistance < 0 || $distance < $shortestDistance) {
                             $shortestDistance = $distance;
                             $bestMatch = $product;
@@ -208,7 +218,7 @@ trait OrderTraits
         if ($session && !empty($session->customer_info['product_id'])) {
             $product = Product::find($session->customer_info['product_id']);
             
-            // স্টক চেক যুক্ত করা হয়েছে
+            // স্টক চেক যুক্ত করা হয়েছে
             if ($product && $product->stock_quantity > 0 && $product->stock_status === 'in_stock') {
                 Log::info("🔄 Retrieved Product from Session Context: {$product->name}");
                 return $product;
