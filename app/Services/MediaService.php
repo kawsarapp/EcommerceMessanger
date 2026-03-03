@@ -32,6 +32,9 @@ class MediaService
     /**
      * 🎤 ভয়েস মেসেজ টেক্সটে কনভার্ট করা (Whisper API)
      */
+   /**
+     * 🎤 ভয়েস মেসেজ টেক্সটে কনভার্ট করা (Whisper API)
+     */
     public function convertVoiceToText($audioUrl)
     {
         if (empty($audioUrl)) return null;
@@ -45,19 +48,19 @@ class MediaService
                 return null;
             }
 
-            // 🔥 FIX: Facebook এর লিংকে এক্সটেনশন থাকে না, তাই জোর করে .mp4 এ সেভ করছি
+            // Facebook এর লিংকে এক্সটেনশন থাকে না, তাই জোর করে .mp4 এ সেভ করছি
             $tempFileName = 'voice_' . uniqid() . '.mp4';
             $tempPath = storage_path('app/' . $tempFileName);
             file_put_contents($tempPath, $audioResponse->body());
 
             $apiKey = config('services.openai.api_key') ?? env('OPENAI_API_KEY');
             
+            // 🔥 FIX: 'language' প্যারামিটার রিমুভ করা হয়েছে (Auto-detect করবে)
             $response = Http::withToken($apiKey)
                 ->timeout(30)
                 ->attach('file', fopen($tempPath, 'r'), $tempFileName)
                 ->post('https://api.openai.com/v1/audio/transcriptions', [
                     'model' => 'whisper-1',
-                    'language' => 'bn', // বাংলা ডিটেকশন
                     'response_format' => 'json'
                 ]);
 

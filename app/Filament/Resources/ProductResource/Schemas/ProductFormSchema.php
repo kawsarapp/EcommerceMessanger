@@ -75,7 +75,6 @@ class ProductFormSchema
                                         ->required()
                                         ->visible(fn () => auth()->id() === 1),
 
-                                    // সাধারণ ক্লায়েন্টের জন্য এটি অটোমেটিক এবং লুকায়িত থাকবে
                                     Hidden::make('client_id')
                                         ->default(fn () => Client::where('user_id', auth()->id())->first()?->id)
                                         ->visible(fn () => auth()->id() !== 1),
@@ -152,6 +151,13 @@ class ProductFormSchema
                                     ->label('SKU / Product Code')
                                     ->placeholder('e.g. TSHIRT-001')
                                     ->required(),
+
+                                // 🔥 NEW FIELD: AI-এর জন্য Search Tags
+                                TagsInput::make('tags')
+                                    ->label('Search Tags / Keywords (For AI)')
+                                    ->placeholder('Type a keyword and press Enter')
+                                    ->helperText('AI কে সহজে প্রোডাক্ট খুঁজে পেতে সাহায্য করবে (যেমন: boi, book, islamic, shirt, jama)')
+                                    ->columnSpanFull(),
                             ]),
 
                             Section::make('Variations (AI & Display)')

@@ -58,6 +58,7 @@ class Product extends Model
         'gallery' => 'array',
         'colors' => 'array',
         'sizes' => 'array',
+        'tags' => 'array',
         'is_featured' => 'boolean',
         'regular_price' => 'decimal:2',
         'sale_price' => 'decimal:2',
