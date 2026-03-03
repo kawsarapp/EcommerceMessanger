@@ -119,7 +119,9 @@ class MessengerWebhookService
                         } 
                         elseif ($type === 'audio') {
                             Log::info("🎤 Audio Received: Converting...");
-                            $convertedText = $this->chatbot->convertVoiceToText($url);
+                            
+                            // 🔥 FIX: MediaService এর মাধ্যমে কল করা হয়েছে
+                            $convertedText = app(\App\Services\MediaService::class)->convertVoiceToText($url);
                             
                             if ($convertedText) {
                                 $messageText = $convertedText . " [Voice Message]";

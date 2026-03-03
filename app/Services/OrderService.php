@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
-    /**
-     * সেশন থেকে অর্ডার কনফার্ম এবং ডাটাবেসে সেভ করার মেথড
-     */
     public function finalizeOrderFromSession($clientId, $senderId, $clientModel)
     {
         $session = OrderSession::where('sender_id', $senderId)->first();
@@ -28,19 +25,16 @@ class OrderService
         $product = Product::find($info['product_id'] ?? null);
         if (!$product) throw new \Exception("Product not found or removed.");
 
-        // 🔥 DATABASE TRANSACTION (নিরাপদ অর্ডার প্রসেসিং)
         return DB::transaction(function () use ($info, $clientId, $senderId, $product, $clientModel, $session) {
             
-            // 🛑 1. STOCK GUARD
             if ($product->manage_stock && ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0)) {
                 throw new \Exception("Stock finished just now! Cannot process order.");
             }
 
             $qty = 1; 
             
-            // 🔥 2. ADVANCED DELIVERY CALCULATION
             $locationType = $info['location_type'] ?? null;
-            $delivery = 120; // Default
+            $delivery = 120; 
 
             if ($locationType === 'inside_dhaka') {
                 $delivery = $clientModel->delivery_charge_inside ?? 80;
@@ -54,7 +48,6 @@ class OrderService
             $price = $product->sale_price ?? $product->regular_price;
             $total = ($price * $qty) + $delivery;
 
-            // ১. অর্ডার ডাটা প্রস্তুত
             $orderData = [
                 'client_id'       => $clientId,
                 'sender_id'       => $senderId,
@@ -68,7 +61,6 @@ class OrderService
                 'payment_method'  => $info['payment_method'] ?? 'cod',
             ];
 
-            // Optional Columns Mapping
             if (Schema::hasColumn('orders', 'district')) {
                 $orderData['district'] = $info['district'] ?? null;
             }
@@ -76,7 +68,6 @@ class OrderService
                 $orderData['division'] = $info['division'] ?? null;
             }
             
-            // নোট হ্যান্ডলিং
             $notes = [];
             if (!empty($info['variant'])) {
                 $vText = is_array($info['variant']) ? implode(', ', array_filter($info['variant'])) : $info['variant'];
@@ -95,34 +86,30 @@ class OrderService
                 }
             }
 
-            // ২. অর্ডার তৈরি
             $order = Order::create($orderData);
 
-            // ৩. আইটেম তৈরি (🔥 FIXED HERE)
+            // 🔥 FIX: OrderItem Save Logic
             $itemData = [
                 'order_id'   => $order->id,
                 'product_id' => $product->id,
                 'quantity'   => $qty,
-                'unit_price' => $price, 
-                'price'      => $price, // ✅ এই লাইনটি যোগ করা হয়েছে (আপনার DB তে এই কলামটি Required)
                 'subtotal'   => $price * $qty
             ];
+
+            // ডাইনামিক কলাম চেকিং (যেহেতু একেকজনের DB-তে unit_price বা price থাকে)
+            if (Schema::hasColumn('order_items', 'unit_price')) {
+                $itemData['unit_price'] = $price;
+            }
+            if (Schema::hasColumn('order_items', 'price')) {
+                $itemData['price'] = $price;
+            }
             
             if (Schema::hasColumn('order_items', 'variant')) {
                 $itemData['variant'] = isset($info['variant']) ? (is_array($info['variant']) ? json_encode($info['variant']) : $info['variant']) : null;
             }
 
-            // Check which price column exists to be safe
-            if (!Schema::hasColumn('order_items', 'price')) {
-                unset($itemData['price']); // যদি price কলাম না থাকে, তবে বাদ দাও
-            }
-            if (!Schema::hasColumn('order_items', 'unit_price')) {
-                unset($itemData['unit_price']); // যদি unit_price না থাকে, বাদ দাও
-            }
-
             OrderItem::create($itemData);
 
-            // ৪. স্টক আপডেট
             if ($product->manage_stock) {
                 $product->decrement('stock_quantity', $qty);
                 if ($product->stock_quantity <= 0) {
@@ -130,7 +117,6 @@ class OrderService
                 }
             }
 
-            // ৫. সেশন আপডেট
             $session->update([
                 'customer_info' => [
                     'step' => 'completed', 

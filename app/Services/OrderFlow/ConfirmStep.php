@@ -17,7 +17,6 @@ class ConfirmStep implements OrderStepInterface
         $productId = $customerInfo['product_id'] ?? null;
         $clientId = $session->client_id;
 
-        // ১. প্রোডাক্ট ভ্যালিডেশন
         if (!$productId) {
             return ['instruction' => "দুঃখিত, কোনো প্রোডাক্ট সিলেক্ট করা নেই। দয়া করে প্রথমে প্রোডাক্ট পছন্দ করুন।", 'context' => "No product selected"];
         }
@@ -27,12 +26,10 @@ class ConfirmStep implements OrderStepInterface
             return ['instruction' => "দুঃখিত, এই প্রোডাক্টটি আর পাওয়া যাচ্ছে না। অন্য কিছু দেখুন।", 'context' => "Product not found in DB"];
         }
 
-        // 🔥 ২. রিয়েল-টাইম স্টক চেক
         if ($product->stock_status === 'out_of_stock' || $product->stock_quantity <= 0) {
             return ['instruction' => "দুঃখিত! এইমাত্র প্রোডাক্টটি স্টক আউট হয়ে গেছে। আপনি কি অন্য কোনো প্রোডাক্ট দেখতে চান?", 'context' => "Stock finished during flow"];
         }
 
-        // ৩. ভেরিয়েন্ট ভ্যালিডেশন
         $hasColors = !empty($this->decodeVariants($product->colors));
         $hasSizes = !empty($this->decodeVariants($product->sizes));
         $selectedVariant = $customerInfo['variant'] ?? null;
@@ -43,7 +40,6 @@ class ConfirmStep implements OrderStepInterface
             return ['instruction' => "অর্ডার করার আগে কাস্টমারকে অবশ্যই প্রোডাক্টের কালার বা সাইজ সিলেক্ট করতে হবে।", 'context' => "Variant missing"];
         }
 
-        // ✅ ৪. ইনফরমেশন চেক (STRICT)
         $name = $customerInfo['name'] ?? null;
         $phone = $customerInfo['phone'] ?? null;
         $address = $customerInfo['address'] ?? null;
@@ -63,8 +59,6 @@ class ConfirmStep implements OrderStepInterface
             ];
         }
 
-        // 🔥 ৫. অর্ডার স্ট্যাটাস চেক (নতুন ফিচার: কাস্টমার কনফিউজড হলে)
-        // কাস্টমার যদি জিজ্ঞেস করে "অর্ডার কি হয়েছে?", কিন্তু অর্ডার তৈরি হয়নি
         if ($this->isOrderInquiry($userMessage)) {
              return [
                 'instruction' => "কাস্টমার জানতে চাইছে অর্ডার হয়েছে কিনা। তাকে স্পষ্টভাবে বলো: 'না স্যার, অর্ডারটি এখনো কনফার্ম হয়নি। অর্ডারটি সম্পন্ন করতে দয়া করে **Confirm** অথবা **Ji** লিখে রিপ্লাই দিন।'",
@@ -72,7 +66,6 @@ class ConfirmStep implements OrderStepInterface
             ];
         }
 
-        // 🔥 ৬. তথ্য পরিবর্তনের রিকোয়েস্ট হ্যান্ডলিং
         if ($this->isModificationIntent($userMessage)) {
             $customerInfo['step'] = 'collect_info';
             $session->update(['customer_info' => $customerInfo]);
@@ -83,7 +76,6 @@ class ConfirmStep implements OrderStepInterface
             ];
         }
 
-        // ৭. নেগেটিভ ইন্টেন্ট চেক
         if ($this->isNegativeConfirmation($userMessage)) {
             return [
                 'instruction' => "কাস্টমার অর্ডারটি কনফার্ম করতে চাচ্ছে না। জিজ্ঞেস করো তারা কি অর্ডার বাতিল করতে চায় নাকি কোনো প্রশ্ন আছে?",
@@ -91,17 +83,15 @@ class ConfirmStep implements OrderStepInterface
             ];
         }
 
-        // ✅ ৮. ফাইনাল কনফার্মেশন চেক & অর্ডার তৈরি
+        // ✅ FINAL CONFIRMATION TRIGGER
         if ($this->isPositiveConfirmation($userMessage)) {
             
-            // 🔥 কাস্টমার নোট এক্সট্রাকশন
             $note = $this->extractNoteFromConfirmation($userMessage);
             if ($note) {
                 $customerInfo['user_note'] = $note;
                 $session->update(['customer_info' => $customerInfo]);
             }
 
-            // ডুপ্লিকেট অর্ডার প্রোটেকশন
             $recentOrder = Order::where('sender_id', $session->sender_id)
                 ->where('client_id', $session->client_id)
                 ->where('created_at', '>=', now()->subMinutes(2)) 
@@ -115,7 +105,7 @@ class ConfirmStep implements OrderStepInterface
                 ];
             }
 
-            // 🔥 অর্ডার তৈরির সিগন্যাল (Action Trigger)
+            // 🔥 ACTUAL ACTION TRIGGER
             return [
                 'action' => 'create_order', 
                 'instruction' => "অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। কাস্টমারকে অভিনন্দন জানাও এবং সিস্টেম জেনারেটেড অর্ডার আইডি (Order ID) জানিয়ে দাও। ডেলিভারি টাইম সম্পর্কে Shop Policy বা FAQ দেখে উত্তর দাও।",
@@ -128,19 +118,15 @@ class ConfirmStep implements OrderStepInterface
             ];
         }
 
-        // ❌ ৯. রিভিউ সামারি (Detailed Review before Order)
-        
         $client = Client::find($clientId);
         $unitPrice = $product->sale_price ?? $product->regular_price;
         
-        // A. ভেরিয়েন্ট ডিসপ্লে
         $variantText = "";
         if ($selectedVariant) {
             $vDetails = is_array($selectedVariant) ? implode(', ', array_filter($selectedVariant)) : $selectedVariant;
             $variantText = " (সাইজ/কালার: $vDetails)";
         }
 
-        // B. ডেলিভারি চার্জ ক্যালকুলেশন
         $deliveryCharge = 120; 
         $deliveryNote = "ডেলিভারি চার্জ";
 
@@ -154,15 +140,12 @@ class ConfirmStep implements OrderStepInterface
                 $deliveryCharge = $client->delivery_charge_outside ?? 150;
                 $deliveryNote .= " (ঢাকার বাইরে)";
             } else {
-                // ডিফল্ট লজিক
                 $isDhaka = str_contains(strtolower($address), 'dhaka') || str_contains($address, 'ঢাকা');
                 $deliveryCharge = $isDhaka ? ($client->delivery_charge_inside ?? 80) : ($client->delivery_charge_outside ?? 150);
             }
         }
 
         $totalAmount = $unitPrice + $deliveryCharge;
-
-        // 🔥 C. ফিক্সড পেমেন্ট মেথড (COD Only)
         $paymentMethod = "ক্যাশ অন ডেলিভারি (COD)";
 
         return [
@@ -183,16 +166,12 @@ class ConfirmStep implements OrderStepInterface
         ];
     }
 
-    /**
-     * ✅ পজিটিভ কিওয়ার্ড চেক
-     */
     private function isPositiveConfirmation($msg)
     {
+        // 🔥 FIX: 'order number', 'track order' ইত্যাদি কনফিউজিং শব্দ বাদ দেওয়া হয়েছে
         $words = [
             'yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'done', 
             'order koren', 'create', 'nibo', 'pathan', 'place order', 'right',
-            // 🔥 অর্ডার নম্বর চাইলেও কনফার্ম ধরা হবে
-            'order number', 'number koto', 'koto number', 'track order',
             'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'অর্ডার করেন', 'পাঠান', 'নিব'
         ];
         
@@ -203,9 +182,6 @@ class ConfirmStep implements OrderStepInterface
         return false;
     }
 
-    /**
-     * নেগেটিভ কিওয়ার্ড চেক
-     */
     private function isNegativeConfirmation($msg)
     {
         $words = [
@@ -217,9 +193,6 @@ class ConfirmStep implements OrderStepInterface
         return false;
     }
 
-    /**
-     * তথ্য পরিবর্তনের ইচ্ছা ডিটেকশন
-     */
     private function isModificationIntent($msg)
     {
         $words = [
@@ -232,12 +205,9 @@ class ConfirmStep implements OrderStepInterface
         return false;
     }
 
-    /**
-     * 🔥 নোট এক্সট্রাকশন
-     */
     private function extractNoteFromConfirmation($msg)
     {
-        $confirmationKeywords = ['ji', 'yes', 'ok', 'confirm', 'thik ace', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'order number'];
+        $confirmationKeywords = ['ji', 'yes', 'ok', 'confirm', 'thik ace', 'হ্যাঁ', 'জি', 'ঠিক আছে'];
         $cleanMsg = str_ireplace($confirmationKeywords, '', $msg);
         $cleanMsg = trim(preg_replace('/[[:punct:]]+/', ' ', $cleanMsg));
 
@@ -247,9 +217,6 @@ class ConfirmStep implements OrderStepInterface
         return null;
     }
 
-    /**
-     * 🔥 অর্ডার স্ট্যাটাস ইনকোয়ারি ডিটেকশন (New Helper)
-     */
     private function isOrderInquiry($msg)
     {
         $words = [

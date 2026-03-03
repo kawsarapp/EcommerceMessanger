@@ -7,18 +7,15 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\OrderSession;
 use App\Models\Client;
 
-// Core Services
 use App\Services\OrderService;
 use App\Services\NotificationService;
 use App\Services\MediaService;
 use App\Services\InventoryService;
 use App\Services\SafetyGuardService;
 
-// Extracted Chatbot Services
 use App\Services\Chatbot\ChatbotPromptService;
 use App\Services\Chatbot\ChatbotUtilityService;
 
-// OrderFlow Classes
 use App\Services\OrderFlow\StartStep;
 use App\Services\OrderFlow\VariantStep;
 use App\Services\OrderFlow\AddressStep;
@@ -49,9 +46,6 @@ class ChatbotService
         $this->utility = $utility;
     }
 
-    /**
-     * 🌐 Omnichannel Wrapper: Telegram ও Instagram যেন এই ফাংশনটি কল করতে পারে
-     */
     public function handleMessage($client, $senderId, $messageText, $incomingImageUrl = null) {
         return $this->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl);
     }
@@ -59,7 +53,6 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         $lock = Cache::lock("processing_user_{$senderId}", 5);
-        Log::info("🤖 AI Service Started for User: $senderId");
 
         $userMessage = $userMessage ?? '';
         $base64Image = null;
@@ -116,20 +109,23 @@ class ChatbotService
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
 
-            // 🔥 HISTORY RESET LOGIC (Prevent Loop/Confusion)
+            // 🔥 FIX: History Wipe বন্ধ করা হয়েছে। শুধু প্রোডাক্ট আইডি আপডেট হবে।
             if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
                 $newProduct = $this->findProductSystematically($clientId, $userMessage);
                 
                 if ($newProduct && $newProduct->id != ($session->customer_info['product_id'] ?? null)) {
-                    // কাস্টমার নতুন প্রোডাক্ট সিলেক্ট করেছে, তাই আগের হিস্ট্রি এবং ভেরিয়েন্ট মুছে ফেলা হচ্ছে
                     $session->update([
-                        'customer_info' => ['step' => 'start', 'product_id' => $newProduct->id, 'history' => [], 'variant' => []]
+                        'customer_info' => array_merge($session->customer_info, [
+                            'step' => 'start', 
+                            'product_id' => $newProduct->id, 
+                            'variant' => []
+                        ])
                     ]);
                     $stepName = 'start'; 
                 } elseif (!$newProduct) {
                     foreach (['menu', 'start', 'offer', 'ki ace', 'home', 'suru'] as $word) {
                         if (stripos($userMessage, $word) !== false) {
-                            $session->update(['customer_info' => ['step' => 'start', 'history' => []]]); // Reset
+                            $session->update(['customer_info' => ['step' => 'start', 'history' => []]]);
                             $stepName = 'start';
                             break;
                         }
@@ -164,7 +160,6 @@ class ChatbotService
             $inventoryData = $this->inventory->getFormattedInventory($client, $userMessage);
             $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId);
             
-            // 🔥 এখানে $stepName পাস করা হয়েছে
             $systemPrompt = $this->promptService->generateDynamicSystemPrompt(
                 $client, $instruction, $contextData, $orderHistory, $inventoryData, 
                 now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Sir/Ma\'am', 
@@ -177,8 +172,8 @@ class ChatbotService
             
             $history = $session->customer_info['history'] ?? [];
             
-            // 🔥 AI যেন লুপে না পড়ে, তাই শুধুমাত্র শেষের ৪টি মেসেজ পাঠানো হচ্ছে (আগে ৬টি ছিল)
-            foreach (array_slice($history, -20) as $chat) {
+            // 🔥 AI-কে সর্বশেষ ১৫টি মেসেজ দেওয়া হচ্ছে (যাতে সে সহজে ভুলে না যায়)
+            foreach (array_slice($history, -15) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
@@ -192,10 +187,11 @@ class ChatbotService
             $aiResponse = $this->utility->callLlmChain($messages);
             if (!$aiResponse) return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
+            // 🔥 FIX: AI এর রেসপন্স লগে সেভ করা হচ্ছে
+            Log::info("🤖 AI Response: " . $aiResponse);
+
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
-            
-            // DB-তেও মাত্র ১০টি মেসেজ সেভ হবে (আগে ২০টি ছিল), যাতে মেমোরি ক্লিয়ার থাকে
-            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -50)])]);
+            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -30)])]);
 
             return $aiResponse;
         });

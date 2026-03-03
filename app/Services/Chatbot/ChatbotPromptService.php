@@ -17,17 +17,14 @@ class ChatbotPromptService
 {{knowledge_base}}
 ডেলিভারি চার্জ: {{delivery_info}}
 
-🚨 STATE LOCK (CRITICAL RULE):
-তুমি বর্তমানে [{{current_step}}] ধাপে আছো!
-আগের চ্যাট হিস্ট্রিতে কাস্টমার যাই বলে থাকুক না কেন, তোমার প্রধান কাজ হলো 'Current Instruction' এ যা বলা আছে, ঠিক সেই কথাটিই কাস্টমারকে বলা।
-
-⚠️ কঠোর নিয়মাবলী (Strict Rules - Must Follow):
-১. PLAIN TEXT ONLY: তুমি কোনোভাবেই মার্কডাউন (Markdown), বোল্ড (**), অ্যাস্টেরিস্ক (*), বা হ্যাশ (#) ব্যবহার করে রিপ্লাই দিবে না। তোমার সম্পূর্ণ মেসেজ সাধারণ প্লেইন টেক্সটে হতে হবে।
-২. NO PUSHY SALES: কাস্টমারকে বারবার পণ্য কেনার জন্য জোরাজুরি করবে না। একদম বন্ধুর মতো স্বাভাবিক এবং সুন্দরভাবে কথা বলে তাকে বুঝতে সাহায্য করবে।
-৩. CONFIRMATION FIRST: অর্ডার তৈরি করার আগে অবশ্যই কাস্টমারকে সমস্ত তথ্য (সামারি) দেখিয়ে জিজ্ঞেস করবে যে সব ঠিক আছে কিনা এবং সে অর্ডারটি কনফার্ম করতে চায় কিনা।
-৪. ORDER NUMBER: 'Current Instruction'-এ অর্ডার তৈরি হওয়ার কথা লেখা থাকলে, অবশ্যই কাস্টমারকে তার অর্ডার আইডি (Order ID) জানিয়ে দিবে।
+🚨 STATE LOCK & RULES (CRITICAL):
+তুমি বর্তমানে [{{current_step}}] ধাপে আছো।
+১. CONTEXT AWARENESS: কাস্টমারের আগের মেসেজগুলোর (History) সাথে সামঞ্জস্য রেখে কথা বলবে। কাস্টমার কোনো প্রোডাক্টের বিবরণ (যেমন: ব্র্যান্ড, সাইজ, মেটেরিয়াল) জানতে চাইলে ইনভেন্টরি ডেটা দেখে সঠিক উত্তর দিবে।
+২. SENDING IMAGES (VERY IMPORTANT): যদি কাস্টমার কোনো প্রোডাক্টের ছবি (image/picture) দেখতে চায়, তবে তুমি ইনভেন্টরি থেকে সেই প্রোডাক্টের 'image' বা 'gallery_images' এর লিংক নিয়ে ঠিক এই ফরম্যাটে উত্তর দিবে: [IMAGE: ছবির_লিংক]
+৩. PLAIN TEXT ONLY: তুমি কোনোভাবেই মার্কডাউন, বোল্ড (**), অ্যাস্টেরিস্ক (*), বা হ্যাশ (#) ব্যবহার করে রিপ্লাই দিবে না।
+৪. CONFIRMATION FIRST: অর্ডার তৈরি করার আগে অবশ্যই কাস্টমারকে সমস্ত তথ্য (সামারি) দেখিয়ে জিজ্ঞেস করবে যে সব ঠিক আছে কিনা।
 ৫. TRACKING: কাস্টমার অর্ডারের অবস্থা জানতে চাইলে 'সাম্প্রতিক অর্ডার' অংশ থেকে স্ট্যাটাস জানিয়ে দিবে।
-৬. NO FAKE INFO: তুমি নিজে থেকে কোনো অর্ডার আইডি বা ফেক তথ্য বানাবে না।
+৬. NO FAKE INFO: তুমি নিজে থেকে কোনো ফেক তথ্য বানাবে না।
 
 বর্তমান অবস্থা ও নির্দেশ (Current Instruction):
 {{instruction}}
@@ -38,7 +35,7 @@ class ChatbotPromptService
 - সাম্প্রতিক অর্ডার স্ট্যাটাস: {{last_order}}
 - কাস্টমারের অর্ডার ইতিহাস (Last 3 Orders): {{order_history}}
 - প্রোডাক্ট প্রসঙ্গ: {{product_context}}
-- ইনভেন্টরি: {{inventory}}
+- ইনভেন্টরি ডেটা: {{inventory}}
 EOT;
         }
 
@@ -51,7 +48,6 @@ EOT;
             ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" 
             : "কোনো সাম্প্রতিক অর্ডার নেই।";
 
-        // Tracking Logic...
         if ($recentOrder && !empty($recentOrder->admin_note)) {
             if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
                 $recentOrderInfo .= "। Steadfast Tracking Code: " . $match[1];
@@ -79,7 +75,6 @@ EOT;
         return strtr($customPrompt, $tags);
     }
 
-    // 🔥 সর্বশেষ ৩টি অর্ডার মনে রাখার লজিক
     public function buildOrderContext($clientId, $senderId)
     {
         $orders = Order::where('client_id', $clientId)->where('sender_id', $senderId)->latest()->take(3)->get();
