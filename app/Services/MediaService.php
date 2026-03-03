@@ -61,6 +61,8 @@ class MediaService
                 ->attach('file', fopen($tempPath, 'r'), $tempFileName)
                 ->post('https://api.openai.com/v1/audio/transcriptions', [
                     'model' => 'whisper-1',
+                    // 🔥 FIX: language কোড সাপোর্ট না করায় prompt দিয়ে বলে দেওয়া হচ্ছে
+                    'prompt' => 'এটি একটি বাংলা ভাষার মেসেজ। দয়া করে বাংলায় ট্রান্সক্রাইব করুন। (This is a Bengali voice message)',
                     'response_format' => 'json'
                 ]);
 
