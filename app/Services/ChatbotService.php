@@ -109,7 +109,6 @@ class ChatbotService
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
 
-            // 🔥 FIX: History Wipe বন্ধ করা হয়েছে। শুধু প্রোডাক্ট আইডি আপডেট হবে।
             if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
                 $newProduct = $this->findProductSystematically($clientId, $userMessage);
                 
@@ -147,13 +146,22 @@ class ChatbotService
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
+            // 🔥 CRITICAL FIX: Order Creation Logic
             if (isset($result['action']) && $result['action'] === 'create_order') {
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    $instruction .= " (SYSTEM: Order Created Successfully! Order ID is #{$order->id}.)";
+                    
+                    // সফল হলে AI-কে রিয়েল অর্ডার আইডি বলে দেওয়া হচ্ছে
+                    $instruction = "অর্ডারটি সফলভাবে ডাটাবেসে সেভ হয়েছে! কাস্টমারকে অভিনন্দন জানাও এবং অর্ডার আইডি (#{$order->id}) জানিয়ে দাও। ডেলিভারি টাইম সম্পর্কে Shop Policy বা FAQ দেখে উত্তর দাও।";
+                    
                     $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
+                    
+                    // স্টেপ চেঞ্জ করে completed করা হচ্ছে
+                    $stepName = 'completed';
+                    
                 } catch (\Exception $e) {
-                    $instruction = "Technical error creating order. Please apologize.";
+                    Log::error("❌ Order Creation Failed: " . $e->getMessage());
+                    $instruction = "Technical error creating order. Please apologize to the customer.";
                 }
             }
 
@@ -172,7 +180,6 @@ class ChatbotService
             
             $history = $session->customer_info['history'] ?? [];
             
-            // 🔥 AI-কে সর্বশেষ ১৫টি মেসেজ দেওয়া হচ্ছে (যাতে সে সহজে ভুলে না যায়)
             foreach (array_slice($history, -15) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
@@ -187,7 +194,6 @@ class ChatbotService
             $aiResponse = $this->utility->callLlmChain($messages);
             if (!$aiResponse) return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
-            // 🔥 FIX: AI এর রেসপন্স লগে সেভ করা হচ্ছে
             Log::info("🤖 AI Response: " . $aiResponse);
 
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];

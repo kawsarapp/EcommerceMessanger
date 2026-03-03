@@ -120,7 +120,6 @@ class MessengerWebhookService
                         elseif ($type === 'audio') {
                             Log::info("🎤 Audio Received: Converting...");
                             
-                            // 🔥 FIX: MediaService এর মাধ্যমে কল করা হয়েছে
                             $convertedText = app(\App\Services\MediaService::class)->convertVoiceToText($url);
                             
                             if ($convertedText) {
@@ -158,13 +157,27 @@ class MessengerWebhookService
                     $this->responseService->sendSenderAction($senderId, $client->fb_page_token, 'typing_off');
 
                     if ($reply) {
-                        $outgoingImage = null;
+                        $outgoingImages = [];
                         $quickReplies = [];
                         $carouselIds = null;
 
-                        if (preg_match('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $matches)) {
-                            $outgoingImage = $matches[1];
-                            $reply = str_replace($outgoingImage, '', $reply);
+                        // 🔥 FIX: Extract Multiple [IMAGE: url] Tags Perfectly
+                        if (preg_match_all('/\[IMAGE:\s*(https?:\/\/[^\]]+)\]/i', $reply, $imgMatches)) {
+                            foreach ($imgMatches[1] as $imgUrl) {
+                                $outgoingImages[] = trim($imgUrl);
+                            }
+                            // সিরিয়াল নম্বর এবং ট্যাগগুলো রিপ্লাই থেকে মুছে ফেলা হচ্ছে
+                            $reply = preg_replace('/[0-9]+\.?\s*\[IMAGE:\s*https?:\/\/[^\]]+\]/i', '', $reply);
+                            $reply = preg_replace('/-\s*\[IMAGE:\s*https?:\/\/[^\]]+\]/i', '', $reply);
+                            $reply = preg_replace('/\[IMAGE:\s*https?:\/\/[^\]]+\]/i', '', $reply);
+                        }
+
+                        // Fallback for Raw URLs
+                        if (empty($outgoingImages) && preg_match_all('/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|webp))/i', $reply, $rawMatches)) {
+                            foreach ($rawMatches[1] as $imgUrl) {
+                                $outgoingImages[] = trim($imgUrl);
+                                $reply = str_replace($imgUrl, '', $reply);
+                            }
                         }
 
                         if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/', $reply, $matches)) {
@@ -195,7 +208,23 @@ class MessengerWebhookService
                             }
                             $this->responseService->sendMessengerCarousel($senderId, $carouselIds, $client->fb_page_token);
                         } else {
-                            $this->responseService->sendMessengerMessage($senderId, $reply, $client->fb_page_token, $outgoingImage, $quickReplies);
+                            if (empty($outgoingImages)) {
+                                // ছবি না থাকলে নরমাল টেক্সট পাঠানো
+                                $this->responseService->sendMessengerMessage($senderId, $reply, $client->fb_page_token, null, $quickReplies);
+                            } else {
+                                // ছবি থাকলে প্রথমে টেক্সট পাঠানো
+                                if (!empty($reply)) {
+                                    $this->responseService->sendMessengerMessage($senderId, $reply, $client->fb_page_token);
+                                }
+                                
+                                // এরপর সিরিয়ালি সবগুলো ছবি পাঠানো
+                                $lastIndex = count($outgoingImages) - 1;
+                                foreach ($outgoingImages as $index => $imgUrl) {
+                                    // কুইক রিপ্লাই (যদি থাকে) শুধু একদম শেষের ছবির সাথে দেওয়া হবে
+                                    $qReplies = ($index === $lastIndex) ? $quickReplies : [];
+                                    $this->responseService->sendMessengerMessage($senderId, "", $client->fb_page_token, $imgUrl, $qReplies);
+                                }
+                            }
                         }
 
                         $this->responseService->logConversation($client->id, $senderId, $messageText, $reply, $incomingImageUrl);
