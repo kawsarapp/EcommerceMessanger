@@ -53,6 +53,7 @@ class ChatbotService
     public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
     {
         $lock = Cache::lock("processing_user_{$senderId}", 5);
+        Log::info("🤖 AI Service Started for User: $senderId");
 
         $userMessage = $userMessage ?? '';
         $base64Image = null;
@@ -85,7 +86,7 @@ class ChatbotService
             $reason = ($safetyStatus === 'spam') ? "Spamming/Looping" : "Customer Angry";
             OrderSession::updateOrCreate(['sender_id' => $senderId, 'client_id' => $clientId], ['is_human_agent_active' => true]);
             $this->notify->sendTelegramAlert($client, $senderId, "🛑 **AI Stopped!**\nReason: $reason\nMsg: `$userMessage`", 'danger');
-            return "দুঃখিত, আমি আপনার কথা বুঝতে পারছি না। আমাদের একজন প্রতিনিধি শীঘ্রই আপনার সাথে যোগাযোগ করবেন।";
+            return "দুঃখিত, আমি আপনার কথা বুঝতে পারছিবিধা। আমাদের একজন প্রতিনিধি শীঘ্রই আপনার সাথে যোগাযোগ করবেন।";
         }
 
         return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image, $imageUrl, $client) {
@@ -114,11 +115,7 @@ class ChatbotService
                 
                 if ($newProduct && $newProduct->id != ($session->customer_info['product_id'] ?? null)) {
                     $session->update([
-                        'customer_info' => array_merge($session->customer_info, [
-                            'step' => 'start', 
-                            'product_id' => $newProduct->id, 
-                            'variant' => []
-                        ])
+                        'customer_info' => ['step' => 'start', 'product_id' => $newProduct->id, 'history' => [], 'variant' => []]
                     ]);
                     $stepName = 'start'; 
                 } elseif (!$newProduct) {
@@ -146,22 +143,22 @@ class ChatbotService
             $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
             $contextData = $result['context'] ?? "[]";
 
-            // 🔥 CRITICAL FIX: Order Creation Logic
+            // 🔥 CRITICAL BUG FIX: Order Creation Logic
             if (isset($result['action']) && $result['action'] === 'create_order') {
                 try {
                     $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
                     
                     // সফল হলে AI-কে রিয়েল অর্ডার আইডি বলে দেওয়া হচ্ছে
-                    $instruction = "অর্ডারটি সফলভাবে ডাটাবেসে সেভ হয়েছে! কাস্টমারকে অভিনন্দন জানাও এবং অর্ডার আইডি (#{$order->id}) জানিয়ে দাও। ডেলিভারি টাইম সম্পর্কে Shop Policy বা FAQ দেখে উত্তর দাও।";
+                    $instruction = "অর্ডারটি সফলভাবে ডাটাবেসে সেভ হয়েছে! কাস্টমারকে অভিনন্দন জানাও এবং অর্ডার আইডি (#{$order->id}) জানিয়ে দাও।";
                     
                     $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
                     
-                    // স্টেপ চেঞ্জ করে completed করা হচ্ছে
+                    // 🔥 FIX: স্টেপ চেঞ্জ করে completed করা হচ্ছে (আগে এটি ছিল না)
                     $stepName = 'completed';
                     
                 } catch (\Exception $e) {
                     Log::error("❌ Order Creation Failed: " . $e->getMessage());
-                    $instruction = "Technical error creating order. Please apologize to the customer.";
+                    $instruction = "Technical error creating order. Please apologize.";
                 }
             }
 
@@ -177,10 +174,9 @@ class ChatbotService
             );
             
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
-            
             $history = $session->customer_info['history'] ?? [];
             
-            foreach (array_slice($history, -15) as $chat) {
+            foreach (array_slice($history, -20) as $chat) {
                 if (!empty($chat['user'])) $messages[] = ['role' => 'user', 'content' => $chat['user']];
                 if (!empty($chat['ai'])) $messages[] = ['role' => 'assistant', 'content' => $chat['ai']];
             }
@@ -194,10 +190,8 @@ class ChatbotService
             $aiResponse = $this->utility->callLlmChain($messages);
             if (!$aiResponse) return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
-            Log::info("🤖 AI Response: " . $aiResponse);
-
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
-            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -30)])]);
+            $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -50)])]);
 
             return $aiResponse;
         });

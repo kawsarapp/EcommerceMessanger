@@ -83,17 +83,19 @@ class AddressStep implements OrderStepInterface
         $session->update(['customer_info' => $customerInfo]);
 
         // ✅ সব তথ্য থাকলে কনফার্মেশন স্টেপে পাঠাও
+        // ✅ সব তথ্য থাকলে কনফার্মেশন স্টেপে পাঠাও
         if ($hasName && $hasPhone && $hasAddress) {
             $customerInfo['step'] = 'confirm_order';
             $session->update(['customer_info' => $customerInfo]);
 
-            // ডেলিভারি চার্জের হিন্টস তৈরি
             $locType = $customerInfo['location_type'] === 'inside_dhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে';
             $districtTxt = $customerInfo['district'] !== 'Other' ? "({$customerInfo['district']})" : "";
             
             return [
                 'instruction' => 
-                    "নাম ({$customerInfo['name']}), ফোন ({$customerInfo['phone']}) এবং ঠিকানা পেয়েছি। লোকেশন: {$locType} {$districtTxt}। এখন অর্ডারের সামারি দেখিয়ে কনফার্ম করতে বলো।",
+                    "কাস্টমারের নাম ({$customerInfo['name']}), ফোন ({$customerInfo['phone']}) এবং ঠিকানা ({$customerInfo['address']}) পেয়েছি। 
+                    🚨 খুব গুরুত্বপূর্ণ নির্দেশ: এখন অর্ডারের সম্পূর্ণ সামারি (প্রোডাক্টের নাম, সাইজ, কালার, ডেলিভারি চার্জ, মোট বিল) দেখাও। এরপর কাস্টমারকে সরাসরি প্রশ্ন করো: 'সব তথ্য ঠিক থাকলে অর্ডারটি সম্পন্ন করতে দয়া করে «Ji» অথবা «Confirm» লিখুন।' 
+                    ❌ নিজে থেকে কখনোই বলবে না যে অর্ডার কনফার্ম হয়েছে বা হচ্ছে।",
                 'context' => json_encode($customerInfo)
             ];
         }
