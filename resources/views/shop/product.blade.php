@@ -112,12 +112,12 @@
                                 <button @click="selectedColor = '{{ $color }}'"
                                         class="px-4 py-2.5 rounded-xl border text-sm font-bold transition-all flex items-center gap-2"
                                         :class="selectedColor === '{{ $color }}' ? 'border-primary bg-primary text-white shadow-lg shadow-primary/30' : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-white'">
-                                    @if(selectedColor !== '{{ $color }}')
-                                    <span class="w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ strtolower($color) }}"></span>
-                                    @else
-                                    <i class="fas fa-check text-xs"></i>
-                                    @endif
-                                    {{ $color }}
+                                    <!-- ফিক্স করা অংশ: @if এর পরিবর্তে x-show ব্যবহার করা হয়েছে -->
+                                    <span x-show="selectedColor !== '{{ $color }}'" class="w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ strtolower($color) }}"></span>
+                                    <span x-show="selectedColor === '{{ $color }}'" class="flex items-center gap-1">
+                                        <i class="fas fa-check text-xs"></i>
+                                        <span>{{ $color }}</span>
+                                    </span>
                                 </button>
                                 @endforeach
                             </div>
