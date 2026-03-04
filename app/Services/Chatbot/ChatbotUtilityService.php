@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotUtilityService
 {
-    
-
-public function lookupOrderByPhone($clientId, $message)
+    public function lookupOrderByPhone($clientId, $message)
     {
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
@@ -22,7 +20,6 @@ public function lookupOrderByPhone($clientId, $message)
             if ($order) {
                 $status = ucfirst($order->order_status);
                 
-                // 🔥 ম্যাজিক: admin_note থেকে Steadfast, Pathao এবং RedX এর ট্র্যাকিং কোড খুঁজে বের করা
                 $trackingInfo = "";
                 if (!empty($order->admin_note)) {
                     if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $order->admin_note, $match)) {
@@ -40,7 +37,6 @@ public function lookupOrderByPhone($clientId, $message)
         return null;
     }
     
-
     public function isTrackingIntent($msg) {
         $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অবস্থা', 'কবে পাব', 'tracking'];
         foreach ($trackingKeywords as $kw) {
@@ -56,7 +52,7 @@ public function lookupOrderByPhone($clientId, $message)
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
                 'max_tokens' => 600, 
-                'temperature' => 0.4, 
+                'temperature' => 0.1,
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
