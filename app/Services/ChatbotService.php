@@ -152,6 +152,15 @@ class ChatbotService
                     $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
                     
                     $stepName = 'completed';
+
+                    // 🔥 FIX 1: অর্ডার হওয়ার পর সেশন ক্লিয়ার করে দেওয়া হলো, যাতে পরে "ok" বললে আবার অর্ডার না পড়ে।
+                    $session->update([
+                        'customer_info' => array_merge($session->customer_info, [
+                            'step' => 'start',
+                            'product_id' => null,
+                            'variant' => []
+                        ])
+                    ]);
                     
                 } catch (\Exception $e) {
                     Log::error("❌ Order Creation Failed: " . $e->getMessage());
@@ -160,6 +169,8 @@ class ChatbotService
             }
 
             $inventoryData = $this->inventory->getFormattedInventory($client, $userMessage);
+            Log::info("📦 Inventory Sent to AI: " . $inventoryData);
+
             $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId);
             
             $systemPrompt = $this->promptService->generateDynamicSystemPrompt(
@@ -187,7 +198,6 @@ class ChatbotService
             $aiResponse = $this->utility->callLlmChain($messages);
             if (!$aiResponse) return "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। কিছুক্ষণ পর আবার চেষ্টা করুন।";
 
-            // 🔥 FIX: AI er response ekhane log kora hocche
             Log::info("🤖 AI Response: \n" . $aiResponse);
 
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];

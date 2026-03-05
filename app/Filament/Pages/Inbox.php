@@ -11,9 +11,8 @@ use App\Services\Messenger\MessengerResponseService;
 
 class Inbox extends Page
 {
-    // 🔥 Navigation Settings (ফোর্স করে মেনুতে দেখানোর জন্য)
     protected static bool $shouldRegisterNavigation = true;
-    protected static ?int $navigationSort = 1; // মেনুর একদম শুরুতে দেখাবে
+    protected static ?int $navigationSort = 1; 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
     protected static ?string $navigationGroup = 'Customer Support';
     protected static ?string $navigationLabel = 'Live Inbox';
@@ -28,7 +27,6 @@ class Inbox extends Page
     public $isAiActive = true;
     public $newMessage = ''; 
 
-    // পেজটি কে কে দেখতে পাবে (Security)
     public static function canAccess(): bool
     {
         return true; 
@@ -106,7 +104,21 @@ class Inbox extends Page
         $responseService = app(MessengerResponseService::class);
         $responseService->sendMessengerMessage($this->selectedSender, $message, $client->fb_page_token);
 
+        // UI-এর জন্য ডাটাবেসে সেভ
         $responseService->logConversation($this->clientId, $this->selectedSender, null, $message, null);
+
+        // 🔥 FIX 2: এআই-এর মেমোরি (OrderSession History)-তে অ্যাডমিনের মেসেজ যুক্ত করা
+        $session = OrderSession::where('client_id', $this->clientId)->where('sender_id', $this->selectedSender)->first();
+        if ($session) {
+            $customerInfo = $session->customer_info ?? [];
+            $history = $customerInfo['history'] ?? [];
+            
+            // অ্যাডমিনের মেসেজকে AI এর মেসেজ হিসেবে ট্যাগ করে দিচ্ছি, যাতে AI বুঝতে পারে তার তরফ থেকে কী বলা হয়েছে
+            $history[] = ['user' => null, 'ai' => "[Human Admin Reply]: " . $message, 'time' => time()];
+            
+            $customerInfo['history'] = array_slice($history, -50);
+            $session->update(['customer_info' => $customerInfo]);
+        }
 
         $this->newMessage = '';
         $this->loadChat();

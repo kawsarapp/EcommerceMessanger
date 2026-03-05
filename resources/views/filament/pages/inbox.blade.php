@@ -1,7 +1,7 @@
 <x-filament-panels::page>
-    <div class="flex flex-col md:flex-row h-[82vh] bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden" wire:poll.1s="loadChat">
+    <div class="flex flex-col md:flex-row h-[calc(100vh-6rem)] md:h-[calc(100vh-8rem)] lg:h-[85vh] bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden w-full" wire:poll.1s="loadChat">
 
-        <div class="w-full md:w-1/3 lg:w-1/4 h-1/3 md:h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex flex-col transition-all">
+        <div class="w-full md:w-1/3 lg:w-1/4 {{ $selectedSender ? 'hidden md:flex' : 'flex' }} flex-col h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 transition-all">
             <div class="p-3 md:p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10 flex justify-between items-center shadow-sm">
                 <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                     <x-heroicon-o-inbox-stack class="w-5 h-5 text-primary-500" />
@@ -44,16 +44,22 @@
             </div>
         </div>
 
-        <div class="w-full md:w-2/3 lg:w-3/4 h-2/3 md:h-full flex flex-col relative bg-[#F9FAFB] dark:bg-[#111827]">
+        <div class="w-full md:w-2/3 lg:w-3/4 {{ $selectedSender ? 'flex' : 'hidden md:flex' }} flex-col relative bg-[#F9FAFB] dark:bg-[#111827] h-full">
             
             @if($selectedSender)
-                <div class="px-4 py-2.5 md:p-4 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md flex justify-between items-center shadow-sm z-10 sticky top-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-white font-bold shadow-md">
-                            <x-heroicon-s-user class="w-5 h-5 md:w-6 md:h-6"/>
+                <div class="px-3 md:px-4 py-2.5 md:p-4 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md flex justify-between items-center shadow-sm z-10 sticky top-0">
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <button wire:click="$set('selectedSender', null)" class="md:hidden mr-1 p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 rounded-full transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                        </button>
+
+                        <div class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-white font-bold shadow-md">
+                            <x-heroicon-s-user class="w-4 h-4 md:w-6 md:h-6"/>
                         </div>
                         <div>
-                            <h3 class="font-bold text-sm md:text-base text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <h3 class="font-bold text-sm md:text-base text-gray-800 dark:text-gray-100 flex items-center gap-1 md:gap-2">
                                 Customer {{ substr($selectedSender, -6) }}
                                 <span class="hidden lg:inline-block text-xs font-normal text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">ID: {{ $selectedSender }}</span>
                             </h3>
@@ -62,26 +68,26 @@
                                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 {{ $isAiActive ? 'bg-green-400' : 'bg-red-400' }}"></span>
                                   <span class="relative inline-flex rounded-full h-2 w-2 {{ $isAiActive ? 'bg-green-500' : 'bg-red-500' }}"></span>
                                 </span>
-                                {{ $isAiActive ? 'AI Assistant is Active' : 'Human Mode (AI Paused)' }}
+                                {{ $isAiActive ? 'AI Active' : 'Human Mode' }}
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
-                        <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider {{ $isAiActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400' }} hidden md:block">
+                    <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-2.5 py-1.5 md:px-3 rounded-full border border-gray-200 dark:border-gray-700">
+                        <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider {{ $isAiActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400' }} hidden sm:block">
                             {{ $isAiActive ? 'Auto Reply ON' : 'Auto Reply OFF' }}
                         </span>
                         <button 
                             wire:click="toggleAi" 
-                            class="relative inline-flex h-6 w-11 md:h-7 md:w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ $isAiActive ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600' }} shadow-inner"
+                            class="relative inline-flex h-6 w-11 md:h-7 md:w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ $isAiActive ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600' }} shadow-inner flex-shrink-0"
                             title="Toggle AI"
                         >
-                            <span class="inline-block h-4 w-4 md:h-5 md:w-5 transform rounded-full bg-white shadow-sm transition-transform duration-300 {{ $isAiActive ? 'translate-x-6 md:translate-x-6' : 'translate-x-1' }}"></span>
+                            <span class="inline-block h-4 w-4 md:h-5 md:w-5 transform rounded-full bg-white shadow-sm transition-transform duration-300 {{ $isAiActive ? 'translate-x-6' : 'translate-x-1' }}"></span>
                         </button>
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 flex flex-col-reverse custom-scrollbar" id="chat-container" style="background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 24px 24px;">
+                <div class="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 flex flex-col-reverse custom-scrollbar" id="chat-container" style="background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 24px 24px;">
                     <div class="space-y-4 md:space-y-6 pb-2">
                         @foreach($chatHistory as $chat)
                             
@@ -133,33 +139,33 @@
                     </div>
                 </div>
 
-                <div class="p-3 md:p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
-                    <form wire:submit.prevent="sendMessage" class="relative flex items-center gap-2 max-w-5xl mx-auto">
-                        <div class="relative flex-1 flex items-center bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all shadow-inner pl-4 pr-2 py-1.5 md:py-2">
+                <div class="p-3 md:p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full">
+                    <form wire:submit.prevent="sendMessage" class="relative flex items-center gap-2 max-w-5xl mx-auto w-full">
+                        <div class="relative flex-1 flex items-center bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all shadow-inner pl-4 pr-1.5 py-1.5 md:py-2">
                             
                             <input 
                                 type="text" 
                                 wire:model="newMessage"
-                                placeholder="Type a message to send directly to messenger..." 
-                                class="w-full bg-transparent border-none text-sm md:text-base text-gray-800 dark:text-gray-100 focus:ring-0 outline-none placeholder-gray-400 py-2"
+                                placeholder="Type a message..." 
+                                class="w-full bg-transparent border-none text-sm md:text-base text-gray-800 dark:text-gray-100 focus:ring-0 outline-none placeholder-gray-400 py-1 md:py-2"
                                 autocomplete="off"
                             >
                             
                             <button 
                                 type="submit" 
-                                class="p-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 transition-all rounded-full text-white flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed group flex-shrink-0"
+                                class="p-2 md:p-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 transition-all rounded-full text-white flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed group flex-shrink-0"
                                 wire:loading.attr="disabled"
                             >
                                 <x-heroicon-s-paper-airplane class="w-4 h-4 md:w-5 md:h-5 transform -rotate-45 group-hover:scale-110 transition-transform"/>
                             </button>
                         </div>
                     </form>
-                    <div class="text-center mt-2 hidden md:block">
+                    <div class="text-center mt-2 hidden sm:block">
                         <span class="text-[10px] text-gray-400 font-medium"><span class="text-indigo-500">Tip:</span> This message will be sent as a Human Agent. The AI will pause automatically if you take over.</span>
                     </div>
                 </div>
             @else
-                <div class="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900/50">
+                <div class="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900/50 h-full">
                     <div class="w-24 h-24 md:w-32 md:h-32 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 shadow-xl border border-gray-100 dark:border-gray-700 relative">
                         <div class="absolute inset-0 rounded-full animate-ping opacity-10 bg-primary-400"></div>
                         <x-heroicon-o-chat-bubble-left-ellipsis class="w-12 h-12 md:w-16 md:h-16 text-primary-300 dark:text-primary-600"/>
@@ -188,10 +194,10 @@
                 if(container) { container.scrollTop = container.scrollHeight; }
             };
 
-            // স্ক্রল টু বটম প্রথমবার লোড হওয়ার সময়
+            // স্ক্রল টু বটম প্রথমবার লোড হওয়ার সময়
             scrollToBottom();
 
-            // লাইভওয়্যার মেসেজ আপডেট হলে আবার নিচে স্ক্রল করবে
+            // লাইভওয়্যার মেসেজ আপডেট হলে আবার নিচে স্ক্রল করবে
             Livewire.hook('message.processed', (message, component) => {
                 scrollToBottom();
             });
