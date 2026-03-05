@@ -24,7 +24,6 @@ class StartStep implements OrderStepInterface
         }
 
         if ($product) {
-            // 🔥 FIX: $contextData আগে ডিফাইন করা হলো
             $price = $product->sale_price ?? $product->regular_price;
             $regularPrice = $product->regular_price;
             $discountText = ($product->sale_price && $regularPrice > $price) 
@@ -54,7 +53,7 @@ class StartStep implements OrderStepInterface
             $dbSizes = $this->decodeVariants($product->sizes);
             
             $detectedVariant = $this->extractVariant($userMessage, $product);
-            $contextData['detected_variant'] = $detectedVariant; // Update context
+            $contextData['detected_variant'] = $detectedVariant; 
             
             $missingAttributes = [];
             if (!empty($dbColors) && empty($detectedVariant['color'])) $missingAttributes[] = 'কালার (Color)';
@@ -92,8 +91,18 @@ class StartStep implements OrderStepInterface
             }
         }
 
+        // 🔥 FIX: জেনারেল প্রশ্নের জন্য ইনভেন্টরি লিস্ট দেখানোর নির্দেশ
+        $isGeneralInquiry = preg_match('/(ki ki|ace|menu|list|offer|product|boi|dress|item|ache)/i', $userMessage);
+        
+        if ($isGeneralInquiry) {
+            return [
+                'instruction' => "কাস্টমার আমাদের স্টকে কী কী আছে তা জানতে চাচ্ছে। 'ইনভেন্টরি (Inventory)' ডাটা থেকে এভেইলেবল প্রোডাক্টগুলোর নাম ও দাম সুন্দরভাবে লিস্ট করে দেখাও।",
+                'context' => "General Menu Request"
+            ];
+        }
+
         return [
-            'instruction' => "কাস্টমার যা খুঁজছে তা সরাসরি পাওয়া যায়নি। ইনভেন্টরি লিস্ট চেক করে অফার বা বেস্ট সেলিং প্রোডাক্ট সাজেস্ট করো।",
+            'instruction' => "কাস্টমার যা খুঁজছে তা সরাসরি ডাটাবেসে পাওয়া যায়নি। তাকে বিনীতভাবে জানাও এবং ইনভেন্টরি লিস্ট চেক করে বেস্ট সেলিং প্রোডাক্টগুলো সাজেস্ট করো।",
             'context' => "Product Not Found"
         ];
     }
