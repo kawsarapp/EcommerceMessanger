@@ -44,7 +44,7 @@ class StartStep implements OrderStepInterface
             
             if ($isOutOfStock) {
                 return [
-                    'instruction' => "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে অন্য কোনো সিমিলার পণ্য দেখতে বলো।",
+                    'instruction' => "দুঃখিত, '{$product->name}' বর্তমানে স্টকে নেই। কাস্টমারকে Inventory থেকে অন্য কোনো প্রোডাক্ট সাজেস্ট করো।",
                     'context' => json_encode($contextData)
                 ];
             }
@@ -91,18 +91,18 @@ class StartStep implements OrderStepInterface
             }
         }
 
-        // 🔥 FIX: জেনারেল প্রশ্নের জন্য ইনভেন্টরি লিস্ট দেখানোর নির্দেশ
+        // 🔥 FIX: জেনারেল প্রশ্ন বা প্রোডাক্ট না পাওয়ার ইনস্ট্রাকশন আপডেট (No Hallucination Zone)
         $isGeneralInquiry = preg_match('/(ki ki|ace|menu|list|offer|product|boi|dress|item|ache)/i', $userMessage);
         
         if ($isGeneralInquiry) {
             return [
-                'instruction' => "কাস্টমার আমাদের স্টকে কী কী আছে তা জানতে চাচ্ছে। 'ইনভেন্টরি (Inventory)' ডাটা থেকে এভেইলেবল প্রোডাক্টগুলোর নাম ও দাম সুন্দরভাবে লিস্ট করে দেখাও।",
-                'context' => "General Menu Request"
+                'instruction' => "কাস্টমার মেসেজে যা জানতে চেয়েছে (যেমন: '{$userMessage}'), সেটি 'Inventory' ডাটাতে আছে কিনা চেক করো। যদি Inventory-তে ওই রিলেটেড প্রোডাক্ট না থাকে, তবে পরিষ্কারভাবে বলো 'দুঃখিত, আমাদের কাছে এই মুহূর্তে এটি নেই।' এবং Inventory তে থাকা অন্য রিয়েল প্রোডাক্টগুলোর নাম ও দাম বলো। ❌ কোনো ফেক নাম বা উদাহরণ বানাবে না।",
+                'context' => "General Query"
             ];
         }
 
         return [
-            'instruction' => "কাস্টমার যা খুঁজছে তা সরাসরি ডাটাবেসে পাওয়া যায়নি। তাকে বিনীতভাবে জানাও এবং ইনভেন্টরি লিস্ট চেক করে বেস্ট সেলিং প্রোডাক্টগুলো সাজেস্ট করো।",
+            'instruction' => "কাস্টমার যা খুঁজছে তা Inventory-তে পাওয়া যায়নি। তাকে সরাসরি জানাও যে 'দুঃখিত, প্রোডাক্টটি আমাদের স্টকে নেই।' এবং Inventory থেকে অন্য প্রোডাক্টগুলো সাজেস্ট করো।",
             'context' => "Product Not Found"
         ];
     }
