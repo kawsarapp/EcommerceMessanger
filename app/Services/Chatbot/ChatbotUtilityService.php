@@ -52,7 +52,7 @@ class ChatbotUtilityService
                 'model' => 'gpt-4o-mini',
                 'messages' => $messages,
                 'max_tokens' => 600, 
-                'temperature' => 0.1,
+                'temperature' => 0.0, // 🔥 Zero Hallucination Mode 
             ]);
             return $response->json()['choices'][0]['message']['content'] ?? null;
         } catch (\Exception $e) {
