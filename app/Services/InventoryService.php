@@ -11,18 +11,24 @@ class InventoryService
     {
         $safeMessage = trim((string) $userMessage);
 
+        // Clean punctuation for better matching
+        $cleanMessage = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $safeMessage);
+
         $stopWords = [
             'ki','ace','dam','koto','rate','price','show','product',
             'image','chobi','daw','brand','material','size','color',
+            'want','buy', 'to',
             'আছে', 'কী', 'কি', 'দাও', 'কত', 'দাম', 'দেখাও', 'কিনবো', 'nibo', 'chai', 'চাই'
         ];
 
+        // 🔥 Use mb_strtolower for Bengali support
         $keywords = array_filter(
-            explode(' ', strtolower($safeMessage)),
+            explode(' ', mb_strtolower($cleanMessage, 'UTF-8')),
             fn($w) => mb_strlen($w) > 2 && !in_array($w, $stopWords)
         );
 
-        $query = Product::where('client_id', $client->id)->where('stock_status', 'in_stock');
+        $query = Product::where('client_id', $client->id)
+            ->where('stock_status', 'in_stock');
 
         if (!empty($keywords)) {
             $query->where(function($q) use ($keywords) {
@@ -53,7 +59,6 @@ class InventoryService
 
         return $products->map(function($p) use ($client) {
 
-            // 🔥 FIX: এআইকে শুধু ফাইনাল দাম দেওয়া হচ্ছে। কোনো বিয়োগের সুযোগ নেই!
             $finalPrice = ($p->sale_price > 0 && $p->sale_price < $p->regular_price) 
                 ? $p->sale_price 
                 : $p->regular_price;
@@ -64,14 +69,16 @@ class InventoryService
             $colors = !empty($colorsArray) ? implode(', ', $colorsArray) : 'N/A';
             $sizes  = !empty($sizesArray) ? implode(', ', $sizesArray) : 'N/A';
 
-            $mainImage = $p->thumbnail ? asset('storage/' . ltrim($p->thumbnail, '/')) : ($p->image ? asset('storage/' . ltrim($p->image, '/')) : null);
+            $mainImage = $p->thumbnail 
+                ? asset('storage/' . ltrim($p->thumbnail, '/')) 
+                : ($p->image ? asset('storage/' . ltrim($p->image, '/')) : null);
 
             return [
                 'id' => $p->id,
                 'name' => $p->name,
                 'available_colors' => $colors,
                 'available_sizes' => $sizes,
-                'price' => $finalPrice . " Tk", // Only exact price goes to AI
+                'price' => $finalPrice . " Tk",
                 'stock' => $p->stock_quantity,
                 'desc' => Str::limit(strip_tags($p->description ?? $p->short_description), 150),
                 'link' => route('shop.product.details', [$client->slug, $p->slug]),

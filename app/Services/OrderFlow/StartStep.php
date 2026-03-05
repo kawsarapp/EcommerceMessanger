@@ -14,9 +14,10 @@ class StartStep implements OrderStepInterface
         $customerInfo = $session->customer_info ?? [];
         $clientId = $session->client_id;
         
-        $msgLower = strtolower(trim($userMessage));
+        $msgLower = mb_strtolower(trim($userMessage), 'UTF-8');
         $isGeneralInquiry = preg_match('/(ki ki|ace|menu|list|offer|product|boi|dress|item|ache|koto|dam|price|picture|pic|chobi|ase|ki|details)/i', $msgLower);
-        $isBuyingIntent = preg_match('/(nibo|kinbo|chai|order|daw|deo|kinte|confirm|pathan|order korbo)/i', $msgLower);
+        // 🔥 Add 'want to buy' to explicitly capture FB default intents
+        $isBuyingIntent = preg_match('/(nibo|kinbo|chai|order|daw|deo|kinte|confirm|pathan|order korbo|want to buy)/i', $msgLower);
 
         $product = $this->findProductSystematically($clientId, $userMessage);
 
@@ -32,7 +33,6 @@ class StartStep implements OrderStepInterface
         }
 
         if ($product) {
-            // 🔥 ফাইন্যাল প্রাইস ক্যালকুলেশন
             $finalPrice = ($product->sale_price > 0 && $product->sale_price < $product->regular_price) 
                 ? $product->sale_price 
                 : $product->regular_price;
@@ -66,7 +66,6 @@ class StartStep implements OrderStepInterface
             
             $customerInfo['product_id'] = $product->id;
             
-            // 🔥 FIX: মিসিং এট্রিবিউট থাকলে অবশ্যই select_variant স্টেপে পাঠাবে
             $nextStep = !empty($missingAttributes) ? 'select_variant' : 'collect_info';
             $customerInfo['step'] = $nextStep;
             $session->update(['customer_info' => $customerInfo]);
@@ -93,12 +92,12 @@ class StartStep implements OrderStepInterface
 
     private function extractVariant($msg, $product)
     {
-        $msg = strtolower(trim($msg));
+        $msg = mb_strtolower(trim($msg), 'UTF-8');
         $variant = [];
 
         $colors = $this->decodeVariants($product->colors);
         foreach ($colors as $color) {
-            if (str_contains($msg, strtolower($color))) {
+            if (str_contains($msg, mb_strtolower($color, 'UTF-8'))) {
                 $variant['color'] = $color;
                 break;
             }
@@ -106,7 +105,7 @@ class StartStep implements OrderStepInterface
 
         $sizes = $this->decodeVariants($product->sizes);
         foreach ($sizes as $size) {
-            $s = strtolower($size);
+            $s = mb_strtolower($size, 'UTF-8');
             if (preg_match("/\b{$s}\b/", $msg) || $msg === $s) {
                 $variant['size'] = $size;
                 break;

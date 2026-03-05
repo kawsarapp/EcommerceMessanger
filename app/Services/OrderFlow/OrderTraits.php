@@ -13,10 +13,12 @@ trait OrderTraits
     {
         if (empty($data)) return [];
         if (is_array($data)) return array_values(array_filter($data, fn($item) => !empty($item) && strtolower((string)$item) !== 'n/a'));
+        
         $decoded = json_decode($data, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return array_values(array_filter($decoded, fn($item) => !empty($item)));
         }
+        
         if (is_string($data)) return array_values(array_filter(array_map('trim', explode(',', $data))));
         return [];
     }
@@ -26,36 +28,48 @@ trait OrderTraits
         $message = trim((string) $message);
         if (empty($message)) return null;
 
-        $fastMatch = Product::where('client_id', $clientId)
-            ->where(function($q) use ($message) {
-                $q->where('id', $message)->orWhere('sku', $message);
-            })
-            ->where('stock_status', 'in_stock')
-            ->first();
+        // 🔥 1. Facebook Auto Message format detection (Direct SKU Match)
+        if (preg_match('/\(Code:\s*([A-Za-z0-9\-]+)\)/i', $message, $matches)) {
+            $sku = $matches[1];
+            $product = Product::where('client_id', $clientId)
+                ->where('sku', $sku)
+                ->where('stock_status', 'in_stock')
+                ->first();
+            if ($product) {
+                Log::info("✅ Product Found by SKU from FB Message: {$product->name}");
+                return $product;
+            }
+        }
 
-        if ($fastMatch) return $fastMatch;
+        // 🔥 2. Fast Match (ID Exact)
+        if (is_numeric($message)) {
+            $fastMatch = Product::where('client_id', $clientId)
+                ->where('id', $message)
+                ->where('stock_status', 'in_stock')
+                ->first();
+
+            if ($fastMatch) return $fastMatch;
+        }
+
+        // 🔥 3. Clean string from punctuation for keyword search
+        $cleanMessage = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $message);
 
         $stopWords = [
             'ami','kinbo','chai','korte','jonno','ace','ase','nibo',
             'product','koto','dam','price','hi','hello','akta','ekta',
             'ki','kivabe','order','please','details','pic','picture',
+            'want','buy','to','for',
             'আছে','নাই','কত','দাম','অর্ডার','চাই','নিতে','হবে','দেখি','দেখান'
         ];
 
-        // 🔥 FIX: স্মার্ট সিনোনিম - কাস্টমার ড্রেস বা শার্ট চাইলে টি-শার্ট সাজেস্ট করবে
         $synonyms = [
-            'mobile' => 'phone',
-            'pant'   => 'trousers',
-            'shirt'  => 't-shirt',
-            'tshirt' => 't-shirt',
-            'dress'  => 't-shirt', // ড্রেস বললেও জামা/টি-শার্ট খুঁজবে
-            'panjabi'=> 'punjabi',
-            'juta'   => 'shoe',
-            'boi'    => 'book',
-            'book'   => 'boi'
+            'mobile' => 'phone', 'pant' => 'trousers', 'shirt' => 'top',
+            'dress' => 't-shirt', 'tshirt' => 't-shirt', 'juta' => 'shoe',
+            'ghori' => 'watch', 'boi' => 'book', 'book' => 'boi'
         ];
 
-        $rawKeywords = explode(' ', strtolower($message));
+        // 🔥 MUST USE mb_strtolower for Bengali!
+        $rawKeywords = explode(' ', mb_strtolower($cleanMessage, 'UTF-8'));
         $keywords = [];
 
         foreach ($rawKeywords as $word) {
@@ -72,6 +86,7 @@ trait OrderTraits
         $query->where(function($q) use ($keywords, $message) {
             $safeMessage = addcslashes($message, '%_');
             $q->where('name', 'LIKE', "%{$safeMessage}%")->orWhere('tags', 'LIKE', "%{$safeMessage}%");
+
             foreach($keywords as $word) {
                 $safeWord = addcslashes($word, '%_');
                 $q->orWhere('name', 'LIKE', "%{$safeWord}%")
@@ -85,7 +100,11 @@ trait OrderTraits
         });
 
         $product = $query->latest()->first();
-        if ($product) return $product;
+
+        if ($product) {
+            Log::info("✅ Product Found by Smart Keywords: {$product->name}");
+            return $product;
+        }
 
         return $this->findProductWithFuzzyLogic($clientId, $keywords);
     }
@@ -97,7 +116,7 @@ trait OrderTraits
         $shortestDistance = PHP_INT_MAX;
 
         foreach ($allProducts as $product) {
-            $productWords = explode(' ', strtolower($product->name));
+            $productWords = explode(' ', mb_strtolower($product->name, 'UTF-8'));
             foreach ($keywords as $keyword) {
                 if (mb_strlen($keyword) <= 4) continue;
                 foreach ($productWords as $pWord) {
@@ -111,12 +130,38 @@ trait OrderTraits
                 }
             }
         }
-        return $bestMatch ? Product::find($bestMatch->id) : null;
+
+        if ($bestMatch) {
+            Log::info("✅ Product Found by Fuzzy Logic (Typo Fix): {$bestMatch->name}");
+            return Product::find($bestMatch->id);
+        }
+
+        return null;
     }
 
     public function extractVariantsFromMessage($message, $product)
     {
-        return $this->extractVariant($message, $product); // StartStep এর লজিকের সাথে যুক্ত করা হলো
+        $detected = ['color' => null, 'size' => null];
+        $msg = mb_strtolower((string)$message, 'UTF-8');
+
+        $availableColors = $this->decodeVariants($product->colors);
+        foreach ($availableColors as $color) {
+            if (str_contains($msg, mb_strtolower($color, 'UTF-8'))) {
+                $detected['color'] = $color;
+                break;
+            }
+        }
+
+        $availableSizes = $this->decodeVariants($product->sizes);
+        foreach ($availableSizes as $size) {
+            $s = preg_quote(mb_strtolower($size, 'UTF-8'), '/');
+            if (preg_match("/\b{$s}\b/u", $msg)) {
+                $detected['size'] = $size;
+                break;
+            }
+        }
+
+        return array_filter($detected);
     }
 
     public function getProductFromSession($senderId, $clientId)
@@ -125,6 +170,7 @@ trait OrderTraits
         if ($session && !empty($session->customer_info['product_id'])) {
             $product = Product::find($session->customer_info['product_id']);
             if ($product && $product->stock_quantity > 0 && $product->stock_status === 'in_stock') {
+                Log::info("🔄 Retrieved Product from Session Context: {$product->name}");
                 return $product;
             }
         }
