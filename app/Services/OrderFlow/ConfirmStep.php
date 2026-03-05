@@ -55,35 +55,32 @@ class ConfirmStep implements OrderStepInterface
             
             return [
                 'instruction' => "অর্ডার কনফার্ম করার জন্য কাস্টমারের " . implode(' এবং ', $missingFields) . " প্রয়োজন। বিনয়ের সাথে চাও।",
-                'context' => "Missing Info: " . implode(',', $missingFields)
+                'context' => "Missing Info"
             ];
         }
 
         if ($this->isOrderInquiry($userMessage)) {
              return [
                 'instruction' => "কাস্টমার জানতে চাইছে অর্ডার হয়েছে কিনা। তাকে স্পষ্টভাবে বলো: 'না স্যার, অর্ডারটি এখনো কনফার্ম হয়নি। অর্ডারটি সম্পন্ন করতে দয়া করে **Confirm** অথবা **Ji** লিখে রিপ্লাই দিন।'",
-                'context' => "User asking about order status but order not created yet."
+                'context' => "User asking about order status"
             ];
         }
 
         if ($this->isModificationIntent($userMessage)) {
             $customerInfo['step'] = 'collect_info';
             $session->update(['customer_info' => $customerInfo]);
-            
-            return [
-                'instruction' => "ঠিক আছে, আপনি আপনার সঠিক তথ্য (নাম, ফোন বা ঠিকানা) আবার দিন। আমি আপডেট করে নিচ্ছি।",
-                'context' => "User wants to modify info"
-            ];
+            return ['instruction' => "ঠিক আছে, আপনি আপনার সঠিক তথ্য (নাম, ফোন বা ঠিকানা) আবার দিন।", 'context' => "User wants to modify info"];
         }
 
         if ($this->isNegativeConfirmation($userMessage)) {
-            return [
-                'instruction' => "কাস্টমার অর্ডারটি কনফার্ম করতে চাচ্ছে না। জিজ্ঞেস করো তারা কি অর্ডার বাতিল করতে চায় নাকি কোনো প্রশ্ন আছে?",
-                'context' => "User declined confirmation"
-            ];
+            return ['instruction' => "কাস্টমার অর্ডারটি কনফার্ম করতে চাচ্ছে না। জিজ্ঞেস করো তারা কি অর্ডার বাতিল করতে চায়?", 'context' => "User declined"];
         }
 
-        // ✅ FINAL CONFIRMATION TRIGGER
+        // 🔥 FIX: Price calculation robust logic
+        $unitPrice = ($product->sale_price > 0 && $product->sale_price < $product->regular_price) 
+            ? $product->sale_price 
+            : $product->regular_price;
+
         if ($this->isPositiveConfirmation($userMessage)) {
             
             $note = $this->extractNoteFromConfirmation($userMessage);
@@ -99,27 +96,17 @@ class ConfirmStep implements OrderStepInterface
                 ->first();
 
             if ($recentOrder) {
-                return [
-                    'instruction' => "আপনার অর্ডারটি ইতিমধ্যেই গ্রহণ করা হয়েছে (অর্ডার #{$recentOrder->id})। ধন্যবাদ!",
-                    'context' => "Duplicate Order Attempt"
-                ];
+                return ['instruction' => "আপনার অর্ডারটি ইতিমধ্যেই গ্রহণ করা হয়েছে (অর্ডার #{$recentOrder->id})। ধন্যবাদ!", 'context' => "Duplicate"];
             }
 
-            // 🔥 ACTUAL ACTION TRIGGER
             return [
                 'action' => 'create_order', 
-                'instruction' => "অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। কাস্টমারকে অভিনন্দন জানাও এবং সিস্টেম জেনারেটেড অর্ডার আইডি (Order ID) জানিয়ে দাও। ডেলিভারি টাইম সম্পর্কে Shop Policy বা FAQ দেখে উত্তর দাও।",
-                'context' => json_encode([
-                    'product' => $product->name,
-                    'variant' => $selectedVariant,
-                    'price' => $product->sale_price ?? $product->regular_price,
-                    'note' => $note ?? 'N/A'
-                ])
+                'instruction' => "অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে। কাস্টমারকে অভিনন্দন জানাও এবং সিস্টেম জেনারেটেড অর্ডার আইডি (Order ID) জানিয়ে দাও।",
+                'context' => json_encode(['product' => $product->name, 'variant' => $selectedVariant, 'price' => $unitPrice])
             ];
         }
 
         $client = Client::find($clientId);
-        $unitPrice = $product->sale_price ?? $product->regular_price;
         
         $variantText = "";
         if ($selectedVariant) {
@@ -132,7 +119,6 @@ class ConfirmStep implements OrderStepInterface
 
         if ($client) {
             $locationType = $customerInfo['location_type'] ?? 'unknown';
-            
             if ($locationType === 'inside_dhaka') {
                 $deliveryCharge = $client->delivery_charge_inside ?? 80;
                 $deliveryNote .= " (ঢাকা)";
@@ -146,10 +132,9 @@ class ConfirmStep implements OrderStepInterface
         }
 
         $totalAmount = $unitPrice + $deliveryCharge;
-        $paymentMethod = "ক্যাশ অন ডেলিভারি (COD)";
 
         return [
-            'instruction' => "অর্ডার কনফার্ম করার জন্য কাস্টমারকে নিচের তথ্যগুলো ভালো করে চেক করতে বলো। যদি সব ঠিক থাকে তবে 'Ji' বা 'Confirm' লিখতে বলো।\n\n" .
+            'instruction' => "অর্ডার কনফার্ম করার জন্য কাস্টমারকে নিচের তথ্যগুলো চেক করতে বলো। সব ঠিক থাকলে 'Ji' বা 'Confirm' লিখতে বলো।\n\n" .
                              "📝 **অর্ডার রিভিউ:**\n" .
                              "- পণ্য: {$product->name}{$variantText}\n" .
                              "- পণ্যের দাম: {$unitPrice} টাকা\n" .
@@ -158,36 +143,23 @@ class ConfirmStep implements OrderStepInterface
                              "📦 **শিপিং তথ্য:**\n" .
                              "- নাম: {$name}\n" . 
                              "- ফোন: {$phone}\n" .
-                             "- ঠিকানা: {$address}\n" .
-                             "- পেমেন্ট: {$paymentMethod}\n\n" .
-                             "👉 *ডেলিভারি সময় এবং বিস্তারিত জানতে আমাদের পলিসি চেক করা হচ্ছে।* \n" .
-                             "আপনি কি কনফার্ম করছেন? বিশেষ কোনো নোট থাকলে তাও লিখতে পারেন।",
-            'context' => "Waiting for Confirmation. Total: {$totalAmount}. Check KB for delivery time."
+                             "- ঠিকানা: {$address}\n\n" .
+                             "আপনি কি কনফার্ম করছেন?",
+            'context' => "Waiting for Confirmation. Total: {$totalAmount}."
         ];
     }
 
     private function isPositiveConfirmation($msg)
     {
-        // 🔥 FIX: 'order number', 'track order' ইত্যাদি কনফিউজিং শব্দ বাদ দেওয়া হয়েছে
-        $words = [
-            'yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'done', 
-            'order koren', 'create', 'nibo', 'pathan', 'place order', 'right',
-            'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'অর্ডার করেন', 'পাঠান', 'নিব'
-        ];
-        
+        $words = ['yes', 'ji', 'hmd', 'ok', 'confirm', 'thik ace', 'thik ase', 'done', 'order koren', 'create', 'nibo', 'pathan', 'place order', 'right', 'হ্যাঁ', 'জি', 'ঠিক আছে', 'কনফার্ম', 'করেন', 'অর্ডার করেন', 'পাঠান', 'নিব'];
         $msg = strtolower(trim($msg));
-        foreach ($words as $w) {
-            if (str_contains($msg, $w)) return true;
-        }
+        foreach ($words as $w) if (str_contains($msg, $w)) return true;
         return false;
     }
 
     private function isNegativeConfirmation($msg)
     {
-        $words = [
-            'no', 'na', 'cancel', 'bad', 'thak', 'pore', 'later', 'not now',
-            'না', 'বাদ', 'ক্যানসেল', 'থাক', 'পরে', 'নিব না'
-        ];
+        $words = ['no', 'na', 'cancel', 'bad', 'thak', 'pore', 'later', 'not now', 'না', 'বাদ', 'ক্যানসেল', 'থাক', 'পরে', 'নিব না'];
         $msg = strtolower(trim($msg));
         foreach ($words as $w) if (str_contains($msg, $w)) return true;
         return false;
@@ -195,11 +167,7 @@ class ConfirmStep implements OrderStepInterface
 
     private function isModificationIntent($msg)
     {
-        $words = [
-            'change', 'wrong', 'vul', 'thik nai', 'edit', 'poriborton', 
-            'address change', 'name change', 'number change',
-            'ভুল', 'চেঞ্জ', 'পরিবর্তন', 'ঠিকানা ভুল', 'নাম ভুল', 'নম্বর ভুল', 'এডিট'
-        ];
+        $words = ['change', 'wrong', 'vul', 'thik nai', 'edit', 'poriborton', 'address change', 'name change', 'number change', 'ভুল', 'চেঞ্জ', 'পরিবর্তন', 'ঠিকানা ভুল', 'নাম ভুল', 'নম্বর ভুল', 'এডিট'];
         $msg = strtolower(trim($msg));
         foreach ($words as $w) if (str_contains($msg, $w)) return true;
         return false;
@@ -210,20 +178,12 @@ class ConfirmStep implements OrderStepInterface
         $confirmationKeywords = ['ji', 'yes', 'ok', 'confirm', 'thik ace', 'হ্যাঁ', 'জি', 'ঠিক আছে'];
         $cleanMsg = str_ireplace($confirmationKeywords, '', $msg);
         $cleanMsg = trim(preg_replace('/[[:punct:]]+/', ' ', $cleanMsg));
-
-        if (mb_strlen($cleanMsg) > 4) {
-            return $cleanMsg;
-        }
-        return null;
+        return (mb_strlen($cleanMsg) > 4) ? $cleanMsg : null;
     }
 
     private function isOrderInquiry($msg)
     {
-        $words = [
-            'order ki hoice', 'order hoise', 'confirm hoise', 'create hoice', 
-            'create kora hoice', 'placed', 'hoice kina', 'hoy nai', 
-            'অর্ডার হয়েছে', 'কনফার্ম হয়েছে', 'অর্ডার কি হয়েছে', 'অর্ডার কি কনফার্ম'
-        ];
+        $words = ['order ki hoice', 'order hoise', 'confirm hoise', 'create hoice', 'create kora hoice', 'placed', 'hoice kina', 'hoy nai', 'অর্ডার হয়েছে', 'কনফার্ম হয়েছে', 'অর্ডার কি হয়েছে', 'অর্ডার কি কনফার্ম'];
         $msg = strtolower(trim($msg));
         foreach ($words as $w) if (str_contains($msg, $w)) return true;
         return false;

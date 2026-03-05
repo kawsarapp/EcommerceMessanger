@@ -9,49 +9,35 @@ class ChatbotPromptService
     {
         $clientPrompt = $client->custom_prompt ?? '';
 
-        // 🔥 মাস্টার রুলস: সেলার কাস্টম প্রম্পট দিক বা না দিক, এই নিয়মগুলো এআই-কে মানতেই হবে!
         $masterRules = <<<EOT
-তুমি {{shop_name}} এর একজন ডাটাবেস-নির্ভর কাস্টমার সাপোর্ট এজেন্ট। 
+তুমি {{shop_name}} এর একজন স্মার্ট, প্রফেশনাল এবং পারফেক্ট সেলসম্যান।
+তোমার লক্ষ্য কাস্টমারকে সঠিক তথ্য দিয়ে সাহায্য করা এবং দ্রুত অর্ডার নেওয়া।
 
-🚨 STRICT AI RULES (CRITICAL - DO NOT BREAK):
-১. DATABASE ONLY: নিচে 'Inventory' সেকশনে যে প্রোডাক্টগুলোর লিস্ট দেওয়া আছে, তোমার কাছে শুধুমাত্র সেগুলোই আছে। এর বাইরে তোমার দোকানে আর কোনো প্রোডাক্ট, বই বা পোশাক নেই।
-২. ZERO HALLUCINATION: কাস্টমার যদি এমন কোনো বই বা প্রোডাক্টের নাম বলে যা 'Inventory'-তে নেই, তুমি সরাসরি বলবে: "দুঃখিত, এই প্রোডাক্টটি আমাদের স্টকে নেই।" 
-৩. NO FAKE EXAMPLES: নিজে থেকে কোনো লেখক, বইয়ের নাম, পোশাক বা প্রোডাক্ট বানিয়ে উদাহরণ দিবে না। এটি সম্পূর্ণ নিষিদ্ধ! কাস্টমার 'কী কী আছে' জানতে চাইলে শুধুমাত্র 'Inventory'-তে থাকা আইটেমগুলোর নাম বলবে।
-৪. PICTURE SENDING: কাস্টমার ছবি দেখতে চাইলে, Inventory থেকে প্রোডাক্টের 'image_url' লিংকটি তোমার মেসেজে হুবহু পেস্ট করে দিবে। 
-৫. PLAIN TEXT: কোনো মার্কডাউন (* বা #) ব্যবহার করবে না।
+🚨 STRICT SALESMAN RULES (CRITICAL):
+১. EXACT PRICE ONLY: Inventory-তে যে 'price' দেওয়া আছে (যেমন: 630 Tk), ঠিক সেই দামই বলবে। নিজে থেকে কোনো অফার বা ফেক দাম বানাবে না।
+২. NO PREMATURE ADDRESS: কাস্টমার প্রোডাক্ট পছন্দ করলে আগে জিজ্ঞেস করো সে কোন কালার বা সাইজ নিবে। 'Current Instruction' এ যা বলা আছে শুধু তাই করবে।
+৩. IMAGE SENDING (CRITICAL): কাস্টমার ছবি চাইলে, Inventory থেকে প্রোডাক্টের 'image_url' লিংকটি মেসেজে দিবে এবং বলবে "এই নিন আপনার প্রোডাক্টের ছবি"। ⚠️ কোনোভাবেই বলবে না "আমি ছবি পাঠাতে পারি না"।
+৪. CALCULATE TOTAL: কাস্টমার মোট বিল জানতে চাইলে, (প্রোডাক্টের দাম + ডেলিভারি চার্জ) যোগ করে সঠিক হিসাব দিবে।
+৫. DATABASE ONLY: 'Inventory'-তে যে প্রোডাক্টগুলো আছে, শুধু সেগুলো নিয়েই কথা বলবে। 
+৬. PLAIN TEXT: কোনো মার্কডাউন (* বা #) ব্যবহার করবে না।
 
-Current Instruction:
-{{instruction}}
+👇 Current Instruction (তোমাকে এখন ঠিক এই কাজটি করতে হবে):
+>>> {{instruction}} <<<
 
 প্রয়োজনীয় তথ্য:
 - কাস্টমার: {{customer_name}}
 - অর্ডার ইতিহাস: {{order_history}}
 
-👇 Inventory (তোমার স্টকে এই মুহূর্তে শুধু এগুলোই আছে):
+👇 Inventory (তোমার স্টকে শুধু এগুলোই আছে):
 {{inventory}}
 EOT;
 
-        // যদি সেলারের কাস্টম প্রম্পট থাকে, তবে সেটা মাস্টার রুলসের উপরে জুড়ে দেওয়া হবে
         $finalPrompt = !empty($clientPrompt) 
             ? "Shop Owner's Guideline:\n" . $clientPrompt . "\n\n" . $masterRules 
             : $masterRules;
 
-        $recentOrder = Order::where('client_id', $client->id)
-            ->where('sender_id', request('sender_id') ?? 0)
-            ->latest()
-            ->first();
-            
-        $recentOrderInfo = $recentOrder 
-            ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" 
-            : "কোনো সাম্প্রতিক অর্ডার নেই।";
-
-        if ($recentOrder && !empty($recentOrder->admin_note)) {
-            if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
-                $recentOrderInfo .= "। Steadfast Tracking Code: " . $match[1];
-            } elseif (preg_match('/Pathao Tracking:\s*([A-Za-z0-9\-]+)/i', $recentOrder->admin_note, $match)) {
-                $recentOrderInfo .= "। Pathao Tracking Code: " . $match[1];
-            }
-        }
+        $recentOrder = Order::where('client_id', $client->id)->where('sender_id', request('sender_id') ?? 0)->latest()->first();
+        $recentOrderInfo = $recentOrder ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" : "কোনো সাম্প্রতিক অর্ডার নেই।";
 
         $tags = [
             '{{shop_name}}'       => $client->shop_name,
