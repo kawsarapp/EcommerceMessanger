@@ -75,6 +75,15 @@ class Client extends Model
         'is_review_collection_active',
         'review_delay_days',
 
+        //--
+        // Store Sync API Keys
+        'wc_store_url',
+        'wc_consumer_key',
+        'wc_consumer_secret',
+        'shopify_store_url',
+        'shopify_access_token',
+        'last_inventory_sync_at',
+
     ];
 
     /**
@@ -85,6 +94,7 @@ class Client extends Model
         'webhook_verified_at' => 'datetime',
         'is_ai_enabled' => 'boolean',
         'is_review_collection_active' => 'boolean',
+        'last_inventory_sync_at' => 'datetime',
     ];
 
     // ==========================================

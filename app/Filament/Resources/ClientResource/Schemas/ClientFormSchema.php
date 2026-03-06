@@ -299,6 +299,30 @@ class ClientFormSchema
                         ->visible(fn (callable $get) => $get('is_review_collection_active')),
                 ])->columns(2),
 
+                //-----
+                // 🔄 Tab 9: Store Sync (WooCommerce/Shopify)
+                        Tabs\Tab::make('Store Sync')
+                            ->icon('heroicon-m-arrow-path-rounded-square')
+                            ->schema([
+                                Section::make('WooCommerce Sync (WordPress)')
+                                    ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
+                                    ->schema([
+                                        TextInput::make('wc_store_url')
+                                            ->label('Store URL')
+                                            ->placeholder('https://yourwebsite.com')
+                                            ->url(),
+                                        TextInput::make('wc_consumer_key')
+                                            ->label('Consumer Key')
+                                            ->password()
+                                            ->revealable(),
+                                        TextInput::make('wc_consumer_secret')
+                                            ->label('Consumer Secret')
+                                            ->password()
+                                            ->revealable(),
+                                    ])->columns(3),
+                            ]),
+
+                            //--
 
 
 
