@@ -15,6 +15,30 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OrderFormSchema
 {
+    // 🔥 Auto Calculate Total Function
+    public static function updateTotal(callable $get, callable $set)
+    {
+        $subtotal = 0;
+        $items = $get('items') ?? [];
+        
+        foreach ($items as $item) {
+            $price = floatval($item['price'] ?? 0);
+            $qty = floatval($item['quantity'] ?? 1);
+            $subtotal += ($price * $qty);
+        }
+
+        $zone = $get('delivery_zone');
+        $charge = 0;
+        
+        if ($zone) {
+            $client = Client::where('user_id', auth()->id())->first();
+            if ($zone === 'Inside Dhaka') $charge = floatval($client->delivery_charge_inside ?? 80);
+            if ($zone === 'Outside Dhaka') $charge = floatval($client->delivery_charge_outside ?? 150);
+        }
+
+        $set('total_amount', $subtotal + $charge);
+    }
+
     public static function schema(): array
     {
         return [
@@ -36,7 +60,6 @@ class OrderFormSchema
                                             ->tel()
                                             ->required(),
                                         
-                                        // ম্যানুয়াল অর্ডারের জন্য স্মার্ট ক্লায়েন্ট সিলেকশন
                                         Select::make('client_id')
                                             ->label('Shop/Merchant')
                                             ->relationship('client', 'shop_name', function (Builder $query) {
@@ -45,8 +68,8 @@ class OrderFormSchema
                                                 }
                                             })
                                             ->default(fn () => Client::where('user_id', auth()->id())->first()?->id)
-                                            ->disabled(fn () => auth()->id() !== 1) // ক্লায়েন্ট নিজে এটা বদলাতে পারবে না
-                                            ->dehydrated() // ডিসেবল থাকলেও ডাটা সেভ হবে
+                                            ->disabled(fn () => auth()->id() !== 1) 
+                                            ->dehydrated() 
                                             ->searchable()
                                             ->required(),
                                         
@@ -56,16 +79,30 @@ class OrderFormSchema
                                     ]),
                                 ]),
 
-                            // ২. ডেলিভারি অ্যাড্রেস
-                            Section::make('Shipping Address')
+                            // ২. ডেলিভারি অ্যাড্রেস ও জোন সিলেকশন
+                            Section::make('Shipping & Location')
                                 ->schema([
-                                    Grid::make(2)->schema([
+                                    Grid::make(3)->schema([
+                                        // 🔥 NEW: Delivery Zone Selection
+                                        Select::make('delivery_zone')
+                                            ->label('Delivery Zone')
+                                            ->options([
+                                                'Inside Dhaka' => 'Inside Dhaka',
+                                                'Outside Dhaka' => 'Outside Dhaka',
+                                            ])
+                                            ->dehydrated(false) // Database e save hobe na, shudhu calculation er jonno
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                if ($state === 'Inside Dhaka') $set('division', 'Dhaka');
+                                                self::updateTotal($get, $set);
+                                            }),
+
                                         TextInput::make('division')->placeholder('e.g. Dhaka'),
                                         TextInput::make('district')->placeholder('e.g. Gazipur'),
                                     ]),
                                     Textarea::make('shipping_address')
                                         ->label('Full Street Address')
-                                        ->rows(3)
+                                        ->rows(2)
                                         ->required(),
                                 ]),
 
@@ -74,6 +111,8 @@ class OrderFormSchema
                                 ->schema([
                                     Repeater::make('items')
                                         ->relationship('orderItems')
+                                        ->live()
+                                        ->afterStateUpdated(fn ($get, $set) => self::updateTotal($get, $set))
                                         ->schema([
                                             Select::make('product_id')
                                                 ->label('Product')
@@ -85,24 +124,26 @@ class OrderFormSchema
                                                     return $query->pluck('name', 'id');
                                                 })
                                                 ->required()
-                                                ->reactive()
-                                                ->afterStateUpdated(fn ($state, $set) => 
-                                                    // 🔥 ডাটাবেসের কলাম অনুযায়ী unit_price কে price করা হলো
-                                                    $set('price', Product::find($state)?->sale_price ?? 0)
-                                                ),
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                    $set('price', Product::find($state)?->sale_price ?? Product::find($state)?->regular_price ?? 0);
+                                                    self::updateTotal($get, $set);
+                                                }),
                                                 
                                             TextInput::make('quantity')
                                                 ->numeric()
                                                 ->default(1)
                                                 ->required()
-                                                ->reactive(),
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(fn ($get, $set) => self::updateTotal($get, $set)),
                                                 
-                                            // 🔥 ডাটাবেসের কলাম অনুযায়ী ফিল্ডের নাম price করা হলো
                                             TextInput::make('price')
                                                 ->label('Unit Price')
                                                 ->numeric()
                                                 ->prefix('৳')
-                                                ->required(),
+                                                ->required()
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(fn ($get, $set) => self::updateTotal($get, $set)),
                                         ])
                                         ->columns(3)
                                         ->reorderableWithButtons()
@@ -152,7 +193,7 @@ class OrderFormSchema
                                 ->schema([
                                     Textarea::make('admin_note')
                                         ->label('Internal Note')
-                                        ->placeholder('ক্যান্সেলেশন বা স্পেশাল ইনস্ট্রাকশন...')
+                                        ->placeholder('Size/Color/Cancellation Note...')
                                         ->rows(3),
                                 ]),
                         ])->columnSpan(1),

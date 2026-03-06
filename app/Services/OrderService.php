@@ -33,8 +33,9 @@ class OrderService
 
             $qty = 1; 
             
+            // 🔥 ডেলিভারি চার্জ ক্যালকুলেশন (Inside/Outside)
             $locationType = $info['location_type'] ?? null;
-            $delivery = 120; 
+            $delivery = 120; // Default
 
             if ($locationType === 'inside_dhaka') {
                 $delivery = $clientModel->delivery_charge_inside ?? 80;
@@ -45,6 +46,7 @@ class OrderService
                 $delivery = $isDhaka ? ($clientModel->delivery_charge_inside ?? 80) : ($clientModel->delivery_charge_outside ?? 150);
             }
 
+            // পণ্যের দাম + ডেলিভারি চার্জ = টোটাল বিল
             $price = $product->sale_price ?? $product->regular_price;
             $total = ($price * $qty) + $delivery;
 
@@ -54,13 +56,16 @@ class OrderService
                 'customer_name'   => $info['name'] ?? 'Messenger Guest',
                 'customer_phone'  => $info['phone'] ?? '',
                 'shipping_address'=> $info['address'] ?? '',
-                'total_amount'    => $total,
-                'delivery_charge' => $delivery,
+                'total_amount'    => $total, // ডেলিভারি চার্জ সহ একদম সঠিক হিসাব
                 'order_status'    => 'processing',
                 'payment_status'  => 'pending',
                 'payment_method'  => $info['payment_method'] ?? 'cod',
             ];
 
+            // ডাটাবেসে কলাম থাকলে তবেই সেভ হবে, নতুবা ক্র্যাশ করবে না
+            if (Schema::hasColumn('orders', 'delivery_charge')) {
+                $orderData['delivery_charge'] = $delivery;
+            }
             if (Schema::hasColumn('orders', 'district')) {
                 $orderData['district'] = $info['district'] ?? null;
             }
@@ -68,7 +73,10 @@ class OrderService
                 $orderData['division'] = $info['division'] ?? null;
             }
             
+            // নোটস যুক্ত করা
             $notes = [];
+            $notes[] = "Delivery Charge: ৳{$delivery}"; // নোটেও ডেলিভারি চার্জ লিখে রাখা হলো
+
             if (!empty($info['variant'])) {
                 $vText = is_array($info['variant']) ? implode(', ', array_filter($info['variant'])) : $info['variant'];
                 $notes[] = "Variant: " . $vText;
@@ -88,7 +96,7 @@ class OrderService
 
             $order = Order::create($orderData);
 
-            // 🔥 FIX: OrderItem Save Logic
+            // অর্ডার আইটেম সেভ করা
             $itemData = [
                 'order_id'   => $order->id,
                 'product_id' => $product->id,
@@ -96,20 +104,19 @@ class OrderService
                 'subtotal'   => $price * $qty
             ];
 
-            // ডাইনামিক কলাম চেকিং (যেহেতু একেকজনের DB-তে unit_price বা price থাকে)
             if (Schema::hasColumn('order_items', 'unit_price')) {
                 $itemData['unit_price'] = $price;
             }
             if (Schema::hasColumn('order_items', 'price')) {
                 $itemData['price'] = $price;
             }
-            
             if (Schema::hasColumn('order_items', 'variant')) {
                 $itemData['variant'] = isset($info['variant']) ? (is_array($info['variant']) ? json_encode($info['variant']) : $info['variant']) : null;
             }
 
             OrderItem::create($itemData);
 
+            // স্টক ম্যানেজমেন্ট
             if ($product->manage_stock) {
                 $product->decrement('stock_quantity', $qty);
                 if ($product->stock_quantity <= 0) {
@@ -125,7 +132,7 @@ class OrderService
                 ]
             ]);
 
-            Log::info("✅ Order #{$order->id} Created Successfully via Chatbot.");
+            Log::info("✅ Order #{$order->id} Created Successfully via Chatbot. Total: ৳{$total} (Inc. Delivery: ৳{$delivery})");
 
             return $order;
         });

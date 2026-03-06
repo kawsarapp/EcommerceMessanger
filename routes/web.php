@@ -8,7 +8,7 @@ use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\FacebookConnectController;
 use App\Http\Controllers\ClientSettingsController;
 use App\Models\Plan;
-
+use App\Models\Order;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -35,6 +35,15 @@ Route::get('/pricing', function () {
 })->name('pricing');
 
 
+
+Route::get('/orders/{order}/print', function (Order $order) {
+    // Security Check: Only admin or the shop owner can print
+    if (auth()->id() !== 1 && $order->client->user_id !== auth()->id()) {
+        abort(403, 'Unauthorized access.');
+    }
+    
+    return view('filament.pages.invoice-print', compact('order'));
+})->name('orders.print')->middleware(['web', 'auth']);
 // =============================================================
 // 🛍️ DYNAMIC SHOP ENGINE
 // =============================================================

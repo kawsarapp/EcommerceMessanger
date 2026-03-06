@@ -7,6 +7,8 @@ use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\SelectColumn;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 
 class OrderTableSchema
 {
@@ -58,8 +60,6 @@ class OrderTableSchema
                 ->dateTime('d M, Y')
                 ->sortable(),
         ];
-
-
     }
 
     public static function filters(): array
@@ -79,29 +79,30 @@ class OrderTableSchema
     public static function actions(): array
     {
         return [
-            Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ]),
-            // OrderTableSchema.php এর actions() মেথডের ভেতরে:
-            Tables\Actions\Action::make('send_to_courier')
+            // 🔥 Print Invoice Action (টেবিলে সরাসরি দেখা যাবে)
+            Action::make('print_invoice')
+                ->label('Print')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->url(fn (Order $record) => route('orders.print', $record))
+                ->openUrlInNewTab(),
+
+            // 🔥 Send to Courier Action
+            Action::make('send_to_courier')
                 ->label('Send to Courier')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn ($record) => $record->order_status === 'processing') // শুধু প্রসেসিং অর্ডারগুলো কুরিয়ারে পাঠানো যাবে
+                ->visible(fn ($record) => $record->order_status === 'processing') 
                 ->action(function ($record) {
-                    // এখানে আমরা Courier API Service কে কল করব
                     $result = app(\App\Services\Courier\CourierIntegrationService::class)->sendParcel($record);
                     
                     if ($result['status'] === 'success') {
                         \Filament\Notifications\Notification::make()
-                            ->title('Parcel Sent to ' . ucfirst($record->client->default_courier))
+                            ->title('Parcel Sent to ' . ucfirst($record->client->default_courier ?? 'Courier'))
                             ->success()
                             ->send();
                         
-                        // স্ট্যাটাস আপডেট করে Shipped করে দেওয়া
                         $record->update(['order_status' => 'shipped']);
                     } else {
                         \Filament\Notifications\Notification::make()
@@ -112,8 +113,12 @@ class OrderTableSchema
                     }
                 }),
 
-
-
+            // বাকি অ্যাকশনগুলো (View, Edit, Delete) ড্রপডাউনের ভেতরে রাখা হলো
+            ActionGroup::make([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])->icon('heroicon-m-ellipsis-vertical'),
         ];
     }
 
