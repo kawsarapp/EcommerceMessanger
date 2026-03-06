@@ -171,7 +171,7 @@
             
             <div class="text-right">
                 <p class="text-[10px] text-gray-400 font-medium">Powered by</p>
-                <p class="text-xs text-gray-600 font-bold tracking-wide">Automated SAAS Platform</p>
+                <p class="text-xs text-gray-600 font-bold tracking-wide">Asian Host</p>
             </div>
         </div>
     </div>
