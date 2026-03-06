@@ -166,6 +166,35 @@
 
         @if(isset($relatedProducts) && $relatedProducts->count() > 0)
         <div class="mt-16">
+
+        @php
+            $reviews = $product->reviews()->where('is_visible', true)->latest()->get();
+        @endphp
+        
+        @if($reviews->count() > 0)
+        <div class="mt-12 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Customer Reviews ({{ $reviews->count() }})</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach($reviews as $review)
+                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="font-bold text-gray-800">{{ $review->customer_name ?? 'Verified Buyer' }}</h4>
+                        <div class="text-yellow-400 text-sm tracking-widest">
+                            {!! str_repeat('★', $review->rating) !!}{!! str_repeat('☆', 5 - $review->rating) !!}
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm italic">"{{ $review->comment }}"</p>
+                    <p class="text-xs text-gray-400 mt-3 text-right">{{ $review->created_at->diffForHumans() }}</p>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+
+
+
             <h2 class="text-2xl font-bold font-heading text-gray-900 mb-6">You May Also Like</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 @foreach($relatedProducts as $related)

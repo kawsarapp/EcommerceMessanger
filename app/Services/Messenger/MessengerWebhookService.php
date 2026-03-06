@@ -149,6 +149,65 @@ class MessengerWebhookService
                     Log::info("🛒 Product Selection Intent: $messageText");
                 }
 
+
+                //---
+
+                // 🌟 REVIEW COLLECTION LOGIC 🌟
+                if ($messageText) {
+                    // 1. Check if user clicked a Rating Button
+                    if (Str::startsWith($messageText, 'RATE_')) {
+                        $parts = explode('_', $messageText); // Format: RATE_{product_id}_{order_id}_{rating}
+                        if (count($parts) === 4) {
+                            $prodId = $parts[1];
+                            $orderId = $parts[2];
+                            $rating = $parts[3];
+
+                            // টেম্পোরারি ক্যাশে সেভ করে রাখছি যাতে পরের মেসেজে কমেন্ট নিতে পারি
+                            Cache::put("review_wait_{$senderId}", [
+                                'product_id' => $prodId,
+                                'order_id' => $orderId,
+                                'rating' => $rating
+                            ], now()->addMinutes(60));
+
+                            $this->responseService->sendMessengerMessage($senderId, "অসংখ্য ধন্যবাদ! 🌟 দয়া করে প্রোডাক্টটি সম্পর্কে আপনার মতামত (Review) লিখে পাঠান।", $client->fb_page_token);
+                            continue; // AI কে আর কল করবে না
+                        }
+                    }
+
+                    // 2. Check if waiting for written comment
+                    if (Cache::has("review_wait_{$senderId}") && !isset($messaging['postback']) && !isset($messaging['message']['quick_reply'])) {
+                        $reviewData = Cache::get("review_wait_{$senderId}");
+                        
+                        $order = \App\Models\Order::find($reviewData['order_id']);
+                        
+                        \App\Models\Review::create([
+                            'client_id' => $client->id,
+                            'product_id' => $reviewData['product_id'],
+                            'order_id' => $reviewData['order_id'],
+                            'sender_id' => $senderId,
+                            'customer_name' => $order ? $order->customer_name : 'Valued Customer',
+                            'rating' => $reviewData['rating'],
+                            'comment' => $messageText,
+                            'is_visible' => true // ডিফল্টভাবে শো করবে
+                        ]);
+
+                        Cache::forget("review_wait_{$senderId}");
+
+                        $this->responseService->sendMessengerMessage($senderId, "আপনার মূল্যবান রিভিউর জন্য অসংখ্য ধন্যবাদ! আপনার মতামত আমাদের ওয়েবসাইট পেজে যুক্ত করা হয়েছে। ❤️", $client->fb_page_token);
+                        continue; // AI কে কল করবে না
+                    }
+                }
+
+                //----
+
+
+
+
+
+
+
+
+
                 // 🤖 6. AI PROCESSING & RESPONSE
                 if ($messageText || $incomingImageUrl) {
                     

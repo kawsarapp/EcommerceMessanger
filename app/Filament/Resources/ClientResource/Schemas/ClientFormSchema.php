@@ -280,6 +280,31 @@ class ClientFormSchema
                         ->required()
                         ->visible(fn (callable $get) => $get('is_reminder_active')),
                 ])->columns(2),
+
+
+
+                // Section::make('Abandoned Cart Automation') এর ঠিক নিচে এটি যুক্ত করুন:
+            Section::make('Post-Purchase Auto Review')
+                ->description('অর্ডার ডেলিভারি হওয়ার পর কাস্টমারের কাছ থেকে অটোমেটিক রিভিউ সংগ্রহ করুন।')
+                ->schema([
+                    Toggle::make('is_review_collection_active')
+                        ->label('Enable Auto Review Request')
+                        ->default(true),
+                    
+                    Select::make('review_delay_days')
+                        ->label('Ask for review after (Days)')
+                        ->options([1 => '1 Day', 2 => '2 Days', 3 => '3 Days', 5 => '5 Days', 7 => '7 Days'])
+                        ->default(3)
+                        ->required()
+                        ->visible(fn (callable $get) => $get('is_review_collection_active')),
+                ])->columns(2),
+
+
+
+
+
+
+
         ];
     }
 
