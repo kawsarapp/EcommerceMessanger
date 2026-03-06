@@ -12,6 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Notifications\Notification;
 use App\Services\Messenger\MessengerResponseService;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\HtmlString;
 
 class AbandonedCartResource extends Resource
 {
@@ -26,7 +29,7 @@ class AbandonedCartResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // 🔥 FIX: OrderService 'step' কে 'completed' করে, তাই JSON চেক করতে হবে
+        // শুধু অসম্পূর্ণ সেশনগুলো দেখাবে
         $query->where('customer_info->step', '!=', 'completed');
 
         if (auth()->id() === 1) {
@@ -42,7 +45,7 @@ class AbandonedCartResource extends Resource
             ->columns([
                 TextColumn::make('customer_name')
                     ->label('Customer Name')
-                    ->state(fn (OrderSession $record) => $record->customer_info['name'] ?? 'Unknown')
+                    ->state(fn (OrderSession $record) => $record->customer_info['name'] ?? 'Unknown Guest')
                     ->description(fn (OrderSession $record) => $record->sender_id)
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->where('customer_info->name', 'like', "%{$search}%")
@@ -100,25 +103,49 @@ class AbandonedCartResource extends Resource
                         'pending' => 'Pending',
                         'sent' => 'Reminder Sent',
                         'recovered' => 'Recovered (Ordered)',
+                        'ignored' => 'Ignored / Lost',
                     ]),
             ])
             ->actions([
-                // 🔥 NEW: Manual Send Reminder Action
+                
+                // 🔥 FEATURE 1: View Chat History (কাস্টমার কোথায় আটকেছে তা পড়ার জন্য)
+                Tables\Actions\Action::make('view_history')
+                    ->label('Read Chat')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('gray')
+                    ->modalHeading('Customer Conversation History')
+                    ->modalSubmitAction(false) // No submit button needed
+                    ->modalCancelActionLabel('Close')
+                    ->form([
+                        Placeholder::make('history')
+                            ->label('')
+                            ->content(function (OrderSession $record) {
+                                $history = $record->customer_info['history'] ?? [];
+                                if (empty($history)) return new HtmlString('<p class="text-gray-500">No chat history available.</p>');
+                                
+                                $html = '<div class="space-y-3 max-h-96 overflow-y-auto p-2">';
+                                foreach(array_slice($history, -15) as $chat) { // শেষের ১৫টি মেসেজ দেখাবে
+                                    if(!empty($chat['user'])) {
+                                        $html .= '<div class="bg-gray-100 border border-gray-200 p-3 rounded-lg text-sm text-gray-800"><span class="font-bold text-gray-600">Customer:</span><br> ' . nl2br(htmlspecialchars($chat['user'])) . '</div>';
+                                    }
+                                    if(!empty($chat['ai'])) {
+                                        $html .= '<div class="bg-blue-50 border border-blue-100 p-3 rounded-lg text-sm text-blue-900"><span class="font-bold text-blue-600">AI Bot:</span><br> ' . nl2br(htmlspecialchars($chat['ai'])) . '</div>';
+                                    }
+                                }
+                                $html .= '</div>';
+                                return new HtmlString($html);
+                            })
+                    ]),
+
+                // 🔥 FEATURE 2: Custom Reminder Message
                 Tables\Actions\Action::make('send_reminder')
                     ->label('Send Push')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Send Manual Reminder')
-                    ->modalDescription('আপনি কি এই কাস্টমারকে মেসেঞ্জারে রিমাইন্ডার মেসেজ পাঠাতে চান?')
-                    ->visible(fn (OrderSession $record) => ($record->reminder_status ?? 'pending') !== 'recovered')
-                    ->action(function (OrderSession $record) {
-                        $client = $record->client;
-                        if (!$client || !$client->fb_page_token) {
-                            Notification::make()->title('Facebook Page Not Connected')->danger()->send();
-                            return;
-                        }
-
+                    ->modalHeading('Send Custom Reminder')
+                    ->modalDescription('আপনি চাইলে এই মেসেজটি এডিট করে কাস্টমারকে স্পেশাল ডিসকাউন্ট অফার করতে পারেন।')
+                    ->visible(fn (OrderSession $record) => !in_array($record->reminder_status, ['recovered', 'ignored']))
+                    ->form(function (OrderSession $record) {
                         $pid = $record->customer_info['product_id'] ?? null;
                         $productName = "আপনার পছন্দের প্রোডাক্টটি";
                         if ($pid) {
@@ -126,20 +153,50 @@ class AbandonedCartResource extends Resource
                             if ($product) $productName = "'" . $product->name . "'";
                         }
 
-                        $message = "হ্যালো! 👋\nআপনি {$productName} দেখছিলেন, কিন্তু অর্ডারটি সম্পূর্ণ করেননি। প্রোডাক্টটি স্টক আউট হওয়ার আগেই অর্ডার কনফার্ম করতে চাইলে আমাকে জানাতে পারেন। কোনো সাহায্য লাগবে কি? 😊";
+                        $defaultMessage = "হ্যালো! 👋\nআপনি {$productName} দেখছিলেন, কিন্তু অর্ডারটি সম্পূর্ণ করেননি। প্রোডাক্টটি স্টক আউট হওয়ার আগেই অর্ডার কনফার্ম করতে চাইলে আমাকে জানাতে পারেন। কোনো সাহায্য লাগবে কি? 😊";
+
+                        return [
+                            Textarea::make('custom_message')
+                                ->label('Message to Send')
+                                ->default($defaultMessage)
+                                ->required()
+                                ->rows(4),
+                        ];
+                    })
+                    ->action(function (OrderSession $record, array $data) {
+                        $client = $record->client;
+                        if (!$client || !$client->fb_page_token) {
+                            Notification::make()->title('Facebook Page Not Connected')->danger()->send();
+                            return;
+                        }
 
                         try {
-                            app(MessengerResponseService::class)->sendMessengerMessage($record->sender_id, $message, $client->fb_page_token);
+                            // কাস্টম মেসেজটি পাঠানো হচ্ছে
+                            app(MessengerResponseService::class)->sendMessengerMessage($record->sender_id, $data['custom_message'], $client->fb_page_token);
                             
                             $record->update([
                                 'reminder_status' => 'sent',
                                 'last_interacted_at' => now(),
                             ]);
 
-                            Notification::make()->title('Reminder Sent Successfully!')->success()->send();
+                            Notification::make()->title('Custom Reminder Sent!')->success()->send();
                         } catch (\Exception $e) {
                             Notification::make()->title('Failed to send reminder')->body($e->getMessage())->danger()->send();
                         }
+                    }),
+
+                // 🔥 FEATURE 3: Mark as Ignored (লিস্ট ক্লিন রাখার জন্য)
+                Tables\Actions\Action::make('mark_ignored')
+                    ->label('Ignore')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Mark as Ignored / Lost')
+                    ->modalDescription('এই কাস্টমার কি অর্ডার করতে আগ্রহী নয়? এটি ইগনোরড হিসেবে মার্ক করলে আর রিমাইন্ডার যাবে না।')
+                    ->visible(fn (OrderSession $record) => !in_array($record->reminder_status, ['recovered', 'ignored']))
+                    ->action(function (OrderSession $record) {
+                        $record->update(['reminder_status' => 'ignored']);
+                        Notification::make()->title('Marked as Ignored')->success()->send();
                     }),
             ]);
     }
