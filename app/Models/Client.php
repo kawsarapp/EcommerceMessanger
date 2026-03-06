@@ -71,6 +71,10 @@ class Client extends Model
         'is_telegram_active',
         'telegram_bot_token',
         'telegram_chat_id',
+        //--
+        'is_review_collection_active',
+        'review_delay_days',
+
     ];
 
     /**
@@ -80,6 +84,7 @@ class Client extends Model
         'plan_ends_at' => 'datetime',
         'webhook_verified_at' => 'datetime',
         'is_ai_enabled' => 'boolean',
+        'is_review_collection_active' => 'boolean',
     ];
 
     // ==========================================
