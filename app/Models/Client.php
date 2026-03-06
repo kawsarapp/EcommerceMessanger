@@ -84,6 +84,10 @@ class Client extends Model
         'shopify_access_token',
         'last_inventory_sync_at',
 
+        //---
+        'is_reminder_active',
+        'reminder_delay_hours',
+
     ];
 
     /**
@@ -95,6 +99,7 @@ class Client extends Model
         'is_ai_enabled' => 'boolean',
         'is_review_collection_active' => 'boolean',
         'last_inventory_sync_at' => 'datetime',
+        'is_reminder_active' => 'boolean',
     ];
 
     // ==========================================
