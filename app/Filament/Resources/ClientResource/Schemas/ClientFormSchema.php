@@ -88,12 +88,12 @@ class ClientFormSchema
                             ->icon('heroicon-m-archive-box-arrow-down')
                             ->schema(self::courierApi()),
 
-                        // 🔗 Tab 7: Omnichannel & Integrations
+                        // 🔗 Tab 7: Integrations & Social
                         Tabs\Tab::make('Integrations & Social')
                             ->icon('heroicon-m-share')
                             ->schema(self::integrations()),
 
-                        // 💬 Tab 8: Inbox Automation (Fixed Structure)
+                        // 💬 Tab 8: Inbox Automation
                         Tabs\Tab::make('Inbox Automation')
                             ->icon('heroicon-m-chat-bubble-left-right')
                             ->schema([
@@ -114,11 +114,32 @@ class ClientFormSchema
                                         ])->columns(2),
                                     ]),
                                 
-                                // Moved inside the schema array to fix syntax error
                                 Toggle::make('auto_status_update_msg')
                                     ->label('Auto Order Status SMS (Messenger/IG)')
                                     ->helperText('ড্যাশবোর্ড থেকে অর্ডারের স্ট্যাটাস পরিবর্তন করলে কাস্টমার অটোমেটিক মেসেজ পাবে।')
                                     ->default(true),
+                            ]),
+
+                        // 🔄 NEW TAB 9: Store Sync (WooCommerce/Shopify)
+                        Tabs\Tab::make('Store Sync')
+                            ->icon('heroicon-m-arrow-path-rounded-square')
+                            ->schema([
+                                Section::make('WooCommerce Sync (WordPress)')
+                                    ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
+                                    ->schema([
+                                        TextInput::make('wc_store_url')
+                                            ->label('Store URL')
+                                            ->placeholder('https://yourwebsite.com')
+                                            ->url(),
+                                        TextInput::make('wc_consumer_key')
+                                            ->label('Consumer Key')
+                                            ->password()
+                                            ->revealable(),
+                                        TextInput::make('wc_consumer_secret')
+                                            ->label('Consumer Secret')
+                                            ->password()
+                                            ->revealable(),
+                                    ])->columns(3),
                             ]),
                     ])
                     ->columnSpanFull(),
@@ -281,9 +302,7 @@ class ClientFormSchema
                         ->visible(fn (callable $get) => $get('is_reminder_active')),
                 ])->columns(2),
 
-
-
-                // Section::make('Abandoned Cart Automation') এর ঠিক নিচে এটি যুক্ত করুন:
+            // 🔥 NEW: Post-Purchase Auto Review
             Section::make('Post-Purchase Auto Review')
                 ->description('অর্ডার ডেলিভারি হওয়ার পর কাস্টমারের কাছ থেকে অটোমেটিক রিভিউ সংগ্রহ করুন।')
                 ->schema([
@@ -298,37 +317,6 @@ class ClientFormSchema
                         ->required()
                         ->visible(fn (callable $get) => $get('is_review_collection_active')),
                 ])->columns(2),
-
-                //-----
-                // 🔄 Tab 9: Store Sync (WooCommerce/Shopify)
-                        Tabs\Tab::make('Store Sync')
-                            ->icon('heroicon-m-arrow-path-rounded-square')
-                            ->schema([
-                                Section::make('WooCommerce Sync (WordPress)')
-                                    ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
-                                    ->schema([
-                                        TextInput::make('wc_store_url')
-                                            ->label('Store URL')
-                                            ->placeholder('https://yourwebsite.com')
-                                            ->url(),
-                                        TextInput::make('wc_consumer_key')
-                                            ->label('Consumer Key')
-                                            ->password()
-                                            ->revealable(),
-                                        TextInput::make('wc_consumer_secret')
-                                            ->label('Consumer Secret')
-                                            ->password()
-                                            ->revealable(),
-                                    ])->columns(3),
-                            ]),
-
-                            //--
-
-
-
-
-
-
         ];
     }
 
@@ -370,7 +358,6 @@ class ClientFormSchema
                             </ul>
                         ')),
                     
-                    // ডাইনামিক ওয়েবহুক ইউআরএল (প্রত্যেক সেলারের আলাদা)
                     TextInput::make('webhook_url_display')
                         ->label('Your Unique Steadfast Webhook URL')
                         ->default(fn ($record) => $record ? url("/api/webhook/courier/{$record->id}/steadfast") : 'দোকান সেভ করার পর URL তৈরি হবে')
@@ -463,7 +450,6 @@ class ClientFormSchema
                         TextInput::make('ig_account_id')
                             ->label('Instagram Account ID')
                             ->placeholder('e.g., 178414000000000')
-                            ->helperText('আপনার Instagram Professional Account ID টি দিন।')
                             ->prefixIcon('heroicon-o-camera')
                             ->visible(fn (\Filament\Forms\Get $get): bool => $get('is_instagram_active'))
                             ->required(fn (\Filament\Forms\Get $get): bool => $get('is_instagram_active')),
@@ -479,7 +465,6 @@ class ClientFormSchema
                         TextInput::make('telegram_bot_token')
                             ->label('Telegram Bot Token')
                             ->placeholder('e.g., 123456:ABC...')
-                            ->helperText('BotFather theke pawa token ti din.')
                             ->password()
                             ->revealable()
                             ->prefixIcon('heroicon-o-key'),
@@ -491,16 +476,13 @@ class ClientFormSchema
                 ->schema([
                     TextInput::make('social_facebook')
                         ->label('Facebook Page URL')
-                        ->prefixIcon('heroicon-m-globe-alt')
-                        ->placeholder('https://facebook.com/your-page'),
+                        ->prefixIcon('heroicon-m-globe-alt'),
                     TextInput::make('social_instagram')
                         ->label('Instagram Profile URL')
-                        ->prefixIcon('heroicon-m-camera')
-                        ->placeholder('https://instagram.com/your-brand'),
+                        ->prefixIcon('heroicon-m-camera'),
                     TextInput::make('social_youtube')
                         ->label('YouTube Channel URL')
-                        ->prefixIcon('heroicon-m-play')
-                        ->placeholder('https://youtube.com/@channel'),
+                        ->prefixIcon('heroicon-m-play'),
                 ])->columns(2),
 
             Section::make('Facebook Connection')->schema([
