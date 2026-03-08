@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OrderFormSchema
 {
-    // 🔥 Auto Calculate Total Function
+    // 🔥 Auto Calculate Total Function (Updated for Subtotal & Discount)
     public static function updateTotal(callable $get, callable $set)
     {
         $subtotal = 0;
@@ -28,15 +28,22 @@ class OrderFormSchema
         }
 
         $zone = $get('delivery_zone');
-        $charge = 0;
+        $charge = floatval($get('shipping_charge') ?? 0);
         
+        // যদি জোন সিলেক্ট করা থাকে, তবে অটো চার্জ বসবে
         if ($zone) {
             $client = Client::where('user_id', auth()->id())->first();
             if ($zone === 'Inside Dhaka') $charge = floatval($client->delivery_charge_inside ?? 80);
             if ($zone === 'Outside Dhaka') $charge = floatval($client->delivery_charge_outside ?? 150);
+            $set('shipping_charge', $charge);
+            $set('delivery_zone', null); // একবার সেট করার পর রিসেট করে দিলাম যাতে ম্যানুয়ালি এডিট করা যায়
         }
 
-        $set('total_amount', $subtotal + $charge);
+        $discount = floatval($get('discount_amount') ?? 0);
+        $total = ($subtotal + $charge) - $discount;
+
+        $set('subtotal', $subtotal);
+        $set('total_amount', $total > 0 ? $total : 0);
     }
 
     public static function schema(): array
@@ -83,14 +90,13 @@ class OrderFormSchema
                             Section::make('Shipping & Location')
                                 ->schema([
                                     Grid::make(3)->schema([
-                                        // 🔥 NEW: Delivery Zone Selection
                                         Select::make('delivery_zone')
-                                            ->label('Delivery Zone')
+                                            ->label('Auto Set Shipping')
                                             ->options([
                                                 'Inside Dhaka' => 'Inside Dhaka',
                                                 'Outside Dhaka' => 'Outside Dhaka',
                                             ])
-                                            ->dehydrated(false) // Database e save hobe na, shudhu calculation er jonno
+                                            ->dehydrated(false) 
                                             ->live()
                                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                                 if ($state === 'Inside Dhaka') $set('division', 'Dhaka');
@@ -106,7 +112,7 @@ class OrderFormSchema
                                         ->required(),
                                 ]),
 
-                            // ৩. অর্ডার আইটেমস (অটো প্রাইস ক্যালকুলেশন সহ)
+                            // ৩. অর্ডার আইটেমস
                             Section::make('Order Items')
                                 ->schema([
                                     Repeater::make('items')
@@ -156,11 +162,50 @@ class OrderFormSchema
                     // ডান পাশের অংশ (১ কলাম)
                     Group::make()
                         ->schema([
+                            // 🔥 NEW: Pricing & Coupon Section
+                            Section::make('Pricing & Discounts')
+                                ->schema([
+                                    TextInput::make('subtotal')
+                                        ->label('Subtotal')
+                                        ->numeric()
+                                        ->prefix('৳')
+                                        ->readOnly()
+                                        ->default(0),
+
+                                    TextInput::make('shipping_charge')
+                                        ->label('Delivery Charge')
+                                        ->numeric()
+                                        ->prefix('৳')
+                                        ->default(0)
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn ($get, $set) => self::updateTotal($get, $set)),
+
+                                    TextInput::make('discount_amount')
+                                        ->label('Discount Amount')
+                                        ->numeric()
+                                        ->prefix('৳')
+                                        ->default(0)
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn ($get, $set) => self::updateTotal($get, $set)),
+
+                                    TextInput::make('coupon_code')
+                                        ->label('Coupon Code Used')
+                                        ->placeholder('e.g. EID2026'),
+
+                                    TextInput::make('total_amount')
+                                        ->label('Grand Total')
+                                        ->numeric()
+                                        ->prefix('৳')
+                                        ->readOnly()
+                                        ->extraInputAttributes(['class' => 'font-bold text-primary']),
+                                ]),
+
                             Section::make('Status & Payment')
                                 ->schema([
                                     Select::make('order_status')
                                         ->label('Order Status')
                                         ->options([
+                                            'pending' => 'Pending',
                                             'processing' => 'Processing',
                                             'shipped' => 'Shipped',
                                             'delivered' => 'Delivered',
@@ -175,12 +220,6 @@ class OrderFormSchema
                                             'bkash' => 'bKash',
                                             'nagad' => 'Nagad',
                                         ])->required(),
-
-                                    TextInput::make('total_amount')
-                                        ->label('Grand Total')
-                                        ->numeric()
-                                        ->prefix('৳')
-                                        ->required(),
 
                                     Select::make('payment_status')
                                         ->options([

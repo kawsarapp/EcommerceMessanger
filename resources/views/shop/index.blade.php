@@ -144,7 +144,8 @@
                                 'colors' => $product->colors ?? [],
                                 'sizes' => $product->sizes ?? [],
                                 'brand' => $product->brand,
-                                'sku' => $product->sku
+                                'sku' => $product->sku,
+                                'checkout_url' => $client->custom_domain ? route('shop.checkout.custom', $product->slug) : route('shop.checkout', [$client->slug, $product->slug])
                             ];
                         @endphp
                         
@@ -303,13 +304,15 @@
                 </div>
 
                 <div class="p-6 border-t border-gray-100 bg-gray-50 sticky bottom-0">
-                    <a :href="'https://m.me/' + activeProduct.fb_page + '?text=I want to buy: ' + activeProduct.name + ' (Code: ' + activeProduct.sku + ')'" 
-                       target="_blank"
+                    <a :href="activeProduct.checkout_url" 
                        class="w-full bg-primary hover:bg-primaryDark text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition shadow-lg shadow-blue-500/30 transform hover:-translate-y-1">
-                        <i class="fab fa-facebook-messenger text-2xl"></i>
-                        Confirm Order
+                        <i class="fas fa-shopping-cart text-2xl"></i>
+                        Order Now
                     </a>
                 </div>
+
+
+
             </div>
         </div>
     </div>

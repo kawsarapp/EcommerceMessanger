@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\SelectColumn;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 
@@ -26,15 +27,40 @@ class OrderTableSchema
                 ->sortable()
                 ->description(fn (Order $record): string => $record->customer_phone ?? ''),
 
+            // 🔥 NEW: ওয়েবসাইটের ডাইরেক্ট চেকআউট থেকে এসেছে কিনা তা দেখানোর জন্য
+            IconColumn::make('is_guest_checkout')
+                ->label('Source')
+                ->icon(fn (string $state): string => match ($state) {
+                    '1' => 'heroicon-o-globe-alt', // Website
+                    '0' => 'heroicon-o-chat-bubble-oval-left-ellipsis', // Messenger/WhatsApp
+                    default => 'heroicon-o-question-mark-circle',
+                })
+                ->color(fn (string $state): string => match ($state) {
+                    '1' => 'info',
+                    '0' => 'success',
+                    default => 'gray',
+                })
+                ->tooltip(fn ($state) => $state ? 'Ordered via Website Checkout' : 'Ordered via Chatbot'),
+
             TextColumn::make('client.shop_name')
                 ->label('Shop')
                 ->toggleable(isToggledHiddenByDefault: auth()->id() !== 1),
+
+            // 🔥 NEW: কুপন কোড (যদি থাকে)
+            TextColumn::make('coupon_code')
+                ->label('Coupon')
+                ->badge()
+                ->color('success')
+                ->searchable()
+                ->toggleable(isToggledHiddenByDefault: false)
+                ->default('None'),
 
             TextColumn::make('total_amount')
                 ->label('Total')
                 ->money('BDT')
                 ->sortable()
-                ->weight('bold'),
+                ->weight('bold')
+                ->description(fn (Order $record): string => $record->discount_amount > 0 ? "Saved: ৳{$record->discount_amount}" : ""),
 
             SelectColumn::make('order_status')
                 ->label('Status')
@@ -57,8 +83,9 @@ class OrderTableSchema
 
             TextColumn::make('created_at')
                 ->label('Date')
-                ->dateTime('d M, Y')
-                ->sortable(),
+                ->dateTime('d M, Y h:i A')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 
@@ -79,7 +106,6 @@ class OrderTableSchema
     public static function actions(): array
     {
         return [
-            // 🔥 Print Invoice Action (টেবিলে সরাসরি দেখা যাবে)
             Action::make('print_invoice')
                 ->label('Print')
                 ->icon('heroicon-o-printer')
@@ -87,7 +113,6 @@ class OrderTableSchema
                 ->url(fn (Order $record) => route('orders.print', $record))
                 ->openUrlInNewTab(),
 
-            // 🔥 Send to Courier Action
             Action::make('send_to_courier')
                 ->label('Send to Courier')
                 ->icon('heroicon-o-paper-airplane')
@@ -113,7 +138,6 @@ class OrderTableSchema
                     }
                 }),
 
-            // বাকি অ্যাকশনগুলো (View, Edit, Delete) ড্রপডাউনের ভেতরে রাখা হলো
             ActionGroup::make([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

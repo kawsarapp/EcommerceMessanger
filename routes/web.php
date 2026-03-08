@@ -66,12 +66,39 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
         // অর্ডার ট্র্যাকিং
         Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
         Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
+
+
+
+        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
+        Route::get('/', [ShopController::class, 'show'])->name('shop.show');
+        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
+        Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
+        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
+
+        // 🔥 NEW: Direct Checkout Routes
+        Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout');
+        Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process');
+
+
     });
 
 
     // ==========================================
     // 🌍 CUSTOM DOMAIN ROUTING (example.com/...)
     // ==========================================
+    
+
+
+    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
+    Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
+    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
+
+    // 🔥 NEW: Direct Checkout Routes (Custom Domain)
+    Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout.custom');
+    Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process.custom');
+
+    // 🔥 NEW: Coupon Apply Route (Ajax)
+    Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon');
     
     // সিঙ্গেল প্রোডাক্ট (Custom Domain)
     Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');

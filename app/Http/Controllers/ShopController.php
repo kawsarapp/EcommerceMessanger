@@ -127,4 +127,160 @@ class ShopController extends Controller
     {
         return $this->show($request, $request->slug);
     }
+
+
+
+    /**
+     * চেকআউট পেজ ভিউ করানো
+     */
+    public function checkout(Request $request, $slug = null, $productSlug = null)
+    {
+        if ($request->has('current_client')) {
+            $client = $request->current_client;
+            $productSlug = $slug; 
+        } else {
+            $client = $this->clientService->getSafeClient($request, $slug);
+        }
+
+        if (!$client->exists) return redirect('/');
+
+        $product = $this->productService->getProductBySlug($client->id, $productSlug);
+
+        if (!$product) {
+            return redirect()->route('shop.show', $client->slug ?? '');
+        }
+
+        $pages = $this->clientService->getActivePages($client->id);
+
+        return view('shop.checkout', compact('client', 'product', 'pages'));
+    }
+
+    /**
+     * AJAX: কুপন কোড চেক করা
+     */
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'code' => 'required', 
+            'client_id' => 'required', 
+            'subtotal' => 'required|numeric'
+        ]);
+        
+        $coupon = \App\Models\Coupon::where('client_id', $request->client_id)
+                    ->where('code', $request->code)
+                    ->first();
+
+        if (!$coupon || !$coupon->isValid()) {
+            return response()->json(['success' => false, 'message' => 'Invalid or expired coupon!']);
+        }
+
+        if ($coupon->min_spend && $request->subtotal < $coupon->min_spend) {
+            return response()->json(['success' => false, 'message' => "Minimum spend is ৳{$coupon->min_spend}"]);
+        }
+
+        $discount = $coupon->type === 'percent' 
+            ? ($request->subtotal * $coupon->discount_amount / 100) 
+            : $coupon->discount_amount;
+
+        return response()->json([
+            'success' => true, 
+            'discount' => round($discount), 
+            'message' => 'Coupon applied successfully!'
+        ]);
+    }
+
+    /**
+     * অর্ডার সাবমিট প্রসেস করা (Guest / Direct Checkout)
+     */
+    public function processCheckout(Request $request, $slug = null)
+    {
+        if ($request->has('current_client')) {
+            $client = $request->current_client;
+        } else {
+            $client = $this->clientService->getSafeClient($request, $slug);
+        }
+
+        // ভ্যালিডেশন (নাম, নাম্বার ও ঠিকানা বাধ্যতামূলক)
+        $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'required|string|min:11',
+            'shipping_address' => 'required|string',
+            'delivery_area' => 'required|in:inside,outside',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1'
+        ]);
+
+        $product = \App\Models\Product::findOrFail($request->product_id);
+        $unitPrice = $product->sale_price ?? $product->regular_price;
+        $subtotal = $unitPrice * $request->quantity;
+        
+        // ডেলিভারি চার্জ নির্ধারণ
+        $shipping = $request->delivery_area === 'inside' 
+            ? $client->delivery_charge_inside 
+            : $client->delivery_charge_outside;
+
+        $discount = 0;
+        $couponCode = null;
+
+        // কুপন থাকলে ডিসকাউন্ট ক্যালকুলেট করা
+        if ($request->filled('coupon_code')) {
+            $coupon = \App\Models\Coupon::where('client_id', $client->id)->where('code', $request->coupon_code)->first();
+            if ($coupon && $coupon->isValid() && (!$coupon->min_spend || $subtotal >= $coupon->min_spend)) {
+                $discount = $coupon->type === 'percent' ? ($subtotal * $coupon->discount_amount / 100) : $coupon->discount_amount;
+                $couponCode = $coupon->code;
+                $coupon->increment('used_count'); // কুপন ব্যবহারের সংখ্যা বাড়ানো হলো
+            }
+        }
+
+        $total = ($subtotal + $shipping) - $discount;
+
+        // ১. মেইন অর্ডার ডাটাবেসে সেভ করা
+        $order = \App\Models\Order::create([
+            'client_id' => $client->id,
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'shipping_address' => $request->shipping_address,
+            'subtotal' => $subtotal,
+            'shipping_charge' => $shipping,
+            'discount_amount' => $discount,
+            'coupon_code' => $couponCode,
+            'total_amount' => $total,
+            'is_guest_checkout' => true,
+            'order_status' => 'pending',
+            'customer_note' => $request->notes,
+        ]);
+
+        // ২. অর্ডারের প্রোডাক্ট আইটেম সেভ করা
+        \App\Models\OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => $request->quantity,
+            'unit_price' => $unitPrice,
+            'price' => $subtotal,
+            'attributes' => [
+                'color' => $request->color,
+                'size' => $request->size
+            ]
+        ]);
+
+        // অর্ডার সম্পন্ন হলে ট্র্যাকিং পেজে রিডাইরেক্ট করে দেওয়া
+        $redirectUrl = $client->custom_domain 
+            ? route('shop.track.custom') 
+            : route('shop.track', $client->slug);
+
+        return redirect($redirectUrl)->with('success_phone', $order->customer_phone);
+    }
+
+
+
+
+
+
+
+
+
 }
+
+
+
+

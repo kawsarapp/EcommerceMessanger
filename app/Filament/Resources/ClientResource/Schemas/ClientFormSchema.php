@@ -253,14 +253,17 @@ public static function schema(): array
                     ->maxLength(255)
                     ->afterStateUpdated(fn ($state, callable $set, $operation) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 
+
+   
                 TextInput::make('slug')
                     ->label('Shop URL')
                     ->prefix(config('app.url') . '/shop/')
                     ->required()
+                    ->live(onBlur: true)
                     ->unique(Client::class, 'slug', ignoreRecord: true)
-                    ->disabled(fn ($operation) => $operation !== 'create')
-                    ->dehydrated()
-                    ->helperText('Unique link for your shop.'),
+                    ->helperText('Unique link for your shop. You can customize it!'),    
+
+
             ])->columns(2),
 
             Section::make('Contact Details')->schema([
@@ -322,18 +325,93 @@ public static function schema(): array
         ];
     }
 
+
     private static function domainSeo(): array
     {
         return [
-            Section::make('Custom Domain')
-                ->description('Connect your own domain (e.g. www.brand.com)')
+            Section::make('Custom Domain Setup')
+                ->description('আপনার শপের জন্য নিজস্ব ডোমেইন (e.g. yourbrand.com) সেটআপ করুন।')
+                ->icon('heroicon-m-globe-alt')
                 ->schema([
                     TextInput::make('custom_domain')
                         ->label('Your Domain Name')
-                        ->placeholder('www.yourbrand.com')
+                        ->placeholder('yourbrand.com (without https://)')
                         ->prefixIcon('heroicon-m-globe-alt')
-                        ->helperText(new HtmlString('<strong>Setup:</strong> Point your domain\'s <code>A Record</code> to our server IP.'))
-                        ->unique(Client::class, 'custom_domain', ignoreRecord: true),
+                        ->unique(Client::class, 'custom_domain', ignoreRecord: true)
+                        // 🔥 LIVE DOMAIN VERIFIER BUTTON
+                        ->suffixAction(
+                            Action::make('verify_domain')
+                                ->icon('heroicon-m-check-badge')
+                                ->color('success')
+                                ->label('Verify Setup')
+                                ->action(function ($state, $livewire) {
+                                    if (!$state) {
+                                        Notification::make()->title('Please enter a domain first.')->warning()->send();
+                                        return;
+                                    }
+                                    
+                                    // Remove http://, https:// and trailing slashes
+                                    $domain = preg_replace('/^https?:\/\//', '', $state);
+                                    $domain = trim($domain, '/');
+                                    
+                                    try {
+                                        // লাইভ DNS (A Record) চেক করা হচ্ছে
+                                        $records = dns_get_record($domain, DNS_A);
+                                        // আপনার মেইন সার্ভারের আইপি অটোমেটিক বের করা হচ্ছে
+                                        $serverIp = gethostbyname(parse_url(config('app.url'), PHP_URL_HOST));
+                                        
+                                        $isMatched = false;
+                                        foreach ($records as $record) {
+                                            if (isset($record['ip']) && $record['ip'] === $serverIp) {
+                                                $isMatched = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if ($isMatched) {
+                                            Notification::make()->title('✅ Domain Verified!')->body('A-Record is pointing to our server perfectly.')->success()->send();
+                                        } else {
+                                            Notification::make()->title('❌ DNS Not Matched!')->body("We found no matching A-Record for IP: {$serverIp}. If you just updated it on Cloudflare/Namecheap, please wait a few hours.")->danger()->send();
+                                        }
+                                    } catch (\Exception $e) {
+                                        Notification::make()->title('❌ Verification Failed')->body('Could not check DNS records. Is the domain valid?')->danger()->send();
+                                    }
+                                })
+                        ),
+
+                    // 🔥 DNS INSTRUCTIONS TABLE
+                    Placeholder::make('dns_instructions')
+                        ->label('DNS Setup Instructions (অবশ্যই করণীয়)')
+                        ->content(function () {
+                            $serverIp = gethostbyname(parse_url(config('app.url'), PHP_URL_HOST));
+                            return new HtmlString('
+                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-gray-800 shadow-sm mt-2">
+                                    <p class="mb-3 font-bold text-blue-800"><i class="fas fa-info-circle"></i> ডোমেইন কানেক্ট করার নিয়ম:</p>
+                                    <p class="mb-4">আপনার ডোমেইন কন্ট্রোল প্যানেলে (যেমন: Cloudflare, Namecheap বা Hostinger) গিয়ে DNS Settings থেকে নিচের <strong>A Record</strong> টি যুক্ত করুন:</p>
+                                    
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left border-collapse bg-white rounded-lg overflow-hidden shadow-sm">
+                                            <thead>
+                                                <tr class="bg-gray-100 text-gray-700">
+                                                    <th class="border-b p-3 font-bold">Type</th>
+                                                    <th class="border-b p-3 font-bold">Name / Host</th>
+                                                    <th class="border-b p-3 font-bold">Value / IP Address</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="border-b p-3 font-bold text-blue-600">A Record</td>
+                                                    <td class="border-b p-3">@ (বা আপনার ডোমেইন নাম)</td>
+                                                    <td class="border-b p-3 font-mono font-bold text-green-600">' . $serverIp . '</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p class="mt-4 text-xs text-red-500 font-bold">* DNS আপডেট হতে ২ থেকে ২৪ ঘণ্টা সময় লাগতে পারে। আপডেট হওয়ার পর উপরের <strong>"Verify Setup"</strong> বাটনে ক্লিক করে চেক করুন।</p>
+                                </div>
+                            ');
+                        })
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('SEO & Analytics')->schema([
@@ -355,6 +433,7 @@ public static function schema(): array
             ])->columns(2),
         ];
     }
+    
 
     private static function aiBrain(): array
     {

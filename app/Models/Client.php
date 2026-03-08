@@ -96,6 +96,9 @@ class Client extends Model
         'wa_status',
         'wa_phone_number_id',
         'wa_access_token',
+        //---
+        'phone',
+        'address',
 
     ];
 
