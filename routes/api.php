@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\Api\StoreSyncController;
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +49,9 @@ Route::prefix('v1')->group(function () {
     // এখানে আপনার অন্যান্য API এন্ডপয়েন্ট রাখতে পারেন
 });
 
+Route::post('/v1/whatsapp/status', [WhatsAppWebhookController::class, 'updateStatus']);
+Route::post('/v1/whatsapp/receive', [WhatsAppWebhookController::class, 'receiveMessage']);
+Route::post('/v1/import-products', [StoreSyncController::class, 'pushProducts']);
 
 // Courier Webhook Route (Multi-tenant)
 Route::post('/webhook/courier/{client_id}/{courier_name}', [\App\Http\Controllers\CourierWebhookController::class, 'handle'])->name('webhook.courier');

@@ -93,4 +93,100 @@ class InventorySync extends Page
 
         $this->isLoading = false;
     }
+
+
+    public function syncShopify()
+    {
+        $this->isLoading = true;
+
+        if (!$this->client || !$this->client->shopify_store_url || !$this->client->shopify_access_token) {
+            Notification::make()->title('Shopify API Credentials Missing!')->warning()->send();
+            $this->isLoading = false;
+            return;
+        }
+
+        try {
+            // URL ঠিক করা (যাতে শেষে / না থাকে)
+            $storeUrl = rtrim($this->client->shopify_store_url, '/');
+            $storeUrl = preg_replace('#^https?://#', '', $storeUrl); // http/https সরিয়ে ফেলা
+            $url = "https://" . $storeUrl . "/admin/api/2024-01/products.json";
+
+            $response = Http::withHeaders([
+                'X-Shopify-Access-Token' => $this->client->shopify_access_token,
+                'Content-Type' => 'application/json',
+            ])->get($url, ['limit' => 50, 'status' => 'active']);
+
+            if ($response->failed()) {
+                Notification::make()->title('Failed to connect with Shopify. Check Domain and Token.')->danger()->send();
+                $this->isLoading = false;
+                return;
+            }
+
+            $products = $response->json()['products'] ?? [];
+            $count = 0;
+
+            foreach ($products as $shProduct) {
+                // শপিফাইয়ের ভেরিয়েন্ট থেকে দাম এবং স্টক বের করা
+                $variant = $shProduct['variants'][0] ?? null;
+                if (!$variant) continue;
+
+                $imageUrl = !empty($shProduct['images']) ? $shProduct['images'][0]['src'] : null;
+
+                $price = $variant['price'] ?? 0;
+                $compareAtPrice = $variant['compare_at_price'] ?? $price;
+
+                $regularPrice = $compareAtPrice > $price ? $compareAtPrice : $price;
+                $salePrice = $compareAtPrice > $price ? $price : null;
+
+                // ডাটাবেসে সেভ করা বা আপডেট করা
+                Product::updateOrCreate(
+                    [
+                        'client_id' => $this->client->id,
+                        'sku' => $variant['sku'] ?: 'SH-' . $shProduct['id']
+                    ],
+                    [
+                        'name' => $shProduct['title'],
+                        'slug' => Str::slug($shProduct['title']) . '-' . Str::random(4),
+                        'regular_price' => $regularPrice,
+                        'sale_price' => $salePrice,
+                        'description' => $shProduct['body_html'] ?? '',
+                        'short_description' => Str::limit(strip_tags($shProduct['body_html'] ?? ''), 150),
+                        'stock_quantity' => $variant['inventory_quantity'] ?? 100,
+                        'stock_status' => ($variant['inventory_quantity'] ?? 1) > 0 ? 'in_stock' : 'out_of_stock',
+                        'thumbnail' => $imageUrl,
+                        'is_featured' => false,
+                    ]
+                );
+                $count++;
+            }
+
+            $this->client->update(['last_inventory_sync_at' => now()]);
+
+            Notification::make()
+                ->title("Success!")
+                ->body("Successfully imported/updated {$count} products from Shopify.")
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()->title('Error Syncing: ' . $e->getMessage())->danger()->send();
+        }
+
+        $this->isLoading = false;
+    }
+
+
+    public function generateApiKey()
+    {
+        if($this->client) {
+            $this->client->update(['api_token' => \Illuminate\Support\Str::random(60)]);
+            \Filament\Notifications\Notification::make()
+                ->title('New API Key Generated!')
+                ->success()
+                ->send();
+        }
+    }
+
+
+
 }

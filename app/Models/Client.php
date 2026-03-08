@@ -87,6 +87,15 @@ class Client extends Model
         //---
         'is_reminder_active',
         'reminder_delay_hours',
+        //--
+        'api_token',
+        //---
+        'is_whatsapp_active',
+        'whatsapp_type',
+        'wa_instance_id',
+        'wa_status',
+        'wa_phone_number_id',
+        'wa_access_token',
 
     ];
 
@@ -100,6 +109,7 @@ class Client extends Model
         'is_review_collection_active' => 'boolean',
         'last_inventory_sync_at' => 'datetime',
         'is_reminder_active' => 'boolean',
+        'is_whatsapp_active' => 'boolean',
     ];
 
     // ==========================================

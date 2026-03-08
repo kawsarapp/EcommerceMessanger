@@ -25,16 +25,16 @@ use Illuminate\Support\HtmlString;
 
 class ClientFormSchema
 {
-    public static function schema(): array
+public static function schema(): array
     {
         return [
             // --- Section 1: Subscription Plan (Admin Only) ---
-            Section::make('Subscription Plan')
+            \Filament\Forms\Components\Section::make('Subscription Plan')
                 ->description('User subscription & limitations control.')
                 ->icon('heroicon-m-credit-card')
                 ->collapsible()
                 ->schema([
-                    Select::make('plan_id')
+                    \Filament\Forms\Components\Select::make('plan_id')
                         ->label('Assigned Plan')
                         ->relationship('plan', 'name')
                         ->preload()
@@ -43,7 +43,7 @@ class ClientFormSchema
                         ->disabled(fn () => auth()->id() !== 1)
                         ->dehydrated(fn () => auth()->id() === 1),
 
-                    DateTimePicker::make('plan_ends_at')
+                    \Filament\Forms\Components\DateTimePicker::make('plan_ends_at')
                         ->label('Plan Expiry Date')
                         ->default(now()->addMonth())
                         ->required(fn () => auth()->id() === 1)
@@ -54,92 +54,185 @@ class ClientFormSchema
                 ->visible(fn () => auth()->id() === 1),
 
             // --- Section 2: Shop Configuration (Tabs) ---
-            Group::make()->schema([
-                Tabs::make('Shop Configuration')
+            \Filament\Forms\Components\Group::make()->schema([
+                \Filament\Forms\Components\Tabs::make('Shop Configuration')
                     ->persistTabInQueryString()
                     ->tabs([
-                        // 🏠 Tab 1: Basic Info
-                        Tabs\Tab::make('Basic Info')
-                            ->icon('heroicon-m-information-circle')
-                            ->schema(self::basicInfo()),
-
-                        // 🎨 Tab 2: Storefront
-                        Tabs\Tab::make('Storefront')
-                            ->icon('heroicon-m-paint-brush')
-                            ->schema(self::storefront()),
-
-                        // 🌐 Tab 3: Domain & SEO
-                        Tabs\Tab::make('Domain & SEO')
-                            ->icon('heroicon-m-globe-alt')
-                            ->schema(self::domainSeo()),
-
-                        // 🤖 Tab 4: AI Brain & Automation
-                        Tabs\Tab::make('AI Brain & Automation')
-                            ->icon('heroicon-m-cpu-chip')
-                            ->schema(self::aiBrain()),
-
-                        // 🚚 Tab 5: Logistics
-                        Tabs\Tab::make('Logistics')
-                            ->icon('heroicon-m-truck')
-                            ->schema(self::logistics()),
-
-                        // 📦 Tab 6: Courier API Integrations
-                        Tabs\Tab::make('Courier API')
-                            ->icon('heroicon-m-archive-box-arrow-down')
-                            ->schema(self::courierApi()),
-
-                        // 🔗 Tab 7: Integrations & Social
-                        Tabs\Tab::make('Integrations & Social')
-                            ->icon('heroicon-m-share')
-                            ->schema(self::integrations()),
+                        // 🏠 Tab 1 to 7: Condensed for cleaner code
+                        \Filament\Forms\Components\Tabs\Tab::make('Basic Info')->icon('heroicon-m-information-circle')->schema(self::basicInfo()),
+                        \Filament\Forms\Components\Tabs\Tab::make('Storefront')->icon('heroicon-m-paint-brush')->schema(self::storefront()),
+                        \Filament\Forms\Components\Tabs\Tab::make('Domain & SEO')->icon('heroicon-m-globe-alt')->schema(self::domainSeo()),
+                        \Filament\Forms\Components\Tabs\Tab::make('AI Brain & Automation')->icon('heroicon-m-cpu-chip')->schema(self::aiBrain()),
+                        \Filament\Forms\Components\Tabs\Tab::make('Logistics')->icon('heroicon-m-truck')->schema(self::logistics()),
+                        \Filament\Forms\Components\Tabs\Tab::make('Courier API')->icon('heroicon-m-archive-box-arrow-down')->schema(self::courierApi()),
+                        \Filament\Forms\Components\Tabs\Tab::make('Integrations & Social')->icon('heroicon-m-share')->schema(self::integrations()),
 
                         // 💬 Tab 8: Inbox Automation
-                        Tabs\Tab::make('Inbox Automation')
+                        \Filament\Forms\Components\Tabs\Tab::make('Inbox Automation')
                             ->icon('heroicon-m-chat-bubble-left-right')
                             ->schema([
-                                Section::make('AI Comment & Inbox Automation')
+                                \Filament\Forms\Components\Section::make('AI Comment & Inbox Automation')
                                     ->description('ফেসবুক পেইজের কমেন্টে অটো-রিপ্লাই এবং ইনবক্স মেসেজ সেটআপ করুন।')
                                     ->icon('heroicon-o-chat-bubble-left-right')
                                     ->schema([
-                                        Group::make()->schema([
-                                            Toggle::make('auto_comment_reply')
+                                        \Filament\Forms\Components\Group::make()->schema([
+                                            \Filament\Forms\Components\Toggle::make('auto_comment_reply')
                                                 ->label('Auto Comment Reply')
                                                 ->helperText('AI নিজে থেকে কাস্টমারের কমেন্টের নিচে রিপ্লাই দিবে।')
                                                 ->default(true),
 
-                                            Toggle::make('auto_private_reply')
+                                            \Filament\Forms\Components\Toggle::make('auto_private_reply')
                                                 ->label('Auto Inbox Message (PM)')
                                                 ->helperText('কমেন্টকারীকে AI সরাসরি মেসেঞ্জারে মেসেজ পাঠাবে।')
                                                 ->default(true),
                                         ])->columns(2),
                                     ]),
                                 
-                                Toggle::make('auto_status_update_msg')
+                                \Filament\Forms\Components\Toggle::make('auto_status_update_msg')
                                     ->label('Auto Order Status SMS (Messenger/IG)')
                                     ->helperText('ড্যাশবোর্ড থেকে অর্ডারের স্ট্যাটাস পরিবর্তন করলে কাস্টমার অটোমেটিক মেসেজ পাবে।')
                                     ->default(true),
                             ]),
 
-                        // 🔄 NEW TAB 9: Store Sync (WooCommerce/Shopify)
-                        Tabs\Tab::make('Store Sync')
+                        // 🔄 Tab 9: Store Sync (WooCommerce/Shopify)
+                        \Filament\Forms\Components\Tabs\Tab::make('Store Sync')
                             ->icon('heroicon-m-arrow-path-rounded-square')
                             ->schema([
-                                Section::make('WooCommerce Sync (WordPress)')
-                                    ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
+                                \Filament\Forms\Components\Section::make('WooCommerce Sync (WordPress)')
+                                    ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
+                                    ->collapsed()
                                     ->schema([
-                                        TextInput::make('wc_store_url')
-                                            ->label('Store URL')
-                                            ->placeholder('https://yourwebsite.com')
-                                            ->url(),
-                                        TextInput::make('wc_consumer_key')
-                                            ->label('Consumer Key')
-                                            ->password()
-                                            ->revealable(),
-                                        TextInput::make('wc_consumer_secret')
-                                            ->label('Consumer Secret')
-                                            ->password()
-                                            ->revealable(),
+                                        \Filament\Forms\Components\TextInput::make('wc_store_url')->label('Store URL')->url(),
+                                        \Filament\Forms\Components\TextInput::make('wc_consumer_key')->label('Consumer Key')->password()->revealable(),
+                                        \Filament\Forms\Components\TextInput::make('wc_consumer_secret')->label('Consumer Secret')->password()->revealable(),
                                     ])->columns(3),
+
+                                \Filament\Forms\Components\Section::make('Shopify Sync')
+                                    ->description('আপনার শপিফাই স্টোরের প্রোডাক্ট ইমপোর্ট করুন।')
+                                    ->collapsed()
+                                    ->schema([
+                                        \Filament\Forms\Components\TextInput::make('shopify_store_url')->label('Shopify Store Domain')->placeholder('your-store.myshopify.com')->url(),
+                                        \Filament\Forms\Components\TextInput::make('shopify_access_token')->label('Admin API Access Token')->password()->revealable(),
+                                    ])->columns(2),
+                            ]),
+
+                        // 🟢 Tab 10: WhatsApp Integration
+                        \Filament\Forms\Components\Tabs\Tab::make('WhatsApp API')
+                            ->icon('heroicon-m-chat-bubble-oval-left-ellipsis')
+                            ->schema([
+                                \Filament\Forms\Components\Toggle::make('is_whatsapp_active')
+                                    ->label('Enable WhatsApp AI Bot')
+                                    ->helperText('আপনার কাস্টমারদের হোয়াটসঅ্যাপে অটোমেটিক রিপ্লাই দেওয়ার জন্য এটি চালু করুন।')
+                                    ->onColor('success')
+                                    ->live(),
+
+                                \Filament\Forms\Components\Radio::make('whatsapp_type')
+                                    ->label('Select Connection Method')
+                                    ->options([
+                                        'unofficial' => '📱 QR Code Scan (Free & Easy for Small Business)',
+                                        'official' => '🏢 Official Meta Cloud API (For Verified Business)',
+                                    ])
+                                    ->descriptions([
+                                        'unofficial' => 'আপনার ফোন থেকে হোয়াটসঅ্যাপ ওয়েব স্ক্যান করে কানেক্ট করুন। কোনো বিজনেস ভেরিফিকেশন লাগবে না।',
+                                        'official' => 'ফেসবুক ডেভেলপার প্যানেল থেকে টোকেন এনে বসান। ১০০% সিকিউর, তবে প্রতি মেসেজে মেটাকে পে করতে হবে।',
+                                    ])
+                                    ->visible(fn (\Filament\Forms\Get $get) => $get('is_whatsapp_active'))
+                                    ->live()
+                                    ->required(fn (\Filament\Forms\Get $get) => $get('is_whatsapp_active')),
+
+                                // 🟢 Unofficial Setup (QR Code)
+                                \Filament\Forms\Components\Section::make('QR Code Setup (Device Link)')
+                                    ->visible(fn (\Filament\Forms\Get $get) => $get('whatsapp_type') === 'unofficial' && $get('is_whatsapp_active'))
+                                    ->schema([
+                                        \Filament\Forms\Components\Placeholder::make('qr_note')
+                                            ->label('Status')
+                                            ->content(fn ($record) => $record && $record->wa_status === 'connected' 
+                                                ? new \Illuminate\Support\HtmlString('<span class="text-green-600 font-bold">✅ WhatsApp is Connected! AI is ready to reply.</span>') 
+                                                : new \Illuminate\Support\HtmlString('<span class="text-red-500 font-bold">❌ Disconnected. Please connect your device.</span>')
+                                            ),
+                                            
+                                        \Filament\Forms\Components\Actions::make([
+                                            \Filament\Forms\Components\Actions\Action::make('generate_qr')
+                                                ->label('Generate QR Code')
+                                                ->icon('heroicon-o-qr-code')
+                                                ->color('info')
+                                                ->action(function ($record, \Filament\Forms\Set $set) {
+                                                    // দোকান আগে সেভ করা না থাকলে মেসেজ দিবে
+                                                    if (!$record) {
+                                                        \Filament\Notifications\Notification::make()->title('দয়া করে আগে শপটি Save করুন!')->warning()->send();
+                                                        return;
+                                                    }
+                                                    try {
+                                                        $instanceId = 'client_' . $record->id;
+                                                        // Node সার্ভারে রিকোয়েস্ট পাঠানো হচ্ছে
+                                                        $response = \Illuminate\Support\Facades\Http::post('http://127.0.0.1:3001/api/generate-qr', [
+                                                            'instance_id' => $instanceId
+                                                        ]);
+                                                        if ($response->successful()) {
+                                                            $data = $response->json();
+                                                            if (isset($data['status']) && $data['status'] === 'connected') {
+                                                                $record->update(['wa_status' => 'connected', 'wa_instance_id' => $instanceId]);
+                                                                \Filament\Notifications\Notification::make()->title('Already Connected!')->success()->send();
+                                                            } elseif (isset($data['qr_code'])) {
+                                                                $record->update(['wa_instance_id' => $instanceId]);
+                                                                $set('generated_qr_code', $data['qr_code']); // QR Code Base64 সেট করা
+                                                                \Filament\Notifications\Notification::make()->title('QR Code Generated. Please Scan!')->success()->send();
+                                                            }
+                                                        } else {
+                                                            \Filament\Notifications\Notification::make()->title('Failed to get QR Code.')->danger()->send();
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        \Filament\Notifications\Notification::make()->title('Error: Node Server is not running!')->danger()->send();
+                                                    }
+                                                })
+                                                ->hidden(fn ($record) => $record && $record->wa_status === 'connected'),
+                                                
+                                            // 🔥 নতুন Disconnect বাটন
+                                            \Filament\Forms\Components\Actions\Action::make('disconnect_wa')
+                                                ->label('Disconnect & Rescan')
+                                                ->icon('heroicon-o-x-circle')
+                                                ->color('danger')
+                                                ->requiresConfirmation()
+                                                ->action(function ($record, \Filament\Forms\Set $set) {
+                                                    if ($record) {
+                                                        $record->update(['wa_status' => 'disconnected', 'wa_instance_id' => null]);
+                                                        $set('generated_qr_code', null);
+                                                        \Filament\Notifications\Notification::make()->title('Disconnected successfully! You can now generate a new QR.')->warning()->send();
+                                                    }
+                                                })
+                                                ->visible(fn ($record) => $record && $record->wa_status === 'connected')
+                                        ]),
+                                        
+                                        // QR Code দেখানোর জন্য ফিল্ড
+                                        \Filament\Forms\Components\Hidden::make('generated_qr_code')->dehydrated(false),
+                            
+                                        \Filament\Forms\Components\Placeholder::make('qr_display')
+                                            ->label('Scan this QR Code using WhatsApp')
+                                            ->visible(fn (\Filament\Forms\Get $get) => $get('generated_qr_code') !== null)
+                                            ->content(fn (\Filament\Forms\Get $get) => new \Illuminate\Support\HtmlString('
+                                                <div class="text-center bg-gray-50 p-6 rounded-2xl border border-gray-200 inline-block w-full max-w-sm">
+                                                    <img src="' . $get('generated_qr_code') . '" style="width: 250px; height: 250px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
+                                                    <p class="text-sm text-gray-600 font-bold mt-4 animate-pulse">⏳ স্ক্যান করার জন্য অপেক্ষা করছি...</p>
+                                                    <p class="text-xs text-gray-400 mt-1">আপনার মোবাইল থেকে Linked Devices এ গিয়ে স্ক্যান করুন।</p>
+                                                </div>
+                                            ')),
+                                    ]),
+
+                                // 🟢 Official Setup (Meta API)
+                                \Filament\Forms\Components\Section::make('Official Meta API Setup')
+                                    ->visible(fn (\Filament\Forms\Get $get) => $get('whatsapp_type') === 'official' && $get('is_whatsapp_active'))
+                                    ->schema([
+                                        \Filament\Forms\Components\TextInput::make('wa_phone_number_id')
+                                            ->label('Phone Number ID')
+                                            ->placeholder('E.g. 102345678901234')
+                                            ->required(fn (\Filament\Forms\Get $get) => $get('whatsapp_type') === 'official'),
+                                            
+                                        \Filament\Forms\Components\Textarea::make('wa_access_token')
+                                            ->label('Permanent Access Token')
+                                            ->placeholder('E.g. EAAGm0... ')
+                                            ->rows(3)
+                                            ->required(fn (\Filament\Forms\Get $get) => $get('whatsapp_type') === 'official'),
+                                    ])->columns(2),
                             ]),
                     ])
                     ->columnSpanFull(),
