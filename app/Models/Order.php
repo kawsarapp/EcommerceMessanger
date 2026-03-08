@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
@@ -55,6 +57,59 @@ class Order extends Model
     ];
 
     // ==========================================
+    // 🔥 AUTO WHATSAPP NOTIFICATION LOGIC
+    // ==========================================
+    protected static function booted()
+    {
+        static::updated(function ($order) {
+            // যদি শুধুমাত্র order_status পরিবর্তন হয়
+            if ($order->isDirty('order_status')) {
+                $client = $order->client;
+
+                // ক্লায়েন্টের হোয়াটসঅ্যাপ কানেক্টেড এবং Auto Status SMS অন থাকলে
+                if ($client && $client->is_whatsapp_active && $client->auto_status_update_msg && $client->wa_instance_id) {
+                    
+                    $to = $order->customer_phone;
+                    
+                    // যদি কাস্টমার ফোন নাম্বার না থাকে, তবে sender_id (WhatsApp ID) ব্যবহার করবে
+                    if (empty($to) && $order->sender_id) {
+                        $to = $order->sender_id;
+                    }
+
+                    if (!empty($to)) {
+                        // বাংলাদেশি নাম্বারের আগে 88 বসানোর লজিক
+                        $cleanNumber = preg_replace('/[^0-9]/', '', $to);
+                        if (strlen($cleanNumber) == 11 && str_starts_with($cleanNumber, '01')) {
+                            $cleanNumber = '88' . $cleanNumber;
+                        } elseif (strlen($cleanNumber) > 11 && !str_starts_with($cleanNumber, '88') && str_starts_with($cleanNumber, '01')) {
+                             // অন্যান্য ক্ষেত্রের জন্য
+                             $cleanNumber = $to; 
+                        }
+
+                        $shopName = $client->shop_name;
+                        $status = strtoupper($order->order_status);
+                        $customerName = $order->customer_name ?? 'Sir/Madam';
+
+                        // সুন্দর একটি বাংলা+ইংরেজি মিক্স মেসেজ তৈরি
+                        $message = "হ্যালো {$customerName},\n\nআপনার অর্ডারটির (ID: #{$order->id}) বর্তমান স্ট্যাটাস আপডেট হয়ে *{$status}* হয়েছে।\n\nআমাদের সাথে থাকার জন্য ধন্যবাদ! 🛍️\n- {$shopName}";
+
+                        // Node.js সার্ভারে মেসেজ পাঠানোর রিকোয়েস্ট
+                        try {
+                            Http::post('http://127.0.0.1:3001/api/send-message', [
+                                'instance_id' => $client->wa_instance_id,
+                                'to' => $cleanNumber,
+                                'message' => $message
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Auto Order Status WA Error: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ==========================================
     // RELATIONSHIPS
     // ==========================================
 
@@ -74,17 +129,16 @@ class Order extends Model
         return $this->hasMany(OrderItem::class, 'order_id');
     }
 
-    // 🔥 NEW: ট্র্যাকিং পেজ এবং টেলিগ্রাম রিপোর্টের জন্য সরাসরি প্রোডাক্ট এক্সেস
-    // এটি $order->products কল করলেই অর্ডারের সব প্রোডাক্ট এনে দিবে
+    // ট্র্যাকিং পেজ এবং টেলিগ্রাম রিপোর্টের জন্য সরাসরি প্রোডাক্ট এক্সেস
     public function products(): HasManyThrough
     {
         return $this->hasManyThrough(
             Product::class,
             OrderItem::class,
-            'order_id', // Foreign key on order_items table...
-            'id', // Foreign key on products table...
-            'id', // Local key on orders table...
-            'product_id' // Local key on order_items table...
+            'order_id', 
+            'id', 
+            'id', 
+            'product_id' 
         );
     }
 }

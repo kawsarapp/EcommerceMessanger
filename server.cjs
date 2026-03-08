@@ -13,7 +13,10 @@ const sessions = {};
 
 async function sendWebhookToLaravel(endpoint, data) {
     try {
-        await fetch(`http://127.0.0.1:8000/api/v1/whatsapp/${endpoint}`, {
+        // 🔥 এখানে আপনার লাইভ ওয়েবসাইটের মেইন লিংক বসানো হলো
+        const myDomain = 'https://asianhost.net'; 
+
+        await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -23,7 +26,7 @@ async function sendWebhookToLaravel(endpoint, data) {
     }
 }
 
-// 🌟 কোর ফাংশন: হোয়াটসঅ্যাপ সেশন ইনিশিয়ালাইজ করা (যাতে বারবার কোড লিখতে না হয়)
+// 🌟 কোর ফাংশন: হোয়াটসঅ্যাপ সেশন ইনিশিয়ালাইজ করা (যাতে বারবার কোড লিখতে না হয়)
 function initializeWhatsAppClient(instance_id, res = null) {
     if (sessions[instance_id]) {
         if (res) return res.json({ success: true, status: 'connected' });
@@ -53,7 +56,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
         sessions[instance_id] = client; // মেমোরিতে সেভ করা হলো
         sendWebhookToLaravel('status', { instance_id: instance_id, status: 'connected' });
         
-        // যদি ড্যাশবোর্ড থেকে રিকোয়েস্ট এসে থাকে
+        // যদি ড্যাশবোর্ড থেকে રিকোয়েস্ট এসে থাকে
         if (res && !res.headersSent) {
             res.json({ success: true, status: 'connected' });
         }
@@ -61,6 +64,12 @@ function initializeWhatsAppClient(instance_id, res = null) {
 
     client.on('message', async (msg) => {
         if (msg.from === 'status@broadcast') return;
+
+        // 🔥 Group message বা অন্য কোনো system message আসলে ইগনোর করবে
+        if (msg.from.includes('@g.us') || msg.from.includes('@newsletter')) {
+            console.log("Ignored group/newsletter message");
+            return;
+        }
 
         try {
             const chat = await msg.getChat();
@@ -82,13 +91,25 @@ function initializeWhatsAppClient(instance_id, res = null) {
             }
         }
 
-        console.log(`📩 New message from ${msg.from}`);
+        // 🌟 আসল ম্যাজিক: কাস্টমারের সঠিক নাম্বার আর আসল নাম বের করা
+        let senderName = msg._data?.notifyName || 'Customer';
+        let cleanNumber = msg.from.replace('@c.us', ''); // '@c.us' কেটে ক্লিন নাম্বার করা
+
+        try {
+            const contact = await msg.getContact();
+            senderName = contact.pushname || contact.name || senderName; // WhatsApp profile name
+            cleanNumber = contact.number || cleanNumber; // Original phone number
+        } catch (e) {
+            console.log("Contact fetch error:", e.message);
+        }
+
+        console.log(`📩 New message from ${cleanNumber} (${senderName})`);
 
         sendWebhookToLaravel('receive', {
             instance_id: instance_id,
-            from: msg.from,
+            from: cleanNumber, // একদম ক্লিন নাম্বার যাবে
             body: messageBody,
-            sender_name: msg._data?.notifyName || 'Customer',
+            sender_name: senderName, // আসল প্রোফাইল নেম যাবে
             attachment: attachmentBase64
         });
     });
@@ -101,7 +122,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
 
     client.initialize();
     
-    // মেমোরিতে না থাকলেও ইনিশিয়ালাইজ হওয়ার আগেই রিটার্ন করে দেওয়া যাতে send-message ফাংশন এটিকে ব্যবহার করতে পারে
+    // মেমোরিতে না থাকলেও ইনিশিয়ালাইজ হওয়ার আগেই রিটার্ন করে দেওয়া যাতে send-message ফাংশন এটিকে ব্যবহার করতে পারে
     sessions[instance_id] = client; 
     return client;
 }
@@ -118,13 +139,13 @@ app.post('/api/send-message', async (req, res) => {
     const { instance_id, to, message, media } = req.body;
     console.log(`\n🚀 [SEND MESSAGE API CALLED] To: ${to}`);
 
-    // 🔥 ম্যাজিক: যদি মেমোরিতে সেশন না থাকে, তবে অটোমেটিক ইনিশিয়ালাইজ করে নিবে!
+    // 🔥 ম্যাজিক: যদি মেমোরিতে সেশন না থাকে, তবে অটোমেটিক ইনিশিয়ালাইজ করে নিবে!
     let client = sessions[instance_id];
     if (!client) {
         console.log(`⚠️ Client not in memory. Auto-connecting from LocalAuth files...`);
         client = initializeWhatsAppClient(instance_id);
         
-        // যেহেতু ইনিশিয়ালাইজ হতে ৩-৪ সেকেন্ড সময় লাগে, তাই একটু অপেক্ষা করব
+        // যেহেতু ইনিশিয়ালাইজ হতে ৩-৪ সেকেন্ড সময় লাগে, তাই একটু অপেক্ষা করব
         console.log("⏳ Waiting 5 seconds for WhatsApp to get Ready...");
         await new Promise(resolve => setTimeout(resolve, 5000));
     }
