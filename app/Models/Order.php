@@ -14,44 +14,15 @@ class Order extends Model
 {
     use HasFactory;
 
+    // 🔥 FIX: শুধুমাত্র guarded থাকবে, কোনো fillable থাকবে না। এতে করে যেকোনো নতুন ডাটা সহজেই সেভ হবে।
     protected $guarded = ['id'];
-
-    protected $fillable = [
-        'client_id',
-        'sender_id', // Messenger/Telegram User ID
-        'customer_name',
-        'customer_image',
-        'customer_phone',
-        'customer_email',
-
-        // Address Info
-        'division',
-        'district',
-        'shipping_address',
-
-        // Order Info
-        'total_amount',
-        'order_status', // processing, shipped, delivered, cancelled
-        
-        // Payment Info
-        'payment_status',
-        'payment_method',
-        'transaction_id',
-
-        //---
-        'courier_name',
-        'tracking_code',
-        //---
-
-        // Notes
-        'customer_note',
-        'admin_note', // 🔥 AI Note (Size/Color info here)
-        'notes',      // Backup Note
-    ];
 
     // ✅ Casts for better data handling
     protected $casts = [
         'total_amount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'shipping_charge' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

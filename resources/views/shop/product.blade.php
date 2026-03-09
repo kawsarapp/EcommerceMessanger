@@ -132,9 +132,8 @@
         </div>
     </div>
 
-</div>
 
-{{-- Facebook Pixel ViewContent Event --}}
+    {{-- Facebook Pixel ViewContent Event --}}
     @if($client->pixel_id)
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -150,7 +149,6 @@
         });
     </script>
     @endif
-
 
 
     {{-- 🔥 NEW: Chat Options Action Sheet / Modal --}}
@@ -209,4 +207,4 @@
         </div>
     </div>
     
-@endsection
+</div> @endsection

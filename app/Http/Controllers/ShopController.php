@@ -248,6 +248,7 @@ class ShopController extends Controller
             'is_guest_checkout' => true,
             'order_status' => 'pending',
             'customer_note' => $request->notes,
+            'payment_method' => 'cod',
         ]);
 
         // ২. অর্ডারের প্রোডাক্ট আইটেম সেভ করা
