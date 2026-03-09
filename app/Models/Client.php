@@ -257,4 +257,26 @@ class Client extends Model
         if ($this->user_id === 1) return true; // Super Admin always active
         return $this->plan_ends_at && $this->plan_ends_at->isFuture();
     }
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Notun client toiri howar shomoy automatic API Token generate korbe
+        static::creating(function ($client) {
+            if (empty($client->api_token)) {
+                $client->api_token = \Illuminate\Support\Str::random(40);
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
 }
