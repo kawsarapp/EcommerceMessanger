@@ -32,6 +32,7 @@ class ProductFormSchema
                                         ->label('Main Image')
                                         ->image()
                                         ->imageEditor()
+                                        ->disk('public') // 🔥 FIX: ডিস্ক পাবলিক করে দেওয়া হলো যেন ফিলামেন্ট ছবি খুঁজে পায়
                                         ->directory('products/thumbnails')
                                         ->visibility('public')
                                         ->required()
@@ -43,6 +44,7 @@ class ProductFormSchema
                                         ->multiple()
                                         ->maxFiles(4)
                                         ->reorderable()
+                                        ->disk('public') // 🔥 FIX: গ্যালারির জন্যও ডিস্ক পাবলিক করা হলো
                                         ->directory('products/gallery')
                                         ->visibility('public'),
                                 ]),
