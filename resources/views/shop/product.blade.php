@@ -9,6 +9,7 @@
     selectedSize: null,
     showVideoModal: false,
     showZoomModal: false,
+    showChatOptions: false,
     activeVideoUrl: '',
 
     playVideo(url) {
@@ -89,22 +90,19 @@
         @endif
     </main>
 
+
     {{-- Mobile Sticky Nav --}}
     <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-safe safe-area-pb">
         <div class="flex gap-3">
-            <a :href="'https://m.me/{{ $client->fb_page_id }}?text=' + encodeURIComponent('Hi, query: {{ $product->name }}')" 
-               target="_blank"
+            <button type="button" @click="showChatOptions = true"
                class="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold text-center flex items-center justify-center gap-2 text-sm active:bg-gray-200">
                 <i class="fas fa-comment"></i> Chat
-            </a>
+            </button>
 
             <a :href="'{{ $client->custom_domain ? route('shop.checkout.custom', $product->slug) : route('shop.checkout', [$client->slug, $product->slug]) }}' + '?qty=1' + (selectedColor ? '&color=' + selectedColor : '') + (selectedSize ? '&size=' + selectedSize : '')" 
                class="flex-[2] bg-primary text-white py-3.5 rounded-xl font-bold text-center flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-500/30 active:scale-95 transition">
                 <i class="fas fa-shopping-cart text-lg"></i> Order Now
             </a>
-
-
-
         </div>
     </div>
 
@@ -152,5 +150,63 @@
         });
     </script>
     @endif
+
+
+
+    {{-- 🔥 NEW: Chat Options Action Sheet / Modal --}}
+    <div x-show="showChatOptions" x-cloak class="fixed inset-0 z-[110] flex items-end md:items-center justify-center sm:p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+             @click="showChatOptions = false"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+        
+        <div class="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden transform transition-all pb-safe"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="translate-y-full sm:translate-y-4 sm:opacity-0" x-transition:enter-end="translate-y-0 sm:opacity-100"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="translate-y-0 sm:opacity-100" x-transition:leave-end="translate-y-full sm:translate-y-4 sm:opacity-0">
+            
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">How do you want to chat?</h3>
+                    <button @click="showChatOptions = false" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    @if($client->fb_page_id)
+                    <a href="https://m.me/{{ $client->fb_page_id }}?text={{ urlencode('Hi, I want to know about: ' . $product->name) }}" 
+                       target="_blank" 
+                       class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-50 hover:border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition group">
+                        <div class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fab fa-facebook-messenger"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 text-lg">Messenger</h4>
+                            <p class="text-xs text-gray-500">Fastest reply from our AI</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300 group-hover:text-blue-500 transition"></i>
+                    </a>
+                    @endif
+
+                    @if($client->is_whatsapp_active && $client->phone)
+                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('Hi, I want to know about this product: ' . route('shop.product.details', [$client->slug, $product->slug])) }}" 
+                       target="_blank" 
+                       class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-green-50 hover:border-green-100 bg-green-50/50 hover:bg-green-50 transition group">
+                        <div class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 text-lg">WhatsApp</h4>
+                            <p class="text-xs text-gray-500">Chat with our support team</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500 transition"></i>
+                    </a>
+                    @endif
+                </div>
+                
+                <p class="text-center text-xs text-gray-400 mt-6">Usually replies within a few minutes.</p>
+            </div>
+        </div>
+    </div>
     
 @endsection

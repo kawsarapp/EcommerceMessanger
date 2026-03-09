@@ -64,12 +64,11 @@
         </div>
 
         <div class="hidden md:flex gap-4 mt-8 pt-6 border-t border-gray-100">
-            <a :href="'https://m.me/{{ $client->fb_page_id }}?text=' + encodeURIComponent('Hi, I have a question about: {{ $product->name }}')" 
-               target="_blank"
+
+        <button type="button" @click="showChatOptions = true"
                class="flex-1 border-2 border-gray-200 hover:border-gray-300 text-gray-700 py-4 rounded-xl font-bold text-lg text-center flex items-center justify-center gap-2 transition hover:bg-gray-50">
                 <i class="fas fa-comment-dots"></i> Chat
-            </a>
-
+            </button>
             <a :href="'{{ $client->custom_domain ? route('shop.checkout.custom', $product->slug) : route('shop.checkout', [$client->slug, $product->slug]) }}' + '?qty=1' + (selectedColor ? '&color=' + selectedColor : '') + (selectedSize ? '&size=' + selectedSize : '')" 
                class="flex-[2] bg-primary hover:bg-primaryDark text-white py-4 rounded-xl font-bold text-lg text-center flex items-center justify-center gap-3 transition shadow-xl shadow-blue-500/20 transform hover:-translate-y-1">
                 <i class="fas fa-shopping-cart text-2xl"></i> Order Now

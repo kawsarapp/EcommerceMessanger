@@ -15,11 +15,11 @@ class StoreSyncController extends Controller
 {
     public function pushProducts(Request $request)
     {
-        // Debugging er jonno log e save kore rakha (pore dorkar na hole muche dite paren)
-        Log::info('WP_INCOMING_DATA:', $request->all());
+        // Debugging (লগ চেক করার জন্য)
+        Log::info('WP_WEBHOOK_RECEIVED:', $request->all());
 
-        // Header theke API Key neoar jonno
-        $apiKey = $request->header('x-api-key') ?? $request->bearerToken();
+        // 🔥 FIX 1: Header এর পাশাপাশি URL parameter থেকেও API Key নেওয়ার ব্যবস্থা
+        $apiKey = $request->header('x-api-key') ?? $request->bearerToken() ?? $request->query('api_key');
 
         if (!$apiKey) {
             return response()->json(['success' => false, 'message' => 'API Key missing'], 401);
@@ -31,17 +31,26 @@ class StoreSyncController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid API Key'], 401);
         }
 
-        $products = $request->input('products', []);
+        // 🔥 FIX 2: Bulk ইম্পোর্ট (Custom Plugin) এবং Single Webhook (WooCommerce Default) দুইটার জন্যই সাপোর্ট
+        $products = [];
+        if ($request->has('products') && is_array($request->input('products'))) {
+            $products = $request->input('products'); // Bulk Import format
+        } else {
+            $products[] = $request->all(); // Default WooCommerce Single Webhook format
+        }
+
         $count = 0;
 
         foreach ($products as $item) {
             
+            // যদি কোনো নাম না থাকে, তবে সেটি ভ্যালিড প্রোডাক্ট ডাটা নয়
+            if (empty($item['name'])) continue;
+
             // ==========================================
             // 🔥 BULLETPROOF IMAGE EXTRACTOR LOGIC
             // ==========================================
             $allImageUrls = [];
 
-            // ১. WooCommerce Default Format ("images" array)
             if (!empty($item['images']) && is_array($item['images'])) {
                 foreach ($item['images'] as $img) {
                     if (is_array($img) && !empty($img['src'])) {
@@ -52,15 +61,9 @@ class StoreSyncController extends Controller
                 }
             }
 
-            // ২. Custom Single Image Format
-            if (!empty($item['image_url']) && is_string($item['image_url'])) {
-                $allImageUrls[] = $item['image_url'];
-            }
-            if (!empty($item['thumbnail']) && is_string($item['thumbnail'])) {
-                $allImageUrls[] = $item['thumbnail'];
-            }
+            if (!empty($item['image_url']) && is_string($item['image_url'])) $allImageUrls[] = $item['image_url'];
+            if (!empty($item['thumbnail']) && is_string($item['thumbnail'])) $allImageUrls[] = $item['thumbnail'];
 
-            // ৩. Custom Gallery Format
             if (!empty($item['gallery_urls']) && is_array($item['gallery_urls'])) {
                 foreach ($item['gallery_urls'] as $gUrl) {
                     if (is_string($gUrl)) $allImageUrls[] = $gUrl;
@@ -72,11 +75,10 @@ class StoreSyncController extends Controller
                 }
             }
 
-            // ৪. Duplicate URLs remove kora ebang array index thik kora
             $allImageUrls = array_values(array_unique(array_filter($allImageUrls)));
 
             // ==========================================
-            // 🔥 IMAGE DOWNLOAD & SAVE LOGIC
+            // 🔥 IMAGE DOWNLOAD LOGIC
             // ==========================================
             $thumbnailPath = null;
             $galleryPaths = [];
@@ -90,12 +92,10 @@ class StoreSyncController extends Controller
                             $extension = pathinfo(parse_url($imageUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
                             
                             if ($index === 0) {
-                                // Prothom chobiti Main Thumbnail hobe
                                 $filename = 'products/thumbnails/sync_' . time() . '_' . uniqid() . '.' . $extension;
                                 Storage::disk('public')->put($filename, $imageResponse->body());
                                 $thumbnailPath = $filename;
                             } else {
-                                // Baki gulo Gallery te jabe (Max 4 ta)
                                 if (count($galleryPaths) < 4) {
                                     $filename = 'products/gallery/sync_' . time() . '_' . uniqid() . '.' . $extension;
                                     Storage::disk('public')->put($filename, $imageResponse->body());
@@ -115,7 +115,7 @@ class StoreSyncController extends Controller
             Product::updateOrCreate(
                 [
                     'client_id' => $client->id,
-                    'sku' => $item['sku'] ?? 'SKU-' . uniqid()
+                    'sku' => (!empty($item['sku'])) ? $item['sku'] : 'SKU-' . Str::random(6)
                 ],
                 [
                     'name' => $item['name'],
@@ -126,8 +126,8 @@ class StoreSyncController extends Controller
                     'short_description' => $item['short_description'] ?? '',
                     'stock_quantity' => $item['stock_quantity'] ?? 100,
                     'stock_status' => ($item['stock_quantity'] ?? 1) > 0 ? 'in_stock' : 'out_of_stock',
-                    'thumbnail' => $thumbnailPath, // Download kora local image path
-                    'gallery' => !empty($galleryPaths) ? $galleryPaths : null, // Download kora local gallery paths
+                    'thumbnail' => $thumbnailPath, 
+                    'gallery' => !empty($galleryPaths) ? $galleryPaths : null, 
                 ]
             );
             $count++;
@@ -135,7 +135,7 @@ class StoreSyncController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Successfully synced {$count} products with robust image processing.",
+            'message' => "Successfully synced {$count} products.",
         ]);
     }
 }
