@@ -9,6 +9,7 @@ use App\Http\Controllers\FacebookConnectController;
 use App\Http\Controllers\ClientSettingsController;
 use App\Models\Plan;
 use App\Models\Order;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -28,24 +29,26 @@ Route::get('/', function (Request $request) {
     return view('welcome');
 })->middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->name('home');
 
-// 🔥 Pricing Page (Catch-All এর আগে রাখতে হবে অথবা Regex এ exclude করতে হবে)
+// 🔥 Pricing Page
 Route::get('/pricing', function () {
     $plans = Plan::where('is_active', true)->orderBy('price', 'asc')->get();
     return view('pricing', compact('plans'));
 })->name('pricing');
 
-
-
-Route::get('/orders/{order}/print', function (Order $order) {
-    // Security Check: Only admin or the shop owner can print
-    if (auth()->id() !== 1 && $order->client->user_id !== auth()->id()) {
-        abort(403, 'Unauthorized access.');
-    }
+// Print Order Invoice (Secured)
+Route::middleware(['auth'])->get('/orders/{order}/print', function (Order $order) {
+    // Security Check: Only super admin (ID 1) or the shop owner can print
+    abort_if(
+        auth()->id() !== 1 && $order->client->user_id !== auth()->id(),
+        403,
+        'Unauthorized access.'
+    );
     
     return view('filament.pages.invoice-print', compact('order'));
-})->name('orders.print')->middleware(['web', 'auth']);
+})->name('orders.print');
+
 // =============================================================
-// 🛍️ DYNAMIC SHOP ENGINE
+// 🛍️ DYNAMIC SHOP ENGINE (Powered by DomainMappingMiddleware)
 // =============================================================
 Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(function () {
 
@@ -54,11 +57,11 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
     // ==========================================
     Route::prefix('shop/{slug}')->group(function () {
         
-        // 🔥 ডাইনামিক পেজ রাউট (সবার উপরে)
-        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
-
         // দোকানের মেইন হোমপেজ
         Route::get('/', [ShopController::class, 'show'])->name('shop.show');
+        
+        // ডাইনামিক পেজ রাউট
+        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
 
         // সিঙ্গেল প্রোডাক্ট ডিটেইলস
         Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
@@ -67,38 +70,14 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
         Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
         Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
 
-
-
-        Route::get('/page/{pageSlug}', [ShopController::class, 'showPage'])->name('shop.page.slug');
-        Route::get('/', [ShopController::class, 'show'])->name('shop.show');
-        Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.details');
-        Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track');
-        Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit');
-
-        // 🔥 NEW: Direct Checkout Routes
+        // Direct Checkout Routes
         Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout');
         Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process');
-
-
     });
-
 
     // ==========================================
     // 🌍 CUSTOM DOMAIN ROUTING (example.com/...)
     // ==========================================
-    
-
-
-    Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
-    Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
-    Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
-
-    // 🔥 NEW: Direct Checkout Routes (Custom Domain)
-    Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout.custom');
-    Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process.custom');
-
-    // 🔥 NEW: Coupon Apply Route (Ajax)
-    Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon');
     
     // সিঙ্গেল প্রোডাক্ট (Custom Domain)
     Route::get('/product/{productSlug}', [ShopController::class, 'productDetails'])->name('shop.product.custom');
@@ -107,14 +86,19 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
     Route::get('/track', [ShopController::class, 'trackOrder'])->name('shop.track.custom');
     Route::post('/track', [ShopController::class, 'trackOrderSubmit'])->name('shop.track.submit.custom');
 
+    // Direct Checkout Routes (Custom Domain)
+    Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout.custom');
+    Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process.custom');
+
+    // Coupon Apply Route (Ajax)
+    Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon');
+    
     // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
     // URL: example.com/terms-condition
-    // এখানে 'pricing' শব্দটিকে বাদ দেওয়া হয়েছে যাতে কনফ্লিক্ট না হয়
     Route::get('/{pageSlug}', [ShopController::class, 'showPage'])
-        ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images|pricing).*$') 
+        ->where('pageSlug', '^(?!shop|webhook|auth|dashboard|login|register|api|admin|storage|css|js|images|pricing|orders|shop-api).*$') 
         ->name('shop.page.custom');
 });
-
 
 // ==========================================
 // ⚡ AJAX & UTILITY FEATURES
@@ -124,22 +108,22 @@ Route::prefix('shop-api')->group(function () {
     Route::get('/category-counts', [ShopController::class, 'getCategoryCounts'])->name('shop.category-counts');
 });
 
-
 // ==========================================
 // 🔗 OAUTH & INTEGRATIONS
 // ==========================================
 
 // Facebook Connect
-Route::get('/auth/facebook/redirect', [FacebookConnectController::class, 'redirect'])->name('auth.facebook');
-Route::get('/auth/facebook/callback', [FacebookConnectController::class, 'callback'])->name('auth.facebook.callback');
+Route::prefix('auth/facebook')->group(function () {
+    Route::get('/redirect', [FacebookConnectController::class, 'redirect'])->name('auth.facebook');
+    Route::get('/callback', [FacebookConnectController::class, 'callback'])->name('auth.facebook.callback');
+});
 
-// Webhooks
+// Webhooks (Ensure these routes are excluded from VerifyCsrfToken middleware)
 Route::prefix('webhook')->group(function () {
     Route::get('/messenger', [WebhookController::class, 'verify'])->name('webhook.verify');
     Route::post('/messenger', [WebhookController::class, 'handle'])->name('webhook.handle');
     Route::post('/telegram/{token}', [TelegramWebhookController::class, 'handle'])->name('telegram.webhook');
 });
-
 
 // ==========================================
 // 🧑‍💼 SELLER DASHBOARD (Authenticated)
