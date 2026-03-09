@@ -120,6 +120,21 @@ class ClientFormSchema
                                         TextInput::make('shopify_store_url')->label('Shopify Store Domain')->placeholder('your-store.myshopify.com')->url(),
                                         TextInput::make('shopify_access_token')->label('Admin API Access Token')->password()->revealable(),
                                     ])->columns(2),
+
+
+                                        TextInput::make('api_token')
+                                    ->label('Webhook API Token (WooCommerce/Shopify)')
+                                    ->readOnly()
+                                    ->suffixAction(
+                                        Action::make('copy_token')
+                                            ->icon('heroicon-m-clipboard')
+                                            ->color('success')
+                                            ->action(function ($livewire, $state) {
+                                                $livewire->js("window.navigator.clipboard.writeText('{$state}')");
+                                                Notification::make()->title('Token copied to clipboard!')->success()->send();
+                                            })
+                                    )
+                                    ->helperText('Ei token ti WordPress er webhook delivery URL e ?api_key= er pore boshaben.'),
                             ]),
 
                         // 🟢 Tab 10: WhatsApp Integration
@@ -235,12 +250,7 @@ class ClientFormSchema
                                             ->required(fn (Get $get) => $get('whatsapp_type') === 'official'),
                                     ])->columns(2),
 
-                                TextInput::make('api_token')
-                                    ->label('Webhook API Token (WooCommerce/Shopify)')
-                                    ->readOnly()
-                                    ->copyable()
-                                    ->copyMessage('API Token copied to clipboard!')
-                                    ->helperText('Ei token ti WordPress er webhook delivery URL e ?api_key= er pore boshaben.'),
+                            
                             ]),
                     ])
                     ->columnSpanFull(),
