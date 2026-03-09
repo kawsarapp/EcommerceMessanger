@@ -119,6 +119,11 @@ class ListProducts extends ListRecords
                                 $finalThumbnail = $thumbnailPath ?? ($existingProduct->thumbnail ?? null);
                                 $finalGallery = !empty($galleryPaths) ? $galleryPaths : ($existingProduct->gallery ?? null);
 
+                               // 🔥 FIX: Empty String ("") কে ঠিকমতো Decimal ও Integer এ কনভার্ট করা
+                                $regularPrice = !empty($item['regular_price']) ? $item['regular_price'] : (!empty($item['price']) ? $item['price'] : 0);
+                                $salePrice = !empty($item['sale_price']) ? $item['sale_price'] : null;
+                                $stockQuantity = (isset($item['stock_quantity']) && $item['stock_quantity'] !== '') ? $item['stock_quantity'] : 100;
+
                                 Product::updateOrCreate(
                                     [
                                         'client_id' => $client->id,
@@ -127,12 +132,12 @@ class ListProducts extends ListRecords
                                     [
                                         'name' => $item['name'],
                                         'slug' => Str::slug($item['name']) . '-' . Str::random(4),
-                                        'regular_price' => $item['regular_price'] ?? ($item['price'] ?? 0),
-                                        'sale_price' => $item['sale_price'] ?? null,
+                                        'regular_price' => $regularPrice,
+                                        'sale_price' => $salePrice,
                                         'description' => $item['description'] ?? '',
                                         'short_description' => $item['short_description'] ?? '',
-                                        'stock_quantity' => $item['stock_quantity'] ?? 100,
-                                        'stock_status' => ($item['stock_quantity'] ?? 1) > 0 ? 'in_stock' : 'out_of_stock',
+                                        'stock_quantity' => $stockQuantity,
+                                        'stock_status' => $stockQuantity > 0 ? 'in_stock' : 'out_of_stock',
                                         'thumbnail' => $finalThumbnail,
                                         'gallery' => $finalGallery,
                                     ]
