@@ -156,7 +156,7 @@ class ListProducts extends ListRecords
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Connection Error!')
-                            ->body('আপনার ওয়ার্ডপ্রেস সাইটের লিংকে বা API-তে কোনো সমস্যা আছে।')
+                            ->body('Error: ' . $e->getMessage()) // 🔥 আসল এরর মেসেজটি দেখাবে
                             ->danger()
                             ->send();
                     }
