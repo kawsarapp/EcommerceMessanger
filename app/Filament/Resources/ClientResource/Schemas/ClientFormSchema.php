@@ -338,8 +338,7 @@ class ClientFormSchema
             ])->columns(2),
         ];
     }
-
-    private static function domainSeo(): array
+private static function domainSeo(): array
     {
         return [
             Section::make('Custom Domain Setup')
@@ -366,24 +365,38 @@ class ClientFormSchema
                                     $domain = trim($domain, '/');
                                     
                                     try {
-                                        $records = dns_get_record($domain, DNS_A);
-                                        $serverIp = gethostbyname(parse_url(config('app.url'), PHP_URL_HOST));
+                                        // 🔥 FIX: Cloudflare এর বদলে আসল cPanel IP এবং CNAME চেক করা
+                                        $realServerIp = '198.38.91.154'; 
+                                        $mainDomain = 'asianhost.net';
+                                        
+                                        $recordsA = dns_get_record($domain, DNS_A);
+                                        $recordsCNAME = dns_get_record($domain, DNS_CNAME);
                                         
                                         $isMatched = false;
-                                        foreach ($records as $record) {
-                                            if (isset($record['ip']) && $record['ip'] === $serverIp) {
-                                                $isMatched = true;
-                                                break;
+
+                                        // ১. CNAME চেক
+                                        foreach ($recordsCNAME as $record) {
+                                            if (isset($record['target']) && $record['target'] === $mainDomain) {
+                                                $isMatched = true; break;
+                                            }
+                                        }
+
+                                        // ২. A Record (আসল IP) চেক
+                                        if (!$isMatched) {
+                                            foreach ($recordsA as $record) {
+                                                if (isset($record['ip']) && $record['ip'] === $realServerIp) {
+                                                    $isMatched = true; break;
+                                                }
                                             }
                                         }
 
                                         if ($isMatched) {
-                                            Notification::make()->title('✅ Domain Verified!')->body('A-Record is pointing to our server perfectly.')->success()->send();
+                                            Notification::make()->title('✅ Domain Verified!')->body('DNS record is perfectly pointing to our server.')->success()->send();
                                         } else {
-                                            Notification::make()->title('❌ DNS Not Matched!')->body("We found no matching A-Record for IP: {$serverIp}. If you just updated it on Cloudflare/Namecheap, please wait a few hours.")->danger()->send();
+                                            Notification::make()->title('❌ DNS Not Matched!')->body("Please point your domain to IP: {$realServerIp} or add a CNAME for {$mainDomain}.")->danger()->send();
                                         }
                                     } catch (\Exception $e) {
-                                        Notification::make()->title('❌ Verification Failed')->body('Could not check DNS records. Is the domain valid?')->danger()->send();
+                                        Notification::make()->title('❌ Verification Failed')->body('Could not check DNS records.')->danger()->send();
                                     }
                                 })
                         ),
@@ -391,11 +404,12 @@ class ClientFormSchema
                     Placeholder::make('dns_instructions')
                         ->label('DNS Setup Instructions (অবশ্যই করণীয়)')
                         ->content(function () {
-                            $serverIp = gethostbyname(parse_url(config('app.url'), PHP_URL_HOST));
+                            // 🔥 FIX: হার্ডকোডেড আসল সার্ভার IP
+                            $realServerIp = '198.38.91.154';
                             return new HtmlString('
                                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-gray-800 shadow-sm mt-2">
                                     <p class="mb-3 font-bold text-blue-800"><i class="fas fa-info-circle"></i> ডোমেইন কানেক্ট করার নিয়ম:</p>
-                                    <p class="mb-4">আপনার ডোমেইন কন্ট্রোল প্যানেলে (যেমন: Cloudflare, Namecheap বা Hostinger) গিয়ে DNS Settings থেকে নিচের <strong>A Record</strong> টি যুক্ত করুন:</p>
+                                    <p class="mb-4">আপনার ডোমেইন কন্ট্রোল প্যানেলে (যেমন: Cloudflare, Namecheap) গিয়ে DNS Settings থেকে নিচের <strong>A Record</strong> অথবা <strong>CNAME Record</strong> যুক্ত করুন:</p>
                                     
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-left border-collapse bg-white rounded-lg overflow-hidden shadow-sm">
@@ -403,19 +417,27 @@ class ClientFormSchema
                                                 <tr class="bg-gray-100 text-gray-700">
                                                     <th class="border-b p-3 font-bold">Type</th>
                                                     <th class="border-b p-3 font-bold">Name / Host</th>
-                                                    <th class="border-b p-3 font-bold">Value / IP Address</th>
+                                                    <th class="border-b p-3 font-bold">Value / Target</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
                                                     <td class="border-b p-3 font-bold text-blue-600">A Record</td>
                                                     <td class="border-b p-3">@ (বা আপনার ডোমেইন নাম)</td>
-                                                    <td class="border-b p-3 font-mono font-bold text-green-600">' . $serverIp . '</td>
+                                                    <td class="border-b p-3 font-mono font-bold text-green-600">' . $realServerIp . '</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-xs text-gray-400 py-1 bg-gray-50">অথবা (যেকোনো একটি ব্যবহার করুন)</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="border-b p-3 font-bold text-blue-600">CNAME</td>
+                                                    <td class="border-b p-3">www (বা সাবডোমেইন)</td>
+                                                    <td class="border-b p-3 font-mono font-bold text-green-600">asianhost.net</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <p class="mt-4 text-xs text-red-500 font-bold">* DNS আপডেট হতে ২ থেকে ২৪ ঘণ্টা সময় লাগতে পারে। আপডেট হওয়ার পর উপরের <strong>"Verify Setup"</strong> বাটনে ক্লিক করে চেক করুন।</p>
+                                    <p class="mt-4 text-xs text-red-500 font-bold">* Cloudflare ব্যবহার করলে প্রথমে "Proxy Status" বন্ধ (DNS Only) করে Verify করুন।</p>
                                 </div>
                             ');
                         })
@@ -427,15 +449,11 @@ class ClientFormSchema
                     ->label('Meta Title')
                     ->placeholder('Best Online Shop in BD')
                     ->maxLength(60),
-                
                 TextInput::make('pixel_id')
                     ->label('Facebook Pixel ID')
-                    ->placeholder('1234567890')
                     ->numeric(),
-                
                 Textarea::make('meta_description')
                     ->label('Meta Description')
-                    ->placeholder('Short description for Google search...')
                     ->rows(2)
                     ->columnSpanFull(),
             ])->columns(2),
