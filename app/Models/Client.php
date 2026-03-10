@@ -11,96 +11,9 @@ class Client extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'shop_name', 
-        'slug', 
-        'status', // active / inactive
-
-        // Plan & Limits
-        'plan_id',
-        'plan_ends_at',
-
-        // Delivery Settings
-        'delivery_charge_inside',
-        'delivery_charge_outside',
-
-        // Meta (Facebook) Keys
-        'fb_page_id', 
-        'fb_page_token', 
-        'fb_verify_token',
-        'fb_app_secret',
-        'webhook_verified_at',
-
-        // Knowledge for AI & Persona Settings
-        'is_ai_enabled',
-        'ai_model',
-        'bot_persona',
-        'knowledge_base',
-        'custom_prompt',
-
-        // Appearance & Social links
-        'logo',
-        'banner',
-        'primary_color',
-        'announcement_text',
-        'pixel_id',
-        'social_facebook',
-        'social_instagram',
-        'social_youtube',
-
-        // Courier API Settings
-        'default_courier',
-        'steadfast_api_key',
-        'steadfast_secret_key',
-        'pathao_api_key',
-        'pathao_store_id',
-        'redx_api_token',
-
-        // AI Automation Toggles
-        'auto_comment_reply',
-        'auto_private_reply',
-        'auto_status_update_msg', // ✅ এখানে কমা দেওয়া হয়েছে
-
-        // Instagram Settings
-        'is_instagram_active',
-        'instagram_page_id',
-        'ig_account_id',
-
-        // Telegram Settings
-        'is_telegram_active',
-        'telegram_bot_token',
-        'telegram_chat_id',
-        //--
-        'is_review_collection_active',
-        'review_delay_days',
-
-        //--
-        // Store Sync API Keys
-        'wc_store_url',
-        'wc_consumer_key',
-        'wc_consumer_secret',
-        'shopify_store_url',
-        'shopify_access_token',
-        'last_inventory_sync_at',
-
-        //---
-        'is_reminder_active',
-        'reminder_delay_hours',
-        //--
-        'api_token',
-        //---
-        'is_whatsapp_active',
-        'whatsapp_type',
-        'wa_instance_id',
-        'wa_status',
-        'wa_phone_number_id',
-        'wa_access_token',
-        //---
-        'phone',
-        'address',
-
-    ];
+    // 🔥 FIX: বিশাল fillable লিস্টের বদলে শুধু guarded ব্যবহার করা হলো। 
+    // এখন থেকে custom_domain সহ যেকোনো নতুন কলাম ডাটাবেসে সহজেই সেভ হবে।
+    protected $guarded = ['id'];
 
     /**
      * ডাটা টাইপ কাস্টিং
@@ -270,13 +183,5 @@ class Client extends Model
             }
         });
     }
-
-
-
-
-
-
-
-
 
 }
