@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\CheckCustomDomain::class);
         $middleware->validateCsrfTokens(except: [
             //'webhook',           // Facebook Webhook এর জন্য
             'telegram/webhook',  // ✅ Telegram Webhook এর জন্য (শুধুমাত্র এই দুটিই দরকার)
