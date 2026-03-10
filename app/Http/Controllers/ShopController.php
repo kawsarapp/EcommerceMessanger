@@ -51,7 +51,8 @@ class ShopController extends Controller
     {
         if ($request->has('current_client')) {
             $client = $request->current_client;
-            $productSlug = $slug; 
+            // 🔥 FIX: যদি productSlug আগে থেকেই থাকে, তবে সেটিকে ওভাররাইড করবে না
+            $productSlug = $productSlug ?? $slug; 
         } else {
             $client = $this->clientService->getSafeClient($request, $slug);
         }
@@ -61,8 +62,9 @@ class ShopController extends Controller
         $product = $this->productService->getProductBySlug($client->id, $productSlug);
 
         if (!$product) {
-            if ($request->has('current_client')) return redirect()->route('shop.index');
-            return $client->slug ? redirect()->route('shop.index', $client->slug) : redirect('/');
+            // 🔥 FIX: shop.index এর বদলে সরাসরি / বা shop.show তে পাঠানো হলো
+            if ($request->has('current_client')) return redirect('/');
+            return $client->slug ? redirect()->route('shop.show', $client->slug) : redirect('/');
         }
 
         $relatedProducts = $this->productService->getRelatedProducts($client->id, $product->category_id, $product->id);
@@ -128,8 +130,6 @@ class ShopController extends Controller
         return $this->show($request, $request->slug);
     }
 
-
-
     /**
      * চেকআউট পেজ ভিউ করানো
      */
@@ -137,7 +137,8 @@ class ShopController extends Controller
     {
         if ($request->has('current_client')) {
             $client = $request->current_client;
-            $productSlug = $slug; 
+            // 🔥 FIX: Checkout এর ক্ষেত্রেও সেম ফিক্স দেওয়া হলো
+            $productSlug = $productSlug ?? $slug; 
         } else {
             $client = $this->clientService->getSafeClient($request, $slug);
         }
@@ -147,6 +148,8 @@ class ShopController extends Controller
         $product = $this->productService->getProductBySlug($client->id, $productSlug);
 
         if (!$product) {
+            // 🔥 FIX: এখানেও shop.show ব্যবহার করা হলো
+            if ($request->has('current_client')) return redirect('/');
             return redirect()->route('shop.show', $client->slug ?? '');
         }
 
@@ -271,17 +274,4 @@ class ShopController extends Controller
 
         return redirect($redirectUrl)->with('success_phone', $order->customer_phone);
     }
-
-
-
-
-
-
-
-
-
 }
-
-
-
-
