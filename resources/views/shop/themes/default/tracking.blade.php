@@ -1,4 +1,4 @@
-@extends('shop.layout')
+@extends('shop.themes.default.layout')
 
 @section('title', 'Track Order - ' . $client->shop_name)
 

@@ -1,4 +1,4 @@
-@extends('shop.layout')
+@extends('shop.themes.default.layout')
 
 @section('title', $client->shop_name . ' | Online Store')
 
