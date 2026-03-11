@@ -185,6 +185,27 @@ app.post('/api/send-message', async (req, res) => {
 });
 
 const PORT = 3001;
+app.post('/api/disconnect', async (req, res) => {
+    const { instance_id } = req.body;
+    if (!instance_id) return res.status(400).json({ success: false, message: 'Instance ID needed' });
+
+    const client = sessions[instance_id];
+    if (client) {
+        try {
+            await client.logout();
+            await client.destroy();
+            delete sessions[instance_id];
+            console.log(`✅ Session logged out & destroyed for: ${instance_id}`);
+            return res.json({ success: true });
+        } catch (error) {
+            console.error('❌ Error during disconnect:', error);
+            delete sessions[instance_id];
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+    res.json({ success: true, message: 'Already disconnected' });
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 WhatsApp Node Server is running on http://127.0.0.1:${PORT}`);
 });

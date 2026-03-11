@@ -19,50 +19,34 @@
     <style>
         :root {
             --primary-color: {{ $client->primary_color ?? '#4f46e5' }};
-            /* Auto Darken Primary Color for Hover State */
             --primary-dark: color-mix(in srgb, var(--primary-color), black 10%);
-            /* Light Background Color */
             --primary-light: color-mix(in srgb, var(--primary-color), white 90%);
         }
         
-        /* Custom Utilities */
         [x-cloak] { display: none !important; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        
-        /* Video Aspect Ratio */
         .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; background: #000; }
         .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-
-        /* Loading Spinner */
-        .loader { border-top-color: var(--primary-color); -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Floating Button Animation */
         .animate-bounce-slow { animation: bounce 3s infinite; }
+        
+        /* 🔥 NEW: Hide default mobile sticky nav if app-nav is active */
+        .safe-area-pb { padding-bottom: calc(env(safe-area-inset-bottom) + 60px) !important; }
     </style>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary: 'var(--primary-color)',
-                        primaryDark: 'var(--primary-dark)',
-                        secondary: '#475569',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Plus Jakarta Sans', 'sans-serif'],
-                    }
+                    colors: { primary: 'var(--primary-color)', primaryDark: 'var(--primary-dark)' },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'] }
                 }
             }
         }
     </script>
 
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
@@ -79,59 +63,81 @@
     fbq('init', '{{ $client->pixel_id }}');
     fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id={{ $client->pixel_id }}&ev=PageView&noscript=1"
-    /></noscript>
     @endif
 </head>
 
 <body class="bg-gray-50 text-slate-800 antialiased min-h-screen flex flex-col relative" x-data="{ showScrollTop: false }" @scroll.window="showScrollTop = (window.pageYOffset > 300)">
 
     @if($client->announcement_text)
-        <div class="bg-primary text-white text-center py-2.5 text-sm font-medium px-4 relative z-50 shadow-sm tracking-wide">
+        <div class="bg-primary text-white text-center py-2 text-xs font-medium px-4 relative z-50 tracking-wide">
             {{ $client->announcement_text }}
         </div>
     @endif
 
-    <header class="glass sticky top-0 z-40 transition-all duration-300 shadow-sm">
+    {{-- 🔥 UPDATED HEADER --}}
+    <header class="glass sticky top-0 z-40 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16 md:h-20">
+            <div class="flex justify-between items-center h-16 md:h-20 gap-4">
                 
-                {{-- 🔥 Custom Domain Clean URL Update --}}
-                <a href="{{ $baseUrl }}" class="flex items-center gap-3 group text-gray-600 hover:text-primary transition">
+                {{-- Logo & Brand --}}
+                <a href="{{ $baseUrl }}" class="flex items-center gap-3 group text-gray-800 hover:text-primary transition flex-shrink-0">
                     @if(request()->routeIs('shop.show'))
-                        {{-- হোমপেজ হলে লোগো দেখাবে --}}
                         @if($client->logo)
-                            <img src="{{ asset('storage/' . $client->logo) }}" alt="Logo" class="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm">
+                            <img src="{{ asset('storage/' . $client->logo) }}" alt="Logo" class="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border border-gray-100 shadow-sm">
                         @else
-                            <div class="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 transform group-hover:rotate-3 transition"><i class="fas fa-store"></i></div>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 transform group-hover:rotate-3 transition"><i class="fas fa-store"></i></div>
                         @endif
                     @else
-                        {{-- অন্য পেজ হলে ব্যাক বাটন দেখাবে --}}
                         <div class="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm group-hover:border-primary group-hover:text-primary transition-all">
                             <i class="fas fa-arrow-left"></i>
                         </div>
                     @endif
-                    
-                    <span class="font-bold hidden sm:block text-lg font-heading text-gray-800 group-hover:text-primary transition">{{ $client->shop_name }}</span>
+                    <span class="font-bold text-lg md:text-xl font-heading truncate max-w-[150px] sm:max-w-[200px]">{{ $client->shop_name }}</span>
                 </a>
-                
-                <h1 class="text-lg font-bold font-heading truncate max-w-[200px] sm:max-w-md text-gray-900 sm:hidden">{{ $client->shop_name }}</h1>
 
-                <a href="https://m.me/{{ $client->fb_page_id }}" target="_blank" 
-                   class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primaryDark shadow-lg hover:shadow-primary/40 transition transform hover:scale-110 active:scale-95"
-                   title="Chat on Messenger">
-                    <i class="fab fa-facebook-messenger text-xl"></i>
-                </a>
+                {{-- 🔥 NEW: Desktop Search Bar (Hidden on Mobile) --}}
+                @if(request()->routeIs('shop.show'))
+                <div class="hidden lg:flex flex-1 max-w-xl mx-8 relative">
+                    <form action="" method="GET" class="w-full relative">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products..." class="w-full bg-gray-100 border border-transparent rounded-full py-2.5 pl-12 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition">
+                        <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+                    </form>
+                </div>
+                @endif
+
+                {{-- 🔥 NEW: Desktop Navigation Links & Action Buttons --}}
+                <div class="flex items-center gap-4 flex-shrink-0">
+                    
+                    {{-- Page Links (Desktop Only) --}}
+                    @if(isset($pages) && $pages->count() > 0)
+                    <nav class="hidden lg:flex items-center gap-6 mr-4 text-sm font-medium text-gray-600">
+                        @foreach($pages as $page)
+                            <a href="{{ $cleanDomain ? $baseUrl.'/page/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition">{{ $page->title }}</a>
+                        @endforeach
+                    </nav>
+                    @endif
+
+                    {{-- Track Order Button (Hidden on Mobile) --}}
+                    <a href="{{ $cleanDomain ? $baseUrl.'/track-order' : route('shop.track', $client->slug) }}" class="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-primary transition bg-gray-100 hover:bg-blue-50 px-4 py-2 rounded-full">
+                        <i class="fas fa-truck-fast"></i> Track Order
+                    </a>
+
+                    {{-- Messenger Button (All Devices) --}}
+                    <a href="https://m.me/{{ $client->fb_page_id }}" target="_blank" 
+                       class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-blue-500/40 transition transform hover:scale-110 active:scale-95"
+                       title="Chat on Messenger">
+                        <i class="fab fa-facebook-messenger text-xl"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </header>
 
-    <div class="flex-1 w-full">
+    <div class="flex-1 w-full pb-20 md:pb-0">
         @yield('content')
     </div>
 
-    <footer class="bg-white border-t border-gray-200 pt-10 pb-8 mt-auto mb-20 md:mb-0">
+    <footer class="bg-white border-t border-gray-200 pt-10 pb-24 md:pb-8 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center">
             
             <div class="mb-6">
@@ -140,11 +146,10 @@
                     <p class="text-sm text-gray-500 mt-2 max-w-sm mx-auto"><i class="fas fa-map-marker-alt text-primary mr-1"></i> {{ $client->address }}</p>
                 @endif
                 @if($client->phone)
-                    <p class="text-sm font-medium text-gray-600 mt-2 hover:text-primary transition"><i class="fas fa-phone mr-1"></i> {{ $client->phone }}</p>
+                    <p class="text-sm font-medium text-gray-600 mt-2"><i class="fas fa-phone mr-1"></i> {{ $client->phone }}</p>
                 @endif
             </div>
 
-            {{-- 🔥 NEW: Social Media Links --}}
             @if($client->social_facebook || $client->social_instagram || $client->social_youtube)
             <div class="flex justify-center gap-4 mb-8">
                 @if($client->social_facebook)
@@ -160,14 +165,11 @@
             @endif
 
             @if(isset($pages) && $pages->count() > 0)
-            <div class="flex flex-wrap justify-center gap-6 text-sm font-medium text-gray-500 mb-8">
-                {{-- 🔥 Custom Domain Clean URL Update --}}
+            <div class="flex flex-wrap justify-center gap-4 md:gap-6 text-sm font-medium text-gray-500 mb-8">
                 @foreach($pages as $page)
-                    <a href="{{ $cleanDomain ? $baseUrl.'/page/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition hover:underline decoration-primary underline-offset-4">
-                        {{ $page->title }}
-                    </a>
+                    <a href="{{ $cleanDomain ? $baseUrl.'/page/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition">{{ $page->title }}</a>
                 @endforeach
-                <a href="{{ $cleanDomain ? $baseUrl.'/track-order' : route('shop.track', $client->slug) }}" class="hover:text-primary transition hover:underline decoration-primary underline-offset-4">Track Order</a>
+                <a href="{{ $cleanDomain ? $baseUrl.'/track-order' : route('shop.track', $client->slug) }}" class="hover:text-primary transition font-bold">Track Order</a>
             </div>
             @endif
 
@@ -181,26 +183,48 @@
         </div>
     </footer>
 
-    {{-- 🔥 NEW: Floating WhatsApp Button --}}
-    @if($client->is_whatsapp_active && $client->phone)
-    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text=Hello" 
-       target="_blank"
-       class="fixed bottom-24 left-4 md:bottom-8 md:left-8 z-40 bg-green-500 text-white w-14 h-14 flex items-center justify-center rounded-full shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:bg-green-600 hover:scale-110 transition-transform duration-300 animate-bounce-slow"
-       title="Chat with us on WhatsApp">
-        <i class="fab fa-whatsapp text-3xl"></i>
-    </a>
-    @endif
+    {{-- 🔥 NEW: Mobile Bottom App Navigation --}}
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-50 pb-safe">
+        <div class="flex justify-around items-center h-16 px-2">
+            
+            <a href="{{ $baseUrl }}" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-primary {{ request()->routeIs('shop.show') ? 'text-primary' : '' }}">
+                <i class="fas fa-home text-lg mb-1"></i>
+                <span class="text-[10px] font-bold">Home</span>
+            </a>
 
-    {{-- Scroll to Top Button --}}
+            <a href="{{ $cleanDomain ? $baseUrl.'/track-order' : route('shop.track', $client->slug) }}" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-primary {{ request()->routeIs('shop.track') ? 'text-primary' : '' }}">
+                <i class="fas fa-truck-fast text-lg mb-1"></i>
+                <span class="text-[10px] font-bold">Track Order</span>
+            </a>
+
+            @if($client->is_whatsapp_active && $client->phone)
+            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}" target="_blank" class="flex flex-col items-center justify-center w-full h-full relative -top-3">
+                <div class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-500/40 text-2xl transform transition hover:scale-105 active:scale-95">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <span class="text-[10px] font-bold text-gray-600 mt-1">WhatsApp</span>
+            </a>
+            @else
+            <a href="https://m.me/{{ $client->fb_page_id }}" target="_blank" class="flex flex-col items-center justify-center w-full h-full relative -top-3">
+                <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40 text-2xl transform transition hover:scale-105 active:scale-95">
+                    <i class="fab fa-facebook-messenger"></i>
+                </div>
+                <span class="text-[10px] font-bold text-gray-600 mt-1">Chat</span>
+            </a>
+            @endif
+
+            <a href="{{ $baseUrl }}" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-primary">
+                <i class="fas fa-shopping-cart text-lg mb-1"></i>
+                <span class="text-[10px] font-bold">Shop</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Scroll to Top Button (Hidden on Mobile due to Bottom Nav) --}}
     <button x-show="showScrollTop" 
             @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-300"
-            x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 translate-y-4"
-            class="fixed bottom-24 right-4 z-40 bg-gray-900 text-white w-12 h-12 flex items-center justify-center rounded-full shadow-xl hover:bg-primary transition-colors md:bottom-8 md:right-8"
+            x-transition
+            class="hidden md:flex fixed bottom-8 right-8 z-40 bg-gray-900 text-white w-12 h-12 items-center justify-center rounded-full shadow-xl hover:bg-primary transition-colors"
             style="display: none;">
         <i class="fas fa-arrow-up"></i>
     </button>

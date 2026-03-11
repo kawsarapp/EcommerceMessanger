@@ -56,14 +56,44 @@ EOT;
         return strtr($finalPrompt, $tags);
     }
 
-    public function buildOrderContext($clientId, $senderId)
+    // 🔥 FIX: স্মার্ট কাস্টমার ডিটেকশন (Sender ID অথবা Phone Number দিয়ে)
+    public function buildOrderContext($clientId, $senderId, $userMessage = '')
     {
-        $orders = Order::where('client_id', $clientId)->where('sender_id', $senderId)->latest()->take(3)->get();
+        $phone = null;
+        $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
+        $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+        $cleanMsg = str_replace($bn, $en, $userMessage);
+
+        if (preg_match('/01[3-9]\d{8,9}/', $cleanMsg, $matches)) {
+            $phone = substr($matches[0], 0, 11);
+        }
+
+        $query = Order::where('client_id', $clientId);
+        
+        if ($phone) {
+            $query->where(function($q) use ($senderId, $phone) {
+                $q->where('sender_id', $senderId)->orWhere('customer_phone', $phone);
+            });
+        } else {
+            $query->where('sender_id', $senderId);
+        }
+
+        $orders = $query->latest()->take(3)->get();
         if ($orders->isEmpty()) return "এই কাস্টমারের কোনো পূর্ববর্তী অর্ডার নেই।";
         
         $context = "কাস্টমারের সর্বশেষ ৩টি অর্ডারের তথ্য:\n";
         foreach($orders as $o) {
-            $context .= "- অর্ডার #{$o->id} (অবস্থা: {$o->order_status}), সর্বমোট বিল: {$o->total_amount} টাকা।\n";
+            $trackingInfo = "";
+            if (!empty($o->admin_note)) {
+                if (preg_match('/Steadfast Tracking:\s*([A-Za-z0-9\-]+)/i', $o->admin_note, $match)) {
+                    $trackingInfo = " (Steadfast Code: {$match[1]})";
+                } elseif (preg_match('/Pathao Tracking:\s*([A-Za-z0-9\-]+)/i', $o->admin_note, $match)) {
+                    $trackingInfo = " (Pathao Code: {$match[1]})";
+                } elseif (preg_match('/RedX Tracking:\s*([A-Za-z0-9\-]+)/i', $o->admin_note, $match)) {
+                    $trackingInfo = " (RedX Code: {$match[1]})";
+                }
+            }
+            $context .= "- অর্ডার #{$o->id} (অবস্থা: {$o->order_status}), বিল: {$o->total_amount} টাকা{$trackingInfo}।\n";
         }
         return $context;
     }

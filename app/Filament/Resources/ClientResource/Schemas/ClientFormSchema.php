@@ -204,7 +204,7 @@ class ClientFormSchema
                                                 })
                                                 ->hidden(fn ($record) => $record && $record->wa_status === 'connected'),
                                                 
-                                            // 🔥 নতুন Disconnect বাটন
+                                            // 🔥 নতুন Disconnect বাটন (With Node.js Logout API)
                                             Action::make('disconnect_wa')
                                                 ->label('Disconnect & Rescan')
                                                 ->icon('heroicon-o-x-circle')
@@ -212,8 +212,20 @@ class ClientFormSchema
                                                 ->requiresConfirmation()
                                                 ->action(function ($record, Set $set) {
                                                     if ($record) {
+                                                        // ১. Node সার্ভারকে সেশন ডিলিট করার নির্দেশ দেওয়া
+                                                        try {
+                                                            $instanceId = $record->wa_instance_id ?? ('client_' . $record->id);
+                                                            Http::post('http://127.0.0.1:3001/api/disconnect', [
+                                                                'instance_id' => $instanceId
+                                                            ]);
+                                                        } catch (\Exception $e) {
+                                                            // Node Server Offline থাকলেও সমস্যা নেই
+                                                        }
+                                                        
+                                                        // ২. ডাটাবেস আপডেট করা
                                                         $record->update(['wa_status' => 'disconnected', 'wa_instance_id' => null]);
                                                         $set('generated_qr_code', null);
+                                                        
                                                         Notification::make()->title('Disconnected successfully! You can now generate a new QR.')->warning()->send();
                                                     }
                                                 })

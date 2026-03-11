@@ -99,79 +99,86 @@ class ChatbotService
             $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
 
             if ($session->is_human_agent_active) return null;
-
-            if ($this->utility->isTrackingIntent($userMessage) || preg_match('/01[3-9]\d{8}/', $userMessage)) {
-                $orderStatusMsg = $this->utility->lookupOrderByPhone($clientId, $userMessage);
-                if ($orderStatusMsg && str_contains($orderStatusMsg, 'FOUND_ORDER')) {
-                    return "স্যার/ম্যাম, আপনার অর্ডারের তথ্য পেয়েছি: \n" . str_replace('FOUND_ORDER:', '', $orderStatusMsg) . "\nআমাদের সাথে থাকার জন্য ধন্যবাদ!";
-                }
-            }
             
             $session->refresh(); 
             $stepName = $session->customer_info['step'] ?? 'start';
 
-            if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
-                $newProduct = $this->findProductSystematically($clientId, $userMessage);
-                
-                if ($newProduct && $newProduct->id != ($session->customer_info['product_id'] ?? null)) {
-                    $session->update([
-                        'customer_info' => ['step' => 'start', 'product_id' => $newProduct->id, 'history' => [], 'variant' => []]
-                    ]);
-                    $stepName = 'start'; 
-                } elseif (!$newProduct) {
-                    foreach (['menu', 'start', 'offer', 'ki ace', 'home', 'suru'] as $word) {
-                        if (stripos($userMessage, $word) !== false) {
-                            $session->update(['customer_info' => ['step' => 'start', 'history' => []]]);
-                            $stepName = 'start';
-                            break;
+            // 🔥 FIX: Order Flow ঠিক রেখে Smart Tracking Intercept করা হলো
+            $isTracking = $this->utility->isTrackingIntent($userMessage);
+            
+            // কাস্টমার যদি ঠিকানা/নাম্বার দেওয়ার স্টেপে থাকে, তবে নাম্বার দিলেও তা ট্র্যাকিং হিসেবে ধরবে না
+            if ($stepName === 'collect_info' || $stepName === 'confirm_order') {
+                $isTracking = false; 
+            }
+
+            if ($isTracking) {
+                // AI-কে সরাসরি অর্ডার হিস্ট্রি চেক করার নির্দেশ দেওয়া হলো
+                $instruction = "কাস্টমার তার অর্ডারের অবস্থা (Tracking/Status) জানতে চাইছে। 'অর্ডার ইতিহাস' (Order History) থেকে সর্বশেষ অর্ডারের স্ট্যাটাস দেখে তাকে সুন্দর করে আপডেট দাও। \n- Shipped হলে: 'আপনার অর্ডারটি কুরিয়ারে দেওয়া হয়েছে। দ্রুত পেয়ে যাবেন।'\n- Pending/Processing হলে: 'আপনার অর্ডারটি প্রসেসিং এ আছে।'\n- Delivered হলে: 'অর্ডারটি ডেলিভারি সম্পন্ন হয়েছে।'\n- অর্ডার না থাকলে: 'আপনার কোনো অর্ডার পাওয়া যায়নি, অন্য নাম্বার দিয়ে চেক করতে পারেন।'\n⚠️ নতুন কোনো প্রোডাক্ট বিক্রির চেষ্টা করবে না।";
+                $contextData = "[]";
+            } else {
+                // 🛒 স্বাভাবিক ই-কমার্স ফ্লো (আগের মতোই ১০০% সেইম থাকবে)
+                if ($stepName !== 'confirm_order' && $stepName !== 'collect_info') {
+                    $newProduct = $this->findProductSystematically($clientId, $userMessage);
+                    
+                    if ($newProduct && $newProduct->id != ($session->customer_info['product_id'] ?? null)) {
+                        $session->update([
+                            'customer_info' => ['step' => 'start', 'product_id' => $newProduct->id, 'history' => [], 'variant' => []]
+                        ]);
+                        $stepName = 'start'; 
+                    } elseif (!$newProduct) {
+                        foreach (['menu', 'start', 'offer', 'ki ace', 'home', 'suru'] as $word) {
+                            if (stripos($userMessage, $word) !== false) {
+                                $session->update(['customer_info' => ['step' => 'start', 'history' => []]]);
+                                $stepName = 'start';
+                                break;
+                            }
                         }
+                    }
+                }
+
+                $steps = [
+                    'start' => new StartStep(),
+                    'select_variant' => new VariantStep(),
+                    'collect_info' => new AddressStep(),
+                    'confirm_order' => new ConfirmStep(),
+                    'completed' => new StartStep(),
+                ];
+
+                $handler = $steps[$stepName] ?? $steps['start'];
+                $result = $handler->process($session, (string)$userMessage, $imageUrl);
+                
+                $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
+                $contextData = $result['context'] ?? "[]";
+
+                if (isset($result['action']) && $result['action'] === 'create_order') {
+                    try {
+                        $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
+                        
+                        $instruction = "অর্ডারটি সফলভাবে ডাটাবেসে সেভ হয়েছে! কাস্টমারকে অভিনন্দন জানাও এবং অর্ডার আইডি (#{$order->id}) জানিয়ে দাও।";
+                        
+                        $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
+                        
+                        $stepName = 'completed';
+
+                        $session->update([
+                            'customer_info' => array_merge($session->customer_info, [
+                                'step' => 'start',
+                                'product_id' => null,
+                                'variant' => []
+                            ])
+                        ]);
+                        
+                    } catch (\Exception $e) {
+                        Log::error("❌ Order Creation Failed: " . $e->getMessage());
+                        $instruction = "Technical error creating order. Please apologize.";
                     }
                 }
             }
 
-            $steps = [
-                'start' => new StartStep(),
-                'select_variant' => new VariantStep(),
-                'collect_info' => new AddressStep(),
-                'confirm_order' => new ConfirmStep(),
-                'completed' => new StartStep(),
-            ];
-
-            $handler = $steps[$stepName] ?? $steps['start'];
-            $result = $handler->process($session, (string)$userMessage, $imageUrl);
-            
-            $instruction = $result['instruction'] ?? "আমি বুঝতে পারিনি।";
-            $contextData = $result['context'] ?? "[]";
-
-            if (isset($result['action']) && $result['action'] === 'create_order') {
-                try {
-                    $order = $this->orderService->finalizeOrderFromSession($clientId, $senderId, $client);
-                    
-                    $instruction = "অর্ডারটি সফলভাবে ডাটাবেসে সেভ হয়েছে! কাস্টমারকে অভিনন্দন জানাও এবং অর্ডার আইডি (#{$order->id}) জানিয়ে দাও।";
-                    
-                    $this->notify->sendTelegramAlert($client, $senderId, "✅ **New Order Placed:**\nOrder #{$order->id}\nAmount: ৳{$order->total_amount}", 'success');
-                    
-                    $stepName = 'completed';
-
-                    // 🔥 FIX 1: অর্ডার হওয়ার পর সেশন ক্লিয়ার করে দেওয়া হলো, যাতে পরে "ok" বললে আবার অর্ডার না পড়ে।
-                    $session->update([
-                        'customer_info' => array_merge($session->customer_info, [
-                            'step' => 'start',
-                            'product_id' => null,
-                            'variant' => []
-                        ])
-                    ]);
-                    
-                } catch (\Exception $e) {
-                    Log::error("❌ Order Creation Failed: " . $e->getMessage());
-                    $instruction = "Technical error creating order. Please apologize.";
-                }
-            }
-
             $inventoryData = $this->inventory->getFormattedInventory($client, $userMessage);
-            Log::info("📦 Inventory Sent to AI: " . $inventoryData);
-
-            $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId);
+            
+            // 🔥 ডাইনামিক অর্ডার হিস্ট্রি জেনারেট করা হচ্ছে (নাম্বার বা সেশন আইডি দিয়ে)
+            $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId, $userMessage);
             
             $systemPrompt = $this->promptService->generateDynamicSystemPrompt(
                 $client, $instruction, $contextData, $orderHistory, $inventoryData, 
