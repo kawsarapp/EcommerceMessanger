@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Log;
+
 class Product extends Model
 {
     use HasFactory;
@@ -81,6 +84,74 @@ class Product extends Model
         });
     }
 
+    // 🔥 Model Events: Publish ba update korar somoy auto watermark hobe
+    protected static function booted()
+    {
+        // ১. Jokhon notun product publish (Create) kora hobe
+        static::created(function ($product) {
+            self::applyWatermark($product->thumbnail, $product->sku);
+            self::applyWatermarkToGallery($product->gallery, $product->sku);
+        });
+
+        // ২. Jokhon purono product edit/update kora hobe
+        static::updated(function ($product) {
+            // Jodi main image poriborton kora hoy
+            if ($product->wasChanged('thumbnail')) {
+                self::applyWatermark($product->thumbnail, $product->sku);
+            }
+
+            // Jodi gallery te notun chobi jukto kora hoy
+            if ($product->wasChanged('gallery')) {
+                $oldGallery = is_string($product->getOriginal('gallery')) ? json_decode($product->getOriginal('gallery'), true) : $product->getOriginal('gallery');
+                $newGallery = is_string($product->gallery) ? json_decode($product->gallery, true) : $product->gallery;
+                
+                $oldGallery = is_array($oldGallery) ? $oldGallery : [];
+                $newGallery = is_array($newGallery) ? $newGallery : [];
+
+                // Ager chobi baad diye shudhumatro "notun jukto kora" chobigulo ber kora
+                $addedImages = array_diff($newGallery, $oldGallery);
+                
+                // Shudhumatro notun chobitei watermark dewa (jeno double watermark na hoy)
+                self::applyWatermarkToGallery($addedImages, $product->sku);
+            }
+        });
+    }
+
+    // 🛠️ Watermark korar Helper function
+    public static function applyWatermark($path, $sku)
+    {
+        if (!$path || !$sku || $sku === 'N/A') return;
+        
+        $fullPath = storage_path('app/public/' . $path);
+        if (!file_exists($fullPath)) return;
+
+        try {
+            $img = Image::make($fullPath);
+            $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
+                $font->size(5); // GD Library er default highest font size (no custom font needed)
+                $font->color([255, 255, 255, 0.6]); // Sada, 60% transparent
+                $font->align('right');
+                $font->valign('bottom');
+            });
+            $img->save($fullPath);
+        } catch (\Exception $e) {
+            Log::error("Watermark Error on Publish: " . $e->getMessage());
+        }
+    }
+
+    // 🛠️ Gallery er jonno Helper function
+    public static function applyWatermarkToGallery($gallery, $sku)
+    {
+        if (empty($gallery)) return;
+        
+        $galleryArray = is_string($gallery) ? json_decode($gallery, true) : $gallery;
+        if (!is_array($galleryArray)) return;
+
+        foreach ($galleryArray as $path) {
+            self::applyWatermark($path, $sku);
+        }
+    }
+
     // ===========================
     // 🔗 Relationships
     // ===========================
@@ -95,11 +166,11 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
-    // 🔥 New: ট্র্যাকিং এবং রিপোর্টের জন্য এটি লাগবে
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
+    
     public function reviews()
     {
         return $this->hasMany(Review::class);

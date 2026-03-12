@@ -29,66 +29,28 @@ class ProductFormSchema
                         ->schema([
                             Section::make('Product Media')
                               ->schema([
-                                    FileUpload::make('thumbnail')
-                                        ->label('Main Image')
-                                        ->image()
-                                        ->imageEditor()
-                                        ->disk('public')
-                                        ->directory('products/thumbnails')
-                                        ->visibility('public')
-                                        ->required()
-                                        ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে।')
-                                        // 🔥 SKU ওয়াটারমার্ক লজিক (Main Image)
-                                        ->afterStateUpdated(function ($state, $get) {
-                                            if (!$state) return;
-                                            $sku = $get('sku') ?? 'N/A';
-                                            $path = storage_path('app/public/' . $state);
-                                            
-                                            try {
-                                                $img = Image::make($path);
-                                                // ছবির নিচের ডান দিকে SKU বসানো
-                                                $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
-                                                    $font->size(25);
-                                                    $font->color([255, 255, 255, 0.6]); // সাদা রঙ, ৬০% ট্রান্সপারেন্ট
-                                                    $font->align('right');
-                                                    $font->valign('bottom');
-                                                });
-                                                $img->save($path);
-                                            } catch (\Exception $e) {
-                                                \Log::error("Watermark Error (Thumbnail): " . $e->getMessage());
-                                            }
-                                        }),
+                                    
+                              FileUpload::make('thumbnail')
+                            ->label('Main Image')
+                            ->image()
+                            ->imageEditor()
+                            ->disk('public')
+                            ->directory('products/thumbnails')
+                            ->visibility('public')
+                            ->required()
+                            ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে।'),
 
-                                    FileUpload::make('gallery')
-                                        ->label('Product Gallery (Max 4 Images)')
-                                        ->image()
-                                        ->multiple()
-                                        ->maxFiles(4)
-                                        ->reorderable()
-                                        ->disk('public')
-                                        ->directory('products/gallery')
-                                        ->visibility('public')
-                                        // 🔥 SKU ওয়াটারমার্ক লজিক (Gallery Images)
-                                        ->afterStateUpdated(function ($state, $get) {
-                                            if (!$state || !is_array($state)) return;
-                                            $sku = $get('sku') ?? 'N/A';
+                        FileUpload::make('gallery')
+                            ->label('Product Gallery (Max 4 Images)')
+                            ->image()
+                            ->multiple()
+                            ->maxFiles(4)
+                            ->reorderable()
+                            ->disk('public')
+                            ->directory('products/gallery')
+                            ->visibility('public'),
 
-                                            foreach ($state as $filePath) {
-                                                $path = storage_path('app/public/' . $filePath);
-                                                try {
-                                                    $img = Image::make($path);
-                                                    $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
-                                                        $font->size(25);
-                                                        $font->color([255, 255, 255, 0.6]);
-                                                        $font->align('right');
-                                                        $font->valign('bottom');
-                                                    });
-                                                    $img->save($path);
-                                                } catch (\Exception $e) {
-                                                    \Log::error("Watermark Error (Gallery): " . $e->getMessage());
-                                                }
-                                            }
-                                        }),
+                                    
                                 ]),
                             
                             Section::make('Video & Description')
