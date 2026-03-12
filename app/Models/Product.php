@@ -128,8 +128,9 @@ class Product extends Model
         try {
             $img = Image::make($fullPath);
             $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
-                $font->size(5); // GD Library er default highest font size (no custom font needed)
-                $font->color('#eb0000');
+                $font->file(public_path('fonts/SolaimanLipi.ttf')); 
+                $font->size(45); 
+                $font->color('#000000');
                 $font->align('right');
                 $font->valign('bottom');
             });
