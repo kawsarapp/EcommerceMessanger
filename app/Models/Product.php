@@ -128,8 +128,8 @@ class Product extends Model
         try {
             $img = Image::make($fullPath);
             $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
-                $font->file(public_path('fonts/SolaimanLipi.ttf')); 
-                $font->size(45); 
+                $font->file(public_path('fonts/Roboto-Regular.ttf')); 
+                $font->size(25); 
                 $font->color('#000000');
                 $font->align('right');
                 $font->valign('bottom');
