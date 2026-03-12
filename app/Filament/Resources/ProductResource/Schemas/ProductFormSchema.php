@@ -15,9 +15,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Group;
 use Illuminate\Support\Str;
-//use Intervention\Image\Facades\Image;
+use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Laravel\Facades\Image;
 class ProductFormSchema
 {
     public static function schema(): array
