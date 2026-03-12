@@ -1,0 +1,19 @@
+@extends('shop.themes.modern.layout')
+@section('title', $product->name . ' | ' . $client->shop_name)
+@section('content')
+@php $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')):route('shop.show',$client->slug); @endphp
+<main class="max-w-7xl mx-auto px-6 py-12 md:py-20" x-data="{mainImg:'{{asset('storage/'.$product->thumbnail)}}', qty:1, color:'', size:''}">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start"><div class="space-y-4 sticky top-28"><div class="aspect-[4/5] bg-gray-100"><img :src="mainImg" class="w-full h-full object-cover mix-blend-multiply"></div>
+<div class="flex gap-4 overflow-x-auto hide-scroll"><img src="{{asset('storage/'.$product->thumbnail)}}" @click="mainImg=$el.src" class="w-24 h-32 object-cover cursor-pointer border border-transparent hover:border-black opacity-70 hover:opacity-100 transition">
+@foreach($product->gallery??[] as $img)<img src="{{asset('storage/'.$img)}}" @click="mainImg=$el.src" class="w-24 h-32 object-cover cursor-pointer border border-transparent hover:border-black opacity-70 hover:opacity-100 transition">@endforeach</div></div>
+<div class="flex flex-col pt-4"><div class="flex items-center gap-3 mb-6"><span class="text-xs font-bold uppercase tracking-widest text-gray-500">{{$product->category->name??'Essential'}}</span><span class="w-1 h-1 bg-gray-300 rounded-full"></span><span class="{{isset($product->stock_status) && $product->stock_status=='out_of_stock'?'text-red-500':'text-green-500'}} text-xs font-bold uppercase tracking-widest">{{isset($product->stock_status) && $product->stock_status=='out_of_stock'?'Out of Stock':'In Stock'}}</span></div>
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter mb-6 leading-none">{{$product->name}}</h1>
+<div class="flex items-end gap-4 mb-10"><span class="text-3xl font-semibold">৳{{number_format($product->sale_price??$product->regular_price)}}</span>@if($product->sale_price)<del class="text-xl text-gray-400">৳{{number_format($product->regular_price)}}</del>@endif</div>
+<form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 border-y border-gray-200 py-10 mb-10">
+@if($product->colors)<div><span class="text-xs font-bold uppercase tracking-widest block mb-4">Color</span><div class="flex gap-3 flex-wrap">@foreach($product->colors as $c)<label><input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required><span class="px-6 py-3 border border-gray-300 cursor-pointer peer-checked:bg-black peer-checked:text-white peer-checked:border-black text-sm font-semibold transition block">{{$c}}</span></label>@endforeach</div></div>@endif
+@if($product->sizes)<div><span class="text-xs font-bold uppercase tracking-widest block mb-4">Size</span><div class="flex gap-3 flex-wrap">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="min-w-[4rem] flex justify-center py-3 border border-gray-300 cursor-pointer peer-checked:bg-black peer-checked:text-white peer-checked:border-black text-sm font-semibold transition">{{$s}}</span></label>@endforeach</div></div>@endif
+<div class="flex flex-col sm:flex-row gap-4"><div class="flex items-center border border-gray-300 p-2"><button type="button" @click="if(qty>1)qty--" class="w-12 h-10 text-xl hover:bg-gray-100">-</button><input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-bold text-lg p-0 focus:ring-0" readonly><button type="button" @click="qty++" class="w-12 h-10 text-xl hover:bg-gray-100">+</button></div>
+<button type="submit" class="flex-1 bg-black text-white py-4 font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition">Checkout</button></div></form>
+<div class="prose max-w-none text-gray-600 font-light leading-loose">{!!$product->description!!}</div></div></div>
+</main>
+@endsection

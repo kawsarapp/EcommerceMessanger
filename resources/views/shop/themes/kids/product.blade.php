@@ -1,0 +1,19 @@
+@extends('shop.themes.kids.layout')
+@section('title', $product->name . ' | ' . $client->shop_name)
+@section('content')
+@php $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')):route('shop.show',$client->slug); @endphp
+<main class="max-w-5xl mx-auto px-4 py-8" x-data="{mainImg:'{{asset('storage/'.$product->thumbnail)}}', qty:1, color:'', size:''}">
+<div class="bg-white rounded-[2.5rem] p-6 md:p-10 border-4 border-gray-50 fun-shadow grid grid-cols-1 md:grid-cols-2 gap-10"><div class="space-y-4"><div class="aspect-square bg-[#F8FAFC] rounded-3xl overflow-hidden p-6 border-2 border-gray-100"><img :src="mainImg" class="w-full h-full object-contain mix-blend-multiply"></div>
+<div class="flex gap-3 overflow-x-auto hide-scroll pb-2"><img src="{{asset('storage/'.$product->thumbnail)}}" @click="mainImg=$el.src" class="w-20 h-20 object-cover rounded-2xl border-2 cursor-pointer hover:border-primary">
+@foreach($product->gallery??[] as $img)<img src="{{asset('storage/'.$img)}}" @click="mainImg=$el.src" class="w-20 h-20 object-cover rounded-2xl border-2 cursor-pointer hover:border-primary">@endforeach</div></div>
+<div class="flex flex-col"><span class="bg-blue-100 text-blue-600 px-4 py-1.5 text-xs font-bold rounded-full w-fit mb-4">{{$product->category->name??'Kids Item'}}</span>
+<h1 class="text-3xl md:text-4xl font-heading font-bold text-gray-800 mb-3 leading-tight">{{$product->name}}</h1>
+<div class="flex items-end gap-3 mb-8"><span class="text-4xl font-heading text-primary font-bold">৳{{number_format($product->sale_price??$product->regular_price)}}</span>@if($product->sale_price)<del class="text-gray-400 font-bold mb-1 text-lg">৳{{number_format($product->regular_price)}}</del>@endif</div>
+<form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-6 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+@if($product->colors)<div class="mb-4"><span class="text-sm font-bold block mb-2 text-gray-700">Pick a Color:</span><div class="flex gap-2 flex-wrap">@foreach($product->colors as $c)<label><input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required><span class="px-5 py-2.5 border-2 border-gray-200 bg-white rounded-full cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary text-sm font-bold shadow-sm block">{{$c}}</span></label>@endforeach</div></div>@endif
+@if($product->sizes)<div class="mb-4"><span class="text-sm font-bold block mb-2 text-gray-700">Choose Size:</span><div class="flex gap-2 flex-wrap">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="px-5 py-2.5 border-2 border-gray-200 bg-white rounded-full cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary text-sm font-bold shadow-sm block">{{$s}}</span></label>@endforeach</div></div>@endif
+<div class="flex gap-4"><div class="flex items-center bg-white border-2 border-gray-200 rounded-2xl p-1"><button type="button" @click="if(qty>1)qty--" class="w-12 h-12 text-2xl font-bold text-gray-500 hover:text-primary">-</button><input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-bold text-xl p-0 focus:ring-0" readonly><button type="button" @click="qty++" class="w-12 h-12 text-2xl font-bold text-gray-500 hover:text-primary">+</button></div>
+<button type="submit" class="flex-1 bg-primary text-white rounded-2xl font-heading text-xl flex items-center justify-center gap-2 hover:bg-primaryDark transition fun-shadow"><i class="fas fa-rocket"></i> Buy Now!</button></div></form>
+<div class="mt-8 text-base text-gray-600 font-medium leading-relaxed bg-white p-6 rounded-3xl border border-gray-100">{!!$product->description!!}</div></div></div>
+</main>
+@endsection

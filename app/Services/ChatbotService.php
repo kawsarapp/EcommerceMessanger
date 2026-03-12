@@ -68,8 +68,22 @@ class ChatbotService
             }
         }
 
-        if (empty(trim($userMessage)) && $base64Image) {
-            $userMessage = "I have sent an image. Please analyze it and check if you have something similar in your inventory.";
+        // 🔥 HYBRID AI: Google Vision API + LLM 
+        if ($base64Image) {
+            $visionTags = $this->utility->analyzeImageWithGoogleVision($base64Image);
+            
+            $promptContext = "";
+            if ($visionTags) {
+                $promptContext = "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে। Google Vision API স্ক্যান করে ছবিতে এই জিনিসগুলো পেয়েছে: '{$visionTags}'। ⚠️ তুমি ছবির গায়ে লেখা কোনো টেক্সট (OCR) দিয়ে প্রোডাক্ট খুঁজবে না! শুধুমাত্র এই ভিজ্যুয়াল ট্যাগগুলো (যেমন: কালার, টি-শার্টের ধরন) ব্যবহার করে ইনভেন্টরি থেকে সঠিক প্রোডাক্টটি খুঁজে বের করো।] ";
+            } else {
+                $promptContext = "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে। ছবিটির ভিজ্যুয়াল প্যাটার্ন এবং ধরন বুঝে ইনভেন্টরি থেকে সিমিলার প্রোডাক্ট খুঁজে বের করো।] ";
+            }
+
+            if (empty(trim($userMessage))) {
+                $userMessage = $promptContext . "এই ছবির মতো কোনো প্রোডাক্ট কি আপনার স্টকে আছে?";
+            } else {
+                $userMessage = $promptContext . "কাস্টমারের মেসেজ: " . $userMessage;
+            }
         } elseif (empty(trim($userMessage)) && !$base64Image) {
             return null;
         }

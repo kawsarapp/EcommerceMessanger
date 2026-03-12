@@ -4,6 +4,7 @@ namespace App\Filament\Resources\OrderResource\Schemas;
 
 use App\Models\Product;
 use App\Models\Client;
+use App\Models\Order;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Group;
@@ -11,11 +12,14 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\HtmlString;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class OrderFormSchema
 {
-    // 🔥 Auto Calculate Total Function (Updated for Subtotal & Discount)
+    // 🔥 Auto Calculate Total Function
     public static function updateTotal(callable $get, callable $set)
     {
         $subtotal = 0;
@@ -30,13 +34,12 @@ class OrderFormSchema
         $zone = $get('delivery_zone');
         $charge = floatval($get('shipping_charge') ?? 0);
         
-        // যদি জোন সিলেক্ট করা থাকে, তবে অটো চার্জ বসবে
         if ($zone) {
             $client = Client::where('user_id', auth()->id())->first();
             if ($zone === 'Inside Dhaka') $charge = floatval($client->delivery_charge_inside ?? 80);
             if ($zone === 'Outside Dhaka') $charge = floatval($client->delivery_charge_outside ?? 150);
             $set('shipping_charge', $charge);
-            $set('delivery_zone', null); // একবার সেট করার পর রিসেট করে দিলাম যাতে ম্যানুয়ালি এডিট করা যায়
+            $set('delivery_zone', null);
         }
 
         $discount = floatval($get('discount_amount') ?? 0);
@@ -51,10 +54,10 @@ class OrderFormSchema
         return [
             Grid::make(3)
                 ->schema([
-                    // বাম পাশের বড় অংশ (২ কলাম)
+                    // Left Column (Customer & Items)
                     Group::make()
                         ->schema([
-                            // ১. কাস্টমার ইনফো
+                            // ১. Customer Info
                             Section::make('Customer Information')
                                 ->schema([
                                     Grid::make(2)->schema([
@@ -62,10 +65,12 @@ class OrderFormSchema
                                             ->label('Full Name')
                                             ->required(),
                                             
+                                        // 🔥 FIXED: Added Live Debounce for real-time tracking
                                         TextInput::make('customer_phone')
                                             ->label('Phone Number')
                                             ->tel()
-                                            ->required(),
+                                            ->required()
+                                            ->live(debounce: 500),
                                         
                                         Select::make('client_id')
                                             ->label('Shop/Merchant')
@@ -84,9 +89,70 @@ class OrderFormSchema
                                             ->label('Email Address')
                                             ->email(),
                                     ]),
+
+                                    // 🔥 NEW: Real-time Customer History Tracking
+                                    Placeholder::make('customer_history')
+                                        ->label('Customer Trust Score (Auto Check)')
+                                        ->content(function (callable $get) {
+                                            $phone = $get('customer_phone');
+                                            $clientId = $get('client_id');
+                                            
+                                            // 11 digit er niche hole check korbe na
+                                            if (!$phone || strlen($phone) < 11) {
+                                                return new HtmlString('<span class="text-gray-400 text-sm italic">Type valid 11-digit phone number to check history...</span>');
+                                            }
+
+                                            // Database theke order history search
+                                            $query = Order::where('customer_phone', 'like', "%{$phone}%");
+                                            if ($clientId) {
+                                                $query->where('client_id', $clientId);
+                                            }
+
+                                            $total = (clone $query)->count();
+                                            
+                                            // Kono order na thakle (New Customer)
+                                            if ($total === 0) {
+                                                return new HtmlString('<span class="text-blue-600 font-bold px-3 py-1 bg-blue-50 rounded-lg border border-blue-200 shadow-sm"><i class="heroicon-o-sparkles"></i> 🆕 New Customer (First Time Order)</span>');
+                                            }
+
+                                            // Status count kora
+                                            $delivered = (clone $query)->where('order_status', 'delivered')->count();
+                                            $cancelled = (clone $query)->whereIn('order_status', ['cancelled', 'returned'])->count();
+                                            
+                                            // Courier History count kora
+                                            $couriers = (clone $query)->whereNotNull('courier_name')
+                                                ->select('courier_name', DB::raw('count(*) as count'))
+                                                ->groupBy('courier_name')
+                                                ->pluck('count', 'courier_name')
+                                                ->toArray();
+                                                
+                                            $courierText = '';
+                                            if (!empty($couriers)) {
+                                                $cList = [];
+                                                foreach ($couriers as $name => $c) {
+                                                    $cList[] = ucfirst($name) . " ({$c})";
+                                                }
+                                                $courierText = "<div class='text-sm text-gray-500 mt-2 border-t border-gray-200 pt-2'>🚚 <b>Couriers Used:</b> " . implode(', ', $cList) . "</div>";
+                                            }
+
+                                            // Risk Warning (Jodi return rate 50% er beshi hoy)
+                                            $warningClass = ($total > 1 && $cancelled > $delivered) ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200';
+
+                                            return new HtmlString(
+                                                "<div class='p-4 rounded-xl border shadow-sm {$warningClass}'>" .
+                                                    "<div class='flex flex-wrap gap-4'>" .
+                                                        "<span class='text-gray-800 font-bold'>📦 Total Orders: {$total}</span>" .
+                                                        "<span class='text-green-600 font-bold'>✅ Delivered: {$delivered}</span>" .
+                                                        "<span class='text-red-600 font-bold'>❌ Cancelled/Return: {$cancelled}</span>" .
+                                                    "</div>" .
+                                                    $courierText .
+                                                "</div>"
+                                            );
+                                        })
+                                        ->columnSpanFull(),
                                 ]),
 
-                            // ২. ডেলিভারি অ্যাড্রেস ও জোন সিলেকশন
+                            // ২. Shipping Address
                             Section::make('Shipping & Location')
                                 ->schema([
                                     Grid::make(3)->schema([
@@ -112,7 +178,7 @@ class OrderFormSchema
                                         ->required(),
                                 ]),
 
-                            // ৩. অর্ডার আইটেমস
+                            // ৩. Order Items
                             Section::make('Order Items')
                                 ->schema([
                                     Repeater::make('items')
@@ -159,10 +225,9 @@ class OrderFormSchema
                                 ]),
                         ])->columnSpan(2),
 
-                    // ডান পাশের অংশ (১ কলাম)
+                    // Right Column (Pricing & Status)
                     Group::make()
                         ->schema([
-                            // 🔥 NEW: Pricing & Coupon Section
                             Section::make('Pricing & Discounts')
                                 ->schema([
                                     TextInput::make('subtotal')
@@ -210,6 +275,7 @@ class OrderFormSchema
                                             'shipped' => 'Shipped',
                                             'delivered' => 'Delivered',
                                             'cancelled' => 'Cancelled',
+                                            'returned' => 'Returned',
                                         ])
                                         ->required()
                                         ->native(false),

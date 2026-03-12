@@ -28,6 +28,25 @@ trait OrderTraits
         $message = trim((string) $message);
         if (empty($message)) return null;
 
+
+        //---
+        // 🔥 NEW: Direct SKU Match (কাস্টমার মেসেজে SKU লিখলে সরাসরি ক্যাচ করবে)
+        $words = explode(' ', $message);
+        foreach ($words as $w) {
+            $cleanWord = trim($w);
+            if (strlen($cleanWord) > 2) {
+                $skuMatch = Product::where('client_id', $clientId)
+                    ->where('sku', $cleanWord)
+                    ->where('stock_status', 'in_stock')
+                    ->first();
+                if ($skuMatch) {
+                    Log::info("✅ Product Found by EXACT SKU: {$skuMatch->name} ({$skuMatch->sku})");
+                    return $skuMatch;
+                }
+            }
+        }
+        //---
+
         // 🔥 1. Facebook Auto Message format detection (Direct SKU Match)
         if (preg_match('/\(Code:\s*([A-Za-z0-9\-]+)\)/i', $message, $matches)) {
             $sku = $matches[1];

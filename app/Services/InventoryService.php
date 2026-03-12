@@ -75,6 +75,7 @@ class InventoryService
 
             return [
                 'id' => $p->id,
+                'sku' => $p->sku ?? 'N/A',
                 'name' => $p->name,
                 'available_colors' => $colors,
                 'available_sizes' => $sizes,

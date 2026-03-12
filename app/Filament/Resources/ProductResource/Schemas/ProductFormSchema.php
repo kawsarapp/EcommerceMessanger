@@ -15,6 +15,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Group;
 use Illuminate\Support\Str;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 class ProductFormSchema
 {
@@ -27,26 +29,67 @@ class ProductFormSchema
                     Group::make()
                         ->schema([
                             Section::make('Product Media')
-                                ->schema([
+                              ->schema([
                                     FileUpload::make('thumbnail')
                                         ->label('Main Image')
                                         ->image()
                                         ->imageEditor()
-                                        ->disk('public') // 🔥 FIX: ডিস্ক পাবলিক করে দেওয়া হলো যেন ফিলামেন্ট ছবি খুঁজে পায়
+                                        ->disk('public')
                                         ->directory('products/thumbnails')
                                         ->visibility('public')
                                         ->required()
-                                        ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে।'),
-                                
+                                        ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে।')
+                                        // 🔥 SKU ওয়াটারমার্ক লজিক (Main Image)
+                                        ->afterStateUpdated(function ($state, $get) {
+                                            if (!$state) return;
+                                            $sku = $get('sku') ?? 'N/A';
+                                            $path = storage_path('app/public/' . $state);
+                                            
+                                            try {
+                                                $img = Image::make($path);
+                                                // ছবির নিচের ডান দিকে SKU বসানো
+                                                $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
+                                                    $font->size(25);
+                                                    $font->color([255, 255, 255, 0.6]); // সাদা রঙ, ৬০% ট্রান্সপারেন্ট
+                                                    $font->align('right');
+                                                    $font->valign('bottom');
+                                                });
+                                                $img->save($path);
+                                            } catch (\Exception $e) {
+                                                \Log::error("Watermark Error (Thumbnail): " . $e->getMessage());
+                                            }
+                                        }),
+
                                     FileUpload::make('gallery')
                                         ->label('Product Gallery (Max 4 Images)')
                                         ->image()
                                         ->multiple()
                                         ->maxFiles(4)
                                         ->reorderable()
-                                        ->disk('public') // 🔥 FIX: গ্যালারির জন্যও ডিস্ক পাবলিক করা হলো
+                                        ->disk('public')
                                         ->directory('products/gallery')
-                                        ->visibility('public'),
+                                        ->visibility('public')
+                                        // 🔥 SKU ওয়াটারমার্ক লজিক (Gallery Images)
+                                        ->afterStateUpdated(function ($state, $get) {
+                                            if (!$state || !is_array($state)) return;
+                                            $sku = $get('sku') ?? 'N/A';
+
+                                            foreach ($state as $filePath) {
+                                                $path = storage_path('app/public/' . $filePath);
+                                                try {
+                                                    $img = Image::make($path);
+                                                    $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
+                                                        $font->size(25);
+                                                        $font->color([255, 255, 255, 0.6]);
+                                                        $font->align('right');
+                                                        $font->valign('bottom');
+                                                    });
+                                                    $img->save($path);
+                                                } catch (\Exception $e) {
+                                                    \Log::error("Watermark Error (Gallery): " . $e->getMessage());
+                                                }
+                                            }
+                                        }),
                                 ]),
                             
                             Section::make('Video & Description')
@@ -152,7 +195,11 @@ class ProductFormSchema
                                 TextInput::make('sku')
                                     ->label('SKU / Product Code')
                                     ->placeholder('e.g. TSHIRT-001')
-                                    ->required(),
+                                    ->required()
+                                    ->unique(ignoreRecord: true) 
+                                    ->live(onBlur: true),
+
+                                    
 
                                 // 🔥 NEW FIELD: AI-এর জন্য Search Tags
                                 TagsInput::make('tags')
