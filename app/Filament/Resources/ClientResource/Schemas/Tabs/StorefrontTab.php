@@ -35,13 +35,13 @@ class StorefrontTab
                 Select::make('theme_name')
                     ->label('Storefront Theme')
                     ->options([
-                        'default'     => '🌟 Default Classic (Standard E-commerce)',
-                        'modern'      => '✨ Modern Minimal (Clean & Fast)',
-                        'fashion'     => '👗 Fashion Pro (Apparel & Clothing)',
-                        'electronics' => '💻 Tech & Gadgets (Electronics)',
-                        'grocery'     => '🛒 Supermarket (Grocery & Daily Needs)',
-                        'luxury'      => '💎 Premium Luxury (Jewelry & Watches)',
-                        'kids'        => '🧸 Kids Corner (Toys & Baby Products)',
+                        'default'     => 'Default Classic (Standard E-commerce)',
+                        'modern'      => 'Modern Minimal (Clean & Fast)',
+                        'fashion'     => 'Fashion Pro (Apparel & Clothing)',
+                        'electronics' => 'Tech & Gadgets (Electronics)',
+                        'grocery'     => 'Supermarket (Grocery & Daily Needs)',
+                        'luxury'      => 'Premium Luxury (Jewelry & Watches)',
+                        'kids'        => 'Kids Corner (Toys & Baby Products)',
                     ])
                     ->default('default')
                     ->searchable() // থিম বেশি হলে সার্চ করার সুবিধা
