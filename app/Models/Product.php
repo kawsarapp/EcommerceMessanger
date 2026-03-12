@@ -129,7 +129,7 @@ class Product extends Model
             $img = Image::make($fullPath);
             $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
                 $font->size(5); // GD Library er default highest font size (no custom font needed)
-                $font->color([255, 255, 255, 0.6]); // Sada, 60% transparent
+                $font->color('#eb0000');
                 $font->align('right');
                 $font->valign('bottom');
             });
