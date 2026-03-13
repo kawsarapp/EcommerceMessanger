@@ -2,33 +2,47 @@
 namespace App\Services\Chatbot;
 
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
 class ChatbotPromptService
 {
     public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start')
     {
+        // 📝 প্রোডাকশন লগ: প্রম্পট জেনারেশন শুরু
+        Log::info("🤖 Generating AI Prompt | Shop ID: {$client->id} | Current Step: {$currentStep}");
+
         $clientPrompt = $client->custom_prompt ?? '';
 
-        $masterRules = <<<EOT
-তুমি {{shop_name}} এর একজন স্মার্ট, প্রফেশনাল এবং পারফেক্ট সেলসম্যান।
-তোমার লক্ষ্য কাস্টমারকে সঠিক তথ্য দিয়ে সাহায্য করা এবং দ্রুত অর্ডার নেওয়া।
+        // 🔥 PRODUCTION FIX: Address Collection Rule (AI যেন ডাটাবেসের জন্য সঠিক ফরম্যাটে ডাটা দেয়)
+        $stepSpecificRules = "";
+        if (in_array(strtolower($currentStep), ['collect_info', 'confirm_order'])) {
+            $stepSpecificRules = "\n🚨 DATA EXTRACTION RULE (CRITICAL):\nকাস্টমার যখন তার নাম, মোবাইল নাম্বার এবং ঠিকানা দিবে, তখন তুমি সেই তথ্যগুলো বের করে মেসেজের একদম শেষে ঠিক এই ফরম্যাটে গোপন ট্যাগ দিবে:\n[NAME: কাস্টমারের নাম]\n[PHONE: কাস্টমারের ফোন নাম্বার]\n[ADDRESS: কাস্টমারের ঠিকানা]\nউদাহরণ: 'আপনার অর্ডারটি কনফার্ম করছি।' [NAME: Kawsar] [PHONE: 01711223344] [ADDRESS: Mirpur 10, Dhaka]";
+            Log::info("📝 Injected Data Extraction Rules for step: {$currentStep}");
+        }
 
-🚨 STRICT SALESMAN RULES (CRITICAL):
-১. EXACT PRICE ONLY: Inventory-তে যে 'price' দেওয়া আছে (যেমন: 630 Tk), ঠিক সেই দামই বলবে। নিজে থেকে কোনো অফার বা ফেক দাম বানাবে না।
-২. NO PREMATURE ADDRESS: কাস্টমার প্রোডাক্ট পছন্দ করলে আগে জিজ্ঞেস করো সে কোন কালার বা সাইজ নিবে। 'Current Instruction' এ যা বলা আছে শুধু তাই করবে।
-৩. IMAGE SENDING (CRITICAL): কাস্টমার ছবি চাইলে, Inventory থেকে প্রোডাক্টের 'image_url' লিংকটি মেসেজে দিবে এবং বলবে "এই নিন আপনার প্রোডাক্টের ছবি"। ⚠️ কোনোভাবেই বলবে না "আমি ছবি পাঠাতে পারি না"।
-৪. CALCULATE TOTAL: কাস্টমার মোট বিল জানতে চাইলে, (প্রোডাক্টের দাম + ডেলিভারি চার্জ) যোগ করে সঠিক হিসাব দিবে।
-৫. DATABASE ONLY: 'Inventory'-তে যে প্রোডাক্টগুলো আছে, শুধু সেগুলো নিয়েই কথা বলবে। 
-৬. PLAIN TEXT: কোনো মার্কডাউন (* বা #) ব্যবহার করবে না।
+        // 🔥 STRICT ZERO-HALLUCINATION & NO-LOOP MASTER RULES
+        $masterRules = <<<EOT
+তুমি {{shop_name}} এর একজন এক্সপার্ট সেলসম্যান।
+তোমার একমাত্র কাজ হলো কাস্টমারের প্রশ্নের উত্তর দেওয়া এবং অর্ডার কনফার্ম করা।
+
+🚨 STRICT AI RULES (CRITICAL - DO NOT BREAK):
+১. ZERO HALLUCINATION: 'Inventory'-তে যে প্রোডাক্ট, দাম, কালার বা সাইজ দেওয়া আছে, তুমি ঠিক হুবহু তাই বলবে। স্টকে না থাকলে সরাসরি বলবে "দুঃখিত, এটি স্টকে নেই"। নিজে থেকে কোনো প্রোডাক্ট, অফার, দাম বা সাইজ বানাবে না।
+২. NO LINKS FOR IMAGES: কাস্টমার যদি ছবি দেখতে চায়, তবে তুমি মেসেজের মধ্যে সরাসরি এই ফরম্যাটে ছবির লিংকটি বসিয়ে দিবে: [ATTACH_IMAGE: image_url]
+যেমন: "জি, প্রোডাক্টের ছবি: [ATTACH_IMAGE: https://example.com/image.jpg]"। তুমি নিজে কোনো টেক্সট লিংক (https://...) দিবে না।
+৩. IMAGE SEARCH (SKU): কাস্টমার ছবি দিলে, 'Current Instruction'-এ যদি ছবির গায়ে লেখা কোনো SKU বা কোড থাকে, তবে আগে সেই SKU দিয়ে Inventory তে খুঁজবে।
+৪. NO LOOPING: কাস্টমার একই কথা বারবার বললে তুমিও একই উত্তর বারবার দিবে না। তুমি নতুন করে জিজ্ঞেস করবে "আমি কি আপনার অর্ডারটি কনফার্ম করবো?" অথবা "আপনি কি অন্য কোনো কালার দেখতে চান?"।
+৫. CALCULATE TOTAL: মোট বিল জানতে চাইলে, (প্রোডাক্টের দাম + ডেলিভারি চার্জ) যোগ করে সঠিক হিসাব দিবে।{{step_rules}}
 
 👇 Current Instruction (তোমাকে এখন ঠিক এই কাজটি করতে হবে):
 >>> {{instruction}} <<<
 
 প্রয়োজনীয় তথ্য:
 - কাস্টমার: {{customer_name}}
+- বর্তমান সময়: {{time}}
+- ডেলিভারি চার্জ: {{delivery_info}}
 - অর্ডার ইতিহাস: {{order_history}}
 
-👇 Inventory (তোমার স্টকে শুধু এগুলোই আছে):
+👇 Inventory Database (তোমার স্টকে শুধু এগুলোই আছে, এর বাইরে কিছু বলবে না):
 {{inventory}}
 EOT;
 
@@ -50,15 +64,18 @@ EOT;
             '{{time}}'            => $time,
             '{{customer_name}}'   => $userName,
             '{{last_order}}'      => $recentOrderInfo,
+            '{{step_rules}}'      => $stepSpecificRules, // ডাইনামিক রুলস
             '{{current_step}}'    => strtoupper(str_replace('_', ' ', $currentStep)),
         ];
 
+        Log::info("✅ Prompt generated successfully for Shop ID: {$client->id}");
         return strtr($finalPrompt, $tags);
     }
 
-    // 🔥 FIX: স্মার্ট কাস্টমার ডিটেকশন (Sender ID অথবা Phone Number দিয়ে)
     public function buildOrderContext($clientId, $senderId, $userMessage = '')
     {
+        Log::info("🔍 Fetching Order History | Shop: {$clientId} | Sender: {$senderId}");
+        
         $phone = null;
         $bn = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"];
         $en = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
@@ -66,6 +83,7 @@ EOT;
 
         if (preg_match('/01[3-9]\d{8,9}/', $cleanMsg, $matches)) {
             $phone = substr($matches[0], 0, 11);
+            Log::info("📞 Phone detected in message for history lookup: {$phone}");
         }
 
         $query = Order::where('client_id', $clientId);
@@ -79,7 +97,12 @@ EOT;
         }
 
         $orders = $query->latest()->take(3)->get();
-        if ($orders->isEmpty()) return "এই কাস্টমারের কোনো পূর্ববর্তী অর্ডার নেই।";
+        if ($orders->isEmpty()) {
+            Log::info("ℹ️ No previous order history found.");
+            return "এই কাস্টমারের কোনো পূর্ববর্তী অর্ডার নেই।";
+        }
+        
+        Log::info("📦 Found {$orders->count()} previous orders for context.");
         
         $context = "কাস্টমারের সর্বশেষ ৩টি অর্ডারের তথ্য:\n";
         foreach($orders as $o) {

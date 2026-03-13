@@ -95,29 +95,21 @@ class Product extends Model
 
         // ২. Jokhon purono product edit/update kora hobe
         static::updated(function ($product) {
-            // Jodi main image poriborton kora hoy
             if ($product->wasChanged('thumbnail')) {
                 self::applyWatermark($product->thumbnail, $product->sku);
             }
 
-            // Jodi gallery te notun chobi jukto kora hoy
             if ($product->wasChanged('gallery')) {
                 $oldGallery = is_string($product->getOriginal('gallery')) ? json_decode($product->getOriginal('gallery'), true) : $product->getOriginal('gallery');
                 $newGallery = is_string($product->gallery) ? json_decode($product->gallery, true) : $product->gallery;
-                
                 $oldGallery = is_array($oldGallery) ? $oldGallery : [];
                 $newGallery = is_array($newGallery) ? $newGallery : [];
-
-                // Ager chobi baad diye shudhumatro "notun jukto kora" chobigulo ber kora
                 $addedImages = array_diff($newGallery, $oldGallery);
-                
-                // Shudhumatro notun chobitei watermark dewa (jeno double watermark na hoy)
                 self::applyWatermarkToGallery($addedImages, $product->sku);
             }
         });
     }
 
-    // 🛠️ Watermark korar Helper function
     public static function applyWatermark($path, $sku)
     {
         if (!$path || !$sku || $sku === 'N/A') return;
@@ -127,10 +119,11 @@ class Product extends Model
 
         try {
             $img = Image::make($fullPath);
-            $img->text($sku, $img->width() - 20, $img->height() - 20, function($font) {
-                $font->file(public_path('fonts/Roboto-Regular.ttf')); 
-                $font->size(25); 
-                $font->color('#000000');
+            $watermarkText = 'SKU: ' . $sku;
+            $img->text($watermarkText, $img->width() - 20, $img->height() - 20, function($font) {
+                $font->file(public_path('fonts/roboto.ttf'));
+                $font->size(25);
+                $font->color('#00000000');
                 $font->align('right');
                 $font->valign('bottom');
             });
@@ -140,7 +133,6 @@ class Product extends Model
         }
     }
 
-    // 🛠️ Gallery er jonno Helper function
     public static function applyWatermarkToGallery($gallery, $sku)
     {
         if (empty($gallery)) return;

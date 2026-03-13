@@ -15,12 +15,17 @@ class Category extends Model
     protected $guarded = ['id'];
 
     protected $fillable = [
-        'client_id', // SaaS প্রেক্ষাপটে কোন সেলারের ক্যাটাগরি তা চেনার জন্য
+        'client_id',
         'name', 
         'slug', 
         'description', 
-        'image',     // ক্যাটাগরির আইকন বা ছবি (ঐচ্ছিক)
-        'status'     // active/inactive
+        'image',
+        'status',
+        'banner_image', 'banner_link', 'sort_order', 'is_visible'
+    ];
+
+    protected $casts = [
+        'is_visible' => 'boolean',
     ];
 
     // 🔥 অটোমেটিক স্লাগ জেনারেশন (নাম লিখলে অটোমেটিক URL তৈরি হবে)

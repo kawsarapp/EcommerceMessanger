@@ -11,6 +11,9 @@
     <meta property="og:title" content="@yield('title', $client->shop_name)">
     <meta property="og:description" content="{{ $client->meta_description }}">
     <meta property="og:image" content="{{ $client->logo ? asset('storage/' . $client->logo) : '' }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.maateen.me/solaiman-lipi/font.css" rel="stylesheet">
     
     <title>@yield('title', $client->shop_name)</title>
     
@@ -39,8 +42,14 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { primary: 'var(--primary-color)', primaryDark: 'var(--primary-dark)' },
-                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'] }
+                colors: { 
+                    primary: 'var(--primary-color)', 
+                    primaryDark: 'var(--primary-dark)' 
+                },
+
+                fontFamily: { 
+                    sans: ['Roboto', 'SolaimanLipi', 'Inter', 'sans-serif'], 
+                    heading: ['Plus Jakarta Sans', 'Roboto', 'SolaimanLipi', 'sans-serif']
                 }
             }
         }

@@ -18,24 +18,28 @@ class StatsOverview extends BaseWidget
         $isAdmin = $userId === 1;
         $client = !$isAdmin ? Client::where('user_id', $userId)->first() : null;
 
-        // কুয়েরি ফিল্টার (Admin সব দেখবে, Client শুধু নিজেরটা)
         $orderQuery = Order::query()->when(!$isAdmin, fn($q) => $q->where('client_id', $client?->id));
 
-        // ১. রেভিনিউ ক্যালকুলেশন
         $todaySales = (clone $orderQuery)->whereDate('created_at', Carbon::today())->sum('total_amount');
+        $yesterdaySales = (clone $orderQuery)->whereDate('created_at', Carbon::yesterday())->sum('total_amount');
         $weeklySales = (clone $orderQuery)->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->sum('total_amount');
 
-        // ২. চার্ট ডাটা (গত ৭ দিনের বিক্রির গ্রাফ)
+        // 🔥 Trend Calculation
+        $todayDiff = $todaySales - $yesterdaySales;
+        $trendIcon = $todayDiff >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
+        $trendColor = $todayDiff >= 0 ? 'success' : 'danger';
+        $trendText = ($todayDiff >= 0 ? '+' : '') . '৳' . number_format($todayDiff) . ' vs yesterday';
+
         $salesData = collect(range(6, 0))->map(function ($days) use ($orderQuery) {
             return (clone $orderQuery)->whereDate('created_at', Carbon::now()->subDays($days))->sum('total_amount');
         })->toArray();
 
         return [
             Stat::make($isAdmin ? 'Global Today Revenue' : 'Today Sales', '৳' . number_format($todaySales))
-                ->description($isAdmin ? 'Across all shops' : 'Sales from your shop today')
-                ->descriptionIcon('heroicon-m-presentation-chart-line')
+                ->description($trendText)
+                ->descriptionIcon($trendIcon)
                 ->chart($salesData)
-                ->color('success'),
+                ->color($trendColor),
 
             Stat::make('Weekly Revenue', '৳' . number_format($weeklySales))
                 ->description('Current week performance')

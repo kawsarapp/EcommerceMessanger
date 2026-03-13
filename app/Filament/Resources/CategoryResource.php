@@ -53,6 +53,26 @@ class CategoryResource extends Resource
                             ->required()
                             ->unique(ignoreRecord: true),
                     ])->columns(2),
+
+                // 🔥 নতুন সেকশন: Category Banner & Settings
+                Forms\Components\Section::make('Category Banner & Settings')
+                    ->schema([
+                        Forms\Components\FileUpload::make('banner_image')
+                            ->label('Category Banner (Optional)')
+                            ->image()
+                            ->directory('categories/banners')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('banner_link')
+                            ->label('Banner Link (URL)')
+                            ->url(),
+                        Forms\Components\TextInput::make('sort_order')
+                            ->label('Serial / Sort Order (e.g. 1, 2, 3)')
+                            ->numeric()
+                            ->default(0),
+                        Forms\Components\Toggle::make('is_visible')
+                            ->label('Show on Homepage')
+                            ->default(true),
+                    ])->columns(2),
             ]);
     }
 
@@ -70,8 +90,17 @@ class CategoryResource extends Resource
 
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Products')
-                    ->counts('products') // এই ক্যাটাগরিতে কয়টি প্রোডাক্ট আছে তা দেখাবে
+                    ->counts('products') // এই ক্যাটাগরিতে কয়টি প্রোডাক্ট আছে তা দেখাবে
                     ->badge(),
+
+                // 🔥 নতুন কলাম: হোমপেজে সিরিয়াল সাজানোর জন্য (Inline Editable)
+                Tables\Columns\TextInputColumn::make('sort_order')
+                    ->label('Serial')
+                    ->sortable(),
+
+                // 🔥 নতুন কলাম: হাইড/শো করার জন্য (Inline Editable)
+                Tables\Columns\ToggleColumn::make('is_visible')
+                    ->label('Visible'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d M, Y')
@@ -89,7 +118,7 @@ class CategoryResource extends Resource
                     : Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions(
-                // এখানে সরাসরি কন্ডিশনাল অ্যারে ব্যবহার করা হয়েছে
+                // এখানে সরাসরি কন্ডিশনাল অ্যারে ব্যবহার করা হয়েছে
                 auth()->id() === 1 
                     ? [
                         Tables\Actions\BulkActionGroup::make([
