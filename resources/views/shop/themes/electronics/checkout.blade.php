@@ -31,7 +31,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
         <div class="w-full lg:w-7/12 order-2 lg:order-1">
             <h1 class="text-3xl font-black text-white tracking-tight mb-8">Initialize Order Process</h1>
             
-            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="POST" class="bg-panel tech-border rounded-2xl p-6 md:p-10 space-y-10 group">
+            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="bg-panel tech-border rounded-2xl p-6 md:p-10 space-y-10 group">
                 @csrf
                 <input type="hidden" name="qty" :value="qty">
                 @if(request('color')) <input type="hidden" name="color" value="{{array_is_list((array)request('color')) ? request('color') : request('color')[0]}}"> @endif

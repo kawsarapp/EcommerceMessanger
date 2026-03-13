@@ -21,7 +21,7 @@
         
         <!-- Left: Form -->
         <div class="lg:w-3/5">
-            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="POST" class="bg-white p-8 lg:p-12 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100 space-y-8">
+            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="bg-white p-8 lg:p-12 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100 space-y-8">
                 @csrf
                 <input type="hidden" name="qty" :value="qty">
                 @if(request('color')) <input type="hidden" name="color" value="{{array_is_list((array)request('color')) ? request('color') : request('color')[0]}}"> @endif
