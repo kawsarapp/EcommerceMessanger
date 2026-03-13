@@ -60,7 +60,7 @@ class FacebookConnectController extends Controller
 
             $client = Client::findOrFail($clientId);
 
-            // ১. Code দিয়ে User Access Token জানা
+            // ১. Code দিয়ে Short-Lived User Access Token জানা
             $tokenResponse = Http::get("https://graph.facebook.com/".self::GRAPH_API_VERSION."/oauth/access_token", [
                 'client_id' => env('FACEBOOK_APP_ID'),
                 'client_secret' => env('FACEBOOK_APP_SECRET'),
@@ -72,30 +72,34 @@ class FacebookConnectController extends Controller
                 throw new Exception($tokenResponse['error']['message']);
             }
 
-            $userAccessToken = $tokenResponse['access_token'];
+            $shortLivedUserToken = $tokenResponse['access_token'];
 
-            // ২. পেজ লিস্ট আনা
-            $pages = $this->getFacebookPages($userAccessToken);
+            // ২. Short-Lived User Token-কে Long-Lived User Token (৬০ দিন)-এ রূপান্তর করা
+            $longLivedUserToken = $this->getLongLivedToken($shortLivedUserToken);
+
+            // ৩. Long-Lived User Token দিয়ে পেজ লিস্ট আনা
+            // MAGIC: Long-Lived User Token দিয়ে পেজ ফেচ করলে, সেই Page Token গুলো "Never-Expiring" হিসেবে আসে!
+            $pages = $this->getFacebookPages($longLivedUserToken);
 
             if (empty($pages)) {
                 return redirect("/admin/clients/{$clientId}/edit")
                     ->with('error', 'No Facebook Pages found directly manageable by this account.');
             }
 
-            // ৩. প্রথম পেজটি সিলেক্ট করা (Logic: SaaS-এর জন্য অটোমেশন)
+            // ৪. প্রথম পেজটি সিলেক্ট করা (Logic: SaaS-এর জন্য অটোমেশন)
             $targetPage = $pages[0];
 
-            // ৪. লং-লিভড টোকেন জেনারেট (Token Exchange)
-            $finalToken = $this->getLongLivedToken($targetPage['access_token']);
+            // এই টোকেনটির মেয়াদ আজীবন (Never-Expiring)
+            $finalPageToken = $targetPage['access_token'];
 
             // ৫. ওয়েব্হুক সাবস্ক্রাইব করা (Webhook Registration)
-            $isSubscribed = $this->subscribeToWebhooks($targetPage['id'], $finalToken);
+            $isSubscribed = $this->subscribeToWebhooks($targetPage['id'], $finalPageToken);
 
             // ৬. ডাটাবেস আপডেট
-            DB::transaction(function () use ($client, $targetPage, $finalToken, $isSubscribed) {
+            DB::transaction(function () use ($client, $targetPage, $finalPageToken, $isSubscribed) {
                 $client->update([
                     'fb_page_id'          => $targetPage['id'],
-                    'fb_page_token'       => $finalToken,
+                    'fb_page_token'       => $finalPageToken,
                     'status'              => 'active',
                     'webhook_verified_at' => $isSubscribed ? now() : null,
                 ]);
