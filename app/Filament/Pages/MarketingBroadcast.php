@@ -25,8 +25,17 @@ class MarketingBroadcast extends Page implements HasForms
                         'all'=>'All Customers (যারা পেজে আগে মেসেজ দিয়েছে)',
                         'buyers'=>'Past Buyers (যাদের অর্ডার ডেলিভারি বা কমপ্লিট হয়েছে)',
                         'abandoned'=>'Abandoned Carts (যারা প্রোডাক্ট দেখেও অর্ডার করেনি)',
-                        'high_value'=>'High Value VIPs (যারা ৫,০০০+ টাকার অর্ডার করেছে)'
-                    ])->required()->default('all'),
+                        'high_value'=>'High Value VIPs (যারা ৫,০০০+ টাকার অর্ডার করেছে)',
+                        'custom_wa'=>'Custom WhatsApp Numbers (নিজে নাম্বার দিন)'
+                    ])->required()->default('all')->live(),
+                    
+                    \Filament\Forms\Components\Textarea::make('custom_wa_numbers')
+                        ->label('WhatsApp Numbers (কমা বা স্পেস দিয়ে আলাদা করুন)')
+                        ->placeholder("01700000000, 01800000000\nবা নিচে নিচে লিখুন")
+                        ->visible(fn (\Filament\Forms\Get $get) => $get('audience') === 'custom_wa')
+                        ->required(fn (\Filament\Forms\Get $get) => $get('audience') === 'custom_wa')
+                        ->rows(4)
+                        ->columnSpanFull(),
                 ]),
 
                 Grid::make(['default' => 1])->schema([
@@ -59,31 +68,48 @@ class MarketingBroadcast extends Page implements HasForms
         $btnText = $data['btn_text'] ?? null;
         $btnUrl = $data['btn_url'] ?? null;
 
-        // ১. কাস্টমারদের ফিল্টার করা (Messenger + WA)
-        $query=Conversation::where('client_id',$clientId);
-        if($platform!=='both'){
-            $query->where('platform',$platform);
-        }
-        if($is24h){$query->where('updated_at', '>=', now()->subHours(24));}
-        
-        $conversations=$query->select('sender_id','platform')->distinct()->get();
+        $customWaNumbers = $data['custom_wa_numbers'] ?? null;
+
         $finalTargets=[];
 
-        foreach($conversations as $conv){
-            $sId=$conv->sender_id;$plat=$conv->platform;
-            $order=Order::where('client_id',$clientId)->where(function($q)use($sId){$q->where('sender_id',$sId)->orWhere('customer_phone',$sId);})->latest()->first();
+        if ($audience === 'custom_wa') {
+            $rawNumbers = preg_split('/[\s,]+/', $customWaNumbers, -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($rawNumbers as $num) {
+                $cleanNum = preg_replace('/[^0-9\+]/', '', $num);
+                if (!empty($cleanNum)) {
+                    if (str_starts_with($cleanNum, '01')) $cleanNum = '88' . $cleanNum;
+                    elseif (str_starts_with($cleanNum, '+')) $cleanNum = str_replace('+', '', $cleanNum);
+                    
+                    $waId = str_contains($cleanNum, '@s.whatsapp.net') ? $cleanNum : $cleanNum . '@s.whatsapp.net';
+                    $finalTargets[] = ['id' => $waId, 'name' => 'Sir/Ma\'am', 'platform' => 'whatsapp'];
+                }
+            }
+        } else {
+            // ১. কাস্টমারদের ফিল্টার করা (Messenger + WA)
+            $query=Conversation::where('client_id',$clientId);
+            if($platform!=='both'){
+                $query->where('platform',$platform);
+            }
+            if($is24h){$query->where('updated_at', '>=', now()->subHours(24));}
             
-            $name=$order?$order->customer_name:'Sir/Ma\'am';$hasBought=$order?true:false;
-            $hasAbandoned=OrderSession::where('client_id',$clientId)->where('sender_id',$sId)->where('customer_info->step','!=','completed')->exists();
-            $isHighValue=Order::where('client_id',$clientId)->where('sender_id',$sId)->sum('total_amount')>=5000;
+            $conversations=$query->select('sender_id','platform')->distinct()->get();
             
-            $shouldAdd=false;
-            if($audience==='all')$shouldAdd=true;
-            elseif($audience==='buyers'&&$hasBought)$shouldAdd=true;
-            elseif($audience==='abandoned'&&$hasAbandoned)$shouldAdd=true;
-            elseif($audience==='high_value'&&$isHighValue)$shouldAdd=true;
-            
-            if($shouldAdd)$finalTargets[]=['id'=>$sId,'name'=>$name,'platform'=>$plat];
+            foreach($conversations as $conv){
+                $sId=$conv->sender_id;$plat=$conv->platform;
+                $order=Order::where('client_id',$clientId)->where(function($q)use($sId){$q->where('sender_id',$sId)->orWhere('customer_phone',$sId);})->latest()->first();
+                
+                $name=$order?$order->customer_name:'Sir/Ma\'am';$hasBought=$order?true:false;
+                $hasAbandoned=OrderSession::where('client_id',$clientId)->where('sender_id',$sId)->where('customer_info->step','!=','completed')->exists();
+                $isHighValue=Order::where('client_id',$clientId)->where('sender_id',$sId)->sum('total_amount')>=5000;
+                
+                $shouldAdd=false;
+                if($audience==='all')$shouldAdd=true;
+                elseif($audience==='buyers'&&$hasBought)$shouldAdd=true;
+                elseif($audience==='abandoned'&&$hasAbandoned)$shouldAdd=true;
+                elseif($audience==='high_value'&&$isHighValue)$shouldAdd=true;
+                
+                if($shouldAdd)$finalTargets[]=['id'=>$sId,'name'=>$name,'platform'=>$plat];
+            }
         }
 
         if(empty($finalTargets)){Notification::make()->title('No customers found in this category!')->warning()->send();return;}
