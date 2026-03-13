@@ -59,11 +59,13 @@ class ShopProductService
      */
     public function getSidebarCategories($clientId)
     {
-        return Category::whereHas('products', function ($q) use ($clientId) {
-            $q->where('client_id', $clientId)->where('stock_status', 'in_stock');
-        })->withCount(['products' => function ($q) use ($clientId) {
-            $q->where('client_id', $clientId)->where('stock_status', 'in_stock');
-        }])->orderBy('name')->get();
+        return Category::where('is_visible', true)
+            ->withCount(['products' => function ($q) use ($clientId) {
+                $q->where('client_id', $clientId)->where('stock_status', 'in_stock');
+            }])
+            ->orderBy('sort_order', 'asc') // সিরিয়াল অনুসারে প্রথমে সাজানো হবে
+            ->orderBy('name')
+            ->get();
     }
 
     /**
