@@ -31,7 +31,11 @@ class WhatsAppWebhookController extends Controller{
                 }
             }catch(\Exception $e){Log::error("WA Webhook - Attachment Processing Error: ".$e->getMessage());}
         }
-        try{Conversation::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'platform'=>'whatsapp','user_message'=>$messageBody,'attachment_url'=>$attachmentUrl,'metadata'=>['sender_name'=>$senderName]]);}catch(\Exception $e){}
+        $conversation = null;
+        try{
+            $conversation = Conversation::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'platform'=>'whatsapp','user_message'=>$messageBody,'attachment_url'=>$attachmentUrl,'metadata'=>['sender_name'=>$senderName]]);
+        }catch(\Exception $e){}
+        
         try{
             $session=OrderSession::where('client_id',$client->id)->where('sender_id',$senderPhone)->first();
             if(!$session){$session=OrderSession::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'is_human_agent_active'=>false,'customer_info'=>['history'=>[]]]);}
@@ -52,6 +56,7 @@ class WhatsAppWebhookController extends Controller{
                     $aiReply=preg_replace('/\[IMAGE:\s*https?:\/\/[^\]]+\]/i','',$aiReply);
                 }
                 $aiReply=preg_replace('/\[CAROUSEL:\s*([^\]]+)\]/i','',$aiReply);$aiReply=trim(preg_replace('/\[QUICK_REPLIES:\s*([^\]]+)\]/i','',$aiReply));
+                
                 if(!empty($aiReply)){Http::post('http://127.0.0.1:3001/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>$aiReply]);}
                 foreach($outgoingImages as $index=>$imgUrl){
                     try{
@@ -62,7 +67,11 @@ class WhatsAppWebhookController extends Controller{
                         }
                     }catch(\Exception $imgEx){}
                 }
-                if(isset($conversation)){$conversation->update(['bot_response'=>$aiReply]);}
+                
+                if($conversation){
+                    $conversation->update(['bot_response'=>$aiReply]);
+                    Log::info("✅ WhatsApp Conversation Logged: Sender {$senderPhone}");
+                }
             }
         }catch(\Exception $e){Log::error("WA Webhook - AI Error: ".$e->getMessage());}
         return response()->json(['success'=>true]);
