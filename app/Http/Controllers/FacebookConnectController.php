@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use Illuminate\Http\Request;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +11,6 @@ use Exception;
 
 class FacebookConnectController extends Controller
 {
-    // ফিউচার আপডেটের জন্য API ভার্সন কনস্ট্যান্ট
     const GRAPH_API_VERSION = 'v19.0';
 
     /**
@@ -22,12 +20,12 @@ class FacebookConnectController extends Controller
     {
         $clientId = $request->query('client_id');
 
-        // ১. ভ্যালিডেশন: ক্লায়েন্ট আইডি আছে কিনা
+        // ১. ভ্যালিডেশন
         if (!$clientId) {
             return redirect()->back()->with('error', 'Client ID is missing.');
         }
 
-        // ২. সিকিউরিটি চেক: এই ক্লায়েন্ট আসলে এই ইউজারের কিনা?
+        // ২. সিকিউরিটি চেক
         $client = Client::find($clientId);
         if (!$client || ($client->user_id !== auth()->id() && auth()->id() !== 1)) {
             return redirect()->back()->with('error', 'Unauthorized access to this shop.');
@@ -36,58 +34,68 @@ class FacebookConnectController extends Controller
         // ৩. সেশনে আইডি রাখা
         session(['connect_client_id' => $clientId]);
 
+        $appId = env('FACEBOOK_APP_ID');
+        $redirectUri = route('auth.facebook.callback');
+        $scopes = 'pages_show_list,pages_messaging,pages_read_engagement,pages_manage_metadata';
+        
+        $loginUrl = "https://www.facebook.com/".self::GRAPH_API_VERSION."/dialog/oauth?client_id={$appId}&redirect_uri={$redirectUri}&scope={$scopes}&response_type=code";
+
         // ৪. ফেসবুকে পাঠানো
-        return Socialite::driver('facebook')
-            ->scopes([
-                'pages_show_list',      // পেজ লিস্ট দেখার জন্য
-                'pages_read_engagement', // পেজের কন্টেন্ট পড়ার জন্য
-                'pages_manage_metadata', // ওয়েব্হুক সাবস্ক্রাইব করার জন্য
-                'pages_messaging'       // মেসেজ রিপ্লাই করার জন্য
-            ])
-            ->redirect();
+        return redirect()->away($loginUrl);
     }
 
     /**
      * স্টেপ ২: ফেসবুক থেকে ফিরে আসার পর হ্যান্ডেল করা
      */
-    public function callback()
+    public function callback(Request $request)
     {
+        $clientId = session('connect_client_id');
+
         try {
-            // ১. সেশন এবং ইউজার চেক
-            $clientId = session('connect_client_id');
-            if (!$clientId) {
-                throw new Exception('Session expired or Client ID missing.');
+            $code = $request->query('code');
+
+            if (!$code || !$clientId) {
+                throw new Exception('Authentication cancelled or session expired.');
             }
 
-            // ২. Socialite ইউজার ডাটা (Stateless ব্যবহার করা নিরাপদ যদি সেশন এরর দেয়)
-            $fbUser = Socialite::driver('facebook')->user();
-            
-            // ৩. ক্লায়েন্ট ভেরিফিকেশন
             $client = Client::findOrFail($clientId);
 
-            // ৪. পেজ লিস্ট আনা (Helper Function ব্যবহার করা হয়েছে)
-            $pages = $this->getFacebookPages($fbUser->token);
+            // ১. Code দিয়ে User Access Token জানা
+            $tokenResponse = Http::get("https://graph.facebook.com/".self::GRAPH_API_VERSION."/oauth/access_token", [
+                'client_id' => env('FACEBOOK_APP_ID'),
+                'client_secret' => env('FACEBOOK_APP_SECRET'),
+                'redirect_uri' => route('auth.facebook.callback'),
+                'code' => $code,
+            ])->json();
+
+            if (isset($tokenResponse['error'])) {
+                throw new Exception($tokenResponse['error']['message']);
+            }
+
+            $userAccessToken = $tokenResponse['access_token'];
+
+            // ২. পেজ লিস্ট আনা
+            $pages = $this->getFacebookPages($userAccessToken);
 
             if (empty($pages)) {
                 return redirect("/admin/clients/{$clientId}/edit")
                     ->with('error', 'No Facebook Pages found directly manageable by this account.');
             }
 
-            // ৫. প্রথম পেজটি সিলেক্ট করা (Logic: SaaS-এর জন্য অটোমেশন)
+            // ৩. প্রথম পেজটি সিলেক্ট করা (Logic: SaaS-এর জন্য অটোমেশন)
             $targetPage = $pages[0];
 
-            // ৬. লং-লিভড টোকেন জেনারেট (Token Exchange)
+            // ৪. লং-লিভড টোকেন জেনারেট (Token Exchange)
             $finalToken = $this->getLongLivedToken($targetPage['access_token']);
 
-            // ৭. ওয়েব্হুক সাবস্ক্রাইব করা (Webhook Registration)
+            // ৫. ওয়েব্হুক সাবস্ক্রাইব করা (Webhook Registration)
             $isSubscribed = $this->subscribeToWebhooks($targetPage['id'], $finalToken);
 
-            // ৮. ডাটাবেস আপডেট (Transaction ব্যবহার করা হয়েছে ডাটা সেফটির জন্য)
+            // ৬. ডাটাবেস আপডেট
             DB::transaction(function () use ($client, $targetPage, $finalToken, $isSubscribed) {
                 $client->update([
                     'fb_page_id'          => $targetPage['id'],
                     'fb_page_token'       => $finalToken,
-                    'shop_name'           => $targetPage['name'], // শপ নেম আপডেট (অপশনাল)
                     'status'              => 'active',
                     'webhook_verified_at' => $isSubscribed ? now() : null,
                 ]);
@@ -97,27 +105,24 @@ class FacebookConnectController extends Controller
                 ->with('success', "Facebook Page '{$targetPage['name']}' Connected Successfully! 🚀");
 
         } catch (Exception $e) {
-            // বিস্তারিত লগিং (ডিবাগিং এর জন্য)
-            Log::error('FB Connect Critical Error:', [
+            Log::error('FB Connect API Error:', [
                 'msg' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
             ]);
 
-            return redirect('/admin')->with('error', 'Connection Failed: ' . $e->getMessage());
+            $redirectUrl = $clientId ? "/admin/clients/{$clientId}/edit" : "/admin";
+            return redirect($redirectUrl)->with('error', 'Connection Failed: ' . $e->getMessage());
         }
     }
 
-    // --- Private Helper Functions (Clean Code) ---
+    // --- Private Helper Functions ---
 
-    /**
-     * ইউজারের সব পেজ ফেচ করা
-     */
     private function getFacebookPages($userAccessToken)
     {
         $response = Http::get("https://graph.facebook.com/" . self::GRAPH_API_VERSION . "/me/accounts", [
             'access_token' => $userAccessToken,
-            'fields'       => 'name,access_token,id,tasks', // অপটিমাইজড: শুধু প্রয়োজনীয় ফিল্ড
+            'fields'       => 'name,access_token,id,tasks',
         ]);
 
         if (!$response->successful()) {
@@ -127,34 +132,36 @@ class FacebookConnectController extends Controller
         return $response->json()['data'] ?? [];
     }
 
-    /**
-     * শর্ট-লিভড টোকেনকে লং-লিভড টোকেনে কনভার্ট করা (৬০ দিনের জন্য)
-     */
     private function getLongLivedToken($shortLivedToken)
     {
+        // Get App ID and Secret from environment
+        $appId = env('FACEBOOK_APP_ID');
+        $appSecret = env('FACEBOOK_APP_SECRET');
+
+        if (!$appId || !$appSecret) {
+            Log::warning('FACEBOOK_APP_ID or FACEBOOK_APP_SECRET is not set. Cannot exchange token.');
+            return $shortLivedToken;
+        }
+
         $response = Http::get("https://graph.facebook.com/" . self::GRAPH_API_VERSION . "/oauth/access_token", [
             'grant_type'        => 'fb_exchange_token',
-            'client_id'         => config('services.facebook.client_id'),
-            'client_secret'     => config('services.facebook.client_secret'),
+            'client_id'         => $appId,
+            'client_secret'     => $appSecret,
             'fb_exchange_token' => $shortLivedToken,
         ]);
 
-        if ($response->successful()) {
+        if ($response->successful() && isset($response->json()['access_token'])) {
             return $response->json()['access_token'];
         }
         
-        // ফেইল করলে আগের টোকেনই রিটার্ন করি (Fallback)
-        Log::warning('Failed to exchange long-lived token. Using default.');
+        Log::warning('Failed to exchange long-lived token. Using default short-lived token.');
         return $shortLivedToken;
     }
 
-    /**
-     * ওয়েব্হুক সাবস্ক্রাইব করা (Magic Step)
-     */
     private function subscribeToWebhooks($pageId, $accessToken)
     {
         $response = Http::post("https://graph.facebook.com/" . self::GRAPH_API_VERSION . "/{$pageId}/subscribed_apps", [
-            'subscribed_fields' => 'messages,messaging_postbacks',
+            'subscribed_fields' => 'messages,messaging_postbacks,messaging_optins',
             'access_token'      => $accessToken,
         ]);
 
