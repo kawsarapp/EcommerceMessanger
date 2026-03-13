@@ -14,7 +14,7 @@ class MarketingBroadcast extends Page implements HasForms
     {
         return $form->schema([
             Section::make('Create Broadcast Campaign')->description('মেসেঞ্জার এবং হোয়াটসঅ্যাপে আপনার কাস্টমারদের সরাসরি প্রমোশনাল অফার বা ব্যানার পাঠান।')->schema([
-                Grid::make(2)->schema([
+                Grid::make(['default' => 2])->schema([
                     Select::make('platform')->label('Platform (কোথায় পাঠাবেন?)')->options([
                         'both'=>'Messenger & WhatsApp (সবাইকে)',
                         'messenger'=>'Only Messenger (শুধুমাত্র মেসেঞ্জারে)',
@@ -28,11 +28,23 @@ class MarketingBroadcast extends Page implements HasForms
                         'high_value'=>'High Value VIPs (যারা ৫,০০০+ টাকার অর্ডার করেছে)'
                     ])->required()->default('all'),
                 ]),
+
+                Grid::make(['default' => 1])->schema([
+                    \Filament\Forms\Components\Toggle::make('is_24h_only')
+                        ->label('Only send to active users (Last 24 Hours)')
+                        ->helperText('ফেসবুকের নিয়ম অনুযায়ী প্রমোশনাল মেসেজ শুধুমাত্র তাদেরকেই পাঠানো উচিত যারা গত ২৪ ঘন্টায় আপনার পেজে মেসেজ দিয়েছে। এটি চালু রাখলে আপনার পেজ নিরাপদ থাকবে।')
+                        ->default(true)
+                ]),
                 
                 FileUpload::make('image')->label('Offer Image / Banner (Optional)')->image()->directory('broadcasts')->columnSpanFull(),
                 
-                Textarea::make('message')->label('Broadcast Message (আপনার অফার)')->placeholder("হ্যালো {{name}}, আপনার জন্য ধামাকা অফার! আজকেই যেকোনো প্রোডাক্ট অর্ডারে পাচ্ছেন ২০% ছাড়!")->rows(5)->required()
-                ->helperText("ম্যাজিক ট্রিক: কাস্টমারের আসল নাম মেনশন করতে {{name}} ট্যাগ ব্যবহার করুন। সিস্টেম অটোমেটিক নাম বসিয়ে নিবে!"),
+                Textarea::make('message')->label('Broadcast Message (আপনার অফার)')->placeholder("হ্যালো {{name}}, আপনার জন্য ধামাকা অফার! আজকেই যেকোনো প্রোডাক্ট অর্ডারে পাচ্ছেন ২০% ছাড়!")->rows(4)->required()
+                ->helperText("ম্যাজিক ট্রিক: কাস্টমারের আসল নাম মেনশন করতে {{name}} এবং আপনার শপের নাম দিতে {{shop}} ট্যাগ ব্যবহার করুন।"),
+
+                Grid::make(['default' => 2])->schema([
+                    \Filament\Forms\Components\TextInput::make('btn_text')->label('Call to Action Button (Optional)')->placeholder('e.g. Shop Now / Order Now')->maxLength(20),
+                    \Filament\Forms\Components\TextInput::make('btn_url')->label('Button Link URL')->url()->placeholder('https://yourshop.com/product/xyz'),
+                ]),
             ])->statePath('data'),
         ]);
     }
@@ -43,9 +55,17 @@ class MarketingBroadcast extends Page implements HasForms
         if(!$clientId){Notification::make()->title('Error: Shop not found!')->danger()->send();return;}
         $client=Client::find($clientId);$platform=$data['platform'];$audience=$data['audience'];$message=$data['message'];$image=$data['image']??null;
         
+        $is24h = $data['is_24h_only'] ?? false;
+        $btnText = $data['btn_text'] ?? null;
+        $btnUrl = $data['btn_url'] ?? null;
+
         // ১. কাস্টমারদের ফিল্টার করা (Messenger + WA)
         $query=Conversation::where('client_id',$clientId);
-        if($platform!=='both'){$query->where('platform',$platform);}
+        if($platform!=='both'){
+            $query->where('platform',$platform);
+        }
+        if($is24h){$query->where('updated_at', '>=', now()->subHours(24));}
+        
         $conversations=$query->select('sender_id','platform')->distinct()->get();
         $finalTargets=[];
 
@@ -72,11 +92,10 @@ class MarketingBroadcast extends Page implements HasForms
         $successCount=0;$messengerService=app(MessengerResponseService::class);$imgUrl=$image?asset('storage/'.$image):null;
         
         foreach($finalTargets as $target){
-            $personalizedMsg=str_replace('{{name}}',$target['name'],$message);
+            $personalizedMsg=str_replace(['{{name}}', '{{shop}}'],[$target['name'], $client->shop_name],$message);
             try{
                 if($target['platform']==='messenger'&&$client->fb_page_token){
-                    if($imgUrl) $messengerService->sendMessengerMessage($target['id'],$personalizedMsg,$client->fb_page_token,$imgUrl);
-                    else $messengerService->sendMessengerMessage($target['id'],$personalizedMsg,$client->fb_page_token);
+                    $messengerService->sendMessengerMessage($target['id'],$personalizedMsg,$client->fb_page_token,$imgUrl,[],$btnText,$btnUrl);
                     $successCount++;
                 }elseif($target['platform']==='whatsapp'&&$client->wa_instance_id){
                     if($image){

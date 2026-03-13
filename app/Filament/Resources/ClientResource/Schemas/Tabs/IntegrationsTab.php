@@ -91,15 +91,16 @@ class IntegrationsTab
                 Actions::make([
                     Action::make('connect_facebook')
                         ->label('Connect with Facebook')
-                        ->url(fn ($record) => route('auth.facebook', ['client_id' => $record->id]))
+                        ->url(fn ($record) => $record ? route('auth.facebook', ['client_id' => $record->id]) : '#')
                         ->color('info')
-                        ->visible(fn ($record) => !$record->fb_page_id),
+                        ->visible(fn ($record) => !$record || !$record->fb_page_id)
+                        ->disabled(fn ($record) => !$record), // Disable link if client is not created yet
                     Action::make('disconnect_facebook')
                         ->label('Disconnect Page')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($record) => $record->update(['fb_page_id' => null, 'fb_page_token' => null]))
-                        ->visible(fn ($record) => $record->fb_page_id),
+                        ->action(fn ($record) => $record?->update(['fb_page_id' => null, 'fb_page_token' => null]))
+                        ->visible(fn ($record) => $record && $record->fb_page_id),
                 ]),
 
                 Section::make('Advanced Manual Setup')

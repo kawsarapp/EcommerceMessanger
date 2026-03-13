@@ -25,16 +25,16 @@ class MessengerResponseService
     }
 
     /**
-     * মেসেঞ্জারে টেক্সট, ছবি এবং কুইক রিপ্লাই পাঠানো
+     * মেসেঞ্জারে টেক্সট, ছবি এবং કুইক রিপ্লাই/বাটন পাঠানো
      */
-    public function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = []) 
+    public function sendMessengerMessage($recipientId, $message, $token, $imageUrl = null, $quickReplies = [], $btnText = null, $btnUrl = null) 
     {
         $url = "https://graph.facebook.com/v19.0/me/messages?access_token={$token}";
         
         // ১. ছবি পাঠানো (যদি থাকে)
         if (!empty($imageUrl)) {
             try {
-                $response = Http::timeout(10)->post($url, [
+                $response = Http::withOptions(['timeout' => 10])->post($url, [
                     'messaging_type' => 'RESPONSE', 
                     'recipient' => ['id' => $recipientId],
                     'message' => [
@@ -51,22 +51,44 @@ class MessengerResponseService
             }
         }
 
-        // ২. টেক্সট এবং কুইক রিপ্লাই পাঠানো
+        // ২. টেক্সট এবং কুইক রিপ্লাই / বাটন পাঠানো
         $messageText = trim($message);
         
         if (!empty($messageText)) {
             $payload = [
-                'messaging_type' => 'RESPONSE',
+                'messaging_type' => 'MESSAGE_TAG', // Using message_tag to improve broadcast deliverability
+                'tag' => 'POST_PURCHASE_UPDATE', // Default broadcast tag allowed
                 'recipient' => ['id' => $recipientId],
-                'message' => ['text' => $messageText]
             ];
 
-            if (!empty($quickReplies) && is_array($quickReplies)) {
-                $payload['message']['quick_replies'] = $quickReplies;
+            // If a button is requested, send as button template
+            if (!empty($btnText) && !empty($btnUrl)) {
+                $payload['message'] = [
+                    'attachment' => [
+                        'type' => 'template',
+                        'payload' => [
+                            'template_type' => 'button',
+                            'text' => mb_substr($messageText, 0, 640),
+                            'buttons' => [
+                                [
+                                    'type' => 'web_url',
+                                    'url' => $btnUrl,
+                                    'title' => mb_substr($btnText, 0, 20)
+                                ]
+                            ]
+                        ]
+                    ]
+                ];
+            } else {
+                $payload['message'] = ['text' => $messageText];
+                // Add Quick Replies if present
+                if (!empty($quickReplies) && is_array($quickReplies)) {
+                    $payload['message']['quick_replies'] = $quickReplies;
+                }
             }
 
             try {
-                $response = Http::timeout(10)->post($url, $payload);
+                $response = Http::withOptions(['timeout' => 10])->post($url, $payload);
                 if ($response->failed()) Log::error("❌ Message Send Error: " . $response->body());
                 else Log::info("✅ Message sent successfully to {$recipientId}.");
             } catch (\Exception $e) {
@@ -111,7 +133,7 @@ class MessengerResponseService
         Log::info("Sending Carousel with " . count($elements) . " elements.");
 
         try {
-            $response = Http::post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
+            $response = Http::withOptions(['timeout' => 10])->post("https://graph.facebook.com/v19.0/me/messages?access_token={$token}", [
                 'recipient' => ['id' => $recipientId],
                 'message' => [
                     'attachment' => [
