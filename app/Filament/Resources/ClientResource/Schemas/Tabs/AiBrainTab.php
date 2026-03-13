@@ -11,20 +11,33 @@ class AiBrainTab
     public static function schema(): array
     {
         return [
-            Section::make('AI Model Selection (Admin Only)')
-                ->description('Choose which AI to power this specific store.')
+            Section::make('🤖 AI Model Selection (Admin Only)')
+                ->description('এই স্টোরের জন্য কোন AI ব্যবহার হবে সেটি এখান থেকে সিলেক্ট করুন। API Key সার্ভারের .env ফাইলে থাকে।')
                 ->schema([
                     Select::make('ai_model')
-                        ->label('Select AI Model')
+                        ->label('AI Model সিলেক্ট করুন')
                         ->options([
-                            'gemini-pro' => 'Google Gemini Pro (Default)',
-                            'gpt-4o' => 'OpenAI GPT-4o',
-                            'gpt-3.5-turbo' => 'OpenAI GPT-3.5 Turbo',
-                            'claude-3-opus' => 'Anthropic Claude 3 Opus',
+                            // ── Google Gemini ──────────────────────────
+                            'gemini-pro'      => '🟦 Google Gemini Pro (Default – Fast)',
+                            'gemini-pro-full' => '🟦 Google Gemini 1.5 Pro (Powerful)',
+
+                            // ── OpenAI ────────────────────────────────
+                            'gpt-4o'          => '🟩 OpenAI GPT-4o (Best Quality)',
+                            'gpt-4o-mini'     => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
+                            'gpt-3.5-turbo'   => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
+
+                            // ── Anthropic Claude ─────────────────────
+                            'claude-3-opus-20240229'   => '🟧 Anthropic Claude 3 Opus (Smartest)',
+                            'claude-3-haiku-20240307'  => '🟧 Anthropic Claude 3 Haiku (Fast)',
+
+                            // ── DeepSeek ──────────────────────────────
+                            'deepseek-chat'     => '🟪 DeepSeek Chat (Cheap & Powerful)',
+                            'deepseek-reasoner' => '🟪 DeepSeek R1 (Reasoning Model)',
                         ])
                         ->default('gemini-pro')
                         ->required()
-                        ->visible(fn () => auth()->user()?->isSuperAdmin()), // Only Superadmin can change
+                        ->helperText('⚙️ API Key গুলো Server এর .env ফাইলে সেট করা আছে। এখানে শুধু মডেল assign করুন।')
+                        ->visible(fn () => auth()->user()?->isSuperAdmin()),
                 ])->visible(fn () => auth()->user()?->isSuperAdmin()),
 
             Section::make('Knowledge Base')

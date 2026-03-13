@@ -51,7 +51,20 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
-    
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+    ],
+
+    'google_vision' => [
+        'api_key' => env('GOOGLE_VISION_API_KEY'),
+    ],
+
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
+    ],
 
 ];

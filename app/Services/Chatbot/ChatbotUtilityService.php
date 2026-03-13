@@ -29,9 +29,10 @@ class ChatbotUtilityService
         // ১. ক্লায়েন্টের কোন AI মডেল সিলেক্ট করা আছে সেটি চেক করা হচ্ছে। যদি না থাকে তবে ডিফল্ট gemini ধরা হবে।
         $selectedModel = $client ? ($client->ai_model ?? 'gemini-pro') : 'gemini-pro';
         
-        $geminiKey = env('GEMINI_API_KEY');
-        $openAiKey = env('OPENAI_API_KEY');
-        $anthropicKey = env('ANTHROPIC_API_KEY');
+        $geminiKey    = config('services.gemini.api_key');
+        $openAiKey    = config('services.openai.api_key');
+        $anthropicKey = config('services.anthropic.api_key');
+        $deepseekKey  = config('services.deepseek.api_key');
 
         // ==========================================
         // 🚀 ROUTE 1: Google Gemini Execution
@@ -68,7 +69,11 @@ class ChatbotUtilityService
                 }
 
                 // মডেল নাম ডাইনামিক করা হলো
-                $modelIdentifier = $selectedModel === 'gemini-pro' ? 'gemini-1.5-flash' : 'gemini-1.5-pro';
+                $modelIdentifier = match($selectedModel) {
+                    'gemini-pro'      => 'gemini-1.5-flash',      // Fast & cheap
+                    'gemini-pro-full' => 'gemini-1.5-pro',        // Powerful
+                    default           => 'gemini-1.5-flash',
+                };
 
                 $response = Http::timeout(30)->post("https://generativelanguage.googleapis.com/v1beta/models/{$modelIdentifier}:generateContent?key={$geminiKey}", [
                     'system_instruction' => ['parts' => ['text' => $systemPrompt]],
@@ -158,11 +163,38 @@ class ChatbotUtilityService
             }
         }
 
+        // ==========================================
+        // 🚀 ROUTE 4: DeepSeek Execution
+        // ==========================================
+        if (str_contains($selectedModel, 'deepseek')) {
+            if (!$deepseekKey) return "⚠️ DeepSeek API Key is missing in server configuration.";
+
+            try {
+                $response = Http::withToken($deepseekKey)
+                    ->timeout(40)
+                    ->post('https://api.deepseek.com/v1/chat/completions', [
+                        'model'       => $selectedModel, // e.g. 'deepseek-chat'
+                        'messages'    => $messages,
+                        'max_tokens'  => 800,
+                        'temperature' => 0.1,
+                    ]);
+
+                if ($response->successful() && isset($response->json()['choices'][0]['message']['content'])) {
+                    return $response->json()['choices'][0]['message']['content'];
+                }
+                Log::warning("DeepSeek Error: " . $response->body());
+                return "DeepSeek API returned an error.";
+            } catch (\Exception $e) {
+                Log::error("DeepSeek Exception: " . $e->getMessage());
+                return "DeepSeek Connection failed.";
+            }
+        }
+
         return "⚠️ Selected AI Model is invalid or not configured properly.";
     }
 
     public function analyzeImageWithGoogleVision($base64Image) {
-        $apiKey = env('GOOGLE_VISION_API_KEY');
+        $apiKey = config('services.google_vision.api_key');
         if (!$apiKey) return null;
 
         try {
