@@ -14,6 +14,6 @@
 @if($product->sizes)<div class="mb-4"><span class="text-sm font-bold block mb-2">Weight/Size:</span><div class="flex gap-2">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="px-4 py-2 border-2 rounded-xl cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 text-sm font-bold">{{$s}}</span></label>@endforeach</div></div>@endif
 <div class="flex gap-4 items-center"><div class="flex items-center bg-gray-100 rounded-xl p-1"><button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center font-bold text-lg rounded-lg hover:bg-white">-</button><input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-bold text-lg p-0 focus:ring-0" readonly><button type="button" @click="qty++" class="w-10 h-10 flex items-center justify-center font-bold text-lg rounded-lg hover:bg-white">+</button></div>
 <button type="submit" class="flex-1 bg-primary text-white py-3.5 rounded-xl font-extrabold text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition shadow-lg shadow-green-500/30"><i class="fas fa-shopping-basket"></i> Buy Now</button></div></form>
-<div class="mt-8 text-sm text-gray-600 border-t pt-6">{!!$product->description!!}</div></div></div>
+<div class="mt-8 text-sm text-gray-600 border-t pt-6">{!! clean($product->description) !!}</div></div></div>
 </main>
 @endsection

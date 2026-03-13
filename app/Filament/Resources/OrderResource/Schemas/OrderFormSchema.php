@@ -130,7 +130,7 @@ class OrderFormSchema
                                             if (!empty($couriers)) {
                                                 $cList = [];
                                                 foreach ($couriers as $name => $c) {
-                                                    $cList[] = ucfirst($name) . " ({$c})";
+                                                    $cList[] = htmlspecialchars(ucfirst($name), ENT_QUOTES, 'UTF-8') . " ({$c})";
                                                 }
                                                 $courierText = "<div class='text-sm text-gray-500 mt-2 border-t border-gray-200 pt-2'>🚚 <b>Couriers Used:</b> " . implode(', ', $cList) . "</div>";
                                             }

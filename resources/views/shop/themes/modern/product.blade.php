@@ -14,6 +14,6 @@
 @if($product->sizes)<div><span class="text-xs font-bold uppercase tracking-widest block mb-4">Size</span><div class="flex gap-3 flex-wrap">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="min-w-[4rem] flex justify-center py-3 border border-gray-300 cursor-pointer peer-checked:bg-black peer-checked:text-white peer-checked:border-black text-sm font-semibold transition">{{$s}}</span></label>@endforeach</div></div>@endif
 <div class="flex flex-col sm:flex-row gap-4"><div class="flex items-center border border-gray-300 p-2"><button type="button" @click="if(qty>1)qty--" class="w-12 h-10 text-xl hover:bg-gray-100">-</button><input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-bold text-lg p-0 focus:ring-0" readonly><button type="button" @click="qty++" class="w-12 h-10 text-xl hover:bg-gray-100">+</button></div>
 <button type="submit" class="flex-1 bg-black text-white py-4 font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition">Checkout</button></div></form>
-<div class="prose max-w-none text-gray-600 font-light leading-loose">{!!$product->description!!}</div></div></div>
+<div class="prose max-w-none text-gray-600 font-light leading-loose">{!! clean($product->description) !!}</div></div></div>
 </main>
 @endsection

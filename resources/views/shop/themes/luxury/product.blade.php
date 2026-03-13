@@ -13,6 +13,6 @@
 @if($product->colors)<div><span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-4">Shade / Color</span><div class="flex gap-3">@foreach($product->colors as $c)<label><input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required><span class="px-5 py-2 border border-[#333] text-gray-400 cursor-pointer peer-checked:border-primary peer-checked:text-primary text-xs uppercase tracking-widest transition">{{$c}}</span></label>@endforeach</div></div>@endif
 @if($product->sizes)<div><span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-4">Size / Variant</span><div class="flex gap-3">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="px-5 py-2 border border-[#333] text-gray-400 cursor-pointer peer-checked:border-primary peer-checked:text-primary text-xs uppercase tracking-widest transition">{{$s}}</span></label>@endforeach</div></div>@endif
 <button type="submit" class="w-full bg-primary text-black py-4 text-xs font-bold uppercase tracking-[0.2em] hover:bg-white transition">Acquire Now</button></form>
-<div class="text-sm text-gray-400 font-light leading-loose">{!!$product->description!!}</div></div></div>
+<div class="text-sm text-gray-400 font-light leading-loose">{!! clean($product->description) !!}</div></div></div>
 </main>
 @endsection

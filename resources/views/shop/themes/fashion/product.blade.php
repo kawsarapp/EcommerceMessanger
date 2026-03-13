@@ -13,6 +13,6 @@
 @if($product->colors)<div class="mb-4"><span class="text-xs uppercase tracking-widest block mb-2">Color</span><div class="flex gap-2">@foreach($product->colors as $c)<label><input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required><span class="px-4 py-2 border cursor-pointer peer-checked:bg-black peer-checked:text-white text-xs uppercase">{{$c}}</span></label>@endforeach</div></div>@endif
 @if($product->sizes)<div class="mb-6"><span class="text-xs uppercase tracking-widest block mb-2">Size</span><div class="flex gap-2">@foreach($product->sizes as $s)<label><input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required><span class="px-4 py-2 border cursor-pointer peer-checked:bg-black peer-checked:text-white text-xs uppercase">{{$s}}</span></label>@endforeach</div></div>@endif
 <button type="submit" class="w-full bg-black text-white py-4 text-xs uppercase tracking-[0.2em] hover:bg-gray-800 transition">Proceed to Checkout</button></form>
-<div class="mt-10 text-sm text-gray-600 leading-relaxed border-t pt-8">{!!$product->description!!}</div></div></div>
+<div class="mt-10 text-sm text-gray-600 leading-relaxed border-t pt-8">{!! clean($product->description) !!}</div></div></div>
 </main>
 @endsection
