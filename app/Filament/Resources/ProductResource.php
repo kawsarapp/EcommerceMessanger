@@ -37,8 +37,8 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        // সুপার এডমিন (ID 1) সব দেখবে, বাকিরা শুধু নিজেরটা দেখবে
-        if (auth()->id() === 1) { 
+        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা দেখবে
+        if (auth()->user()?->isSuperAdmin()) { 
             return parent::getEloquentQuery();
         }
 
@@ -63,7 +63,7 @@ class ProductResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->id === 1) return true;
+        if ($user->isSuperAdmin()) return true;
 
         return $user->client && $user->client->hasActivePlan();
     }
@@ -72,7 +72,7 @@ class ProductResource extends Resource
     {
         $user = auth()->user();
         
-        if ($user->id === 1) return true;
+        if ($user->isSuperAdmin()) return true;
 
         $client = $user->client;
 
@@ -86,7 +86,7 @@ class ProductResource extends Resource
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        if ($user->id === 1) return true;
+        if ($user->isSuperAdmin()) return true;
 
         return $user->client && 
                $user->client->id === $record->client_id && 
@@ -96,7 +96,7 @@ class ProductResource extends Resource
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        if ($user->id === 1) return true;
+        if ($user->isSuperAdmin()) return true;
 
         return $user->client && $user->client->id === $record->client_id;
     }

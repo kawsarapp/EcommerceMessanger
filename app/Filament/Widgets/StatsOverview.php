@@ -15,7 +15,7 @@ class StatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $userId = auth()->id();
-        $isAdmin = $userId === 1;
+        $isAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $client = !$isAdmin ? Client::where('user_id', $userId)->first() : null;
 
         $orderQuery = Order::query()->when(!$isAdmin, fn($q) => $q->where('client_id', $client?->id));

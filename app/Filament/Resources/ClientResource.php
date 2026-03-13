@@ -24,7 +24,7 @@ class ClientResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return auth()->id() === 1 ? (string) static::getModel()::count() : null;
+        return auth()->user()?->isSuperAdmin() ? (string) static::getModel()::count() : null;
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -56,7 +56,7 @@ class ClientResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        if (auth()->id() === 1) return $query;
+        if (auth()->user()?->isSuperAdmin()) return $query;
         return $query->where('user_id', auth()->id());
     }
     
@@ -72,16 +72,16 @@ class ClientResource extends Resource
     // --- Permissions ---
     public static function canCreate(): bool 
     { 
-        return auth()->id() === 1; 
+        return auth()->user()?->isSuperAdmin() ?? false; 
     } 
     
     public static function canDelete(Model $record): bool 
     { 
-        return auth()->id() === 1; 
+        return auth()->user()?->isSuperAdmin() ?? false; 
     }
     
     public static function canEdit(Model $record): bool
     {
-        return auth()->id() === 1 || $record->user_id === auth()->id();
+        return auth()->user()?->isSuperAdmin() || $record->user_id === auth()->id();
     }
 }

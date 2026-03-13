@@ -6,24 +6,84 @@ use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
-    
+    protected $fillable = [
+        // ─── Identity & Pricing
+        'name',
+        'description',
+        'color',
+        'badge_text',
+        'sort_order',
+        'is_featured',
+        'is_active',
+        'features',        // JSON array of custom bullets
 
-protected $fillable = [
-    'name', 
-    'price', 
-    'product_limit', 
-    'order_limit', 
-    'ai_message_limit',
-    'description', 
-    'color', 
-    'is_featured', 
-    'is_active'
-];
+        // ─── Pricing
+        'price',
+        'yearly_price',
+        'duration_days',
+        'trial_days',
 
-public function clients()
-{
-    return $this->hasMany(Client::class);
-}
-    
+        // ─── Core Limits
+        'product_limit',
+        'order_limit',
+        'ai_message_limit',
+        'whatsapp_limit',
+        'storage_limit_mb',
+        'staff_account_limit',
 
+        // ─── Feature Toggles
+        'allow_custom_domain',
+        'remove_branding',
+        'priority_support',
+        'allow_api_access',
+        'allow_whatsapp',
+        'allow_telegram',
+        'allow_coupon',
+        'allow_review',
+        'allow_abandoned_cart',
+        'allow_marketing_broadcast',
+        'allow_analytics',
+    ];
+
+    protected $casts = [
+        'features'                 => 'array',
+        'is_featured'              => 'boolean',
+        'is_active'                => 'boolean',
+        'allow_custom_domain'      => 'boolean',
+        'remove_branding'          => 'boolean',
+        'priority_support'         => 'boolean',
+        'allow_api_access'         => 'boolean',
+        'allow_whatsapp'           => 'boolean',
+        'allow_telegram'           => 'boolean',
+        'allow_coupon'             => 'boolean',
+        'allow_review'             => 'boolean',
+        'allow_abandoned_cart'     => 'boolean',
+        'allow_marketing_broadcast'=> 'boolean',
+        'allow_analytics'          => 'boolean',
+        'price'                    => 'decimal:2',
+        'yearly_price'             => 'decimal:2',
+    ];
+
+    // ─── Relationships ──────────────────────────────────────────
+
+    public function clients()
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    // ─── Helpers ────────────────────────────────────────────────
+
+    /** বার্ষিক সঞ্চয় কত % */
+    public function getYearlySavingsPercentAttribute(): int
+    {
+        if (!$this->yearly_price || !$this->price) return 0;
+        $monthly12 = $this->price * 12;
+        return (int) round((($monthly12 - $this->yearly_price) / $monthly12) * 100);
+    }
+
+    /** Unlimited দেখাবে 0 হলে */
+    public function limitLabel(int $value, string $unit = ''): string
+    {
+        return $value === 0 ? 'Unlimited' : number_format($value) . ($unit ? " $unit" : '');
+    }
 }

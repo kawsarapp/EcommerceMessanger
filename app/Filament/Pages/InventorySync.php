@@ -23,7 +23,7 @@ class InventorySync extends Page
 
     public function mount()
     {
-        $this->client = auth()->id() === 1 ? \App\Models\Client::first() : auth()->user()->client;
+        $this->client = auth()->user()?->isSuperAdmin() ? \App\Models\Client::first() : auth()->user()->client;
     }
 
     public function syncWooCommerce()

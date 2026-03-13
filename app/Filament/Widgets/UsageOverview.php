@@ -15,7 +15,7 @@ class UsageOverview extends BaseWidget
     {
         $user = auth()->user();
         
-        if ($user->id === 1) {
+        if ($user->isSuperAdmin()) {
             return [
                 Stat::make('System Pulse', 'Healthy')
                     ->description('All systems operational')

@@ -29,8 +29,8 @@ class PageResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // সুপার এডমিন (ID 1) সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->id() === 1) {
+        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
+        if (auth()->user()?->isSuperAdmin()) {
             return $query;
         }
 

@@ -66,8 +66,8 @@ class Client extends Model
      */
     public function hasActivePlan(): bool
     {
-        // ১. অ্যাডমিন (User ID 1) হলে বাইপাস
-        if ($this->user_id === 1) return true;
+        // ১. Super Admin হলে বাইপাস
+        if ($this->user?->isSuperAdmin()) return true;
 
         // ২. প্ল্যান আইডি না থাকলে বা স্ট্যাটাস ইনঅ্যাক্টিভ হলে ফলস
         if (!$this->plan_id || $this->status !== 'active') {
@@ -167,7 +167,7 @@ class Client extends Model
 
     public function hasActiveSubscription(): bool
     {
-        if ($this->user_id === 1) return true; // Super Admin always active
+        if ($this->user?->isSuperAdmin()) return true; // Super Admin always active
         return $this->plan_ends_at && $this->plan_ends_at->isFuture();
     }
 

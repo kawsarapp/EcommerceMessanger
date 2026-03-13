@@ -25,17 +25,17 @@ class CategoryResource extends Resource
      */
     public static function canCreate(): bool
     {
-        return auth()->id() === 1;
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->id() === 1;
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->id() === 1;
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     public static function form(Form $form): Form
@@ -112,14 +112,14 @@ class CategoryResource extends Resource
             ])
             
             ->actions([
-                // এডমিন (ID 1) হলে এডিট বাটন, বাকিদের জন্য ভিউ বাটন
-                auth()->id() === 1 
+                // এডমিন হলে এডিট বাটন, বাকিদের জন্য ভিউ বাটন
+                auth()->user()?->isSuperAdmin() 
                     ? Tables\Actions\EditAction::make() 
                     : Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions(
                 // এখানে সরাসরি কন্ডিশনাল অ্যারে ব্যবহার করা হয়েছে
-                auth()->id() === 1 
+                auth()->user()?->isSuperAdmin() 
                     ? [
                         Tables\Actions\BulkActionGroup::make([
                             Tables\Actions\DeleteBulkAction::make(),

@@ -25,8 +25,8 @@ class OrderResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        // সুপার এডমিন (ID 1) সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->id() === 1) {
+        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
+        if (auth()->user()?->isSuperAdmin()) {
             return $query;
         }
         return $query->whereHas('client', function (Builder $query) {
@@ -40,7 +40,7 @@ class OrderResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $query = static::getModel()::where('order_status', 'processing');
-        if (auth()->id() !== 1) {
+        if (!auth()->user()?->isSuperAdmin()) {
             $query->whereHas('client', fn($q) => $q->where('user_id', auth()->id()));
         }
         return $query->count() ?: null;

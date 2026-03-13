@@ -29,7 +29,7 @@ class CourierReportResource extends Resource
     {
         $query = parent::getEloquentQuery()->whereNotNull('courier_name'); // Sudhu courier a pathano order gulo asbe
 
-        if (auth()->id() === 1) {
+        if (auth()->user()?->isSuperAdmin()) {
             return $query; // Admin sob dekhbe
         }
 

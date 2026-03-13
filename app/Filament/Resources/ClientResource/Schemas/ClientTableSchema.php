@@ -47,7 +47,7 @@ class ClientTableSchema
 
             ToggleColumn::make('status')
                 ->label('Active')
-                ->visible(fn () => auth()->id() === 1),
+                ->visible(fn () => auth()->user()?->isSuperAdmin()),
 
             TextColumn::make('created_at')
                 ->dateTime('d M, Y')

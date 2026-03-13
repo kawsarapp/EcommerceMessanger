@@ -22,6 +22,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -53,6 +54,14 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return true; // ক্লায়েন্ট এবং এডমিন দুজনেই ড্যাশবোর্ড এক্সেস পাবে
+    }
+
+    /**
+     * Super Admin কিনা চেক করে (role দিয়ে)
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
     }
 
     /**

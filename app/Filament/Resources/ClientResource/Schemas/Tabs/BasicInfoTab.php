@@ -53,7 +53,7 @@ class BasicInfoTab
                 ->icons(['active' => 'heroicon-o-check-circle', 'inactive' => 'heroicon-o-x-circle'])
                 ->default('active')
                 ->inline()
-                ->visible(fn () => auth()->id() === 1),
+                ->visible(fn () => auth()->user()?->isSuperAdmin()),
         ];
     }
 }

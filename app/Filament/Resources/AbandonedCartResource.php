@@ -32,7 +32,7 @@ class AbandonedCartResource extends Resource
         // শুধু অসম্পূর্ণ সেশনগুলো দেখাবে
         $query->where('customer_info->step', '!=', 'completed');
 
-        if (auth()->id() === 1) {
+        if (auth()->user()?->isSuperAdmin()) {
             return $query;
         }
 

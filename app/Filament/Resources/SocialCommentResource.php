@@ -27,7 +27,7 @@ class SocialCommentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        if (auth()->id() === 1) return $query;
+        if (auth()->user()?->isSuperAdmin()) return $query;
         return $query->where('client_id', auth()->user()->client->id ?? null);
     }
 

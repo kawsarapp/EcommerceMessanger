@@ -26,8 +26,10 @@
                         brand: {
                             50: '#fff2f2',
                             100: '#ffe1e1',
+                            400: '#f97316',
                             500: '#F53003',
                             600: '#d92902',
+                            700: '#b52202',
                             900: '#1a0500',
                         }
                     },
@@ -47,7 +49,6 @@
     </script>
 
     <style>
-        /* Custom Styles */
         .gradient-text {
             background: linear-gradient(135deg, #F53003 0%, #FF750F 100%);
             -webkit-background-clip: text;
@@ -62,24 +63,15 @@
             background: rgba(22, 22, 21, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        /* Hide scrollbar for clean look */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ccc; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #F53003; 
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #F53003; }
     </style>
 </head>
 <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] font-sans antialiased selection:bg-brand-500 selection:text-white">
 
+    {{-- ===== HEADER ===== --}}
     <header class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
@@ -92,20 +84,30 @@
                     <a href="#features" class="hover:text-brand-500 transition">Features</a>
                     <a href="#comparison" class="hover:text-brand-500 transition">Savings Calculator</a>
                     <a href="#pricing" class="hover:text-brand-500 transition">Pricing</a>
-                    <a href="https://asianhost.net/login" class="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 transition-all shadow-md">
+                    <a href="{{ route('filament.admin.auth.login') }}" class="px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 transition-all shadow-md">
                         Login Dashboard
                     </a>
                 </nav>
 
-                <button class="md:hidden text-2xl text-gray-600">
+                <button id="mobile-menu-btn" class="md:hidden text-2xl text-gray-600">
                     <i class="fas fa-bars"></i>
                 </button>
+            </div>
+        </div>
+        {{-- Mobile Menu --}}
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-gray-800 px-4 pb-4">
+            <div class="flex flex-col gap-4 pt-4">
+                <a href="#features" class="text-gray-600 font-semibold hover:text-brand-500">Features</a>
+                <a href="#pricing" class="text-gray-600 font-semibold hover:text-brand-500">Pricing</a>
+                <a href="{{ route('filament.admin.auth.login') }}" class="text-gray-600 font-semibold hover:text-brand-500">Login</a>
+                <a href="{{ route('filament.admin.auth.register') }}" class="bg-brand-500 text-white px-4 py-2 rounded-full font-bold text-center">Get Started</a>
             </div>
         </div>
     </header>
 
     <main class="pt-24">
-        
+
+        {{-- ===== HERO SECTION ===== --}}
         <section class="relative overflow-hidden pt-10 pb-20 lg:pt-20 lg:pb-32">
             <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
             <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
@@ -164,7 +166,7 @@
                             <div class="space-y-4 font-bangla text-sm">
                                 <div class="flex gap-3">
                                     <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none max-w-[80%]">
-                                        ভাইয়া, এই নীল শাড়িটার দাম কত? স্টকে আছে?
+                                        ভাইয়া, এই নীল শাড়িটার দাম কত? স্টকে আছে?
                                     </div>
                                 </div>
 
@@ -174,7 +176,7 @@
 
                                 <div class="flex gap-3 justify-end">
                                     <div class="bg-gradient-to-r from-brand-500 to-orange-500 text-white p-3 rounded-2xl rounded-tr-none max-w-[90%] shadow-lg">
-                                        জি ম্যাম! 😍 এই শাড়িটি আমাদের স্টকে আছে। <br>
+                                        জি ম্যাম! 😍 এই শাড়িটি আমাদের স্টকে আছে। <br>
                                         দাম: ১,২৫০ টাকা। <br>
                                         সাথে পাচ্ছেন <span class="font-bold bg-white/20 px-1 rounded">ফ্রি ডেলিভারি</span>। অর্ডার কনফার্ম করতে "Order Now" বাটনে ক্লিক করুন! 👇
                                     </div>
@@ -221,10 +223,11 @@
             </div>
         </section>
 
+        {{-- ===== PAIN POINTS SECTION ===== --}}
         <section class="py-20 bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-gray-900">
             <div class="max-w-7xl mx-auto px-4 text-center">
                 <h2 class="text-3xl md:text-4xl font-bold mb-12 font-bangla">
-                    কেন ম্যানুয়াল সিস্টেমে আপনি <span class="text-red-500">পিছিয়ে পড়ছেন?</span>
+                    কেন ম্যানুয়াল সিস্টেমে আপনি <span class="text-red-500">পিছিয়ে পড়ছেন?</span>
                 </h2>
                 
                 <div class="grid md:grid-cols-3 gap-8">
@@ -234,7 +237,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">স্লো রেসপন্স = সেল লস</h3>
                         <p class="text-gray-500 font-bangla leading-relaxed">
-                            আপনি যখন ঘুমাচ্ছেন বা ব্যস্ত, তখন কাস্টমার মেসেজ দিচ্ছে। ১ ঘণ্টা পর রিপ্লাই দিলে সেই কাস্টমার আর থাকে না, চলে যায় অন্য পেজে।
+                            আপনি যখন ঘুমাচ্ছেন বা ব্যস্ত, তখন কাস্টমার মেসেজ দিচ্ছে। ১ ঘণ্টা পর রিপ্লাই দিলে সেই কাস্টমার আর থাকে না, চলে যায় অন্য পেজে।
                         </p>
                     </div>
 
@@ -244,7 +247,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">অতিরিক্ত স্টাফ খরচ</h3>
                         <p class="text-gray-500 font-bangla leading-relaxed">
-                            ২৪ ঘণ্টা সাপোর্ট দিতে গেলে ৩ শিফটে মানুষ লাগে। বেতন, বোনাস, ইন্টারনেট খরচ মিলিয়ে আপনার প্রফিটের অর্ধেক চলে যায় স্টাফ খরচে।
+                            ২৪ ঘণ্টা সাপোর্ট দিতে গেলে ৩ শিফটে মানুষ লাগে। বেতন, বোনাস, ইন্টারনেট খরচ মিলিয়ে আপনার প্রফিটের অর্ধেক চলে যায় স্টাফ খরচে।
                         </p>
                     </div>
 
@@ -254,13 +257,14 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">ভুল অর্ডার ও ফ্রড</h3>
                         <p class="text-gray-500 font-bangla leading-relaxed">
-                            মানুষের ভুলে ভুল প্রোডাক্ট ডেলিভারি হয়। এছাড়া ফেইক অর্ডার আইডেন্টিফাই করতে না পারায় ডেলিভারি চার্জ লস হয়।
+                            মানুষের ভুলে ভুল প্রোডাক্ট ডেলিভারি হয়। এছাড়া ফেইক অর্ডার আইডেন্টিফাই করতে না পারায় ডেলিভারি চার্জ লস হয়।
                         </p>
                     </div>
                 </div>
             </div>
         </section>
 
+        {{-- ===== COMPARISON SECTION ===== --}}
         <section id="comparison" class="py-24 bg-gray-900 text-white relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
                 <div class="absolute top-10 left-10 w-72 h-72 bg-blue-500 rounded-full blur-[100px]"></div>
@@ -270,15 +274,15 @@
             <div class="max-w-7xl mx-auto px-4 relative z-10">
                 <div class="text-center mb-16">
                     <span class="text-brand-400 font-bold tracking-wider uppercase text-sm">Real Data Analysis</span>
-                    <h2 class="text-3xl md:text-5xl font-bold mt-2 mb-6 font-bangla">ম্যানুয়াল টিম vs AI সিস্টেম</h2>
+                    <h2 class="text-3xl md:text-5xl font-bold mt-2 mb-6 font-bangla">ম্যানুয়াল টিম vs AI সিস্টেম</h2>
                     <p class="text-gray-400 max-w-2xl mx-auto font-bangla text-lg">
-                        ধরি, আপনার টার্গেট প্রতিদিন **৫০০টি অর্ডার**। এই অপারেশন চালাতে আপনার খরচের পার্থক্য দেখুন।
+                        ধরি, আপনার টার্গেট প্রতিদিন ৫০০টি অর্ডার। এই অপারেশন চালাতে আপনার খরচের পার্থক্য দেখুন।
                     </p>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
                     
-                    <div class="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10 relative">
+                    <div class="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10">
                         <h3 class="text-2xl font-bold text-red-400 mb-2 flex items-center gap-3">
                             <i class="fas fa-users"></i> Manual Human Team
                         </h3>
@@ -294,7 +298,7 @@
                                 <span class="font-bold text-xl">৮০,০০০ ৳</span>
                             </div>
                             <div class="flex justify-between items-center text-red-400">
-                                <span class="">হিউম্যান এরর (Loss)</span>
+                                <span>হিউম্যান এরর (Loss)</span>
                                 <span class="font-bold text-xl">+২০,০০০ ৳</span>
                             </div>
                         </div>
@@ -331,7 +335,7 @@
                                 <span class="font-bold text-xl">আনলিমিটেড</span>
                             </div>
                             <div class="flex justify-between items-center text-brand-400">
-                                <span class="">সফটওয়্যার খরচ (ফিক্সড)</span>
+                                <span>সফটওয়্যার খরচ (ফিক্সড)</span>
                                 <span class="font-bold text-xl">সামান্য*</span>
                             </div>
                         </div>
@@ -344,10 +348,10 @@
                                 </div>
                                 <div class="text-right">
                                     <p class="text-sm text-gray-500 uppercase">Total Savings</p>
-                                    <p class="text-2xl font-bold text-green-400">৯৬% সাশ্রয়!</p>
+                                    <p class="text-2xl font-bold text-green-400">৯৬% সাশ্রয়!</p>
                                 </div>
                             </div>
-                            <a href="https://asianhost.net/pricing" class="block mt-6 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-center rounded-xl font-bold transition">
+                            <a href="#pricing" class="block mt-6 w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-center rounded-xl font-bold transition">
                                 Get Started Now
                             </a>
                         </div>
@@ -357,11 +361,12 @@
             </div>
         </section>
 
+        {{-- ===== FEATURES SECTION ===== --}}
         <section id="features" class="py-24 bg-[#FDFDFC] dark:bg-[#0a0a0a]">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-bold mb-4 font-bangla">Core AI Features</h2>
-                    <p class="text-gray-500 dark:text-gray-400">সবকিছু এক প্ল্যাটফর্মে। আলাদা কোনো টুলের প্রয়োজন নেই।</p>
+                    <p class="text-gray-500 dark:text-gray-400">সবকিছু এক প্ল্যাটফর্মে। আলাদা কোনো টুলের প্রয়োজন নেই।</p>
                 </div>
 
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -371,7 +376,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">Instant Reply (0 Sec)</h3>
                         <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
-                            কাস্টমার হাই দেওয়া মাত্রই রিপ্লাই। প্রোডাক্টের দাম, সাইজ, ছবি—সব অটোমেটিক সেন্ড করবে।
+                            কাস্টমার হাই দেওয়া মাত্রই রিপ্লাই। প্রোডাক্টের দাম, সাইজ, ছবি—সব অটোমেটিক সেন্ড করবে।
                         </p>
                     </div>
 
@@ -381,7 +386,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">Smart Inventory</h3>
                         <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
-                            স্টকে পণ্য না থাকলে অর্ডার নিবে না, বরং "Restock Alert" সেট করবে। আপনার ম্যানুয়াল চেক করার দরকার নেই।
+                            স্টকে পণ্য না থাকলে অর্ডার নিবে না, বরং "Restock Alert" সেট করবে। আপনার ম্যানুয়াল চেক করার দরকার নেই।
                         </p>
                     </div>
 
@@ -391,7 +396,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">Fraud Detection</h3>
                         <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
-                            যারা আগে অর্ডার করে পণ্য নেয়নি, তাদের চিনে রাখবে এবং আপনাকে সতর্ক করবে। ডেলিভারি চার্জ লস হবে না।
+                            যারা আগে অর্ডার করে পণ্য নেয়নি, তাদের চিনে রাখবে এবং আপনাকে সতর্ক করবে। ডেলিভারি চার্জ লস হবে না।
                         </p>
                     </div>
 
@@ -401,7 +406,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">Visual Search</h3>
                         <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
-                            কাস্টমার কোনো জামার ছবি দিলে AI সেটা দেখে আপনার স্টকের সাথে মিলিয়ে বের করে দিবে।
+                            কাস্টমার কোনো জামার ছবি দিলে AI সেটা দেখে আপনার স্টকের সাথে মিলিয়ে বের করে দিবে।
                         </p>
                     </div>
 
@@ -411,7 +416,7 @@
                         </div>
                         <h3 class="text-xl font-bold mb-3 font-bangla">Human Psychology</h3>
                         <p class="text-gray-500 dark:text-gray-400 font-bangla text-sm leading-relaxed">
-                            রোবটের মতো নয়, মানুষের মতো কথা বলে। কাস্টমার দাম বেশি বললে কনভেন্স করে সেল ক্লোজ করে।
+                            রোবটের মতো নয়, মানুষের মতো কথা বলে। কাস্টমার দাম বেশি বললে কনভেন্স করে সেল ক্লোজ করে।
                         </p>
                     </div>
 
@@ -428,16 +433,123 @@
             </div>
         </section>
 
+        {{-- ===== DYNAMIC PRICING SECTION ===== --}}
+        @php $plans = \App\Models\Plan::where('is_active', true)->orderBy('price', 'asc')->get(); @endphp
+        @if($plans->count() > 0)
+        <section id="pricing" class="py-24 bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-gray-900">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 border border-brand-100 text-brand-600 text-sm font-bold mb-4">
+                        💰 Simple, Transparent Pricing
+                    </span>
+                    <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 font-bangla">আপনার বিজনেসের জন্য সঠিক প্ল্যান বেছে নিন</h2>
+                    <p class="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-bangla">ছোট শুরু করুন, বড় হন। যেকোনো সময় প্ল্যান আপগ্রেড করুন।</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    @foreach($plans as $plan)
+                    <div class="relative flex flex-col rounded-3xl p-8 transition-all duration-300 hover:-translate-y-2
+                        {{ $plan->is_featured
+                            ? 'bg-gray-900 dark:bg-gray-800 text-white border-2 border-brand-500 shadow-2xl shadow-brand-500/20'
+                            : 'bg-white dark:bg-[#161615] text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 shadow-lg hover:shadow-2xl' }}">
+
+                        @if($plan->is_featured)
+                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                            ⭐ Most Popular
+                        </div>
+                        @endif
+
+                        <div class="mb-6">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4"
+                                 style="background-color: {{ $plan->color ?? '#2563eb' }}22">
+                                <span style="color: {{ $plan->color ?? '#2563eb' }}">🚀</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-2" style="color: {{ $plan->is_featured ? '#ff6b35' : ($plan->color ?? '#2563eb') }}">
+                                {{ $plan->name }}
+                            </h3>
+                            @if($plan->description)
+                            <p class="{{ $plan->is_featured ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400' }} text-sm font-bangla leading-relaxed">{{ $plan->description }}</p>
+                            @endif
+                        </div>
+
+                        <div class="mb-8">
+                            <div class="flex items-end gap-1">
+                                <span class="text-5xl font-extrabold">৳{{ number_format($plan->price) }}</span>
+                                <span class="text-gray-400 mb-2 ml-1">/month</span>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-3 mb-8 flex-1 font-bangla text-sm">
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">
+                                    <strong class="{{ $plan->is_featured ? 'text-white' : '' }}">{{ $plan->product_limit == 0 ? 'আনলিমিটেড' : $plan->product_limit }}</strong> প্রোডাক্ট
+                                </span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">
+                                    <strong class="{{ $plan->is_featured ? 'text-white' : '' }}">{{ $plan->order_limit == 0 ? 'আনলিমিটেড' : $plan->order_limit }}</strong> মাসিক অর্ডার
+                                </span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">
+                                    <strong class="{{ $plan->is_featured ? 'text-white' : '' }}">{{ $plan->ai_message_limit == 0 ? 'আনলিমিটেড' : $plan->ai_message_limit }}</strong> AI রিপ্লাই/মাস
+                                </span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">Facebook Messenger AI Bot</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">WhatsApp & Telegram Support</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center flex-shrink-0 font-bold">✓</span>
+                                <span class="{{ $plan->is_featured ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400' }}">Custom Online Store</span>
+                            </li>
+                        </ul>
+
+                        <a href="{{ route('filament.admin.auth.register') }}?plan={{ $plan->id }}"
+                           class="block w-full text-center py-4 rounded-2xl font-bold text-lg transition-all active:scale-95
+                           {{ $plan->is_featured
+                               ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-xl shadow-brand-500/30'
+                               : 'border-2' }}"
+                           @if(!$plan->is_featured)
+                               style="border-color: {{ $plan->color ?? '#2563eb' }}; color: {{ $plan->color ?? '#2563eb' }}"
+                               onmouseover="this.style.backgroundColor='{{ $plan->color ?? '#2563eb' }}'; this.style.color='white'"
+                               onmouseout="this.style.backgroundColor='transparent'; this.style.color='{{ $plan->color ?? '#2563eb' }}'"
+                           @endif>
+                            এখনই শুরু করুন →
+                        </a>
+                        <p class="text-center text-xs mt-3 {{ $plan->is_featured ? 'text-gray-500' : 'text-gray-400' }}">No credit card required</p>
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="text-center mt-12">
+                    <p class="text-gray-500 dark:text-gray-400 font-bangla">
+                        আরো বড় ব্যবসার জন্য কাস্টম প্ল্যান দরকার?
+                        <a href="tel:01771545972" class="text-brand-500 font-bold hover:underline">আমাদের কল করুন: 01771545972</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+        @endif
+
+        {{-- ===== CTA SECTION ===== --}}
         <section class="py-10 px-4">
             <div class="max-w-7xl mx-auto rounded-3xl bg-brand-500 text-white p-10 md:p-16 text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div class="relative z-10">
-                    <h2 class="text-3xl md:text-5xl font-bold mb-6 font-bangla">ব্যবসা বড় করতে প্রস্তুত?</h2>
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6 font-bangla">ব্যবসা বড় করতে প্রস্তুত?</h2>
                     <p class="text-lg opacity-90 mb-10 max-w-2xl mx-auto font-bangla">
-                        আর দেরি করবেন না। আজই ফ্রি ট্রায়াল শুরু করুন এবং দেখুন AI কিভাবে আপনার সেল দ্বিগুণ করে।
+                        আর দেরি করবেন না। আজই শুরু করুন এবং দেখুন AI কিভাবে আপনার সেল দ্বিগুণ করে।
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="https://asianhost.net/pricing" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
+                        <a href="#pricing" class="bg-white text-brand-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
                             Get Started Free
                         </a>
                         <a href="tel:01771545972" class="bg-brand-700 text-white border border-brand-400 px-8 py-4 rounded-full font-bold text-lg hover:bg-brand-800 transition">
@@ -450,6 +562,7 @@
 
     </main>
 
+    {{-- ===== FOOTER ===== --}}
     <footer class="bg-gray-50 dark:bg-[#111] pt-20 pb-10 border-t border-gray-200 dark:border-gray-800 mt-20">
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid md:grid-cols-4 gap-12 mb-16">
@@ -470,29 +583,48 @@
                 <div>
                     <h4 class="font-bold text-gray-900 dark:text-white mb-6">Product</h4>
                     <ul class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-                        <li><a href="#" class="hover:text-brand-500">Features</a></li>
-                        <li><a href="https://asianhost.net/pricing" class="hover:text-brand-500">Pricing</a></li>
-                        <li><a href="#" class="hover:text-brand-500">API Docs</a></li>
-                        <li><a href="#" class="hover:text-brand-500">Integrations</a></li>
+                        <li><a href="#features" class="hover:text-brand-500">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-brand-500">Pricing</a></li>
+                        <li><a href="{{ route('filament.admin.auth.register') }}" class="hover:text-brand-500">Get Started</a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-gray-900 dark:text-white mb-6">Company</h4>
+                    <h4 class="font-bold text-gray-900 dark:text-white mb-6">Account</h4>
                     <ul class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-                        <li><a href="#" class="hover:text-brand-500">About Us</a></li>
-                        <li><a href="#" class="hover:text-brand-500">Contact</a></li>
-                        <li><a href="#" class="hover:text-brand-500">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-brand-500">Terms of Service</a></li>
+                        <li><a href="{{ route('filament.admin.auth.login') }}" class="hover:text-brand-500">Login</a></li>
+                        <li><a href="{{ route('filament.admin.auth.register') }}" class="hover:text-brand-500">Register</a></li>
+                        <li><a href="tel:01771545972" class="hover:text-brand-500">Contact Support</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-gray-400 text-sm">
-                <p>&copy; 2026 NeuralCart AI. Developed by <span class="text-brand-500">Kawsar Ahmed</span>.</p>
+                <p>&copy; {{ date('Y') }} NeuralCart AI. Developed by <span class="text-brand-500">Kawsar Ahmed</span>.</p>
             </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileBtn && mobileMenu) {
+            mobileBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Sticky Header Shadow on Scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-lg');
+            } else {
+                header.classList.remove('shadow-lg');
+            }
+        });
+    </script>
 
 </body>
 </html>

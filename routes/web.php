@@ -37,9 +37,9 @@ Route::get('/pricing', function () {
 
 // Print Order Invoice (Secured)
 Route::middleware(['auth'])->get('/orders/{order}/print', function (Order $order) {
-    // Security Check: Only super admin (ID 1) or the shop owner can print
+    // Security Check: Only super admin or the shop owner can print
     abort_if(
-        auth()->id() !== 1 && $order->client->user_id !== auth()->id(),
+        !auth()->user()?->isSuperAdmin() && $order->client->user_id !== auth()->id(),
         403,
         'Unauthorized access.'
     );

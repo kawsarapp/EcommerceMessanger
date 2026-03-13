@@ -29,8 +29,8 @@ class ReviewResource extends Resource
     {
         $query = parent::getEloquentQuery();
         
-        // সুপার এডমিন (ID 1) সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->id() === 1) {
+        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
+        if (auth()->user()?->isSuperAdmin()) {
             return $query;
         }
 
@@ -59,7 +59,7 @@ class ReviewResource extends Resource
                         // Product Selection
                         Forms\Components\Select::make('product_id')
                             ->relationship('product', 'name', function (Builder $query) {
-                                if (auth()->id() !== 1) {
+                                if (!auth()->user()?->isSuperAdmin()) {
                                     $query->where('client_id', auth()->user()->client?->id);
                                 }
                             })

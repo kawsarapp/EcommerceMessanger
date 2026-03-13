@@ -16,8 +16,8 @@ class ClientFormSchema
 {
     public static function schema(): array
     {
-        $isAdmin = fn () => auth()->id() === 1;
-        $isNotAdmin = fn () => auth()->id() !== 1;
+        $isAdmin = fn () => auth()->user()?->isSuperAdmin() ?? false;
+        $isNotAdmin = fn () => !auth()->user()?->isSuperAdmin();
 
         return [
             Section::make('Subscription Plan')

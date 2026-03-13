@@ -79,11 +79,11 @@ class ProductFormSchema
                                         ->searchable()
                                         ->preload()
                                         ->required()
-                                        ->visible(fn () => auth()->id() === 1),
+                                        ->visible(fn () => auth()->user()?->isSuperAdmin()),
 
                                     Hidden::make('client_id')
                                         ->default(fn () => Client::where('user_id', auth()->id())->first()?->id)
-                                        ->visible(fn () => auth()->id() !== 1),
+                                        ->visible(fn () => !auth()->user()?->isSuperAdmin()),
                                     // -----------------------------
 
                                     Select::make('category_id')

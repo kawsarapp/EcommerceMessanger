@@ -24,8 +24,8 @@ class AiBrainTab
                         ])
                         ->default('gemini-pro')
                         ->required()
-                        ->visible(fn () => auth()->id() === 1), // Only Superadmin can change
-                ])->visible(fn () => auth()->id() === 1),
+                        ->visible(fn () => auth()->user()?->isSuperAdmin()), // Only Superadmin can change
+                ])->visible(fn () => auth()->user()?->isSuperAdmin()),
 
             Section::make('Knowledge Base')
                 ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')

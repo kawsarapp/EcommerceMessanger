@@ -28,7 +28,7 @@ class ProductTableSchema
                 ->label('Shop')
                 ->toggleable()
                 ->sortable()
-                ->visible(fn () => auth()->id() === 1)
+                ->visible(fn () => auth()->user()?->isSuperAdmin())
                 ->badge(),
                 
             TextColumn::make('category.name')
@@ -74,7 +74,7 @@ class ProductTableSchema
         return [
             Tables\Filters\SelectFilter::make('client')
                 ->relationship('client', 'shop_name')
-                ->visible(fn () => auth()->id() === 1),
+                ->visible(fn () => auth()->user()?->isSuperAdmin()),
                 
             Tables\Filters\SelectFilter::make('category')
                 ->relationship('category', 'name'),
