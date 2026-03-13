@@ -48,7 +48,7 @@ class PlanResource extends Resource
                 ->description('প্ল্যানের নাম, দাম, রঙ এবং বিবরণ।')
                 ->icon('heroicon-m-swatch')
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         TextInput::make('name')
                             ->label('Plan Name')
                             ->placeholder('e.g. Gold, Business Pro')
@@ -64,7 +64,7 @@ class PlanResource extends Resource
                             ->helperText('কম নম্বর = আগে দেখাবে'),
                     ]),
 
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         ColorPicker::make('color')
                             ->label('Brand Color')
                             ->default('#4f46e5'),
@@ -100,7 +100,7 @@ class PlanResource extends Resource
                 ->description('মাসিক ও বার্ষিক মূল্য এবং মেয়াদ।')
                 ->icon('heroicon-m-banknotes')
                 ->schema([
-                    Grid::make(2)->schema([
+                    Grid::make()->columns(2)->schema([
                         TextInput::make('price')
                             ->label('Monthly Price (৳)')
                             ->numeric()
@@ -116,7 +116,7 @@ class PlanResource extends Resource
                             ->helperText('বার্ষিক ডিসকাউন্ট দিলে এখানে দিন। খালি রাখলে বার্ষিক অপশন দেখাবে না।'),
                     ]),
 
-                    Grid::make(2)->schema([
+                    Grid::make()->columns(2)->schema([
                         TextInput::make('duration_days')
                             ->label('Plan Duration (Days)')
                             ->numeric()
@@ -140,7 +140,7 @@ class PlanResource extends Resource
                 ->description('0 = Unlimited। প্রতিটি সীমা সাবধানে নির্ধারণ করুন।')
                 ->icon('heroicon-m-adjustments-horizontal')
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         TextInput::make('product_limit')
                             ->label('Max Products')
                             ->numeric()
@@ -166,7 +166,7 @@ class PlanResource extends Resource
                             ->required(),
                     ]),
 
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         TextInput::make('whatsapp_limit')
                             ->label('WhatsApp Messages')
                             ->numeric()
@@ -197,7 +197,7 @@ class PlanResource extends Resource
                 ->description('কোন কোন চ্যানেল ও প্ল্যাটফর্ম এই প্ল্যানে থাকবে।')
                 ->icon('heroicon-m-device-phone-mobile')
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         Toggle::make('allow_telegram')
                             ->label('Telegram Bot')
                             ->onColor('success')
@@ -223,7 +223,7 @@ class PlanResource extends Resource
                 ->description('উন্নত ফিচার যা শুধুমাত্র নির্দিষ্ট প্ল্যানে থাকবে।')
                 ->icon('heroicon-m-sparkles')
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         Toggle::make('allow_coupon')
                             ->label('Coupon / Discount System')
                             ->onColor('success')
@@ -242,7 +242,7 @@ class PlanResource extends Resource
                             ->helperText('অসম্পূর্ণ অর্ডারে AI reminder পাঠাবে'),
                     ]),
 
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         Toggle::make('allow_marketing_broadcast')
                             ->label('Marketing Broadcast')
                             ->onColor('warning')
@@ -259,7 +259,7 @@ class PlanResource extends Resource
                             ->helperText('নিজের domain (.com) সংযোগ করতে পারবে'),
                     ]),
 
-                    Grid::make(3)->schema([
+                    Grid::make()->columns(3)->schema([
                         Toggle::make('remove_branding')
                             ->label('Remove NeuralCart Branding')
                             ->onColor('danger')
@@ -269,6 +269,28 @@ class PlanResource extends Resource
                             ->label('Priority Support')
                             ->onColor('success')
                             ->helperText('দ্রুত সাপোর্ট টিকেট সমাধান পাবে'),
+                            
+                        Toggle::make('allow_premium_themes')
+                            ->label('Premium Themes')
+                            ->onColor('success')
+                            ->helperText('প্রিমিয়াম শপ থিম ব্যবহার করতে পারবে'),
+                    ]),
+                    
+                    Grid::make()->columns(3)->schema([
+                        Toggle::make('allow_payment_gateway')
+                            ->label('Payment Gateways')
+                            ->onColor('success')
+                            ->helperText('bKash/SSLCommerz ইন্টিগ্রেশন'),
+
+                        Toggle::make('allow_delivery_integration')
+                            ->label('Delivery Integration')
+                            ->onColor('success')
+                            ->helperText('Steadfast/Pathao/RedX ইন্টিগ্রেশন'),
+                            
+                        Toggle::make('allow_facebook_messenger')
+                            ->label('Facebook Integration')
+                            ->onColor('info')
+                            ->helperText('Facebook Messenger & Auto Reply'),
                     ]),
                 ])->columns(1),
 

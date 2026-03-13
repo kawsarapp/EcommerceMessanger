@@ -33,6 +33,9 @@
         }
     </script>
     <style>
+        :root {
+            --tw-color-primary: {{$client->primary_color ?? "#6366f1"}};
+        }
         [x-cloak] { display: none !important; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         

@@ -40,6 +40,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </script>
     <style>
+        :root {
+            --tw-color-primary: {{$client->primary_color ?? "#f43f5e"}};
+        }
         [x-cloak]{display:none!important} 
         body { background-color: #fce7f3; background-image: radial-gradient(#f9a8d4 2px, transparent 2px); background-size: 40px 40px; }
         .hide-scroll::-webkit-scrollbar{display:none}

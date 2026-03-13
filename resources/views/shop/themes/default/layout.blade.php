@@ -37,7 +37,10 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </script>
     <style>
-        [x-cloak]{display:none!important} 
+        :root {
+            --tw-color-primary: {{$client->primary_color ?? "#6366f1"}};
+        }
+        [x-cloak]{display:none!important}
         body { background-color: #fafafa; }
         .hide-scroll::-webkit-scrollbar{display:none}
         .premium-transition { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
