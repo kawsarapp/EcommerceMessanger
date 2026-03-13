@@ -1,18 +1,72 @@
 @extends('shop.themes.modern.layout')
-@section('title', 'Track Order | ' . $client->shop_name)
+@section('title', 'Track Details | ' . $client->shop_name)
+
 @section('content')
-<main class="max-w-3xl mx-auto px-6 py-20 md:py-32">
-<div class="text-center mb-16"><h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">Track.</h1><p class="text-gray-500 font-medium">Enter your phone number below.</p></div>
-<form action="{{route('shop.track.submit', $client->slug)}}" method="POST" class="flex max-w-md mx-auto border-b-2 border-gray-200 focus-within:border-black transition">@csrf
-<input type="tel" name="phone" value="{{$phone??''}}" required class="flex-1 bg-transparent py-4 outline-none font-bold text-xl text-center placeholder-gray-300" placeholder="01XXXXXXXXX">
-<button type="submit" class="px-6 font-bold uppercase tracking-widest text-sm hover:text-gray-500 transition">Go</button></form>
-@if(isset($phone)) <div class="mt-20 space-y-8">
-@forelse($orders??[] as $o)
-<div class="border border-gray-200 p-8 md:p-10"><div class="flex justify-between items-start mb-8 pb-8 border-b border-gray-100">
-<div><span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Order Number</span><span class="font-extrabold text-2xl tracking-tighter">#{{$o->id}}</span></div>
-<div class="text-right"><span class="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Status</span><span class="font-bold text-sm uppercase px-3 py-1 bg-gray-100">{{$o->order_status}}</span></div></div>
-<div class="space-y-6">@foreach($o->items as $i)<div class="flex gap-6 items-center"><div class="w-16 h-20 bg-gray-50 border border-gray-100"><img src="{{asset('storage/'.$i->product->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply"></div><div class="flex-1"><p class="font-bold text-base">{{$i->product->name}}</p><p class="text-xs font-semibold text-gray-500 mt-2">QTY: {{$i->quantity}}</p></div><span class="font-bold text-lg">৳{{$i->price}}</span></div>@endforeach</div>
-<div class="flex justify-between items-center mt-10 pt-8 border-t border-gray-100"><span class="font-bold uppercase tracking-widest text-sm">Total Paid</span><span class="text-3xl font-extrabold tracking-tighter">৳{{$o->total_amount}}</span></div></div>
-@empty <p class="text-gray-400 text-center font-medium">No active orders found.</p> @endforelse
-</div>@endif </main>
+<div class="max-w-3xl mx-auto px-6 py-24 md:py-32">
+    
+    <div class="mb-16 text-center">
+        <h1 class="text-4xl lg:text-5xl font-black tracking-tighter uppercase text-black mb-4">OrderStatus.</h1>
+        <p class="text-gray-400 font-bold uppercase tracking-[0.15em] text-xs">Enter your mobile number to view details.</p>
+    </div>
+
+    <!-- Minimal Search Form -->
+    <div class="mb-20">
+        <form method="GET" action="" class="flex flex-col sm:flex-row border-b-2 border-gray-200 focus-within:border-black transition-colors duration-300">
+            <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="flex-1 bg-transparent border-0 px-0 py-6 text-xl font-bold text-black focus:ring-0 placeholder-gray-300 text-center sm:text-left tracking-widest" required>
+            <button type="submit" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-6 hover:text-gray-500 transition-colors">
+                Locate
+            </button>
+        </form>
+    </div>
+
+    <!-- Results Section -->
+    @if(request('phone'))
+        <div class="space-y-12">
+            @forelse($orders ?? [] as $o)
+                <div class="bg-gray-50 p-8 md:p-12 border border-gray-100 hover:border-black transition-colors duration-500">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-gray-200 pb-8 mb-8">
+                        <div>
+                            <span class="text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">Order Identity</span>
+                            <h3 class="text-3xl font-black text-black tracking-tighter">#{{$o->id}}</h3>
+                        </div>
+                        <div class="text-right">
+                             <span class="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 bg-white border border-gray-200 shadow-sm
+                                @if($o->order_status == 'pending') text-yellow-600
+                                @elseif($o->order_status == 'completed') text-green-600
+                                @elseif($o->order_status == 'cancelled') text-red-600
+                                @else text-black @endif">
+                                {{$o->order_status}}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div>
+                            <span class="text-gray-400 uppercase tracking-[0.15em] text-[10px] font-black mb-2 block">Purchased</span>
+                            <span class="text-gray-900 font-bold text-sm">{{$o->created_at->format('M d, Y')}}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 uppercase tracking-[0.15em] text-[10px] font-black mb-2 block">Total</span>
+                            <span class="text-gray-900 font-black text-sm">৳{{number_format($o->total_amount)}}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 uppercase tracking-[0.15em] text-[10px] font-black mb-2 block">Payment</span>
+                            <span class="text-gray-900 font-bold text-sm uppercase">{{$o->payment_status}}</span>
+                        </div>
+                        @if($o->courier_name)
+                            <div>
+                                <span class="text-gray-400 uppercase tracking-[0.15em] text-[10px] font-black mb-2 block">Dispatch</span>
+                                <span class="text-black font-black text-sm underline decoration-1 underline-offset-4">{{$o->courier_name}} <br><span class="text-gray-500">{{$o->tracking_code}}</span></span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-20 bg-gray-50 border border-gray-100 border-dashed">
+                    <p class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">No records found.</p>
+                </div>
+            @endforelse
+        </div>
+    @endif
+</div>
 @endsection

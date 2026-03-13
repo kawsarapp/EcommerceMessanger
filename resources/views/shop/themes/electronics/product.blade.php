@@ -1,217 +1,165 @@
 @extends('shop.themes.electronics.layout')
-
-@section('title', $product->name . ' - ' . $client->shop_name)
+@section('title', $product->name . ' | Spec Details')
 
 @section('content')
-@php
-    // 🔥 Custom Domain Clean URL Logic
-    $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
-    $baseUrl = $cleanDomain ? 'https://' . $cleanDomain : route('shop.show', $client->slug);
-    $productUrl = $cleanDomain ? $baseUrl.'/product/'.$product->slug : route('shop.product.details', [$client->slug, $product->slug]);
+@php 
+$baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<div x-data="{ 
-    mainImage: '{{ asset('storage/' . $product->thumbnail) }}',
-    selectedColor: null,
-    selectedSize: null,
-    showVideoModal: false,
-    showZoomModal: false,
-    showChatOptions: false,
-    activeVideoUrl: '',
+<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+    
+    <!-- Breadcrumb terminal style -->
+    <div class="mb-8 font-mono text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center gap-2">
+        <a href="{{$baseUrl}}" class="hover:text-primary transition">Root</a> 
+        <span class="text-gray-700">/</span> 
+        <span class="text-gray-400 truncate">{{$product->category->name ?? 'Hardware'}}</span>
+        <span class="text-gray-700">/</span> 
+        <span class="text-white truncate max-w-[200px]">{{$product->name}}</span>
+    </div>
 
-    playVideo(url) {
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-            const match = url.match(regExp);
-            if (match && match[2].length === 11) {
-                this.activeVideoUrl = 'https://www.youtube.com/embed/' + match[2] + '?autoplay=1&rel=0';
-            } else {
-                this.activeVideoUrl = url;
-            }
-        } else {
-            this.activeVideoUrl = url;
-        }
-        this.showVideoModal = true;
-    },
-
-    shareProduct() {
-        if (navigator.share) {
-            navigator.share({
-                title: '{{ addslashes($product->name) }}',
-                text: 'Check out this awesome tech at {{ $client->shop_name }}!',
-                url: '{{ $productUrl }}'
-            }).catch(console.error);
-        } else {
-            navigator.clipboard.writeText('{{ $productUrl }}');
-            alert('Product link copied to clipboard!');
-        }
-    }
-}">
-
-    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 mb-24 md:mb-12">
-        
-        {{-- 🔥 Tech Style Breadcrumb & Share --}}
-        <div class="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
-            <nav class="flex text-xs md:text-sm text-slate-500 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1 font-mono tracking-wide">
-                <a href="{{ $baseUrl }}" class="hover:text-primary transition uppercase"><i class="fas fa-home mr-1"></i> Store</a>
-                <span class="mx-3 text-slate-300">/</span>
-                <span class="text-slate-900 font-bold truncate max-w-[150px] sm:max-w-md uppercase">{{ $product->name }}</span>
-            </nav>
-
-            <button @click="shareProduct()" class="ml-4 w-9 h-9 flex items-center justify-center bg-slate-100 rounded-lg text-slate-600 hover:text-white hover:bg-slate-900 transition shadow-sm" title="Share Product">
-                <i class="fas fa-share-alt text-sm"></i>
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {{-- Product Gallery Component --}}
-            <div class="lg:col-span-5 xl:col-span-5">
-                @include('shop.themes.electronics.product-gallery')
-            </div>
+    <div class="bg-panel tech-border rounded-2xl p-4 md:p-8 lg:p-10 mb-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
             
-            {{-- Product Info Component --}}
-            <div class="lg:col-span-7 xl:col-span-7">
-                @include('shop.themes.electronics.product-info')
-            </div>
-        </div>
-
-        {{-- 🔥 You May Also Like (Related Tech) --}}
-        @if(isset($relatedProducts) && $relatedProducts->count() > 0)
-        <div class="mt-20 pt-12 border-t border-slate-200">
-            <div class="flex items-center justify-between mb-8">
-                <h2 class="text-2xl font-bold font-heading text-slate-900 flex items-center gap-2">
-                    <i class="fas fa-microchip text-primary"></i> Compatible Tech
-                </h2>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                @foreach($relatedProducts as $related)
-                <div class="group bg-white rounded-xl border border-slate-200 hover:border-primary shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden relative">
+            <!-- Left: Imagery Gallery -->
+            <div class="flex flex-col space-y-4">
+                <div class="w-full aspect-square bg-white rounded-xl relative p-8 flex items-center justify-center tech-border overflow-hidden">
+                    <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply drop-shadow-xl transition-transform duration-500 scale-100 hover:scale-110">
                     
-                    @if($related->sale_price && $related->regular_price > $related->sale_price)
-                        <div class="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
-                            -{{ round((($related->regular_price - $related->sale_price)/$related->regular_price)*100) }}%
+                    @if($product->sale_price)
+                        <div class="absolute top-4 left-4 bg-red-500 text-white font-mono font-black text-xs px-3 py-1.5 rounded uppercase shadow-[0_0_15px_rgba(239,68,68,0.4)]">
+                            Discount Active
                         </div>
                     @endif
+                </div>
+                
+                <div class="flex gap-3 overflow-x-auto hide-scroll pb-2">
+                    <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-20 aspect-square bg-white rounded-lg p-2 flex items-center justify-center border-2 transition-colors shrink-0" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                    </button>
+                    @foreach($product->gallery ?? [] as $img)
+                    <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-20 aspect-square bg-white rounded-lg p-2 flex items-center justify-center border-2 transition-colors shrink-0" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'">
+                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                    </button>
+                    @endforeach
+                </div>
+            </div>
+            
+            <!-- Right: Specs & Configuration -->
+            <div class="flex flex-col">
+                <div class="border-b border-gray-800 pb-8 mb-8">
+                    @if(isset($product->stock_status))
+                        @if($product->stock_status == 'out_of_stock')
+                            <div class="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold font-mono px-3 py-1.5 rounded mb-4 uppercase tracking-widest">
+                                <i class="fas fa-times-circle"></i> Out of Stock
+                            </div>
+                        @else
+                            <div class="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold font-mono px-3 py-1.5 rounded mb-4 uppercase tracking-widest">
+                                <i class="fas fa-check-circle"></i> In Stock
+                            </div>
+                        @endif
+                    @endif
 
-                    <a href="{{ $cleanDomain ? $baseUrl.'/product/'.$related->slug : route('shop.product.details', [$client->slug, $related->slug]) }}" class="relative aspect-square bg-slate-50 overflow-hidden block p-4">
-                        <img src="{{ asset('storage/' . $related->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply transform group-hover:scale-110 transition-transform duration-500">
-                    </a>
-                    <div class="p-4 flex flex-col flex-1 border-t border-slate-100">
-                        <h3 class="font-semibold text-slate-800 text-sm mb-2 leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                            <a href="{{ $cleanDomain ? $baseUrl.'/product/'.$related->slug : route('shop.product.details', [$client->slug, $related->slug]) }}">{{ $related->name }}</a>
-                        </h3>
-                        <div class="mt-auto flex items-end justify-between">
-                            <span class="font-extrabold text-slate-900 text-lg font-mono tracking-tight">৳{{ number_format($related->sale_price ?? $related->regular_price) }}</span>
-                            @if($related->sale_price)
-                                <span class="text-[10px] text-slate-400 line-through font-mono">৳{{ number_format($related->regular_price) }}</span>
-                            @endif
+                    <h1 class="text-3xl lg:text-4xl font-black text-white leading-tight mb-4 tracking-tight">{{$product->name}}</h1>
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-6 bg-dark/50 tech-border rounded-xl p-6 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl point-events-none"></div>
+                        <div>
+                            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest block mb-1">MSRP</span>
+                            <span class="text-4xl font-black font-mono text-white tracking-tighter">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                         </div>
+                        @if($product->sale_price)
+                            <div class="pb-1">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest block mb-1">Original List</span>
+                                <del class="text-lg font-mono text-line-through text-red-400 font-bold">৳{{number_format($product->regular_price)}}</del>
+                            </div>
+                        @endif
                     </div>
                 </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-    </main>
 
-    {{-- 🔥 Mobile Sticky Nav (Dark Tech Version) --}}
-    <div class="md:hidden fixed bottom-[60px] left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 p-3 z-40 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div class="flex gap-3 max-w-md mx-auto">
-            <button type="button" @click="showChatOptions = true"
-               class="flex-1 bg-slate-800 border border-slate-700 text-white py-3.5 rounded-lg font-bold text-center flex items-center justify-center gap-2 text-sm shadow-sm active:scale-95 transition transform">
-                <i class="fas fa-comment-dots text-primary"></i> Chat
-            </button>
-
-            <a :href="'{{ $cleanDomain ? $baseUrl.'/checkout/'.$product->slug : route('shop.checkout', [$client->slug, $product->slug]) }}' + '?qty=1' + (selectedColor ? '&color=' + selectedColor : '') + (selectedSize ? '&size=' + selectedSize : '')" 
-               class="flex-[2] bg-primary hover:bg-primaryDark text-white py-3.5 rounded-lg font-bold text-center flex items-center justify-center gap-2 text-sm shadow-lg active:scale-95 transition transform uppercase tracking-wider">
-                <i class="fas fa-bolt"></i> Buy Now
-            </a>
-        </div>
-    </div>
-
-    {{-- Video Modal (Dark) --}}
-    <div x-show="showVideoModal" x-cloak 
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 p-4 backdrop-blur-md"
-         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
-        <div class="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800" @click.away="showVideoModal = false; activeVideoUrl = ''">
-            <button @click="showVideoModal = false; activeVideoUrl = ''" class="absolute top-4 right-4 z-50 bg-slate-800 hover:bg-red-500 text-white w-10 h-10 flex items-center justify-center rounded-lg transition transform hover:scale-105">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="video-wrapper">
-                <iframe :src="activeVideoUrl" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-            </div>
-        </div>
-    </div>
-
-    {{-- Zoom Modal (Dark) --}}
-    <div x-show="showZoomModal" x-cloak 
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-md p-4"
-         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="relative w-full h-full flex items-center justify-center" @click.away="showZoomModal = false">
-            <button @click="showZoomModal = false" class="absolute top-6 right-6 z-50 bg-slate-800 hover:bg-red-500 text-white w-12 h-12 flex items-center justify-center rounded-lg shadow-lg transition transform hover:scale-105">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-            <img :src="mainImage" class="max-w-full max-h-full object-contain cursor-zoom-out drop-shadow-2xl mix-blend-screen bg-white rounded-2xl p-4" @click="showZoomModal = false"
-                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="scale-90 opacity-0" x-transition:enter-end="scale-100 opacity-100">
-        </div>
-    </div>
-
-    {{-- 🔥 Chat Options Action Sheet (Dark Tech Style) --}}
-    <div x-show="showChatOptions" x-cloak class="fixed inset-0 z-[110] flex items-end md:items-center justify-center sm:p-4">
-        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" 
-             @click="showChatOptions = false"
-             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
-        
-        <div class="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden transform transition-all pb-safe"
-             x-transition:enter="ease-out duration-300" x-transition:enter-start="translate-y-full sm:translate-y-4 sm:opacity-0" x-transition:enter-end="translate-y-0 sm:opacity-100"
-             x-transition:leave="ease-in duration-200" x-transition:leave-start="translate-y-0 sm:opacity-100" x-transition:leave-end="translate-y-full sm:translate-y-4 sm:opacity-0">
-            
-            <div class="p-6 md:p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold font-heading text-slate-900">Connect with Support</h3>
-                    <button @click="showChatOptions = false" class="text-slate-400 hover:text-red-500 bg-slate-100 rounded-lg w-8 h-8 flex items-center justify-center transition">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <div class="space-y-3">
-                    @if($client->fb_page_id)
-                    <a href="https://m.me/{{ $client->fb_page_id }}?text={{ urlencode('Hi, I want to know about: ' . $product->name . ' - ' . $productUrl) }}" 
-                       target="_blank" 
-                       class="w-full flex items-center gap-4 p-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-600 hover:text-white transition group">
-                        <div class="w-12 h-12 bg-blue-600 text-white rounded-lg flex items-center justify-center text-2xl shadow-sm group-hover:bg-white group-hover:text-blue-600 transition-colors">
-                            <i class="fab fa-facebook-messenger"></i>
+                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 flex-1 flex flex-col">
+                    
+                    <div class="space-y-6 flex-1">
+                        @if($product->colors)
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuration Color</span>
+                                <span class="text-primary font-mono text-sm font-bold" x-text="color"></span>
+                            </div>
+                            <div class="flex gap-3 flex-wrap">
+                                @foreach($product->colors as $c)
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                                    <span class="block px-5 py-2.5 rounded-lg border border-gray-700 bg-dark text-gray-400 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-gray-500">{{$c}}</span>
+                                </label>
+                                @endforeach
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-lg group-hover:text-white text-blue-900">Messenger</h4>
-                            <p class="text-xs font-medium opacity-70">Fastest reply from our AI</p>
+                        @endif
+                        
+                        @if($product->sizes)
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Memory / Size Option</span>
+                                <span class="text-primary font-mono text-sm font-bold" x-text="size"></span>
+                            </div>
+                            <div class="flex gap-3 flex-wrap">
+                                @foreach($product->sizes as $s)
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                                    <span class="block px-5 py-2.5 rounded-lg border border-gray-700 bg-dark text-gray-400 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-gray-500">{{$s}}</span>
+                                </label>
+                                @endforeach
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition-transform"></i>
-                    </a>
-                    @endif
+                        @endif
+                    </div>
 
-                    @if($client->is_whatsapp_active && $client->phone)
-                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('Hi, I want to know about this product: ' . $productUrl) }}" 
-                       target="_blank" 
-                       class="w-full flex items-center gap-4 p-4 rounded-xl border border-green-200 bg-green-50 hover:bg-[#25D366] hover:text-white transition group">
-                        <div class="w-12 h-12 bg-[#25D366] text-white rounded-lg flex items-center justify-center text-2xl shadow-sm group-hover:bg-white group-hover:text-[#25D366] transition-colors">
-                            <i class="fab fa-whatsapp"></i>
+                    <div class="flex gap-4 pt-6 border-t border-gray-800">
+                        <div class="w-32 bg-dark tech-border rounded-xl flex border border-gray-700">
+                            <button type="button" @click="if(qty>1)qty--" class="flex-1 text-gray-400 hover:text-white transition"><i class="fas fa-minus text-xs"></i></button>
+                            <input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-mono font-bold text-white p-0 focus:ring-0" readonly>
+                            <button type="button" @click="qty++" class="flex-1 text-gray-400 hover:text-white transition"><i class="fas fa-plus text-xs"></i></button>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-lg group-hover:text-white text-green-900">WhatsApp</h4>
-                            <p class="text-xs font-medium opacity-70">Chat with human support</p>
-                        </div>
-                        <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition-transform"></i>
-                    </a>
-                    @endif
-                </div>
+                        
+                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
+                            <button type="button" disabled class="flex-1 bg-gray-800 text-gray-500 rounded-xl font-bold font-mono uppercase tracking-widest text-sm cursor-not-allowed">Offline</button>
+                        @else
+                            <button type="submit" class="flex-1 bg-primary text-white rounded-xl font-bold bg-dark tech-glow tech-border transition-all hover:bg-white hover:text-black uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                                <i class="fas fa-rocket"></i> Initialize Checkout
+                            </button>
+                        @endif
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
     
-</div> 
+    <!-- Specs Details section -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        
+        <div class="lg:col-span-8 bg-panel tech-border rounded-2xl p-6 md:p-10">
+            <h2 class="text-xl font-bold text-white mb-6 border-b border-gray-800 pb-4 flex items-center gap-2"><i class="fas fa-info-circle text-primary"></i> Technical Details</h2>
+            <div class="prose prose-invert prose-p:text-gray-400 prose-headings:text-gray-200 max-w-none text-sm font-medium leading-relaxed">
+                {!! clean($product->description ?? $product->long_description) !!}
+            </div>
+        </div>
+        
+        @if($product->key_features)
+        <div class="lg:col-span-4 bg-dark tech-border rounded-2xl p-6 md:p-8 self-start sticky top-28">
+            <h2 class="text-lg font-bold text-white mb-6 border-b border-gray-800 pb-4 font-mono tracking-wide uppercase"><i class="fas fa-cogs text-primary"></i> Specs Sheet</h2>
+            <ul class="space-y-4">
+                @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-primary mt-1 text-sm bg-primary/20 rounded-full"></i>
+                        <span class="text-sm font-medium text-gray-300">{{$feature}}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+    </div>
+
+</main>
 @endsection

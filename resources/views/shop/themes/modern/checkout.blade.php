@@ -1,25 +1,126 @@
 @extends('shop.themes.modern.layout')
-@section('title', 'Checkout | ' . $client->shop_name)
+@section('title', 'Complete Purchase | ' . $client->shop_name)
+
 @section('content')
-@php $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')):route('shop.show',$client->slug); @endphp
-<main class="max-w-5xl mx-auto px-6 py-12 md:py-20" x-data="{qty:{{request('qty',1)}}, price:{{$product->sale_price??$product->regular_price}}, delivery:'inside', inCharge:{{$client->delivery_charge_inside ?? 0}}, outCharge:{{$client->delivery_charge_outside ?? 0}}}">
-<div class="mb-12"><h1 class="text-4xl font-extrabold tracking-tighter mb-2">Checkout.</h1><p class="text-sm text-gray-500 font-medium">Please provide your shipping details.</p></div>
-<form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="POST" class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">@csrf
-<input type="hidden" name="product_id" value="{{$product->id}}"><input type="hidden" name="color" value="{{request('color')}}"><input type="hidden" name="size" value="{{request('size')}}">
-<div class="space-y-8">
-<div><label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Full Name</label><input type="text" name="customer_name" required class="w-full bg-transparent border-b-2 border-gray-200 py-2 outline-none focus:border-black text-lg font-semibold transition"></div>
-<div><label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Phone Number</label><input type="tel" name="customer_phone" required class="w-full bg-transparent border-b-2 border-gray-200 py-2 outline-none focus:border-black text-lg font-semibold transition"></div>
-<div><label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Location</label><select name="delivery_area" x-model="delivery" class="w-full bg-transparent border-b-2 border-gray-200 py-2 outline-none focus:border-black text-base font-semibold transition appearance-none"><option value="inside">Inside Dhaka (৳{{$client->delivery_charge_inside}})</option><option value="outside">Outside Dhaka (৳{{$client->delivery_charge_outside}})</option></select></div>
-<div><label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Full Address</label><textarea name="shipping_address" required rows="2" class="w-full bg-transparent border-b-2 border-gray-200 py-2 outline-none focus:border-black text-lg font-semibold transition"></textarea></div>
-<div><label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Quantity</label><div class="flex items-center justify-between w-32 border-b-2 border-gray-200 py-1"><button type="button" @click="if(qty>1) qty--" class="text-2xl font-bold px-2 text-gray-500 hover:text-red-500 transition">-</button><input type="number" name="quantity" x-model.number="qty" min="1" class="w-full text-center bg-transparent outline-none text-lg font-bold" readonly><button type="button" @click="qty++" class="text-2xl font-bold px-2 text-gray-500 hover:text-green-500 transition">+</button></div></div>
+@php 
+$baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')):route('shop.show',$client->slug); 
+@endphp
+
+<div class="max-w-[90rem] mx-auto px-6 py-16 md:py-24" x-data="{ 
+    insideDhaka: true, 
+    qty: {{request('qty',1)}}, 
+    price: {{$product->sale_price ?? $product->regular_price}}, 
+    deliveryInside: {{$client->delivery_charge_inside ?? 60}}, 
+    deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, 
+    get total() { return (this.qty * this.price) + (this.insideDhaka ? this.deliveryInside : this.deliveryOutside); } 
+}">
+    
+    <div class="mb-16 max-w-lg">
+        <h1 class="text-4xl lg:text-5xl font-black tracking-tighter uppercase text-black mb-4">Checkout.</h1>
+        <p class="text-gray-400 font-bold uppercase tracking-[0.15em] text-xs">Complete your purchase below.</p>
+    </div>
+
+    @if(session('success'))
+        <div class="bg-black text-white p-6 mb-12 flex items-center gap-4 text-sm font-bold tracking-widest uppercase">
+            <i class="fas fa-check"></i> {{ session('success') }}
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+        
+        <!-- Left: Form -->
+        <div class="lg:col-span-7">
+            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="POST" class="space-y-12">
+                @csrf
+                <input type="hidden" name="qty" :value="qty">
+                @if(request('color')) <input type="hidden" name="color" value="{{array_is_list((array)request('color')) ? request('color') : request('color')[0]}}"> @endif
+                @if(request('size')) <input type="hidden" name="size" value="{{array_is_list((array)request('size')) ? request('size') : request('size')[0]}}"> @endif
+                
+                <div>
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 border-b border-gray-200 pb-4">01. Contact Info</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <input type="text" name="customer_name" required class="w-full bg-transparent border-0 border-b-2 border-gray-200 px-0 py-4 text-black focus:ring-0 focus:border-black transition text-lg placeholder-gray-300 font-bold" placeholder="Full Name">
+                        </div>
+                        <div>
+                            <input type="tel" name="customer_phone" required class="w-full bg-transparent border-0 border-b-2 border-gray-200 px-0 py-4 text-black focus:ring-0 focus:border-black transition text-lg placeholder-gray-300 font-bold" placeholder="Mobile Number (e.g. 017...)">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 border-b border-gray-200 pb-4 mt-8">02. Shipping</h3>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="area" value="inside" @change="insideDhaka = true" class="peer hidden" checked>
+                            <div class="border border-gray-200 p-6 peer-checked:border-black peer-checked:bg-gray-50 transition text-center">
+                                <span class="block font-black text-sm uppercase tracking-widest mb-1">Inside Dhaka</span>
+                                <span class="block text-gray-500 font-medium">৳{{$client->delivery_charge_inside ?? 60}}</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="area" value="outside" @change="insideDhaka = false" class="peer hidden">
+                            <div class="border border-gray-200 p-6 peer-checked:border-black peer-checked:bg-gray-50 transition text-center">
+                                <span class="block font-black text-sm uppercase tracking-widest mb-1">Outside Dhaka</span>
+                                <span class="block text-gray-500 font-medium">৳{{$client->delivery_charge_outside ?? 120}}</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div>
+                        <textarea name="shipping_address" required rows="2" class="w-full bg-transparent border-0 border-b-2 border-gray-200 px-0 py-4 text-black focus:ring-0 focus:border-black transition text-lg placeholder-gray-300 font-bold resize-none" placeholder="Detailed Address (House, Road, Area)"></textarea>
+                    </div>
+                </div>
+
+                <div class="pt-8">
+                    <button type="submit" class="w-full bg-black text-white hover:bg-gray-900 py-6 font-black text-sm uppercase tracking-[0.2em] transition duration-300 flex justify-center items-center gap-4">
+                        Confirm Purchase <span class="opacity-50">|</span> ৳<span x-text="total"></span>
+                    </button>
+                    <p class="text-center text-[10px] text-gray-400 font-black tracking-widest uppercase mt-4">Cash on Delivery Enabled</p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: Order Summary Sidebar -->
+        <div class="lg:col-span-5">
+            <div class="bg-gray-50 p-8 lg:p-12 sticky top-28 border border-gray-100">
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8 border-b border-gray-200 pb-4">Order Summary</h3>
+                
+                <div class="flex gap-6 mb-10 pb-8 border-b border-gray-200">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-20 aspect-[3/4] object-cover mix-blend-multiply border border-gray-200">
+                    <div class="flex flex-col justify-center">
+                        <h4 class="font-bold text-gray-900 text-lg uppercase tracking-tight mb-2 leading-none">{{$product->name}}</h4>
+                        
+                        <div class="flex items-center gap-3 text-xs text-gray-500 font-bold tracking-widest uppercase mb-4">
+                            @if(request('color')) <span>{{array_is_list((array)request('color')) ? request('color') : request('color')[0]}}</span> @endif
+                            @if(request('color') && request('size')) <span>&times;</span> @endif
+                            @if(request('size')) <span>{{array_is_list((array)request('size')) ? request('size') : request('size')[0]}}</span> @endif
+                        </div>
+                        
+                        <div class="font-black text-sm">৳{{number_format($product->sale_price ?? $product->regular_price)}} <span class="text-gray-400 font-medium">×</span> <span x-text="qty"></span></div>
+                    </div>
+                </div>
+
+                <!-- Price Breakdown -->
+                <div class="space-y-4 font-bold text-sm text-gray-500 uppercase tracking-widest">
+                    <div class="flex justify-between items-center">
+                        <span>Subtotal</span>
+                        <span class="text-gray-900">৳<span x-text="qty * price"></span></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Shipping</span>
+                        <span class="text-gray-900">৳<span x-text="insideDhaka ? deliveryInside : deliveryOutside"></span></span>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-6 mt-6 flex justify-between items-center text-black">
+                        <span class="text-lg">Total</span>
+                        <span class="text-3xl tracking-tighter">৳<span x-text="total"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
-<div class="bg-gray-50 p-8 md:p-10 border border-gray-200 flex flex-col h-fit">
-<div class="flex gap-6 mb-10"><div class="w-20 h-24 bg-white border border-gray-200 p-2"><img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply"></div>
-<div><p class="font-bold text-lg leading-tight mb-2">{{$product->name}}</p><p class="text-xs font-bold text-gray-500 uppercase tracking-widest">{{request('color')}} {{request('size')}}</p></div></div>
-<div class="space-y-5 font-semibold text-gray-600 border-b border-gray-200 pb-8 mb-8">
-<div class="flex justify-between"><span>Item Subtotal (x<span x-text="qty"></span>)</span><span x-text="'৳'+(qty*price)"></span></div>
-<div class="flex justify-between"><span>Shipping</span><span x-text="'৳'+(delivery=='inside'?inCharge:outCharge)"></span></div></div>
-<div class="flex justify-between font-extrabold text-2xl text-black mb-10"><span class="uppercase tracking-tighter">Total</span><span x-text="'৳'+((qty*price)+(delivery=='inside'?inCharge:outCharge))"></span></div>
-<button type="submit" class="w-full bg-black text-white py-5 font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition">Place Order</button></div>
-</form></main>
 @endsection

@@ -19,7 +19,7 @@
             <h1 class="text-3xl font-bold text-gray-900 mb-6 border-b pb-4">{{ $page->title }}</h1>
             
             <div class="prose prose-lg max-w-none text-gray-700">
-                {!! $page->content !!}
+                {!! clean($page->content) !!}
             </div>
         </div>
 

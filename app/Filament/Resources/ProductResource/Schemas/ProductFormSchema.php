@@ -146,7 +146,9 @@ class ProductFormSchema
 
                                 TextInput::make('slug')
                                     ->required()
-                                    ->unique(Product::class, 'slug', ignoreRecord: true)
+                                    ->unique(Product::class, 'slug', ignoreRecord: true, modifyRuleUsing: function ($rule, callable $get) {
+                                        return $rule->where('client_id', $get('../../client_id'));
+                                    })
                                     ->readOnly(),
                                     
                                 TextInput::make('brand')
@@ -157,7 +159,9 @@ class ProductFormSchema
                                     ->label('SKU / Product Code')
                                     ->placeholder('e.g. TSHIRT-001')
                                     ->required()
-                                    ->unique(ignoreRecord: true) 
+                                    ->unique(ignoreRecord: true, modifyRuleUsing: function ($rule, callable $get) {
+                                        return $rule->where('client_id', $get('../../client_id'));
+                                    }) 
                                     ->live(onBlur: true),
 
                                     

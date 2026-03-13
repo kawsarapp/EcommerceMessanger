@@ -5,11 +5,17 @@ class WhatsAppWebhookController extends Controller{
     protected $chatbot;
     public function __construct(ChatbotService $chatbot){$this->chatbot=$chatbot;}
     public function updateStatus(Request $request){
+        if ($request->header('Authorization') !== 'Bearer ' . env('WA_WEBHOOK_SECRET', 'super-secret-key')) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized Access'], 401);
+        }
         $instanceId=$request->instance_id;$status=$request->status;$client=Client::where('wa_instance_id',$instanceId)->first();
         if($client){$client->update(['wa_status'=>$status]);return response()->json(['success'=>true]);}
         return response()->json(['success'=>false],404);
     }
     public function receiveMessage(Request $request){
+        if ($request->header('Authorization') !== 'Bearer ' . env('WA_WEBHOOK_SECRET', 'super-secret-key')) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized Access'], 401);
+        }
         $instanceId=$request->instance_id;$senderPhone=$request->from;$messageBody=$request->body;$senderName=$request->sender_name??'Customer';$attachmentBase64=$request->attachment; 
         $client=Client::where('wa_instance_id',$instanceId)->where('is_whatsapp_active',true)->first();
         if(!$client) return response()->json(['success'=>false,'message'=>'Bot is offline']);

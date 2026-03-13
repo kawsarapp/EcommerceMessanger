@@ -11,6 +11,22 @@ class AiBrainTab
     public static function schema(): array
     {
         return [
+            Section::make('AI Model Selection (Admin Only)')
+                ->description('Choose which AI to power this specific store.')
+                ->schema([
+                    Select::make('ai_model')
+                        ->label('Select AI Model')
+                        ->options([
+                            'gemini-pro' => 'Google Gemini Pro (Default)',
+                            'gpt-4o' => 'OpenAI GPT-4o',
+                            'gpt-3.5-turbo' => 'OpenAI GPT-3.5 Turbo',
+                            'claude-3-opus' => 'Anthropic Claude 3 Opus',
+                        ])
+                        ->default('gemini-pro')
+                        ->required()
+                        ->visible(fn () => auth()->id() === 1), // Only Superadmin can change
+                ])->visible(fn () => auth()->id() === 1),
+
             Section::make('Knowledge Base')
                 ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')
                 ->schema([

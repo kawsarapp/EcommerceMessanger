@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js'); 
 const qrcode = require('qrcode');
@@ -10,15 +11,20 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 🌟 মেমোরিতে সেশন রাখার অবজেক্ট
 const sessions = {};
+const sessionReadyPromises = {}; // 🌟 Ready ইভেন্ট ট্র্যাক করার জন্য
 
 async function sendWebhookToLaravel(endpoint, data) {
     try {
-        // 🔥 এখানে আপনার লাইভ ওয়েবসাইটের মেইন লিংক বসানো হলো
-        const myDomain = 'https://asianhost.net'; 
+        // 🔥 Environment variable থেকে লাইভ লিংক ও সিক্রেট নেওয়া হলো
+        const myDomain = process.env.APP_URL || 'http://127.0.0.1:8000';
+        const secretKey = process.env.WA_WEBHOOK_SECRET || 'super-secret-key';
 
         await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${secretKey}`
+            },
             body: JSON.stringify(data)
         });
     } catch (error) {
@@ -34,6 +40,13 @@ function initializeWhatsAppClient(instance_id, res = null) {
     }
 
     console.log(`\n🔄 Initializing session for: ${instance_id}`);
+
+    // Promise setup to track when it becomes ready dynamically
+    let resolveReady;
+    sessionReadyPromises[instance_id] = new Promise((resolve) => {
+        resolveReady = resolve;
+    });
+    sessionReadyPromises[instance_id].resolve = resolveReady;
 
     const client = new Client({
         authStrategy: new LocalAuth({ clientId: instance_id }),
@@ -56,9 +69,22 @@ function initializeWhatsAppClient(instance_id, res = null) {
         sessions[instance_id] = client; // মেমোরিতে সেভ করা হলো
         sendWebhookToLaravel('status', { instance_id: instance_id, status: 'connected' });
         
+        // Promise resolve করা হলো যাতে manual send message wait করতে পারে
+        if (sessionReadyPromises[instance_id] && sessionReadyPromises[instance_id].resolve) {
+            sessionReadyPromises[instance_id].resolve();
+        }
+
         // যদি ড্যাশবোর্ড থেকে રিকোয়েস্ট এসে থাকে
         if (res && !res.headersSent) {
             res.json({ success: true, status: 'connected' });
+        }
+    });
+
+    // 🌟 Message create ইভেন্ট ট্র্যাক (যদি নিজের ফোন থেকে মেসেজ দেয়)
+    client.on('message_create', async (msg) => {
+        if (msg.fromMe) {
+            // Optional: Log outgoing mobile app messages to Laravel if needed 
+            // console.log(`📤 Quick reply tracked from mobile to ${msg.to}`);
         }
     });
 
@@ -145,9 +171,10 @@ app.post('/api/send-message', async (req, res) => {
         console.log(`⚠️ Client not in memory. Auto-connecting from LocalAuth files...`);
         client = initializeWhatsAppClient(instance_id);
         
-        // যেহেতু ইনিশিয়ালাইজ হতে ৩-৪ সেকেন্ড সময় লাগে, তাই একটু অপেক্ষা করব
-        console.log("⏳ Waiting 5 seconds for WhatsApp to get Ready...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        console.log("⏳ Waiting dynamically for WhatsApp Ready event...");
+        if (sessionReadyPromises[instance_id]) {
+            await sessionReadyPromises[instance_id]; 
+        }
     }
 
     try {

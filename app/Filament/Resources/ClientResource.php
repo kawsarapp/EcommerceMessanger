@@ -72,7 +72,7 @@ class ClientResource extends Resource
     // --- Permissions ---
     public static function canCreate(): bool 
     { 
-        return false; 
+        return auth()->id() === 1; 
     } 
     
     public static function canDelete(Model $record): bool 

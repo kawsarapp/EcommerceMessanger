@@ -36,7 +36,7 @@
             </div>
 
             <div class="prose prose-sm text-slate-600 mb-8 max-w-none text-sm leading-relaxed">
-                {!! $product->description !!}
+                {!! clean($product->description) !!}
             </div>
 
             <form action="{{ $cleanDomain ? $baseUrl.'/checkout/'.$product->slug : route('shop.checkout', [$client->slug, $product->slug]) }}" method="GET" class="space-y-6">

@@ -42,6 +42,7 @@ class StorefrontTab
                         'grocery'     => 'Supermarket (Grocery & Daily Needs)',
                         'luxury'      => 'Premium Luxury (Jewelry & Watches)',
                         'kids'        => 'Kids Corner (Toys & Baby Products)',
+                        'premium'     => '✨ Ultra Premium VIP (Vibrant & Glassmorphism)',
                     ])
                     ->default('default')
                     ->searchable() // থিম বেশি হলে সার্চ করার সুবিধা

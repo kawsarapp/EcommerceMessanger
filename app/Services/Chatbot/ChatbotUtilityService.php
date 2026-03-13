@@ -25,17 +25,24 @@ class ChatbotUtilityService
         return false;
     }
 
-    public function callLlmChain($messages) {
+    public function callLlmChain($messages, $client = null) {
+        // ১. ক্লায়েন্টের কোন AI মডেল সিলেক্ট করা আছে সেটি চেক করা হচ্ছে। যদি না থাকে তবে ডিফল্ট gemini ধরা হবে।
+        $selectedModel = $client ? ($client->ai_model ?? 'gemini-pro') : 'gemini-pro';
+        
         $geminiKey = env('GEMINI_API_KEY');
-        $openAiKey = env('OPENAI_API_KEY') ?? config('services.openai.api_key');
+        $openAiKey = env('OPENAI_API_KEY');
+        $anthropicKey = env('ANTHROPIC_API_KEY');
 
-        // 🔥 STEP 1: Try Gemini API First
-        if ($geminiKey) {
+        // ==========================================
+        // 🚀 ROUTE 1: Google Gemini Execution
+        // ==========================================
+        if (str_contains($selectedModel, 'gemini')) {
+            if (!$geminiKey) return "⚠️ Gemini API Key is missing in server configuration.";
+            
             try {
                 $systemPrompt = "";
                 $geminiContents = [];
                 
-                // OpenAI format theke Gemini format e convert
                 foreach ($messages as $m) {
                     if ($m['role'] === 'system') {
                         $systemPrompt = is_array($m['content']) ? json_encode($m['content']) : $m['content'];
@@ -60,39 +67,98 @@ class ChatbotUtilityService
                     $geminiContents[] = ['role' => $role, 'parts' => $parts];
                 }
 
-                $geminiPayload = [
+                // মডেল নাম ডাইনামিক করা হলো
+                $modelIdentifier = $selectedModel === 'gemini-pro' ? 'gemini-1.5-flash' : 'gemini-1.5-pro';
+
+                $response = Http::timeout(30)->post("https://generativelanguage.googleapis.com/v1beta/models/{$modelIdentifier}:generateContent?key={$geminiKey}", [
                     'system_instruction' => ['parts' => ['text' => $systemPrompt]],
                     'contents' => $geminiContents,
                     'generationConfig' => ['temperature' => 0.1, 'maxOutputTokens' => 800]
-                ];
-
-                $response = Http::timeout(30)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$geminiKey}", $geminiPayload);
+                ]);
 
                 if ($response->successful() && isset($response->json()['candidates'][0]['content']['parts'][0]['text'])) {
                     return $response->json()['candidates'][0]['content']['parts'][0]['text'];
                 }
-                Log::warning("Gemini API skipped/failed. Response: " . $response->body());
+                Log::warning("Gemini Error: " . $response->body());
+                return "Gemini API Temporary Error. Please try again.";
             } catch (\Exception $e) {
-                Log::warning("Gemini API Error, falling back to OpenAI: " . $e->getMessage());
+                Log::error("Gemini Critical Error: " . $e->getMessage());
+                return "Error connecting to AI Server.";
             }
         }
 
-        // 🔥 STEP 2: Fallback to ChatGPT if Gemini fails or Key is missing
-        if ($openAiKey) {
+        // ==========================================
+        // 🚀 ROUTE 2: OpenAI (ChatGPT) Execution
+        // ==========================================
+        if (str_contains($selectedModel, 'gpt')) {
+            if (!$openAiKey) return "⚠️ OpenAI API Key is missing in server configuration.";
+            
             try {
                 $response = Http::withToken($openAiKey)->timeout(40)->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => 'gpt-4o-mini',
+                    // ডাইনামিক GPT মডেল
+                    'model' => $selectedModel, 
                     'messages' => $messages,
                     'max_tokens' => 800, 
                     'temperature' => 0.1, 
                 ]);
-                return $response->json()['choices'][0]['message']['content'] ?? null;
+                
+                if ($response->successful() && isset($response->json()['choices'][0]['message']['content'])) {
+                    return $response->json()['choices'][0]['message']['content'];
+                }
+                Log::warning("OpenAI Error: " . $response->body());
+                return "OpenAI API returned an error.";
             } catch (\Exception $e) {
-                Log::error("OpenAI Fallback Error: " . $e->getMessage());
+                Log::error("OpenAI Exception: " . $e->getMessage());
+                return "OpenAI Connection failed.";
             }
         }
 
-        return null;
+        // ==========================================
+        // 🚀 ROUTE 3: Anthropic (Claude) Execution
+        // ==========================================
+        if (str_contains($selectedModel, 'claude')) {
+            if (!$anthropicKey) return "⚠️ Claude API Key is missing in server configuration.";
+            
+            try {
+                // Claude এর System prompt আলাদা হ্যান্ডেল করতে হয়
+                $systemPrompt = "";
+                $claudeMessages = [];
+                
+                foreach ($messages as $m) {
+                    if ($m['role'] === 'system') {
+                        $systemPrompt = $m['content'];
+                        continue;
+                    }
+                    $claudeMessages[] = [
+                        'role' => $m['role'],
+                        'content' => is_array($m['content']) ? "Image Processing Not Supported Yet" : $m['content']
+                    ];
+                }
+
+                $response = Http::withHeaders([
+                    'x-api-key' => $anthropicKey,
+                    'anthropic-version' => '2023-06-01',
+                    'content-type' => 'application/json'
+                ])->timeout(40)->post('https://api.anthropic.com/v1/messages', [
+                    'model' => 'claude-3-opus-20240229', 
+                    'system' => $systemPrompt,
+                    'messages' => $claudeMessages,
+                    'max_tokens' => 800,
+                    'temperature' => 0.1
+                ]);
+
+                if ($response->successful() && isset($response->json()['content'][0]['text'])) {
+                    return $response->json()['content'][0]['text'];
+                }
+                Log::warning("Claude Error: " . $response->body());
+                return "Claude API returned an error.";
+            } catch (\Exception $e) {
+                Log::error("Claude Exception: " . $e->getMessage());
+                return "Claude Connection failed.";
+            }
+        }
+
+        return "⚠️ Selected AI Model is invalid or not configured properly.";
     }
 
     public function analyzeImageWithGoogleVision($base64Image) {
