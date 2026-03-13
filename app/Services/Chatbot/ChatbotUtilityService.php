@@ -70,8 +70,8 @@ class ChatbotUtilityService
 
                 // মডেল নাম ডাইনামিক করা হলো
                 $modelIdentifier = match($selectedModel) {
-                    'gemini-pro'      => 'gemini-1.5-flash',      // Fast & cheap
-                    'gemini-pro-full' => 'gemini-1.5-pro',        // Powerful
+                    'gemini-pro'      => 'gemini-1.5-flash',   // Fast & free
+                    'gemini-pro-full' => 'gemini-2.0-flash',   // Latest & powerful
                     default           => 'gemini-1.5-flash',
                 };
 

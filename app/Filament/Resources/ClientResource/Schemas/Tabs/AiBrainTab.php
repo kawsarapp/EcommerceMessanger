@@ -18,8 +18,8 @@ class AiBrainTab
                         ->label('AI Model সিলেক্ট করুন')
                         ->options([
                             // ── Google Gemini ──────────────────────────
-                            'gemini-pro'      => '🟦 Google Gemini Pro (Default – Fast)',
-                            'gemini-pro-full' => '🟦 Google Gemini 1.5 Pro (Powerful)',
+                            'gemini-pro'      => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
+                            'gemini-pro-full' => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
 
                             // ── OpenAI ────────────────────────────────
                             'gpt-4o'          => '🟩 OpenAI GPT-4o (Best Quality)',
