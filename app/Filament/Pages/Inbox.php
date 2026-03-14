@@ -128,7 +128,7 @@ class Inbox extends Page
         // 🚀 হোয়াটসঅ্যাপে পাঠানো
         if ($platform === 'whatsapp') {
             if ($client && $client->wa_instance_id) {
-                \Illuminate\Support\Facades\Http::post('http://127.0.0.1:3001/api/send-message', [
+                \Illuminate\Support\Facades\Http::post(config('services.whatsapp.api_url') . '/api/send-message', [
                     'instance_id' => $client->wa_instance_id,
                     'to' => $this->selectedSender,
                     'message' => $message,

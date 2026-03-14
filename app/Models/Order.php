@@ -66,7 +66,7 @@ class Order extends Model
 
                         // Node.js সার্ভারে মেসেজ পাঠানোর রিকোয়েস্ট
                         try {
-                            Http::post('http://127.0.0.1:3001/api/send-message', [
+                            Http::post(config('services.whatsapp.api_url') . '/api/send-message', [
                                 'instance_id' => $client->wa_instance_id,
                                 'to' => $cleanNumber,
                                 'message' => $message

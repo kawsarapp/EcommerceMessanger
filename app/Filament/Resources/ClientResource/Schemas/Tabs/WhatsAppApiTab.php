@@ -63,7 +63,7 @@ class WhatsAppApiTab
                                 }
                                 try {
                                     $instanceId = 'client_' . $record->id;
-                                    $response = Http::post('http://127.0.0.1:3001/api/generate-qr', ['instance_id' => $instanceId]);
+                                    $response = Http::post(config('services.whatsapp.api_url') . '/api/generate-qr', ['instance_id' => $instanceId]);
                                     if ($response->successful()) {
                                         $data = $response->json();
                                         if (isset($data['status']) && $data['status'] === 'connected') {
@@ -92,7 +92,7 @@ class WhatsAppApiTab
                                 if ($record) {
                                     try {
                                         $instanceId = $record->wa_instance_id ?? ('client_' . $record->id);
-                                        Http::post('http://127.0.0.1:3001/api/disconnect', ['instance_id' => $instanceId]);
+                                        Http::post(config('services.whatsapp.api_url') . '/api/disconnect', ['instance_id' => $instanceId]);
                                     } catch (\Exception $e) {}
                                     
                                     $record->update(['wa_status' => 'disconnected', 'wa_instance_id' => null]);

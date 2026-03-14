@@ -57,13 +57,13 @@ class WhatsAppWebhookController extends Controller{
                 }
                 $aiReply=preg_replace('/\[CAROUSEL:\s*([^\]]+)\]/i','',$aiReply);$aiReply=trim(preg_replace('/\[QUICK_REPLIES:\s*([^\]]+)\]/i','',$aiReply));
                 
-                if(!empty($aiReply)){Http::post('http://127.0.0.1:3001/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>$aiReply]);}
+                if(!empty($aiReply)){Http::post(config('services.whatsapp.api_url') . '/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>$aiReply]);}
                 foreach($outgoingImages as $index=>$imgUrl){
                     try{
                         $imageContent=file_get_contents($imgUrl);
                         if($imageContent!==false){
                             $mimeType=(new \finfo(FILEINFO_MIME_TYPE))->buffer($imageContent);$base64Image=base64_encode($imageContent);
-                            Http::post('http://127.0.0.1:3001/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>'','media'=>['mimetype'=>$mimeType,'data'=>$base64Image,'filename'=>'product_image_'.$index]]);
+                            Http::post(config('services.whatsapp.api_url') . '/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>'','media'=>['mimetype'=>$mimeType,'data'=>$base64Image,'filename'=>'product_image_'.$index]]);
                         }
                     }catch(\Exception $imgEx){}
                 }
