@@ -7,6 +7,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\TextInput;
 
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
+
 class StorefrontTab
 {
     public static function schema(): array
@@ -31,7 +34,6 @@ class StorefrontTab
                 ])->columns(2),
 
             Section::make('Theme & Announcements')->schema([
-                // 🔥 NEW: Expanded Theme Options
                 Select::make('theme_name')
                     ->label('Storefront Theme')
                     ->options([
@@ -45,7 +47,7 @@ class StorefrontTab
                         'premium'     => '✨ Ultra Premium VIP (Vibrant & Glassmorphism)',
                     ])
                     ->default('default')
-                    ->searchable() // থিম বেশি হলে সার্চ করার সুবিধা
+                    ->searchable()
                     ->required()
                     ->helperText('Choose a layout for your store.'),
 
@@ -60,6 +62,43 @@ class StorefrontTab
                     ->helperText('Shows at the top of your shop header.')
                     ->columnSpanFull(),
             ])->columns(2),
+
+            Section::make('🛒 Shop Display Controls')
+                ->description('আপনার শপে কোন বাটনগুলো দেখাবে তা নিয়ন্ত্রণ করুন।')
+                ->schema([
+                    Toggle::make('show_order_button')
+                        ->label('Show "Buy Now / Order" Button')
+                        ->helperText('বন্ধ করলে শুধু Chat Button দেখাবে, Order Button থাকবে না।')
+                        ->default(true)
+                        ->onColor('success'),
+                    
+                    Toggle::make('show_chat_button')
+                        ->label('Show Chat Button')
+                        ->helperText('চালু করলে WhatsApp/Messenger চ্যাট বাটন প্রোডাক্ট পেজে দেখাবে।')
+                        ->default(true)
+                        ->onColor('success'),
+                    
+                    Toggle::make('show_terms_checkbox')
+                        ->label('Show Terms & Conditions at Checkout')
+                        ->helperText('চালু করলে চেকআউটে কাস্টমারকে Terms & Conditions এ সম্মতি দিতে হবে।')
+                        ->default(false)
+                        ->onColor('warning')
+                        ->live(),
+                    
+                    TextInput::make('terms_conditions_url')
+                        ->label('Terms & Conditions Page URL')
+                        ->placeholder('https://example.com/terms')
+                        ->url()
+                        ->visible(fn ($get) => $get('show_terms_checkbox'))
+                        ->helperText('যদি কোনো URL দেন, তাহলে "Terms & Conditions" লেখায় ক্লিক করলে সেই পেজ ওপেন হবে।'),
+
+                    Textarea::make('terms_conditions_text')
+                        ->label('Custom Terms Text (Optional)')
+                        ->placeholder('অর্ডার করার পর ক্যান্সেল করা যাবে না...')
+                        ->rows(2)
+                        ->visible(fn ($get) => $get('show_terms_checkbox'))
+                        ->helperText('শর্তের একটি ছোট বর্ণনা। এটি চেকবক্সের নিচে দেখাবে।'),
+                ])->columns(2),
         ];
     }
-}
+}

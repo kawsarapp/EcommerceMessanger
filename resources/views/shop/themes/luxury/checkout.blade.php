@@ -12,7 +12,14 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     price: {{$product->sale_price ?? $product->regular_price}}, 
     deliveryInside: {{$client->delivery_charge_inside ?? 60}}, 
     deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, 
-    get total() { return (this.qty * this.price) + (this.insideDhaka ? this.deliveryInside : this.deliveryOutside); } 
+    couponCode: '',
+    couponDiscount: 0,
+    couponApplied: false,
+    couponError: '',
+    termsAccepted: true,
+    get subtotal() { return this.qty * this.price; },
+    get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
+    get total() { return this.subtotal + this.delivery - this.couponDiscount; } 
 }">
     
     <div class="mb-16 md:mb-24 text-center">
@@ -110,7 +117,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     </div>
                     <div class="flex justify-between">
                         <span>Transit</span>
-                        <span class="text-gray-300 font-light text-xs tracking-widest">৳<span x-text="insideDhaka ? deliveryInside : deliveryOutside"></span></span>
+                        <span class="text-gray-300 font-light text-xs tracking-widest">৳<span x-text="delivery"></span></span>
                     </div>
                     
                     <div class="border-t border-white/5 pt-8 mt-8 flex justify-between items-end text-white text-xs">

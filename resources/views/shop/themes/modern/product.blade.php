@@ -94,7 +94,12 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                         <button type="button" disabled class="w-full sm:w-2/3 bg-gray-200 text-gray-500 py-5 font-black text-sm uppercase tracking-[0.2em] cursor-not-allowed border border-gray-200">Out of Stock</button>
                     @else
-                        <button type="submit" class="w-full sm:w-2/3 bg-black text-white py-5 font-black text-sm uppercase tracking-[0.2em] hover:bg-gray-900 hover:shadow-2xl transition duration-300">Proceed to Checkout</button>
+                        @if($client->show_order_button ?? true)
+                            <button type="submit" class="w-full sm:w-2/3 bg-black text-white py-5 font-black text-sm uppercase tracking-[0.2em] hover:bg-gray-900 hover:shadow-2xl transition duration-300">Proceed to Checkout</button>
+                            @endif
+
+                            {{-- Chat Button --}}
+                            @include('shop.partials.chat-button', ['client' => $client])
                     @endif
                 </div>
 
@@ -126,4 +131,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
     </div>
 </main>
+
+    {{-- Dynamic Reviews Section --}}
+    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+
 @endsection

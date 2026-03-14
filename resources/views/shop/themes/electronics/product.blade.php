@@ -162,4 +162,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
 </main>
+
+    {{-- Dynamic Reviews Section --}}
+    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+
 @endsection

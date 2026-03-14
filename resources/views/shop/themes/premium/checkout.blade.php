@@ -4,7 +4,14 @@
 @section('content')
 @php $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); @endphp
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="{ insideDhaka: true, qty: {{request('qty',1)}}, price: {{$product->sale_price ?? $product->regular_price}}, deliveryInside: {{$client->delivery_charge_inside ?? 60}}, deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, get total() { return (this.qty * this.price) + (this.insideDhaka ? this.deliveryInside : this.deliveryOutside); } }">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="{ insideDhaka: true, qty: {{request('qty',1)}}, price: {{$product->sale_price ?? $product->regular_price}}, deliveryInside: {{$client->delivery_charge_inside ?? 60}}, deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, couponCode: '',
+    couponDiscount: 0,
+    couponApplied: false,
+    couponError: '',
+    termsAccepted: true,
+    get subtotal() { return this.qty * this.price; },
+    get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
+    get total() { return this.subtotal + this.delivery - this.couponDiscount; } }">
     
     <div class="mb-12 text-center max-w-2xl mx-auto">
         <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">Complete Your Order</h1>
@@ -113,7 +120,7 @@
                     </div>
                     <div class="flex justify-between items-center text-gray-600 font-medium">
                         <span>Delivery Fee</span>
-                        <span class="text-gray-900 font-bold text-lg">৳<span x-text="insideDhaka ? deliveryInside : deliveryOutside"></span></span>
+                        <span class="text-gray-900 font-bold text-lg">৳<span x-text="delivery"></span></span>
                     </div>
                     
                     <div class="border-t border-gray-200 pt-6 mt-4 flex justify-between items-center">

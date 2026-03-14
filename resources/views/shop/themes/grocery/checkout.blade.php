@@ -12,7 +12,14 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     price: {{$product->sale_price ?? $product->regular_price}}, 
     deliveryInside: {{$client->delivery_charge_inside ?? 60}}, 
     deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, 
-    get total() { return (this.qty * this.price) + (this.insideDhaka ? this.deliveryInside : this.deliveryOutside); } 
+    couponCode: '',
+    couponDiscount: 0,
+    couponApplied: false,
+    couponError: '',
+    termsAccepted: true,
+    get subtotal() { return this.qty * this.price; },
+    get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
+    get total() { return this.subtotal + this.delivery - this.couponDiscount; } 
 }">
     
     <div class="mb-10 lg:mb-16">
@@ -158,7 +165,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     </div>
                     <div class="flex justify-between items-center text-slate-500 font-bold bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                         <span>Delivery Fee</span>
-                        <span class="text-slate-800 text-lg">৳<span x-text="insideDhaka ? deliveryInside : deliveryOutside"></span></span>
+                        <span class="text-slate-800 text-lg">৳<span x-text="delivery"></span></span>
                     </div>
                     
                     <div class="pt-4 mt-2">

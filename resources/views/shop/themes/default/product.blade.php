@@ -67,10 +67,30 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @endif
                     </div>
 
-                    <div class="flex text-primary">
-                      <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                      <span class="text-slate-400 text-sm ml-2 font-medium">(Premium Quality)</span>
+                    @php
+                        $reviews = $product->reviews()->where('is_visible', true)->get();
+                        $avgRating = $reviews->avg('rating') ?? 0;
+                        $totalReviews = $reviews->count();
+                    @endphp
+                    <div class="flex items-center gap-2">
+                        <div class="flex text-amber-400">
+                            @for($i = 1; $i <= 5; $i++)
+                                @if($i <= floor($avgRating))
+                                    <i class="fas fa-star"></i>
+                                @elseif($i - $avgRating < 1 && $avgRating > 0)
+                                    <i class="fas fa-star-half-alt"></i>
+                                @else
+                                    <i class="far fa-star text-slate-200"></i>
+                                @endif
+                            @endfor
+                        </div>
+                        @if($totalReviews > 0)
+                            <span class="text-slate-400 text-sm ml-1 font-medium">({{ $totalReviews }} {{ $totalReviews > 1 ? 'Reviews' : 'Review' }})</span>
+                        @else
+                            <span class="text-slate-400 text-sm ml-1 font-medium">(No reviews yet)</span>
+                        @endif
                     </div>
+
 
                     <div class="flex items-end gap-3 mt-6">
                         <span class="text-4xl font-extrabold text-slate-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
@@ -126,9 +146,14 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <button type="button" disabled class="flex-1 h-14 bg-slate-100 text-slate-400 rounded-xl font-bold uppercase tracking-widest text-sm cursor-not-allowed">Unavailable</button>
                         @else
+                            @if($client->show_order_button ?? true)
                             <button type="submit" class="flex-1 h-14 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-sm premium-transition hover:bg-slate-800 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="fas fa-shopping-bag text-base"></i> Buy Now
                             </button>
+                            @endif
+                            
+                            {{-- Chat Button --}}
+                            @include('shop.partials.chat-button', ['client' => $client])
                         @endif
                     </div>
                     
@@ -196,6 +221,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         @endif
 
     </div>
+
+    {{-- Dynamic Reviews Section --}}
+    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
 </main>
 @endsection

@@ -139,4 +139,8 @@
         </div>
     </div>
 </main>
+
+    {{-- Dynamic Reviews Section --}}
+    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+
 @endsection

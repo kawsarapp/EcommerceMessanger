@@ -12,7 +12,27 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     price: {{$product->sale_price ?? $product->regular_price}}, 
     deliveryInside: {{$client->delivery_charge_inside ?? 60}}, 
     deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, 
-    get total() { return (this.qty * this.price) + (this.insideDhaka ? this.deliveryInside : this.deliveryOutside); } 
+    couponCode: '',
+    couponDiscount: 0,
+    couponApplied: false,
+    couponError: '',
+    termsAccepted: {{ ($client->show_terms_checkbox ?? false) ? 'false' : 'true' }},
+    get subtotal() { return this.qty * this.price; },
+    get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
+    get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+    applyCoupon() {
+        if (!this.couponCode.trim()) { this.couponError = 'Please enter a coupon code'; return; }
+        this.couponError = '';
+        fetch('{{ $baseUrl }}/api/validate-coupon', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+            body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
+        }).then(r => r.json()).then(data => {
+            if (data.valid) { this.couponDiscount = data.discount; this.couponApplied = true; this.couponError = ''; }
+            else { this.couponError = data.message || 'Invalid coupon code'; this.couponDiscount = 0; }
+        }).catch(() => { this.couponError = 'Could not verify coupon'; });
+    },
+    removeCoupon() { this.couponCode = ''; this.couponDiscount = 0; this.couponApplied = false; this.couponError = ''; }
 }">
     
     <div class="mb-10 text-center sm:text-left">
@@ -103,6 +123,11 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     </div>
                 </div>
 
+                <hr class="border-slate-100">
+
+                {{-- Checkout Extras: Coupon & Terms --}}
+                @include('shop.partials.checkout-extras', ['client' => $client, 'product' => $product])
+
                 <!-- Submit Section -->
                 <div class="pt-6">
                     <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg uppercase tracking-widest hover:bg-primary premium-transition hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-3">
@@ -152,7 +177,11 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     </div>
                     <div class="flex justify-between items-center">
                         <span>Delivery Fee</span>
-                        <span class="text-slate-900">৳<span x-text="insideDhaka ? deliveryInside : deliveryOutside"></span></span>
+                        <span class="text-slate-900">৳<span x-text="delivery"></span></span>
+                    </div>
+                    <div x-show="couponApplied" class="flex justify-between items-center text-emerald-600">
+                        <span><i class="fas fa-tag mr-1"></i> Coupon Discount</span>
+                        <span>-৳<span x-text="couponDiscount"></span></span>
                     </div>
                     
                     <div class="pt-6 mt-4 border-t border-slate-200">
