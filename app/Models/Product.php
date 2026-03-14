@@ -112,42 +112,47 @@ class Product extends Model
 
     public static function applyWatermark($path, $sku)
     {
-        if (!$path || !$sku || $sku === 'N/A') return;
-        
+        if (!$path || !$sku || $sku === 'N/A')
+            return;
+
         $fullPath = storage_path('app/public/' . $path);
-        if (!file_exists($fullPath)) return;
+        if (!file_exists($fullPath))
+            return;
 
         try {
             // Intervention Image v3 implementation without Facades
             $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
             $img = $manager->read($fullPath);
-            
+
             $watermarkText = 'SKU: ' . $sku;
-            
+
             // Note: If fonts/roboto.ttf is missing, this might throw an error, 
             // but we are catching \Throwable so it won't crash the server.
-            $img->text($watermarkText, $img->width() - 20, $img->height() - 20, function($font) {
+            $img->text($watermarkText, $img->width() - 20, $img->height() - 20, function ($font) {
                 if (file_exists(public_path('fonts/roboto.ttf'))) {
                     $font->filename(public_path('fonts/roboto.ttf'));
                 }
-                $font->size(25);
+                $font->size(45);
                 $font->color('rgba(0, 0, 0, 0.6)'); // Added opacity so it looks like a watermark
                 $font->align('right');
                 $font->valign('bottom');
             });
-            
+
             $img->save($fullPath);
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Watermark Error on Publish: " . $e->getMessage());
         }
     }
 
     public static function applyWatermarkToGallery($gallery, $sku)
     {
-        if (empty($gallery)) return;
-        
+        if (empty($gallery))
+            return;
+
         $galleryArray = is_string($gallery) ? json_decode($gallery, true) : $gallery;
-        if (!is_array($galleryArray)) return;
+        if (!is_array($galleryArray))
+            return;
 
         foreach ($galleryArray as $path) {
             self::applyWatermark($path, $sku);
@@ -172,7 +177,7 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
-    
+
     public function reviews()
     {
         return $this->hasMany(Review::class);

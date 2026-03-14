@@ -19,6 +19,7 @@ class WhatsAppWebhookController extends Controller{
         $instanceId=$request->instance_id;$senderPhone=$request->from;$messageBody=$request->body;$senderName=$request->sender_name??'Customer';$attachmentBase64=$request->attachment; 
         $client=Client::where('wa_instance_id',$instanceId)->where('is_whatsapp_active',true)->first();
         if(!$client) return response()->json(['success'=>false,'message'=>'Bot is offline']);
+        Log::info("📨 INCOMING WhatsApp | Shop: {$client->shop_name} | From: {$senderPhone} ({$senderName}) | Msg: " . substr($messageBody, 0, 100));
         $attachmentUrl=null;
         if($attachmentBase64){
             try{
@@ -70,7 +71,7 @@ class WhatsAppWebhookController extends Controller{
                 
                 if($conversation){
                     $conversation->update(['bot_response'=>$aiReply]);
-                    Log::info("✅ WhatsApp Conversation Logged: Sender {$senderPhone}");
+                    Log::info("✅ OUTGOING WhatsApp | Shop: {$client->shop_name} | To: {$senderPhone} | AI: " . substr($aiReply, 0, 100));
                 }
             }
         }catch(\Exception $e){Log::error("WA Webhook - AI Error: ".$e->getMessage());}
