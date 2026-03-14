@@ -27,6 +27,32 @@ class InventoryService
             fn($w) => mb_strlen($w) > 2 && !in_array($w, $stopWords)
         );
 
+        // ==========================================
+        // 🔥 SaaS Feature: REAL-TIME EXTERNAL API LOOKUP
+        // ==========================================
+        if (!empty($client->external_api_url)) {
+            try {
+                $searchQuery = implode(' ', $keywords);
+                $queryStr = http_build_query(['q' => $searchQuery, 'buyer_message' => $safeMessage]);
+                $url = rtrim($client->external_api_url, '/') . '?' . $queryStr;
+                
+                $pendingRequest = \Illuminate\Support\Facades\Http::timeout(10);
+                if (!empty($client->external_product_api_key)) {
+                    $pendingRequest = $pendingRequest->withToken($client->external_product_api_key);
+                }
+
+                $response = $pendingRequest->get($url);
+                if ($response->successful() && is_array($response->json())) {
+                    // API returns JSON, just convert arrays to JSON strings and return
+                    // Assume the external API returns a format similar to our local mapped format
+                    return json_encode(array_slice($response->json(), 0, 8), JSON_UNESCAPED_UNICODE);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("External API Sync failed for Client ID {$client->id}: " . $e->getMessage());
+                // Fallback to local DB if API fails
+            }
+        }
+
         $query = Product::where('client_id', $client->id)
             ->where('stock_status', 'in_stock');
 

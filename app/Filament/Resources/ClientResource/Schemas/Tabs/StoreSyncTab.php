@@ -11,6 +11,23 @@ class StoreSyncTab
     public static function schema(): array
     {
         return [
+            Section::make('Real-time AI Product Lookup (SaaS Feature)')
+                ->description('আপনার কাস্টম বা ওয়ার্ডপ্রেস সাইটের সাথে রিয়েল-টাইম কানেকশন তৈরি করুন। AI আপনার সাইটের লাইভ ডেটা নিয়ে কাস্টমারকে উত্তর দিবে!')
+                ->icon('heroicon-o-bolt')
+                ->schema([
+                    TextInput::make('external_api_url')
+                        ->label('External API URL')
+                        ->placeholder('e.g. https://yourwebsite.com/wp-json/ai-bot/v1/search')
+                        ->helperText('এই লিংকে AI সার্চ কোয়ারি পাঠাবে (যেমন: ?q=shirt) এবং আপনার সার্ভার JSON রিটার্ন করবে।')
+                        ->url(),
+                    TextInput::make('external_product_api_key')
+                        ->label('Secret API Key (Optional)')
+                        ->password()
+                        ->revealable()
+                        ->placeholder('Bearer Token or Secret Key')
+                        ->helperText('আপনার এন্ডপয়েন্ট প্রটেক্টেড থাকলে এখানে তার টোকেন দিন।'),
+                ])->columns(2),
+
             Section::make('WooCommerce Sync (WordPress)')
                 ->description('আপনার ওয়ার্ডপ্রেস ওয়েবসাইটের প্রোডাক্ট এক ক্লিকে এখানে ইমপোর্ট করুন।')
                 ->collapsed()
