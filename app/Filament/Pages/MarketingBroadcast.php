@@ -62,13 +62,23 @@ class MarketingBroadcast extends Page implements HasForms
     {
         $data=$this->form->getState();$clientId=auth()->id()===1?Client::first()?->id:auth()->user()->client->id??null;
         if(!$clientId){Notification::make()->title('Error: Shop not found!')->danger()->send();return;}
-        $client=Client::find($clientId);$platform=$data['platform'];$audience=$data['audience'];$message=$data['message'];$image=$data['image']??null;
-        
-        $is24h = $data['is_24h_only'] ?? false;
-        $btnText = $data['btn_text'] ?? null;
-        $btnUrl = $data['btn_url'] ?? null;
+        $client = Client::find($clientId);
 
+        // ✅ Null-safe access — Undefined array key bug fix
+        $platform  = $data['platform']  ?? null;
+        $audience  = $data['audience']  ?? null;
+        $message   = $data['message']   ?? null;
+        $image     = $data['image']     ?? null;
+        $is24h     = $data['is_24h_only'] ?? false;
+        $btnText   = $data['btn_text']  ?? null;
+        $btnUrl    = $data['btn_url']   ?? null;
         $customWaNumbers = $data['custom_wa_numbers'] ?? null;
+
+        // ✅ Early validation
+        if (!$platform || !$audience || !$message) {
+            Notification::make()->title('⚠️ Required fields missing!')->body('Platform, Audience এবং Message অবশ্যই পূরণ করুন।')->warning()->send();
+            return;
+        }
 
         $finalTargets=[];
 
@@ -115,24 +125,40 @@ class MarketingBroadcast extends Page implements HasForms
         if(empty($finalTargets)){Notification::make()->title('No customers found in this category!')->warning()->send();return;}
 
         // ২. ব্রডকাস্ট সেন্ড করা
-        $successCount=0;$messengerService=app(MessengerResponseService::class);$imgUrl=$image?asset('storage/'.$image):null;
-        
-        foreach($finalTargets as $target){
-            $personalizedMsg=str_replace(['{{name}}', '{{shop}}'],[$target['name'], $client->shop_name],$message);
-            try{
-                if($target['platform']==='messenger'&&$client->fb_page_token){
-                    $messengerService->sendMessengerMessage($target['id'],$personalizedMsg,$client->fb_page_token,$imgUrl,[],$btnText,$btnUrl);
+        $successCount = 0;
+        $messengerService = app(MessengerResponseService::class);
+        $imgUrl = $image ? asset('storage/' . $image) : null;
+        $waApiUrl = config('services.whatsapp.api_url');
+
+        foreach ($finalTargets as $target) {
+            $personalizedMsg = str_replace(['{{name}}', '{{shop}}'], [$target['name'], $client->shop_name], $message);
+            try {
+                if ($target['platform'] === 'messenger' && $client->fb_page_token) {
+                    $messengerService->sendMessengerMessage($target['id'], $personalizedMsg, $client->fb_page_token, $imgUrl, [], $btnText, $btnUrl);
                     $successCount++;
-                }elseif($target['platform']==='whatsapp'&&$client->wa_instance_id){
-                    if($image){
-                        $imgContent=file_get_contents(storage_path('app/public/'.$image));$mime=(new \finfo(FILEINFO_MIME_TYPE))->buffer($imgContent);$base64=base64_encode($imgContent);
-                        Http::post('http://127.0.0.1:3001/api/send-message',['instance_id'=>$client->wa_instance_id,'to'=>$target['id'],'message'=>$personalizedMsg,'media'=>['mimetype'=>$mime,'data'=>$base64,'filename'=>'offer.jpg']]);
-                    }else{
-                        Http::post('http://127.0.0.1:3001/api/send-message',['instance_id'=>$client->wa_instance_id,'to'=>$target['id'],'message'=>$personalizedMsg]);
+                } elseif ($target['platform'] === 'whatsapp' && $client->wa_instance_id) {
+                    if ($image) {
+                        $imgContent = file_get_contents(storage_path('app/public/' . $image));
+                        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($imgContent);
+                        $base64 = base64_encode($imgContent);
+                        Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                            'instance_id' => $client->wa_instance_id,
+                            'to'          => $target['id'],
+                            'message'     => $personalizedMsg,
+                            'media'       => ['mimetype' => $mime, 'data' => $base64, 'filename' => 'offer.jpg'],
+                        ]);
+                    } else {
+                        Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                            'instance_id' => $client->wa_instance_id,
+                            'to'          => $target['id'],
+                            'message'     => $personalizedMsg,
+                        ]);
                     }
                     $successCount++;
                 }
-            }catch(\Exception $e){Log::error("Broadcast Error: ".$e->getMessage());}
+            } catch (\Exception $e) {
+                Log::error("Broadcast Error: " . $e->getMessage());
+            }
         }
 
         $this->form->fill();
