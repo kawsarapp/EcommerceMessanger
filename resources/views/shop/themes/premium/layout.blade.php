@@ -132,6 +132,5 @@
         </div>
     </footer>
     @include('shop.partials.floating-chat', ['client' => $client])
-
 </body>
 </html>
