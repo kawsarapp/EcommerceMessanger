@@ -9,6 +9,7 @@ use Filament\Forms\Components\TextInput;
 
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
+use App\Services\ImageOptimizer;
 
 class StorefrontTab
 {
@@ -23,14 +24,32 @@ class StorefrontTab
                         ->image()
                         ->avatar()
                         ->directory('shops/logos')
-                        ->maxSize(2048),
+                        ->maxSize(3072)
+                        ->saveUploadedFileUsing(function ($file) {
+                            try {
+                                return (new ImageOptimizer())->optimize($file, 'shops/logos', 'shop_logo');
+                            } catch (\Exception $e) {
+                                $filename = \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+                                $file->storeAs('shops/logos', $filename, 'public');
+                                return 'shops/logos/' . $filename;
+                            }
+                        }),
                     
                     FileUpload::make('banner')
                         ->label('Cover Banner (Wide)')
                         ->image()
                         ->directory('shops/banners')
-                        ->maxSize(5120)
-                        ->columnSpanFull(),
+                        ->maxSize(8192)
+                        ->columnSpanFull()
+                        ->saveUploadedFileUsing(function ($file) {
+                            try {
+                                return (new ImageOptimizer())->optimize($file, 'shops/banners', 'shop_banner');
+                            } catch (\Exception $e) {
+                                $filename = \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+                                $file->storeAs('shops/banners', $filename, 'public');
+                                return 'shops/banners/' . $filename;
+                            }
+                        }),
                 ])->columns(2),
 
             Section::make('Theme & Announcements')->schema([

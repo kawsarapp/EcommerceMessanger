@@ -51,7 +51,7 @@ class ShopProductService
                 break;
         }
 
-        return $query->with('category')->paginate(12)->withQueryString();
+        return $query->with(['category', 'client'])->paginate(12)->withQueryString();
     }
 
     /**
@@ -75,7 +75,9 @@ class ShopProductService
     {
         return Product::where('client_id', $clientId)
             ->where('slug', $productSlug)
-            ->with(['category'])
+            ->with(['category', 'client', 'reviews' => function($q) {
+                $q->where('is_visible', true)->latest();
+            }])
             ->first();
     }
 
@@ -88,6 +90,7 @@ class ShopProductService
             ->where('category_id', $categoryId)
             ->where('id', '!=', $excludeId)
             ->where('stock_status', 'in_stock')
+            ->with(['category', 'client'])
             ->inRandomOrder()
             ->take(4)
             ->get();

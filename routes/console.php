@@ -10,3 +10,12 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('cart:remind')->everyFiveMinutes();
+
+// প্রতি সোমবার রাত ৩টায় database cleanup (auto, non-interactive)
+Schedule::command('system:optimize --db')->weeklyOn(1, '03:00');
+
+// প্রতি মাসের ১ তারিখে image optimization
+Schedule::command('system:optimize --images')->monthlyOn(1, '02:00');
+
+// Laravel built-in cleanup
+Schedule::command('queue:prune-batches --hours=48')->daily();

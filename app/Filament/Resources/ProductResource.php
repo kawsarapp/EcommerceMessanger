@@ -38,13 +38,15 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        $query = parent::getEloquentQuery()->with(['client', 'category']);
+
         // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা দেখবে
         if (auth()->user()?->isSuperAdmin()) { 
-            return parent::getEloquentQuery();
+            return $query;
         }
 
-        return parent::getEloquentQuery()->whereHas('client', function ($query) {
-            $query->where('user_id', auth()->id());
+        return $query->whereHas('client', function ($q) {
+            $q->where('user_id', auth()->id());
         });
     }
 

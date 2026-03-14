@@ -1,9 +1,6 @@
-<?php
-
-namespace App\Filament\Resources\ProductResource\Schemas;
-
 use App\Models\Product;
 use App\Models\Client;
+use App\Services\ImageOptimizer;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
@@ -15,8 +12,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Group;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
+
 class ProductFormSchema
 {
     public static function schema(): array
@@ -38,7 +35,21 @@ class ProductFormSchema
                             ->directory('products/thumbnails')
                             ->visibility('public')
                             ->required()
-                            ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে।'),
+                            ->maxSize(5120) // 5MB max upload size
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+                            ->helperText('বট এই ছবিটি কাস্টমারকে চ্যাটে পাঠাবে। Auto compressed to WebP.')
+                            ->saveUploadedFileUsing(function ($file, $get) {
+                                try {
+                                    $optimizer = new ImageOptimizer();
+                                    return $optimizer->optimize($file, 'products/thumbnails', 'product_thumbnail');
+                                } catch (\Exception $e) {
+                                    // Fallback: সাধারণভাবে save করো
+                                    $filename = \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+                                    $file->storeAs('products/thumbnails', $filename, 'public');
+                                    return 'products/thumbnails/' . $filename;
+                                }
+                            }),
+
 
                         FileUpload::make('gallery')
                             ->label('Product Gallery (Max 4 Images)')
@@ -48,7 +59,19 @@ class ProductFormSchema
                             ->reorderable()
                             ->disk('public')
                             ->directory('products/gallery')
-                            ->visibility('public'),
+                            ->visibility('public')
+                            ->maxSize(5120)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+                            ->saveUploadedFileUsing(function ($file) {
+                                try {
+                                    $optimizer = new ImageOptimizer();
+                                    return $optimizer->optimize($file, 'products/gallery', 'product_gallery');
+                                } catch (\Exception $e) {
+                                    $filename = \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+                                    $file->storeAs('products/gallery', $filename, 'public');
+                                    return 'products/gallery/' . $filename;
+                                }
+                            }),
 
                                     
                                 ]),
