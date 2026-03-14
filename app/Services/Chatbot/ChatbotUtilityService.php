@@ -26,13 +26,14 @@ class ChatbotUtilityService
     }
 
     public function callLlmChain($messages, $client = null) {
-        // ১. ক্লায়েন্টের কোন AI মডেল সিলেক্ট করা আছে সেটি চেক করা হচ্ছে। যদি না থাকে তবে ডিফল্ট gemini ধরা হবে।
         $selectedModel = $client ? ($client->ai_model ?? 'gemini-pro') : 'gemini-pro';
-        
+
         $geminiKey    = config('services.gemini.api_key');
         $openAiKey    = config('services.openai.api_key');
         $anthropicKey = config('services.anthropic.api_key');
         $deepseekKey  = config('services.deepseek.api_key');
+        
+        Log::info("🚀 AI Requesting [Model: {$selectedModel}] for client: " . ($client->id ?? 'N/A'));
 
         // ==========================================
         // 🚀 ROUTE 1: Google Gemini Execution
@@ -82,7 +83,9 @@ class ChatbotUtilityService
                 ]);
 
                 if ($response->successful() && isset($response->json()['candidates'][0]['content']['parts'][0]['text'])) {
-                    return $response->json()['candidates'][0]['content']['parts'][0]['text'];
+                    $aiText = $response->json()['candidates'][0]['content']['parts'][0]['text'];
+                    Log::info("✅ Gemini Success: " . substr($aiText, 0, 100) . "...");
+                    return $aiText;
                 }
                 Log::warning("Gemini Error: " . $response->body());
                 return "Gemini API Temporary Error. Please try again.";
@@ -108,7 +111,9 @@ class ChatbotUtilityService
                 ]);
                 
                 if ($response->successful() && isset($response->json()['choices'][0]['message']['content'])) {
-                    return $response->json()['choices'][0]['message']['content'];
+                    $aiText = $response->json()['choices'][0]['message']['content'];
+                    Log::info("✅ OpenAI Success: " . substr($aiText, 0, 100) . "...");
+                    return $aiText;
                 }
                 Log::warning("OpenAI Error: " . $response->body());
                 return "OpenAI API returned an error.";
@@ -153,7 +158,9 @@ class ChatbotUtilityService
                 ]);
 
                 if ($response->successful() && isset($response->json()['content'][0]['text'])) {
-                    return $response->json()['content'][0]['text'];
+                    $aiText = $response->json()['content'][0]['text'];
+                    Log::info("✅ Claude Success: " . substr($aiText, 0, 100) . "...");
+                    return $aiText;
                 }
                 Log::warning("Claude Error: " . $response->body());
                 return "Claude API returned an error.";
@@ -180,7 +187,9 @@ class ChatbotUtilityService
                     ]);
 
                 if ($response->successful() && isset($response->json()['choices'][0]['message']['content'])) {
-                    return $response->json()['choices'][0]['message']['content'];
+                    $aiText = $response->json()['choices'][0]['message']['content'];
+                    Log::info("✅ DeepSeek Success: " . substr($aiText, 0, 100) . "...");
+                    return $aiText;
                 }
                 Log::warning("DeepSeek Error: " . $response->body());
                 return "DeepSeek API returned an error.";

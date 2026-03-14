@@ -174,6 +174,8 @@ class ChatbotService
             $history[] = ['user' => $userMessage, 'ai' => $aiResponse, 'time' => time()];
             $session->update(['customer_info' => array_merge($session->customer_info, ['history' => array_slice($history, -50)])]);
 
+            Log::info("🤖 FINAL AI RESPONSE Sent to [{$senderId}]: " . substr($aiResponse, 0, 150) . "...");
+
             return $aiResponse;
         });
     }

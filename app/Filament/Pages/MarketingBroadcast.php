@@ -126,9 +126,11 @@ class MarketingBroadcast extends Page implements HasForms
 
         // ২. ব্রডকাস্ট সেন্ড করা
         $successCount = 0;
-        $messengerService = app(MessengerResponseService::class);
+        $messengerService = app(\App\Services\MessengerResponseService::class);
         $imgUrl = $image ? asset('storage/' . $image) : null;
         $waApiUrl = config('services.whatsapp.api_url');
+        
+        Log::info("📢 Broadcast STARTED by [Client: {$client->shop_name}] for " . count($finalTargets) . " targets.");
 
         foreach ($finalTargets as $target) {
             $personalizedMsg = str_replace(['{{name}}', '{{shop}}'], [$target['name'], $client->shop_name], $message);
@@ -162,6 +164,7 @@ class MarketingBroadcast extends Page implements HasForms
         }
 
         $this->form->fill();
+        Log::info("✅ Broadcast FINISHED. Success: {$successCount} / Total: " . count($finalTargets));
         Notification::make()->title('🚀 Broadcast Sent Successfully!')->body("মোট {$successCount} জনের কাছে আপনার অফারটি সফলভাবে পাঠানো হয়েছে।")->success()->send();
     }
 }

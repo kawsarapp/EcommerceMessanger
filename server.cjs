@@ -18,8 +18,9 @@ async function sendWebhookToLaravel(endpoint, data) {
         // 🔥 Environment variable থেকে লাইভ লিংক ও সিক্রেট নেওয়া হলো
         const myDomain = process.env.APP_URL || 'http://127.0.0.1:8000';
         const secretKey = process.env.WA_WEBHOOK_SECRET || 'super-secret-key';
-
-        await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
+        
+        console.log(`📡 Sending Webhook [${endpoint}] to Laravel...`);
+        const response = await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -129,7 +130,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
             console.log("Contact fetch error:", e.message);
         }
 
-        console.log(`📩 New message from ${cleanNumber} (${senderName})`);
+        console.log(`📩 New message from ${cleanNumber} (${senderName}): "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}"`);
 
         sendWebhookToLaravel('receive', {
             instance_id: instance_id,
