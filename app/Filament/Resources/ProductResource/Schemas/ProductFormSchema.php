@@ -1,3 +1,7 @@
+<?php
+
+namespace App\Filament\Resources\ProductResource\Schemas;
+
 use App\Models\Product;
 use App\Models\Client;
 use App\Services\ImageOptimizer;
