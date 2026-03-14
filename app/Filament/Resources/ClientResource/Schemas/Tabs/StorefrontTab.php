@@ -45,6 +45,7 @@ class StorefrontTab
                         'luxury'      => 'Premium Luxury (Jewelry & Watches)',
                         'kids'        => 'Kids Corner (Toys & Baby Products)',
                         'premium'     => '✨ Ultra Premium VIP (Vibrant & Glassmorphism)',
+                        'bdshop'      => '🇧🇩 BD Shop (Daraz/BDShop Style)',
                     ])
                     ->default('default')
                     ->searchable()
@@ -98,6 +99,51 @@ class StorefrontTab
                         ->rows(2)
                         ->visible(fn ($get) => $get('show_terms_checkbox'))
                         ->helperText('শর্তের একটি ছোট বর্ণনা। এটি চেকবক্সের নিচে দেখাবে।'),
+                ])->columns(2),
+
+            Section::make('🧩 Widget Controls')
+                ->description('আপনার শপের প্রতিটি UI widget আলাদাভাবে ON/OFF করুন।')
+                ->schema([
+                    Toggle::make('widgets.show_hero_banner')
+                        ->label('Hero Banner')
+                        ->helperText('হোম পেজের উপরে বড় ব্যানার ইমেজ')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_search_bar')
+                        ->label('Search Bar')
+                        ->helperText('হেডারে প্রোডাক্ট সার্চ বার')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_category_filter')
+                        ->label('Category Filter')
+                        ->helperText('ক্যাটাগরি ফিল্টার ট্যাব/পিল')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_trust_badges')
+                        ->label('Trust Badges')
+                        ->helperText('ডেলিভারি, সিকিউরিটি, রিটার্ন ব্যাজ')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_reviews')
+                        ->label('Customer Reviews')
+                        ->helperText('প্রোডাক্ট রিভিউ সেকশন')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_floating_chat')
+                        ->label('Floating Chat Widget')
+                        ->helperText('নিচে ডান পাশে ফ্লোটিং চ্যাট বাটন')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_announcement_bar')
+                        ->label('Announcement Bar')
+                        ->helperText('হেডারের উপরে অ্যানাউন্সমেন্ট বার')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('widgets.show_social_links')
+                        ->label('Social Media Links')
+                        ->helperText('ফুটারে সোশ্যাল মিডিয়া লিংক')
+                        ->default(true)
+                        ->onColor('success'),
                 ])->columns(2),
         ];
     }

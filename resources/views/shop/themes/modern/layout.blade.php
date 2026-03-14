@@ -114,5 +114,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
     </footer>
 
+    @include('shop.partials.floating-chat', ['client' => $client])
+
 </body>
 </html>

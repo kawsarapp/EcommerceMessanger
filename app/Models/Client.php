@@ -26,7 +26,18 @@ class Client extends Model
         'last_inventory_sync_at' => 'datetime',
         'is_reminder_active' => 'boolean',
         'is_whatsapp_active' => 'boolean',
+        'widgets' => 'array',
     ];
+
+    /**
+     * Widget toggle helper - সেলার কোন UI element ON/OFF রেখেছে চেক করবে
+     * Default: সব কিছু ON থাকবে যতক্ষণ না সেলার নিজে বন্ধ করবে
+     */
+    public function widget(string $key, bool $default = true): bool
+    {
+        $widgets = $this->widgets ?? [];
+        return $widgets[$key] ?? $default;
+    }
 
     // ==========================================
     // RELATIONSHIPS

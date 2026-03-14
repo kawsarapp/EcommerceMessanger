@@ -131,5 +131,7 @@
             <p class="text-xs text-gray-400 font-medium tracking-wide">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
         </div>
     </footer>
+    @include('shop.partials.floating-chat', ['client' => $client])
+
 </body>
 </html>
