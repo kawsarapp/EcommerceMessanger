@@ -63,7 +63,7 @@ class WhatsAppApiTab
                                 }
                                 try {
                                     $instanceId = 'client_' . $record->id;
-                                    $response = Http::post(config('services.whatsapp.api_url') . '/api/generate-qr', ['instance_id' => $instanceId]);
+                                    $response = Http::timeout(60)->post(config('services.whatsapp.api_url') . '/api/generate-qr', ['instance_id' => $instanceId]);
                                     if ($response->successful()) {
                                         $data = $response->json();
                                         if (isset($data['status']) && $data['status'] === 'connected') {
@@ -78,7 +78,8 @@ class WhatsAppApiTab
                                         Notification::make()->title('Failed to get QR Code.')->danger()->send();
                                     }
                                 } catch (\Exception $e) {
-                                    Notification::make()->title('Error: Node Server is not running!')->danger()->send();
+                                    \Illuminate\Support\Facades\Log::error('QR Gen Error: ' . $e->getMessage());
+                                    Notification::make()->title('Error: ' . $e->getMessage())->danger()->send();
                                 }
                             })
                             ->hidden(fn ($record) => $record && $record->wa_status === 'connected'),
