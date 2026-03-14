@@ -36,9 +36,45 @@ class AiBrainTab
                         ])
                         ->default('gemini-pro')
                         ->required()
-                        ->helperText('⚙️ API Key গুলো Server এর .env ফাইলে সেট করা আছে। এখানে শুধু মডেল assign করুন।')
-                        ->visible(fn () => auth()->user()?->isSuperAdmin()),
-                ])->visible(fn () => auth()->user()?->isSuperAdmin()),
+                        ->helperText('⚙️ আপনার নিজস্ব API Key দিয়ে কাস্টম এআই চালাতে পারবেন।')
+                        ->live(), // Important to make visibility reactive
+
+                    \Filament\Forms\Components\TextInput::make('gemini_api_key')
+                        ->label('Google Gemini API Key')
+                        ->password()
+                        ->placeholder('AIzaSy...')
+                        ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
+                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'gemini')),
+
+                    \Filament\Forms\Components\TextInput::make('openai_api_key')
+                        ->label('OpenAI API Key (ChatGPT)')
+                        ->password()
+                        ->placeholder('sk-proj-...')
+                        ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
+                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'gpt')),
+                        
+                    \Filament\Forms\Components\TextInput::make('deepseek_api_key')
+                        ->label('DeepSeek API Key')
+                        ->password()
+                        ->placeholder('sk-...')
+                        ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
+                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'deepseek')),
+
+                    \Filament\Forms\Components\TextInput::make('claude_api_key')
+                        ->label('Anthropic Claude API Key')
+                        ->password()
+                        ->placeholder('sk-ant-...')
+                        ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
+                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'claude')),
+
+                    \Filament\Forms\Components\TextInput::make('groq_api_key')
+                        ->label('Groq Fast API Key')
+                        ->password()
+                        ->placeholder('gsk_...')
+                        ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
+                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'groq')),
+
+                ]), // Removed SuperAdmin check so EVERY seller can add their own key or select model.
 
             Section::make('Knowledge Base')
                 ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')

@@ -27,6 +27,29 @@ class Client extends Model
         'is_reminder_active' => 'boolean',
         'is_whatsapp_active' => 'boolean',
         'widgets' => 'array',
+        'ai_model' => 'string',
+        'gemini_api_key' => 'string',
+        'openai_api_key' => 'string',
+        'deepseek_api_key' => 'string',
+        'claude_api_key' => 'string',
+        'groq_api_key' => 'string',
+        // Inbox & Notifications 
+        'is_notification_active' => 'boolean',
+        'notify_emails' => 'array',
+        'notify_telegram' => 'string',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'gemini_api_key',
+        'openai_api_key',
+        'deepseek_api_key',
+        'claude_api_key',
+        'groq_api_key',
     ];
 
     /**

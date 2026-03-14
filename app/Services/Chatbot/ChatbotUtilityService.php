@@ -28,10 +28,12 @@ class ChatbotUtilityService
     public function callLlmChain($messages, $client = null) {
         $selectedModel = $client ? ($client->ai_model ?? 'gemini-pro') : 'gemini-pro';
 
-        $geminiKey    = config('services.gemini.api_key');
-        $openAiKey    = config('services.openai.api_key');
-        $anthropicKey = config('services.anthropic.api_key');
-        $deepseekKey  = config('services.deepseek.api_key');
+        // Fetch keys from Client first (if provided), otherwise fallback to .env configuration
+        $geminiKey    = ($client->gemini_api_key ?? null) ?: config('services.gemini.api_key');
+        $openAiKey    = ($client->openai_api_key ?? null) ?: config('services.openai.api_key');
+        $anthropicKey = ($client->claude_api_key ?? null) ?: config('services.anthropic.api_key');
+        $deepseekKey  = ($client->deepseek_api_key ?? null) ?: config('services.deepseek.api_key');
+        $groqKey      = ($client->groq_api_key ?? null) ?: config('services.groq.api_key', '');
         
         Log::info("🚀 AI Requesting [Model: {$selectedModel}] for client: " . ($client->id ?? 'N/A'));
 
@@ -150,7 +152,8 @@ class ChatbotUtilityService
                     'anthropic-version' => '2023-06-01',
                     'content-type' => 'application/json'
                 ])->timeout(40)->post('https://api.anthropic.com/v1/messages', [
-                    'model' => 'claude-3-opus-20240229', 
+                ])->timeout(40)->post('https://api.anthropic.com/v1/messages', [
+                    'model' => str_replace('-full', '', $selectedModel), // fallbacks if any modifier is used
                     'system' => $systemPrompt,
                     'messages' => $claudeMessages,
                     'max_tokens' => 800,
@@ -196,6 +199,39 @@ class ChatbotUtilityService
             } catch (\Exception $e) {
                 Log::error("DeepSeek Exception: " . $e->getMessage());
                 return "DeepSeek Connection failed.";
+            }
+        }
+
+        // ==========================================
+        // 🚀 ROUTE 5: Groq Execution (Llama / Mixtral)
+        // ==========================================
+        if (str_contains($selectedModel, 'groq')) {
+            if (!$groqKey) return "⚠️ Groq API Key is missing in admin dashboard or server configuration.";
+
+            try {
+                // Determine model name since we probably prefixed 'groq-' in some UI options
+                $groqModel = str_replace('groq-', '', $selectedModel);
+                if ($groqModel === 'groq') $groqModel = 'llama3-8b-8192'; // Default
+
+                $response = Http::withToken($groqKey)
+                    ->timeout(20)
+                    ->post('https://api.groq.com/openai/v1/chat/completions', [
+                        'model'       => $groqModel,
+                        'messages'    => $messages,
+                        'max_tokens'  => 800,
+                        'temperature' => 0.1,
+                    ]);
+
+                if ($response->successful() && isset($response->json()['choices'][0]['message']['content'])) {
+                    $aiText = $response->json()['choices'][0]['message']['content'];
+                    Log::info("✅ Groq Success: " . substr($aiText, 0, 100) . "...");
+                    return $aiText;
+                }
+                Log::warning("Groq Error: " . $response->body());
+                return "Groq API returned an error.";
+            } catch (\Exception $e) {
+                Log::error("Groq Exception: " . $e->getMessage());
+                return "Groq Connection failed.";
             }
         }
 
