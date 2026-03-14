@@ -54,8 +54,8 @@ class MarketingBroadcast extends Page implements HasForms
                     \Filament\Forms\Components\TextInput::make('btn_text')->label('Call to Action Button (Optional)')->placeholder('e.g. Shop Now / Order Now')->maxLength(20),
                     \Filament\Forms\Components\TextInput::make('btn_url')->label('Button Link URL')->url()->placeholder('https://yourshop.com/product/xyz'),
                 ]),
-            ])->statePath('data'),
-        ]);
+            ]),
+        ])->statePath('data');
     }
 
     public function sendBroadcast()

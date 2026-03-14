@@ -88,7 +88,7 @@ class WhatsAppApiTab
                             ->icon('heroicon-o-x-circle')
                             ->color('danger')
                             ->requiresConfirmation()
-                            ->action(function ($record, Set $set) {
+                            ->action(function ($record, Set $set, \Livewire\Component $livewire) {
                                 if ($record) {
                                     try {
                                         $instanceId = $record->wa_instance_id ?? ('client_' . $record->id);
@@ -99,6 +99,7 @@ class WhatsAppApiTab
                                     $set('generated_qr_code', null);
                                     
                                     Notification::make()->title('Disconnected successfully! You can now generate a new QR.')->warning()->send();
+                                    $livewire->js('window.location.reload()');
                                 }
                             })
                             ->visible(fn ($record) => $record && $record->wa_status === 'connected')
