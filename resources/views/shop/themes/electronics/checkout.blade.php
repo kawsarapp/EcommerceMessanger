@@ -33,6 +33,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
             
             <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="bg-panel tech-border rounded-2xl p-6 md:p-10 space-y-10 group">
                 @csrf
+                <input type="hidden" name="product_id" value="{{$product->id}}">
                 <input type="hidden" name="qty" :value="qty">
                 @if(request('color')) <input type="hidden" name="color" value="{{array_is_list((array)request('color')) ? request('color') : request('color')[0]}}"> @endif
                 @if(request('size')) <input type="hidden" name="size" value="{{array_is_list((array)request('size')) ? request('size') : request('size')[0]}}"> @endif

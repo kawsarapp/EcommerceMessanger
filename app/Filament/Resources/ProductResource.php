@@ -32,7 +32,8 @@ class ProductResource extends Resource
             ->columns(ProductTableSchema::columns())
             ->filters(ProductTableSchema::filters())
             ->actions(ProductTableSchema::actions())
-            ->bulkActions(ProductTableSchema::bulkActions());
+            ->bulkActions(ProductTableSchema::bulkActions())
+            ->defaultSort('id', 'desc'); // 🔥 Latest products first
     }
 
     public static function getEloquentQuery(): Builder

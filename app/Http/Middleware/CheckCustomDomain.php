@@ -30,7 +30,8 @@ class CheckCustomDomain
             abort(403, 'Unauthorized Domain. This domain is not connected to our system.');
         }
 
-        // ডোমেইন থাকলে রিকোয়েস্ট পাস করবে
+        // ডোমেইন থাকলে রিকোয়েস্ট পাস করবে, সাথে client data পাঠিয়ে দিবে
+        $request->merge(['current_client' => $client]);
         return $next($request);
     }
 }

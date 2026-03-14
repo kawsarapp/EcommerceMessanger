@@ -63,16 +63,16 @@ trait ShopCheckoutTrait
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|min:11',
             'shipping_address' => 'required|string',
-            'delivery_area' => 'required|in:inside,outside',
+            'area' => 'required|in:inside,outside',
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1'
+            'qty' => 'required|integer|min:1'
         ]);
 
         $product = \App\Models\Product::findOrFail($request->product_id);
         $unitPrice = $product->sale_price ?? $product->regular_price;
-        $subtotal = $unitPrice * $request->quantity;
+        $subtotal = $unitPrice * $request->qty;
         
-        $shipping = $request->delivery_area === 'inside' ? $client->delivery_charge_inside : $client->delivery_charge_outside;
+        $shipping = $request->area === 'inside' ? $client->delivery_charge_inside : $client->delivery_charge_outside;
         $discount = 0;
         $couponCode = null;
 
@@ -106,7 +106,7 @@ trait ShopCheckoutTrait
         \App\Models\OrderItem::create([
             'order_id' => $order->id,
             'product_id' => $product->id,
-            'quantity' => $request->quantity,
+            'quantity' => $request->qty,
             'unit_price' => $unitPrice,
             'price' => $subtotal,
             'attributes' => ['color' => $request->color, 'size' => $request->size]

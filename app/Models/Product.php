@@ -118,18 +118,27 @@ class Product extends Model
         if (!file_exists($fullPath)) return;
 
         try {
-            $img = Image::make($fullPath);
+            // Intervention Image v3 implementation without Facades
+            $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+            $img = $manager->read($fullPath);
+            
             $watermarkText = 'SKU: ' . $sku;
+            
+            // Note: If fonts/roboto.ttf is missing, this might throw an error, 
+            // but we are catching \Throwable so it won't crash the server.
             $img->text($watermarkText, $img->width() - 20, $img->height() - 20, function($font) {
-                $font->file(public_path('fonts/roboto.ttf'));
+                if (file_exists(public_path('fonts/roboto.ttf'))) {
+                    $font->filename(public_path('fonts/roboto.ttf'));
+                }
                 $font->size(25);
-                $font->color('#00000000');
+                $font->color('rgba(0, 0, 0, 0.6)'); // Added opacity so it looks like a watermark
                 $font->align('right');
                 $font->valign('bottom');
             });
+            
             $img->save($fullPath);
-        } catch (\Exception $e) {
-            Log::error("Watermark Error on Publish: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Watermark Error on Publish: " . $e->getMessage());
         }
     }
 
