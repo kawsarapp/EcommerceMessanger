@@ -4,9 +4,10 @@
       "name": "whatsapp-bot",
       "cwd": "./whatsapp-bot",
       "script": "server.js",
-      "watch": true,
+      "watch": false,
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     },
     {
