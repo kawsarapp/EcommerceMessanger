@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Read config from the main Laravel .env in the parent directory
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
