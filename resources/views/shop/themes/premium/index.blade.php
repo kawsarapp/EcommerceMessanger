@@ -102,4 +102,10 @@
         {{ $products->links('pagination::tailwind') }}
     </div>
 </div>
+
+    {{-- Homepage: Category-based product sections (when no filter) --}}
+    @if(!request('category') || request('category') == 'all')
+        @include('shop.partials.homepage-categories', ['client' => $client])
+    @endif
+
 @endsection

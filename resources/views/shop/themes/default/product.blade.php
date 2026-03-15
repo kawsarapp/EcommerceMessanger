@@ -3,16 +3,16 @@
 
 @section('content')
 @php 
-$baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
+$baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : route('shop.show', $client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '', activeTab: 'description' }">
     
     <!-- Clean Breadcrumb -->
     <nav class="mb-8 flex items-center text-xs font-bold uppercase tracking-wider text-slate-400 overflow-hidden">
         <a href="{{$baseUrl}}" class="hover:text-primary premium-transition">Home</a>
         <i class="fas fa-chevron-right text-[10px] mx-3 text-slate-300"></i>
-        <span class="hover:text-primary premium-transition cursor-pointer">{{$product->category->name ?? 'Catalog'}}</span>
+        <a href="{{$baseUrl}}?category={{$product->category->slug ?? ''}}" class="hover:text-primary premium-transition cursor-pointer">{{$product->category->name ?? 'Catalog'}}</a>
         <i class="fas fa-chevron-right text-[10px] mx-3 text-slate-300"></i>
         <span class="text-slate-800 truncate">{{$product->name}}</span>
     </nav>
@@ -27,8 +27,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply premium-transition group-hover:scale-110 z-10 duration-[1.5s]">
                     
                     @if($product->sale_price)
+                        @php $discountPercent = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
                         <div class="absolute top-5 left-5 z-20 bg-red-500 text-white font-bold text-xs uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-sm">
-                            On Sale
+                            -{{ $discountPercent }}%
                         </div>
                     @endif
                 </div>
@@ -57,17 +58,23 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <div class="mb-8">
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-[1.1] mb-4 tracking-tight">{{$product->name}}</h1>
                     
-                    <div class="flex items-center gap-4 text-sm text-slate-500 font-semibold tracking-wide uppercase mb-6">
-                        <span>SKU: <span class="text-slate-800">PRD-{{$product->id}}</span></span>
+                    <div class="flex items-center flex-wrap gap-4 text-sm text-slate-500 font-semibold tracking-wide uppercase mb-6">
+                        <span>SKU: <span class="text-slate-800">{{ $product->sku ?? 'PRD-'.$product->id }}</span></span>
                         <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <span class="text-red-500"><i class="fas fa-circle text-[8px] mr-1"></i> Out of Stock</span>
                         @else
-                            @if($client->show_stock ?? true)
-<span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock ({{ $product->stock_quantity }})</span>
-@else
-<span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock</span>
-@endif
+                            <span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock @if($client->show_stock ?? true)({{ $product->stock_quantity }})@endif</span>
+                        @endif
+
+                        {{-- Warranty & Return inline --}}
+                        @if(($client->show_return_warranty ?? true) && !empty($product->warranty))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-blue-500"><i class="fas fa-shield-alt text-[8px] mr-1"></i> {{ $product->warranty }}</span>
+                        @endif
+                        @if(($client->show_return_warranty ?? true) && !empty($product->return_policy))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-orange-500"><i class="fas fa-undo text-[8px] mr-1"></i> {{ $product->return_policy }}</span>
                         @endif
                     </div>
 
@@ -95,11 +102,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @endif
                     </div>
 
-
                     <div class="flex items-end gap-3 mt-6">
                         <span class="text-4xl font-extrabold text-slate-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                         @if($product->sale_price)
                             <del class="text-xl text-slate-400 font-semibold mb-1">৳{{number_format($product->regular_price)}}</del>
+                            <span class="bg-red-50 text-red-500 text-xs font-bold px-2.5 py-1 rounded-lg mb-1">Save ৳{{ number_format($product->regular_price - $product->sale_price) }}</span>
                         @endif
                     </div>
                 </div>
@@ -161,19 +168,27 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @endif
                     </div>
                     
-                    <!-- Trust Badges inside Form -->
-                    <div class="grid grid-cols-3 gap-4 pt-6 mt-6 border-t border-slate-100">
+                    <!-- Trust Badges + Warranty inside Form -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t border-slate-100">
                         <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
                             <i class="fas fa-truck text-xl"></i>
                             <span class="text-[10px] font-bold uppercase tracking-wider">Fast Delivery</span>
                         </div>
                         <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
                             <i class="fas fa-shield-alt text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">Secure Checkout</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider">
+                                @if(!empty($product->warranty)){{ $product->warranty }}@else Secure Checkout @endif
+                            </span>
                         </div>
                         <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
                             <i class="fas fa-undo text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">Easy Returns</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider">
+                                @if(!empty($product->return_policy)){{ $product->return_policy }}@else Easy Returns @endif
+                            </span>
+                        </div>
+                        <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
+                            <i class="fas fa-award text-xl"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-wider">100% Authentic</span>
                         </div>
                     </div>
 
@@ -183,54 +198,87 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
     </div>
     
-    <!-- Info Section (Bottom) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Info Section with Tabs (Bottom) -->
+    <div class="bg-white border rounded-[2rem] border-slate-100 shadow-soft mb-16 overflow-hidden">
+        {{-- Tab Bar --}}
+        <div class="flex border-b border-slate-100 overflow-x-auto hide-scroll">
+            <button @click="activeTab = 'description'" 
+                :class="activeTab === 'description' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="px-6 sm:px-8 py-5 font-bold text-sm uppercase tracking-wider border-b-2 transition-all whitespace-nowrap">
+                <i class="fas fa-align-left mr-2"></i>Description
+            </button>
+            @if($product->key_features)
+            <button @click="activeTab = 'features'" 
+                :class="activeTab === 'features' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="px-6 sm:px-8 py-5 font-bold text-sm uppercase tracking-wider border-b-2 transition-all whitespace-nowrap">
+                <i class="fas fa-list-check mr-2"></i>Key Features
+            </button>
+            @endif
+            @if(($client->show_return_warranty ?? true) && (!empty($product->warranty) || !empty($product->return_policy)))
+            <button @click="activeTab = 'warranty'" 
+                :class="activeTab === 'warranty' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="px-6 sm:px-8 py-5 font-bold text-sm uppercase tracking-wider border-b-2 transition-all whitespace-nowrap">
+                <i class="fas fa-shield-alt mr-2"></i>Warranty & Return
+            </button>
+            @endif
+        </div>
         
-        <div class="lg:col-span-8">
-            <div class="bg-white border rounded-[2rem] border-slate-100 p-8 md:p-12 shadow-soft">
-                <h2 class="text-2xl font-bold text-slate-900 mb-8 tracking-tight flex items-center gap-3">
-                    <i class="fas fa-align-left text-slate-300"></i> Product Overview
-                </h2>
+        {{-- Tab Content --}}
+        <div class="p-8 md:p-12">
+            {{-- Description --}}
+            <div x-show="activeTab === 'description'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
                 <div class="prose prose-slate max-w-none font-medium text-slate-600 leading-relaxed prose-p:mb-5">
                     {!! clean($product->description ?? $product->long_description) !!}
                 </div>
             </div>
-        </div>
-        
-        @if($product->key_features)
-        <div class="lg:col-span-4 space-y-8">
-            <div class="bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-100">
-                <h2 class="text-xl font-bold text-slate-900 mb-6 tracking-tight">Key Features</h2>
-                <ul class="space-y-4">
-                    @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
+
+            {{-- Key Features --}}
+            @if($product->key_features)
+            <div x-show="activeTab === 'features'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                <ul class="space-y-4 max-w-2xl">
+                    @foreach(is_string($product->key_features) ? json_decode($product->key_features, true) : $product->key_features as $feature)
                         <li class="flex items-start gap-3">
-                            <div class="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 mt-0.5"><i class="fas fa-check text-primary text-[10px]"></i></div>
+                            <div class="w-6 h-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5"><i class="fas fa-check text-primary text-[10px]"></i></div>
                             <span class="text-sm font-semibold text-slate-700 leading-relaxed">{{$feature}}</span>
                         </li>
                     @endforeach
                 </ul>
             </div>
-            
-            <div class="relative overflow-hidden bg-primary rounded-[2rem] p-8 text-center">
-                 <!-- abstract blobs -->
-                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
-                 <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
-                 
-                 <i class="fas fa-headset text-4xl text-white/30 mb-4 relative z-10"></i>
-                 <h4 class="font-bold text-white text-lg mb-2 relative z-10">Need Help?</h4>
-                 <p class="text-sm font-medium text-white/70 relative z-10">We are here to answer your questions.</p>
-                 <a href="{{$baseUrl}}" class="inline-block mt-4 text-xs font-bold uppercase tracking-widest text-white border-b border-white/30 pb-1 relative z-10 hover:border-white transition-colors">Contact Support</a>
-            </div>
-        </div>
-        @endif
+            @endif
 
+            {{-- Warranty & Return --}}
+            @if(($client->show_return_warranty ?? true) && (!empty($product->warranty) || !empty($product->return_policy)))
+            <div x-show="activeTab === 'warranty'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                    @if(!empty($product->warranty))
+                    <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-shield-alt text-blue-500"></i></div>
+                            <h4 class="font-bold text-slate-900">Warranty</h4>
+                        </div>
+                        <p class="text-sm text-slate-600 font-medium">{{ $product->warranty }}</p>
+                    </div>
+                    @endif
+                    @if(!empty($product->return_policy))
+                    <div class="bg-orange-50 rounded-2xl p-6 border border-orange-100">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center"><i class="fas fa-undo text-orange-500"></i></div>
+                            <h4 class="font-bold text-slate-900">Return Policy</h4>
+                        </div>
+                        <p class="text-sm text-slate-600 font-medium">{{ $product->return_policy }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+        </div>
     </div>
 
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+    {{-- Related Products --}}
+    @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
 
-        @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
-    @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
 @endsection

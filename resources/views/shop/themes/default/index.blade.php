@@ -3,7 +3,7 @@
 
 @section('content')
 @php 
-$baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
+$baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : route('shop.show', $client->slug); 
 @endphp
 
 <!-- Modern Elegant Hero -->
@@ -38,15 +38,17 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @endif
 
 <div id="shop" class="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20">
-    
-    <!-- Clean Top Navigation for Categories -->
+
+    {{-- Homepage Offer Banner (Timer + Link) --}}
+    @include('shop.partials.homepage-offer-banner', ['client' => $client])
+
+    {{-- Category Filter Pills --}}
     <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
         <div>
             <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Our Products</h3>
             <p class="text-slate-500 font-medium text-sm">Find exactly what you are looking for.</p>
         </div>
         
-        <!-- Pill Categories -->
         <div class="flex gap-2 overflow-x-auto hide-scroll w-full md:w-auto pb-2">
             <a href="?category=all" class="px-5 py-2.5 rounded-xl text-sm font-bold premium-transition whitespace-nowrap {{!request('category')||request('category')=='all'?'bg-primary text-white shadow-md':'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'}}">
                 All Items
@@ -59,65 +61,37 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
     </div>
 
-    <!-- Product Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-        @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-float premium-transition relative">
-                
-                @if($p->sale_price)
-                    <div class="absolute top-3 left-3 z-20 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-widest shadow-sm">
-                        Sale
+    {{-- When a specific category is selected, show flat grid --}}
+    @if(request('category') && request('category') != 'all')
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            @forelse($products as $p) 
+                @include('shop.partials.product-card', ['product' => $p, 'client' => $client])
+            @empty
+                <div class="col-span-full py-28 flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-slate-200">
+                    <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mb-4">
+                        <i class="fas fa-box-open text-2xl"></i>
                     </div>
-                @endif
-                
-                @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
-                    <div class="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-30 flex items-center justify-center">
-                        <span class="bg-slate-900/90 text-white font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg shadow-xl">Out of Stock</span>
-                    </div>
-                @endif
-
-                <!-- Image Container with soft background -->
-                <div class="aspect-[4/5] bg-slate-50/50 relative p-6 flex flex-col items-center justify-center overflow-hidden">
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 premium-transition duration-500">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">No products found</h3>
+                    <p class="text-sm font-medium text-slate-500">Please try selecting a different category.</p>
                 </div>
-                
-                <!-- Product Information -->
-                <div class="p-5 flex flex-col flex-1 bg-white relative z-20">
-                    <div class="flex justify-between items-start gap-2 mb-2">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate">{{$p->category->name ?? 'Uncategorized'}}</p>
-                    </div>
-                    
-                    <h4 class="font-bold text-slate-800 leading-snug mb-4 line-clamp-2 group-hover:text-primary premium-transition text-sm md:text-base">{{$p->name}}</h4>
-                    
-                    <div class="flex items-center gap-2 mt-auto">
-                        <span class="font-extrabold text-lg text-slate-900 tracking-tight">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
-                        @if($p->sale_price)
-                            <del class="text-xs text-slate-400 font-semibold">৳{{number_format($p->regular_price)}}</del>
-                        @endif
-                    </div>
-                </div>
-            </a> 
-        @empty
-            <div class="col-span-full py-28 flex flex-col items-center justify-center bg-white rounded-3xl border border-dashed border-slate-200">
-                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mb-4">
-                    <i class="fas fa-box-open text-2xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-slate-800 mb-2">No products found</h3>
-                <p class="text-sm font-medium text-slate-500">Please try selecting a different category.</p>
-            </div>
-        @endforelse
-    </div>
-
-    <!-- Modern Pagination -->
-    <div class="mt-16 flex justify-center">
-        <style>
-            .pagination-wrapper nav span, .pagination-wrapper nav a { border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; border:none;  color: #64748b; background: white; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
-            .pagination-wrapper nav span:hover, .pagination-wrapper nav a:hover { background-color: #f8fafc; color: #0f172a; }
-            .pagination-wrapper nav span[aria-current="page"] { background-color: var(--tw-color-primary) !important; color: white !important; box-shadow: 0 4px 6px -1px var(--tw-color-primary) !important; }
-        </style>
-        <div class="pagination-wrapper">
-            {{$products->links('pagination::tailwind')}}
+            @endforelse
         </div>
-    </div>
+
+        <!-- Pagination -->
+        <div class="mt-16 flex justify-center">
+            <style>
+                .pagination-wrapper nav span, .pagination-wrapper nav a { border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; border:none;  color: #64748b; background: white; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+                .pagination-wrapper nav span:hover, .pagination-wrapper nav a:hover { background-color: #f8fafc; color: #0f172a; }
+                .pagination-wrapper nav span[aria-current="page"] { background-color: var(--tw-color-primary) !important; color: white !important; box-shadow: 0 4px 6px -1px var(--tw-color-primary) !important; }
+            </style>
+            <div class="pagination-wrapper">
+                {{$products->links('pagination::tailwind')}}
+            </div>
+        </div>
+    @else
+        {{-- Homepage: Category-based product sections --}}
+        @include('shop.partials.homepage-categories', ['client' => $client])
+    @endif
+
 </div>
 @endsection

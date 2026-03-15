@@ -69,6 +69,13 @@ class CategoryResource extends Resource
                             ->label('Serial / Sort Order (e.g. 1, 2, 3)')
                             ->numeric()
                             ->default(0),
+                        Forms\Components\TextInput::make('homepage_products_count')
+                            ->label('Homepage Products Count')
+                            ->helperText('হোমপেজে এই ক্যাটাগরি থেকে কয়টি প্রোডাক্ট দেখাবে')
+                            ->numeric()
+                            ->default(4)
+                            ->minValue(1)
+                            ->maxValue(20),
                         Forms\Components\Toggle::make('is_visible')
                             ->label('Show on Homepage')
                             ->default(true),

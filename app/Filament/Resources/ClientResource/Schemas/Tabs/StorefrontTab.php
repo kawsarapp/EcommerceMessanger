@@ -85,6 +85,43 @@ class StorefrontTab
                     ->columnSpanFull(),
             ])->columns(2),
 
+            Section::make('🎯 Homepage Offer Banner')
+                ->description('ক্যাটাগরি সেকশনের উপরে একটি বড় অফার ব্যানার দেখাবে (টাইমার সহ)।')
+                ->schema([
+                    Toggle::make('homepage_banner_active')
+                        ->label('Enable Offer Banner')
+                        ->default(false)
+                        ->live()
+                        ->onColor('success'),
+
+                    TextInput::make('homepage_banner_title')
+                        ->label('Banner Title')
+                        ->placeholder('🔥 Mega Sale! Up to 70% Off')
+                        ->visible(fn ($get) => $get('homepage_banner_active')),
+
+                    Textarea::make('homepage_banner_subtitle')
+                        ->label('Banner Subtitle')
+                        ->placeholder('সীমিত সময়ের জন্য সব ক্যাটাগরিতে বিশাল ডিসকাউন্ট!')
+                        ->rows(2)
+                        ->visible(fn ($get) => $get('homepage_banner_active')),
+
+                    FileUpload::make('homepage_banner_image')
+                        ->label('Banner Image')
+                        ->image()
+                        ->directory('shops/homepage-banners')
+                        ->visible(fn ($get) => $get('homepage_banner_active')),
+
+                    TextInput::make('homepage_banner_link')
+                        ->label('Banner Link (Optional)')
+                        ->url()
+                        ->visible(fn ($get) => $get('homepage_banner_active')),
+
+                    DateTimePicker::make('homepage_banner_timer')
+                        ->label('Countdown Timer (Offer Ends At)')
+                        ->helperText('এই সময়ের একটি কাউন্টডাউন টাইমার দেখাবে।')
+                        ->visible(fn ($get) => $get('homepage_banner_active')),
+                ])->columns(2),
+
             Section::make('🛒 Shop Display Controls')
                 ->description('আপনার শপে কোন বাটনগুলো দেখাবে তা নিয়ন্ত্রণ করুন।')
                 ->schema([

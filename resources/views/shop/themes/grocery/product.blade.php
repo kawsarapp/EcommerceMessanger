@@ -60,6 +60,17 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                                 <span class="bg-red-100 text-red-600 border border-red-200 text-xs font-black px-3 py-1.5 rounded-lg whitespace-nowrap"><i class="fas fa-times-circle mr-1"></i> Out of Stock</span>
                             @else
                                 <span class="bg-emerald-100 text-emerald-600 border border-emerald-200 text-xs font-black px-3 py-1.5 rounded-lg whitespace-nowrap"><i class="fas fa-check-circle mr-1"></i> In Stock</span>
+                        @endif
+
+                        {{-- Warranty & Return inline --}}
+                        @if(($client->show_return_warranty ?? true) && !empty($product->warranty))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-blue-500"><i class="fas fa-shield-alt text-[8px] mr-1"></i> {{ $product->warranty }}</span>
+                        @endif
+                        @if(($client->show_return_warranty ?? true) && !empty($product->return_policy))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-orange-500"><i class="fas fa-undo text-[8px] mr-1"></i> {{ $product->return_policy }}</span>
+                        @endif
                             @endif
                         @endif
                     </div>

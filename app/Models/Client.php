@@ -37,6 +37,18 @@ class Client extends Model
         'is_notification_active' => 'boolean',
         'notify_emails' => 'array',
         'notify_telegram' => 'string',
+        // Shop Display Settings
+        'show_stock' => 'boolean',
+        'show_related_products' => 'boolean',
+        'show_return_warranty' => 'boolean',
+        'cod_active' => 'boolean',
+        'partial_payment_active' => 'boolean',
+        'full_payment_active' => 'boolean',
+        'footer_links' => 'array',
+        'popup_active' => 'boolean',
+        'popup_expires_at' => 'datetime',
+        'homepage_banner_active' => 'boolean',
+        'homepage_banner_timer' => 'datetime',
     ];
 
     /**

@@ -49,6 +49,17 @@
                         @else
                             <span class="bg-green-50 text-green-600 text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-2"><i class="fas fa-check-circle"></i> In Stock</span>
                         @endif
+
+                        {{-- Warranty & Return inline --}}
+                        @if(($client->show_return_warranty ?? true) && !empty($product->warranty))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-blue-500"><i class="fas fa-shield-alt text-[8px] mr-1"></i> {{ $product->warranty }}</span>
+                        @endif
+                        @if(($client->show_return_warranty ?? true) && !empty($product->return_policy))
+                            <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
+                            <span class="text-orange-500"><i class="fas fa-undo text-[8px] mr-1"></i> {{ $product->return_policy }}</span>
+                        @endif
+                        @endif
                     @endif
                 </div>
 
