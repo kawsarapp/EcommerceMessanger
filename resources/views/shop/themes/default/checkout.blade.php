@@ -23,12 +23,12 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     applyCoupon() {
         if (!this.couponCode.trim()) { this.couponError = 'Please enter a coupon code'; return; }
         this.couponError = '';
-        fetch('{{ $baseUrl }}/api/validate-coupon', {
+        fetch('{{ $baseUrl }}/apply-coupon', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-            body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
+            body: JSON.stringify({code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal})
         }).then(r => r.json()).then(data => {
-            if (data.valid) { this.couponDiscount = data.discount; this.couponApplied = true; this.couponError = ''; }
+            if (data.success) { this.couponDiscount = data.discount; this.couponApplied = true; this.couponError = ''; }
             else { this.couponError = data.message || 'Invalid coupon code'; this.couponDiscount = 0; }
         }).catch(() => { this.couponError = 'Could not verify coupon'; });
     },

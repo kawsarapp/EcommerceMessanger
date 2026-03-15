@@ -240,9 +240,28 @@ class StorefrontTab
                         ->visible(fn ($get) => $get('popup_active')),
                         
                     DateTimePicker::make('popup_expires_at')
-                        ->label('Popup Expires At')
-                        ->helperText('এই সময়ের পর পপআপ আর দেখাবে না।')
+                        ->label('Offer Expires At (Optional)')
+                        ->helperText('এই সময়ের পর আর পপআপ দেখাবে না।')
                         ->visible(fn ($get) => $get('popup_active')),
+
+                    TextInput::make('popup_delay')
+                        ->label('Popup Delay (Seconds)')
+                        ->numeric()
+                        ->default(3)
+                        ->helperText('কত সেকেন্ড পর পপআপ আসবে।')
+                        ->visible(fn ($get) => $get('popup_active')),
+
+                    \Filament\Forms\Components\Select::make('popup_pages')
+                        ->label('Show on specific pages')
+                        ->multiple()
+                        ->options([
+                            'home' => 'Homepage',
+                            'product' => 'Product Details Page',
+                            'checkout' => 'Checkout Page',
+                        ])
+                        ->helperText('খালি রাখলে সব পেজে দেখাবে।')
+                        ->visible(fn ($get) => $get('popup_active'))
+                        ->columnSpanFull(),
                 ])->columns(2),
 
             Section::make('🧩 Widget Controls')

@@ -81,6 +81,17 @@ class IntegrationsTab
                         ->prefixIcon('heroicon-m-play'),
                 ])->columns(2),
 
+            Section::make('Tracking & Analytics')
+                ->description('ফেসবুক পিক্সেল বা অন্যান্য ট্র্যাকিং টুল সেটআপ করুন।')
+                ->icon('heroicon-o-chart-bar')
+                ->schema([
+                    TextInput::make('fb_pixel_id')
+                        ->label('Facebook Pixel ID')
+                        ->placeholder('e.g., 293847293847293')
+                        ->helperText('Your Meta Pixel ID for tracking conversions and page views.')
+                        ->prefixIcon('heroicon-o-code-bracket-square'),
+                ])->columns(1),
+
             Section::make('Facebook Connection')->schema([
                 Placeholder::make('fb_status')
                     ->label('Status')

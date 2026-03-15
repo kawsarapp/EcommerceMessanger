@@ -50,6 +50,7 @@ class Client extends Model
         'homepage_banner_active' => 'boolean',
         'homepage_banner_timer' => 'datetime',
         'admin_permissions' => 'array',
+        'popup_pages' => 'array',
     ];
 
     /**

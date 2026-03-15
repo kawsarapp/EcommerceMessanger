@@ -114,7 +114,7 @@ trait ShopCheckoutTrait
         ]);
 
         $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
-        $redirectUrl = $cleanDomain ? 'https://' . $cleanDomain . '/track-order' : route('shop.track', $client->slug);
+        $redirectUrl = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
 
         return redirect($redirectUrl)->with('success_phone', $order->customer_phone);
     }

@@ -73,6 +73,9 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
         // Direct Checkout Routes
         Route::get('/checkout/{productSlug}', [ShopController::class, 'checkout'])->name('shop.checkout');
         Route::post('/checkout/process', [ShopController::class, 'processCheckout'])->name('shop.checkout.process');
+
+        // Coupon Apply Route (Ajax, Sub-path)
+        Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon.sub');
     });
 
     // ==========================================

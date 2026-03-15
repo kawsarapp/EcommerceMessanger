@@ -8,6 +8,26 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title')</title>
+
+    @if($client->fb_pixel_id)
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '{{ $client->fb_pixel_id }}');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id={{ $client->fb_pixel_id }}&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+    @endif
     
     <!-- AlpineJS & TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -75,14 +95,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </a>
 
             <!-- Search Bar -->
-            <div class="hidden md:flex flex-1 max-w-md mx-8 relative group/search">
+            <form action="{{ $baseUrl }}" method="GET" class="hidden md:flex flex-1 max-w-md mx-8 relative group/search">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary premium-transition"></i>
-                <input type="text" placeholder="Search for products..." class="w-full bg-slate-100/50 hover:bg-slate-100 border-2 border-transparent focus:border-primary/20 focus:bg-white pl-11 pr-5 py-2.5 rounded-2xl text-slate-700 text-sm font-medium focus:ring-4 focus:ring-primary/5 premium-transition placeholder-slate-400 outline-none">
-            </div>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search for products..." class="w-full bg-slate-100/50 hover:bg-slate-100 border-2 border-transparent focus:border-primary/20 focus:bg-white pl-11 pr-5 py-2.5 rounded-2xl text-slate-700 text-sm font-medium focus:ring-4 focus:ring-primary/5 premium-transition placeholder-slate-400 outline-none">
+            </form>
             
             <!-- Actions -->
             <div class="flex items-center gap-3">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-primary hover:bg-primary/5 premium-transition">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-primary hover:bg-primary/5 premium-transition">
                     <i class="fas fa-truck-fast"></i> <span>Track Order</span>
                 </a>
                 
@@ -136,7 +156,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                  <h4 class="font-bold text-slate-900 mb-6 text-sm uppercase tracking-wider">Support</h4>
                 <div class="flex flex-col space-y-4 font-medium text-sm text-slate-500">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary premium-transition w-fit">Track Your Order</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary premium-transition w-fit">Track Your Order</a>
                     <a href="#" class="hover:text-primary premium-transition w-fit">Shipping Policy</a>
                     <a href="#" class="hover:text-primary premium-transition w-fit">Returns & Refunds</a>
                 </div>
