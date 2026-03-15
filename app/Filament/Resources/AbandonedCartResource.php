@@ -25,6 +25,18 @@ class AbandonedCartResource extends Resource
     protected static ?string $navigationGroup = 'Shop Management';
     protected static ?string $slug = 'abandoned-carts';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) return false;
+
+        return $client->canAccessFeature('allow_abandoned_cart');
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

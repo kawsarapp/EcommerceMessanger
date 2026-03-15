@@ -24,6 +24,18 @@ class CourierReportResource extends Resource
     protected static ?string $slug = 'courier-reports';
     protected static ?string $navigationGroup = 'Logistics & Reports';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) return false;
+
+        return $client->canAccessFeature('allow_delivery_integration');
+    }
+
     // 100% Data Isolation (Seller sudhu nijer data dekhbe)
     public static function getEloquentQuery(): Builder
     {

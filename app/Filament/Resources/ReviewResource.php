@@ -25,6 +25,18 @@ class ReviewResource extends Resource
     /**
      * 🔥 Data Isolation: ক্লায়েন্ট শুধুমাত্র নিজের পেজ/রিভিউ দেখবে।
      */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) return false;
+
+        return $client->canAccessFeature('allow_review');
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

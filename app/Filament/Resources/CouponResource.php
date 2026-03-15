@@ -22,6 +22,18 @@ class CouponResource extends Resource
     /**
      * ডাটা আইসোলেশন: ক্লায়েন্ট শুধুমাত্র নিজের কুপন দেখবে।
      */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) return false;
+
+        return $client->canAccessFeature('allow_coupon');
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();

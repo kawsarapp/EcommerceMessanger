@@ -23,6 +23,18 @@ class SocialCommentResource extends Resource
     protected static ?string $navigationLabel = 'Social Comments';
     protected static ?string $navigationGroup = 'Shop Management';
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) return false;
+
+        return $client->canAccessFeature('allow_facebook_messenger');
+    }
+
     // সেলার শুধু নিজের শপের কমেন্ট দেখবে
     public static function getEloquentQuery(): Builder
     {
