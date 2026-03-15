@@ -2,7 +2,8 @@
   "apps": [
     {
       "name": "whatsapp-bot",
-      "script": "whatsapp-bot/server.js",
+      "cwd": "./whatsapp-bot",
+      "script": "server.js",
       "watch": true,
       "env": {
         "NODE_ENV": "production"
