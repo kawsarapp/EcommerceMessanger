@@ -156,6 +156,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
     </div>
 
+
+        @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
+    @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
 
     {{-- Dynamic Reviews Section --}}

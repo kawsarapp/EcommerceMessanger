@@ -114,6 +114,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <span class="text-2xl font-extrabold tracking-tight text-slate-900">{{$client->shop_name}}</span>
                 </a>
                 <p class="text-slate-500 font-medium text-sm leading-relaxed">Providing high-quality products and excellent customer service. Your satisfaction is our priority.</p>
+    @include('shop.partials.footer-links', ['client' => $client])
                 <div class="flex gap-4 items-center">
                     <div class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary cursor-pointer premium-transition"><i class="fab fa-facebook-f"></i></div>
                     <div class="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary cursor-pointer premium-transition"><i class="fab fa-instagram"></i></div>
@@ -183,5 +184,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
+
+        @include('shop.partials.popup-banner', ['client' => $client])
 </body>
 </html>

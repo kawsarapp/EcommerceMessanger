@@ -9,6 +9,8 @@ use Filament\Forms\Components\TextInput;
 
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\DateTimePicker;
 use App\Services\ImageOptimizer;
 
 class StorefrontTab
@@ -118,6 +120,90 @@ class StorefrontTab
                         ->rows(2)
                         ->visible(fn ($get) => $get('show_terms_checkbox'))
                         ->helperText('শর্তের একটি ছোট বর্ণনা। এটি চেকবক্সের নিচে দেখাবে।'),
+
+                    Toggle::make('show_stock')
+                        ->label('Show Stock Status')
+                        ->helperText('প্রোডাক্ট পেজে স্টক এর পরিমাণ দেখাবে কিনা।')
+                        ->default(true)
+                        ->onColor('success'),
+                        
+                    Toggle::make('show_related_products')
+                        ->label('Show Related Products')
+                        ->helperText('প্রোডাক্ট পেজের নিচে রিলেটেড প্রোডাক্ট দেখাবে কিনা।')
+                        ->default(true)
+                        ->onColor('success'),
+                        
+                    Toggle::make('show_return_warranty')
+                        ->label('Show Warranty & Return Policy')
+                        ->helperText('প্রোডাক্ট পেজে রিটার্ন ও ওয়ারেন্টি পলিসি দেখাবে কিনা।')
+                        ->default(true)
+                        ->onColor('success'),
+                ])->columns(2),
+                
+            Section::make('Payment Methods')
+                ->schema([
+                    Toggle::make('cod_active')
+                        ->label('Cash on Delivery (COD)')
+                        ->default(true)
+                        ->onColor('success'),
+                    Toggle::make('partial_payment_active')
+                        ->label('Partial Payment Allowed')
+                        ->default(false)
+                        ->onColor('success'),
+                    Toggle::make('full_payment_active')
+                        ->label('Full Pre-Payment Allowed')
+                        ->default(false)
+                        ->onColor('success'),
+                ])->columns(3),
+                
+            Section::make('Footer Settings')
+                ->schema([
+                    Textarea::make('footer_text')
+                        ->label('Custom Footer Text')
+                        ->placeholder('Copyright 2026. All rights reserved.'),
+                    Repeater::make('footer_links')
+                        ->label('Dynamic Footer Links')
+                        ->schema([
+                            TextInput::make('title')->label('Link Title')->required(),
+                            TextInput::make('url')->label('Link URL')->url()->required(),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(0)
+                        ->collapsible(),
+                ])->columns(1),
+                
+            Section::make('Offer Popup Banner')
+                ->description('শপে ঢুকলেই ইউজারের সামনে এই অফার পপআপ শো করবে।')
+                ->schema([
+                    Toggle::make('popup_active')
+                        ->label('Enable Popup Banner')
+                        ->default(false)
+                        ->live()
+                        ->onColor('success'),
+                        
+                    TextInput::make('popup_title')
+                        ->label('Popup Title')
+                        ->visible(fn ($get) => $get('popup_active')),
+                        
+                    Textarea::make('popup_description')
+                        ->label('Popup Description')
+                        ->visible(fn ($get) => $get('popup_active')),
+                        
+                    FileUpload::make('popup_image')
+                        ->label('Banner Image')
+                        ->image()
+                        ->directory('shops/popups')
+                        ->visible(fn ($get) => $get('popup_active')),
+                        
+                    TextInput::make('popup_link')
+                        ->label('Redirect Link (Optional)')
+                        ->url()
+                        ->visible(fn ($get) => $get('popup_active')),
+                        
+                    DateTimePicker::make('popup_expires_at')
+                        ->label('Popup Expires At')
+                        ->helperText('এই সময়ের পর পপআপ আর দেখাবে না।')
+                        ->visible(fn ($get) => $get('popup_active')),
                 ])->columns(2),
 
             Section::make('🧩 Widget Controls')

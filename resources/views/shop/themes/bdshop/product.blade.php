@@ -210,5 +210,8 @@ $totalReviews = $reviews->count();
         @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
     @endif
 
+
+        @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
+    @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
 @endsection

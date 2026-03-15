@@ -65,7 +65,8 @@ trait ShopCheckoutTrait
             'shipping_address' => 'required|string',
             'area' => 'required|in:inside,outside',
             'product_id' => 'required|exists:products,id',
-            'qty' => 'required|integer|min:1'
+            'qty' => 'required|integer|min:1',
+            'payment_method' => 'nullable|string|in:cod,partial,full'
         ]);
 
         $product = \App\Models\Product::findOrFail($request->product_id);
@@ -100,7 +101,7 @@ trait ShopCheckoutTrait
             'is_guest_checkout' => true,
             'order_status' => 'pending',
             'customer_note' => $request->notes,
-            'payment_method' => 'cod',
+            'payment_method' => $request->payment_method ?? 'cod',
         ]);
 
         \App\Models\OrderItem::create([

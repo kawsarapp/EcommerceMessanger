@@ -63,7 +63,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <span class="text-red-500"><i class="fas fa-circle text-[8px] mr-1"></i> Out of Stock</span>
                         @else
-                            <span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock</span>
+                            @if($client->show_stock ?? true)
+<span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock ({{ $product->stock_quantity }})</span>
+@else
+<span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-1"></i> In Stock</span>
+@endif
                         @endif
                     </div>
 
@@ -225,5 +229,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+
+        @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
+    @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
 @endsection

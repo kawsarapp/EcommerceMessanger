@@ -62,7 +62,48 @@
     <p x-show="couponError" x-text="couponError" class="text-red-500 text-xs font-bold mt-2"></p>
 </div>
 
-<hr class="border-slate-100">
+<hr class="border-slate-100 mb-6 mt-6">
+
+{{-- Payment Methods --}}
+<div>
+    <div class="flex items-center gap-4 mb-6">
+        <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm"><i class="fas fa-credit-card text-xs"></i></div>
+        <h3 class="text-lg font-bold text-slate-900">Payment Method</h3>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        @if($client->cod_active ?? true)
+        <label class="cursor-pointer">
+            <input type="radio" name="payment_method" value="cod" class="peer hidden" checked>
+            <div class="border border-slate-200 rounded-xl p-4 text-center peer-checked:border-primary peer-checked:bg-primary/5 transition hover:bg-slate-50">
+                <i class="fas fa-money-bill-wave text-xl text-slate-400 peer-checked:text-primary mb-2 block"></i>
+                <span class="block text-sm font-bold text-slate-700 peer-checked:text-primary">Cash on Delivery</span>
+            </div>
+        </label>
+        @endif
+        
+        @if($client->partial_payment_active ?? false)
+        <label class="cursor-pointer">
+            <input type="radio" name="payment_method" value="partial" class="peer hidden" {{ !($client->cod_active ?? true) ? 'checked' : '' }}>
+            <div class="border border-slate-200 rounded-xl p-4 text-center peer-checked:border-primary peer-checked:bg-primary/5 transition hover:bg-slate-50">
+                <i class="fas fa-wallet text-xl text-slate-400 peer-checked:text-primary mb-2 block"></i>
+                <span class="block text-sm font-bold text-slate-700 peer-checked:text-primary">Partial Pre-Payment</span>
+            </div>
+        </label>
+        @endif
+        
+        @if($client->full_payment_active ?? false)
+        <label class="cursor-pointer">
+            <input type="radio" name="payment_method" value="full" class="peer hidden" {{ !($client->cod_active ?? true) && !($client->partial_payment_active ?? false) ? 'checked' : '' }}>
+            <div class="border border-slate-200 rounded-xl p-4 text-center peer-checked:border-primary peer-checked:bg-primary/5 transition hover:bg-slate-50">
+                <i class="fas fa-credit-card text-xl text-slate-400 peer-checked:text-primary mb-2 block"></i>
+                <span class="block text-sm font-bold text-slate-700 peer-checked:text-primary">Full Pre-Payment</span>
+            </div>
+        </label>
+        @endif
+    </div>
+</div>
+
+<hr class="border-slate-100 mt-6 mb-6">
 
 {{-- Terms & Conditions --}}
 @if($client->show_terms_checkbox ?? false)

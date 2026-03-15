@@ -191,6 +191,14 @@ class ProductFormSchema
                                     }) 
                                     ->live(onBlur: true),
 
+                                TextInput::make('warranty')
+                                    ->label('Warranty')
+                                    ->placeholder('e.g. 6 Months Warranty'),
+
+                                TextInput::make('return_policy')
+                                    ->label('Return Policy')
+                                    ->placeholder('e.g. 7 Days Return Policy'),
+
                                     
 
                                 // 🔥 NEW FIELD: AI-এর জন্য Search Tags
