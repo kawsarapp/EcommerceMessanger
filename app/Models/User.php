@@ -23,6 +23,9 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
+        'client_id',
+        'staff_permissions',
+        'is_active',
     ];
 
     /**
@@ -43,8 +46,10 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'  => 'datetime',
+            'password'           => 'hashed',
+            'staff_permissions'  => 'array',
+            'is_active'          => 'boolean',
         ];
     }
 
@@ -62,6 +67,20 @@ class User extends Authenticatable implements FilamentUser
     public function isSuperAdmin(): bool
     {
         return $this->role === 'super_admin';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    public function hasStaffPermission(string $permission): bool
+    {
+        if ($this->isSuperAdmin()) return true;
+        if ($this->isStaff()) {
+            return in_array($permission, $this->staff_permissions ?? []);
+        }
+        return true; // regular seller has all permissions for their own shop
     }
 
     /**

@@ -9,7 +9,9 @@ use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Http;
 
 class OrderTableSchema
 {
@@ -79,6 +81,14 @@ class OrderTableSchema
                     default => 'gray',
                 }),
 
+            TextColumn::make('admin_note')
+                ->label('Note')
+                ->icon('heroicon-o-pencil-square')
+                ->color('warning')
+                ->limit(30)
+                ->tooltip(fn ($record) => $record->admin_note)
+                ->toggleable(isToggledHiddenByDefault: false),
+
             TextColumn::make('created_at')
                 ->label('Date')
                 ->dateTime('d M, Y h:i A')
@@ -138,6 +148,27 @@ class OrderTableSchema
                     }
                 }),
 
+            // 🔥 Add / Edit Note
+            Action::make('add_note')
+                ->label('Note')
+                ->icon('heroicon-o-pencil-square')
+                ->color('warning')
+                ->form([
+                    Textarea::make('admin_note')
+                        ->label('Order Note (internal)')
+                        ->placeholder('Add internal notes about this order...')
+                        ->rows(4)
+                        ->maxLength(1000),
+                ])
+                ->fillForm(fn (Order $record) => ['admin_note' => $record->admin_note])
+                ->action(function (Order $record, array $data) {
+                    $record->update(['admin_note' => $data['admin_note']]);
+                    \Filament\Notifications\Notification::make()
+                        ->title('Note saved!')
+                        ->success()
+                        ->send();
+                }),
+
             ActionGroup::make([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -151,21 +182,55 @@ class OrderTableSchema
         return [
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
-                
-                // 🔥 NEW FEATURE: Bulk Status Update
+
+                // Bulk Status Update
                 Tables\Actions\BulkAction::make('mark_as_processing')
                     ->label('Mark as Processing')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(fn (Collection $records) => $records->each->update(['order_status' => 'processing'])),
-                    
+
                 Tables\Actions\BulkAction::make('mark_as_shipped')
                     ->label('Mark as Shipped')
                     ->icon('heroicon-o-truck')
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (Collection $records) => $records->each->update(['order_status' => 'shipped'])),
+
+                // 📊 Google Sheet Export
+                Tables\Actions\BulkAction::make('export_google_sheet')
+                    ->label('Export to Google Sheet (CSV)')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('info')
+                    ->action(function (Collection $records) {
+                        $csvRows = [["Order ID", "Customer", "Phone", "Address", "Items", "Total", "Discount", "Coupon", "Status", "Payment", "Note", "Date"]];
+                        foreach ($records as $order) {
+                            $items = $order->orderItems->map(fn($i) => $i->product_name . ' x' . $i->quantity)->implode(' | ');
+                            $csvRows[] = [
+                                $order->id,
+                                $order->customer_name,
+                                $order->customer_phone,
+                                $order->customer_address,
+                                $items,
+                                $order->total_amount,
+                                $order->discount_amount ?? 0,
+                                $order->coupon_code ?? '',
+                                $order->order_status,
+                                $order->payment_status,
+                                $order->admin_note ?? '',
+                                $order->created_at->format('Y-m-d H:i'),
+                            ];
+                        }
+                        $csv = implode("\n", array_map(fn($r) => implode(',', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $r)), $csvRows));
+                        $filename = 'orders-export-' . now()->format('Y-m-d') . '.csv';
+
+                        // Return downloadable response
+                        return response()->streamDownload(fn() => print($csv), $filename, [
+                            'Content-Type' => 'text/csv',
+                        ]);
+                    })
+                    ->deselectRecordsAfterCompletion(),
             ]),
         ];
     }
