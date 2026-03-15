@@ -49,6 +49,7 @@ class Client extends Model
         'popup_expires_at' => 'datetime',
         'homepage_banner_active' => 'boolean',
         'homepage_banner_timer' => 'datetime',
+        'admin_permissions' => 'array',
     ];
 
     /**
@@ -169,6 +170,46 @@ class Client extends Model
             ->count();
             
         return $monthlyMessages >= $this->plan->ai_message_limit;
+    }
+
+    /**
+     * 🔑 Central Permission Check: Admin Override > Plan Feature
+     * 
+     * Usage: $client->canAccessFeature('allow_ai')
+     * 
+     * First checks admin_permissions overrides (set by Super Admin),
+     * then falls back to the Plan's feature flags.
+     */
+    public function canAccessFeature(string $feature): bool
+    {
+        // Super Admin client always has all features
+        if ($this->user?->isSuperAdmin()) return true;
+
+        // Check admin_permissions override first
+        $adminPerms = $this->admin_permissions ?? [];
+        if (array_key_exists($feature, $adminPerms)) {
+            return (bool) $adminPerms[$feature];
+        }
+
+        // Fall back to plan
+        if ($this->plan) {
+            return (bool) ($this->plan->$feature ?? false);
+        }
+
+        return false;
+    }
+
+    /**
+     * Get effective limit — admin override trumps plan limit
+     * Returns -1 if not overridden (use plan), 0 = unlimited
+     */
+    public function getEffectiveLimit(string $limitKey): int
+    {
+        $adminPerms = $this->admin_permissions ?? [];
+        if (isset($adminPerms[$limitKey]) && $adminPerms[$limitKey] >= 0) {
+            return (int) $adminPerms[$limitKey];
+        }
+        return (int) ($this->plan?->$limitKey ?? 0);
     }
 
     // ==========================================

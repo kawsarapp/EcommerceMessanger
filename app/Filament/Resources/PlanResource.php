@@ -295,6 +295,45 @@ class PlanResource extends Resource
                 ])->columns(1),
 
             // ══════════════════════════════════════════
+            // 🤖 SECTION 5.5: AI Access Control
+            // ══════════════════════════════════════════
+            Section::make('🤖 AI Access Control')
+                ->description('সেলাররা কোন AI ব্যবহার করতে পারবে এবং নিজের API Key দিতে পারবে কিনা।')
+                ->icon('heroicon-m-cpu-chip')
+                ->schema([
+                    Grid::make()->columns(3)->schema([
+                        Toggle::make('allow_ai')
+                            ->label('AI Bot Access')
+                            ->onColor('success')
+                            ->default(true)
+                            ->helperText('AI Bot চালু করতে পারবে কিনা'),
+
+                        Toggle::make('allow_own_api_key')
+                            ->label('Use Own API Key')
+                            ->onColor('info')
+                            ->default(false)
+                            ->helperText('নিজের Gemini/OpenAI/DeepSeek key দিতে পারবে'),
+                    ]),
+
+                    \Filament\Forms\Components\CheckboxList::make('allowed_ai_models')
+                        ->label('Allowed AI Models (খালি = সব মডেল)')
+                        ->options([
+                            'gemini-pro'              => '🟦 Gemini 1.5 Flash',
+                            'gemini-pro-full'         => '🟦 Gemini 2.0 Flash',
+                            'gpt-4o'                  => '🟩 GPT-4o',
+                            'gpt-4o-mini'             => '🟩 GPT-4o Mini',
+                            'gpt-3.5-turbo'           => '🟩 GPT-3.5 Turbo',
+                            'claude-3-opus-20240229'  => '🟧 Claude 3 Opus',
+                            'claude-3-haiku-20240307' => '🟧 Claude 3 Haiku',
+                            'deepseek-chat'           => '🟪 DeepSeek Chat',
+                            'deepseek-reasoner'       => '🟪 DeepSeek R1',
+                        ])
+                        ->columns(3)
+                        ->helperText('কোন মডেলগুলো এই প্ল্যানে available থাকবে। খালি রাখলে সব মডেল পাবে।')
+                        ->columnSpanFull(),
+                ])->columns(1),
+
+            // ══════════════════════════════════════════
             // ✅ SECTION 6: Availability
             // ══════════════════════════════════════════
             Section::make('✅ Plan Availability')

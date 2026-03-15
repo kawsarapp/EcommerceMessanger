@@ -27,6 +27,7 @@ class StorefrontTab
                         ->avatar()
                         ->directory('shops/logos')
                         ->maxSize(3072)
+                        ->helperText('📐 Recommended: 200×200px square. Max 3MB. PNG/JPG.')
                         ->saveUploadedFileUsing(function ($file) {
                             try {
                                 return (new ImageOptimizer())->optimize($file, 'shops/logos', 'shop_logo');
@@ -42,6 +43,7 @@ class StorefrontTab
                         ->image()
                         ->directory('shops/banners')
                         ->maxSize(8192)
+                        ->helperText('📐 Recommended: 1600×600px wide. Max 8MB. JPG/WebP.')
                         ->columnSpanFull()
                         ->saveUploadedFileUsing(function ($file) {
                             try {

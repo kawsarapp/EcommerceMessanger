@@ -11,70 +11,76 @@ class AiBrainTab
     public static function schema(): array
     {
         return [
-            Section::make('🤖 AI Model Selection (Admin Only)')
-                ->description('এই স্টোরের জন্য কোন AI ব্যবহার হবে সেটি এখান থেকে সিলেক্ট করুন। API Key সার্ভারের .env ফাইলে থাকে।')
+            Section::make('🤖 AI Model Selection')
+                ->description('এই স্টোরের জন্য কোন AI ব্যবহার হবে তা সিলেক্ট করুন।')
                 ->schema([
                     Select::make('ai_model')
                         ->label('AI Model সিলেক্ট করুন')
-                        ->options([
-                            // ── Google Gemini ──────────────────────────
-                            'gemini-pro'      => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
-                            'gemini-pro-full' => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
+                        ->options(function () {
+                            $client = filament()->getTenant() ?? auth()->user()?->client;
+                            $allModels = [
+                                'gemini-pro'              => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
+                                'gemini-pro-full'         => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
+                                'gpt-4o'                  => '🟩 OpenAI GPT-4o (Best Quality)',
+                                'gpt-4o-mini'             => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
+                                'gpt-3.5-turbo'           => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
+                                'claude-3-opus-20240229'  => '🟧 Anthropic Claude 3 Opus (Smartest)',
+                                'claude-3-haiku-20240307' => '🟧 Anthropic Claude 3 Haiku (Fast)',
+                                'deepseek-chat'           => '🟪 DeepSeek Chat (Cheap & Powerful)',
+                                'deepseek-reasoner'       => '🟪 DeepSeek R1 (Reasoning Model)',
+                            ];
 
-                            // ── OpenAI ────────────────────────────────
-                            'gpt-4o'          => '🟩 OpenAI GPT-4o (Best Quality)',
-                            'gpt-4o-mini'     => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
-                            'gpt-3.5-turbo'   => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
+                            // Super admin sees all
+                            if (auth()->user()?->isSuperAdmin()) return $allModels;
 
-                            // ── Anthropic Claude ─────────────────────
-                            'claude-3-opus-20240229'   => '🟧 Anthropic Claude 3 Opus (Smartest)',
-                            'claude-3-haiku-20240307'  => '🟧 Anthropic Claude 3 Haiku (Fast)',
+                            // Filter by plan's allowed models (if set)
+                            $plan = $client?->plan;
+                            if ($plan && !empty($plan->allowed_ai_models)) {
+                                return array_intersect_key($allModels, array_flip($plan->allowed_ai_models));
+                            }
 
-                            // ── DeepSeek ──────────────────────────────
-                            'deepseek-chat'     => '🟪 DeepSeek Chat (Cheap & Powerful)',
-                            'deepseek-reasoner' => '🟪 DeepSeek R1 (Reasoning Model)',
-                        ])
+                            return $allModels;
+                        })
                         ->default('gemini-pro')
                         ->required()
-                        ->helperText('⚙️ আপনার নিজস্ব API Key দিয়ে কাস্টম এআই চালাতে পারবেন।')
-                        ->live(), // Important to make visibility reactive
+                        ->helperText('⚙️ আপনার প্ল্যান অনুযায়ী AI মডেলের অ্যাক্সেস নির্ধারিত। নিজের API Key যোগ করতে পারবেন।')
+                        ->live(),
 
                     \Filament\Forms\Components\TextInput::make('gemini_api_key')
                         ->label('Google Gemini API Key')
                         ->password()
                         ->placeholder('AIzaSy...')
                         ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
-                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'gemini')),
+                        ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'gemini')),
 
                     \Filament\Forms\Components\TextInput::make('openai_api_key')
                         ->label('OpenAI API Key (ChatGPT)')
                         ->password()
                         ->placeholder('sk-proj-...')
                         ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
-                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'gpt')),
-                        
+                        ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'gpt')),
+
                     \Filament\Forms\Components\TextInput::make('deepseek_api_key')
                         ->label('DeepSeek API Key')
                         ->password()
                         ->placeholder('sk-...')
                         ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
-                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'deepseek')),
+                        ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'deepseek')),
 
                     \Filament\Forms\Components\TextInput::make('claude_api_key')
                         ->label('Anthropic Claude API Key')
                         ->password()
                         ->placeholder('sk-ant-...')
                         ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
-                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'claude')),
+                        ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'claude')),
 
                     \Filament\Forms\Components\TextInput::make('groq_api_key')
                         ->label('Groq Fast API Key')
                         ->password()
                         ->placeholder('gsk_...')
                         ->helperText('কী না দিলে সিস্টেমের ডিফল্ট কী ব্যবহার হবে।')
-                        ->visible(fn (callable $get) => str_contains($get('ai_model') ?? '', 'groq')),
-
-                ]), // Removed SuperAdmin check so EVERY seller can add their own key or select model.
+                        ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'groq')),
+                ]),
 
             Section::make('Knowledge Base')
                 ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')
@@ -103,7 +109,7 @@ class AiBrainTab
                         ->onColor('success')
                         ->offColor('danger')
                         ->inline(false),
-                    
+
                     Select::make('reminder_delay_hours')
                         ->label('Send Reminder After')
                         ->options([1 => '1 Hour', 2 => '2 Hours', 6 => '6 Hours', 12 => '12 Hours', 24 => '24 Hours'])
@@ -118,7 +124,7 @@ class AiBrainTab
                     Toggle::make('is_review_collection_active')
                         ->label('Enable Auto Review Request')
                         ->default(true),
-                    
+
                     Select::make('review_delay_days')
                         ->label('Ask for review after (Days)')
                         ->options([1 => '1 Day', 2 => '2 Days', 3 => '3 Days', 5 => '5 Days', 7 => '7 Days'])

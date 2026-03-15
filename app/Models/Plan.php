@@ -43,6 +43,13 @@ class Plan extends Model
         'allow_abandoned_cart',
         'allow_marketing_broadcast',
         'allow_analytics',
+        'allow_premium_themes',
+        'allow_payment_gateway',
+        'allow_delivery_integration',
+        'allow_facebook_messenger',
+        'allow_ai',
+        'allowed_ai_models',
+        'allow_own_api_key',
     ];
 
     protected $casts = [
@@ -59,9 +66,16 @@ class Plan extends Model
         'allow_review'             => 'boolean',
         'allow_abandoned_cart'     => 'boolean',
         'allow_marketing_broadcast'=> 'boolean',
-        'allow_analytics'          => 'boolean',
-        'price'                    => 'decimal:2',
-        'yearly_price'             => 'decimal:2',
+        'allow_analytics'           => 'boolean',
+        'allow_premium_themes'      => 'boolean',
+        'allow_payment_gateway'     => 'boolean',
+        'allow_delivery_integration'=> 'boolean',
+        'allow_facebook_messenger'  => 'boolean',
+        'allow_ai'                  => 'boolean',
+        'allowed_ai_models'         => 'array',
+        'allow_own_api_key'         => 'boolean',
+        'price'                     => 'decimal:2',
+        'yearly_price'              => 'decimal:2',
     ];
 
     // ─── Relationships ──────────────────────────────────────────

@@ -132,3 +132,23 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::get('/settings/domain', [ClientSettingsController::class, 'domainPage'])->name('dashboard.domain');
     Route::post('/settings/domain', [ClientSettingsController::class, 'updateDomain'])->name('dashboard.domain.update');
 });
+
+// ==========================================
+// 🛡️ BACKUP ROUTES (Super Admin Only)
+// ==========================================
+Route::middleware(['auth'])->prefix('admin-backup')->group(function () {
+    Route::get('/db', function () {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        return app(\App\Filament\Pages\BackupManager::class)->downloadFullDatabaseBackup();
+    })->name('filament.admin.pages.backup-manager.db');
+
+    Route::get('/zip', function () {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        return app(\App\Filament\Pages\BackupManager::class)->downloadFullWebsiteBackup();
+    })->name('filament.admin.pages.backup-manager.zip');
+
+    Route::get('/client/{clientId}', function ($clientId) {
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        return app(\App\Filament\Pages\BackupManager::class)->downloadClientBackup($clientId);
+    })->name('filament.admin.pages.backup-manager.client');
+});
