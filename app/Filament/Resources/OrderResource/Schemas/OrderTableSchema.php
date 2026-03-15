@@ -157,10 +157,10 @@ class OrderTableSchema
                     Textarea::make('admin_note')
                         ->label('Order Note (internal)')
                         ->placeholder('Add internal notes about this order...')
+                        ->default(fn (Order $record) => $record->admin_note)
                         ->rows(4)
                         ->maxLength(1000),
                 ])
-                ->fillForm(fn (Order $record) => ['admin_note' => $record->admin_note])
                 ->action(function (Order $record, array $data) {
                     $record->update(['admin_note' => $data['admin_note']]);
                     \Filament\Notifications\Notification::make()

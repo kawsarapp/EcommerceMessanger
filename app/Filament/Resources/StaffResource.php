@@ -91,13 +91,13 @@ class StaffResource extends Resource
                 Toggle::make('is_active')
                     ->label('Account Active')
                     ->default(true),
-            ])->columns(2),
+            ])->columns(['sm' => 2]),
 
             Section::make('Permissions')->description('এই staff member কোন কাজগুলো করতে পারবে তা নির্ধারণ করুন।')->schema([
                 CheckboxList::make('staff_permissions')
                     ->label('Allowed Actions')
                     ->options(self::availablePermissions())
-                    ->columns(2)
+                    ->columns(['sm' => 2])
                     ->bulkToggleable()
                     ->required(),
             ]),
@@ -171,6 +171,7 @@ class StaffResource extends Resource
     {
         $user = auth()->user();
         if (!$user) return false;
+        if ($user->role === 'staff') return false;
         if ($user->isSuperAdmin()) return true;
         $client = $user->client;
         return $client && $client->hasActivePlan();
