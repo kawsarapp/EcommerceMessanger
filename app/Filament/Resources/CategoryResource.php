@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
+use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -11,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class CategoryResource extends Resource
 {
@@ -25,21 +27,41 @@ class CategoryResource extends Resource
      */
     public static function canCreate(): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        return !auth()->user()?->isStaff();
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        $user = auth()->user();
+        if ($user?->isSuperAdmin()) return true;
+        return $record->client_id === $user?->client?->id;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        $user = auth()->user();
+        if ($user?->isSuperAdmin()) return true;
+        return $record->client_id === $user?->client?->id;
+    }
+
+    /**
+     * ডাটা আইসোলেশন: সেলার শুধু নিজের ক্যাটাগরি দেখবে, super admin সব দেখবে
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $user = auth()->user();
+        if ($user?->isSuperAdmin()) {
+            return parent::getEloquentQuery();
+        }
+        $clientId = $user?->client?->id;
+        return parent::getEloquentQuery()->where('client_id', $clientId);
     }
 
     public static function form(Form $form): Form
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user?->isSuperAdmin();
+
         return $form
             ->schema([
                 Forms\Components\Section::make('Category Details')
@@ -52,6 +74,15 @@ class CategoryResource extends Resource
                         Forms\Components\TextInput::make('slug')
                             ->required()
                             ->unique(ignoreRecord: true),
+
+                        // Super Admin হলে কোন ক্লায়েন্টের জন্য ক্যাটাগরি তৈরি হবে সেটা সিলেক্ট করতে পারবে
+                        Forms\Components\Select::make('client_id')
+                            ->label('Shop / Client')
+                            ->relationship('client', 'shop_name')
+                            ->searchable()
+                            ->required()
+                            ->visible($isSuperAdmin)
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                 // 🔥 নতুন সেকশন: Category Banner & Settings

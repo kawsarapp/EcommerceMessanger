@@ -17,7 +17,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Filament\Pages\Auth\CustomRegister; // আপনার কাস্টম রেজিস্ট্রেশন পেজ
+use App\Filament\Pages\Auth\CustomRegister;
+use App\Filament\Pages\Auth\CustomLogin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -39,8 +40,8 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth('full') // ফুল স্ক্রিন ভিউ
             
             // --- [ Authentication ] ---
-            ->login()
-            ->registration(CustomRegister::class) // কাস্টম রেজিস্ট্রেশন কানেক্ট করা হলো
+            ->login(CustomLogin::class)  // কাস্টম লগিন — domain isolation + instant error
+            ->registration(CustomRegister::class)
             ->passwordReset()
             ->emailVerification()
             ->profile() // প্রোফাইল এডিট করার সুবিধা

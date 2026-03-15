@@ -24,10 +24,11 @@ class ShopProductService
             });
         }
 
-        // ক্যাটাগরি ফিল্টার
+        // ক্যাটাগরি ফিল্টার — শুধু এই shop এর ক্যাটাগরি slug দিয়ে ফিল্টার
         if ($request->filled('category') && $request->category !== 'all') {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->category);
+            $query->whereHas('category', function ($q) use ($request, $clientId) {
+                $q->where('slug', $request->category)
+                  ->where('client_id', $clientId); // 🔒 SECURITY: category must belong to this shop
             });
         }
 
@@ -55,25 +56,26 @@ class ShopProductService
     }
 
     /**
-     * সাইডবার ক্যাটাগরি এবং প্রোডাক্ট কাউন্ট
+     * সাইডবার ক্যাটাগরি — শুধুমাত্র এই শপের ক্যাটাগরি দেখাবে
      */
     public function getSidebarCategories($clientId)
     {
-        return Category::where('is_visible', true)
+        return Category::where('client_id', $clientId) // 🔒 SECURITY: only this shop's categories
+            ->where('is_visible', true)
             ->withCount(['products' => function ($q) use ($clientId) {
                 $q->where('client_id', $clientId)->where('stock_status', 'in_stock');
             }])
-            ->orderBy('sort_order', 'asc') // সিরিয়াল অনুসারে প্রথমে সাজানো হবে
+            ->orderBy('sort_order', 'asc')
             ->orderBy('name')
             ->get();
     }
 
     /**
-     * সিঙ্গেল প্রোডাক্ট ফেচ করা
+     * সিঙ্গেল প্রোডাক্ট ফেচ করা — client_id দিয়ে verify করা হচ্ছে
      */
     public function getProductBySlug($clientId, $productSlug)
     {
-        return Product::where('client_id', $clientId)
+        return Product::where('client_id', $clientId) // 🔒 SECURITY: product must belong to this shop
             ->where('slug', $productSlug)
             ->with(['category', 'client', 'reviews' => function($q) {
                 $q->where('is_visible', true)->latest();
@@ -82,11 +84,11 @@ class ShopProductService
     }
 
     /**
-     * রিলেটেড প্রোডাক্ট ফেচ করা
+     * রিলেটেড প্রোডাক্ট — একই shop এবং একই category, অন্য seller এর প্রোডাক্ট কখনো না
      */
     public function getRelatedProducts($clientId, $categoryId, $excludeId)
     {
-        return Product::where('client_id', $clientId)
+        return Product::where('client_id', $clientId)  // 🔒 SECURITY: same shop only
             ->where('category_id', $categoryId)
             ->where('id', '!=', $excludeId)
             ->where('stock_status', 'in_stock')
