@@ -11,6 +11,12 @@ trait ShopTrackingTrait
         if (!$client->exists) return redirect('/');
        
         $pages = $this->clientService->getActivePages($client->id);
+        
+        if ($request->filled('phone')) {
+            $orders = $this->trackingService->trackOrder($client->id, $request->phone);
+            $phone = $request->phone;
+            return $this->themeView($client, 'tracking', compact('client', 'orders', 'phone', 'pages'));
+        }
        
         return $this->themeView($client, 'tracking', compact('client', 'pages'));
     }

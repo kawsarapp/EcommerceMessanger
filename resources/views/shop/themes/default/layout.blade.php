@@ -91,7 +91,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <i class="fas fa-shopping-bag"></i>
                     </div>
                 @endif
+                @if(!$client->logo)
                 <span class="text-2xl font-extrabold tracking-tight text-slate-900 ml-1">{{$client->shop_name}}</span>
+                @endif
             </a>
 
             <!-- Search Bar -->

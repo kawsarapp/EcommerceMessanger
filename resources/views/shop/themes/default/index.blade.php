@@ -62,7 +62,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
     </div>
 
     {{-- When a specific category is selected, show flat grid --}}
-    @if(request('category') && request('category') != 'all')
+    @if((request('category') && request('category') != 'all') || request()->filled('search'))
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
             @forelse($products as $p) 
                 @include('shop.partials.product-card', ['product' => $p, 'client' => $client])

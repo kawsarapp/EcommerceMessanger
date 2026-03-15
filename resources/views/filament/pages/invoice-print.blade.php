@@ -77,12 +77,20 @@
                     {{ $client->custom_domain ?? route('shop.show', $client->slug) }}
                 </p>
             </div>
-            <div class="w-1/2 text-right">
-                <h2 class="text-4xl font-black theme-text tracking-widest uppercase mb-2">INVOICE</h2>
-                <div class="inline-block text-left bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <p class="text-gray-600 mb-1"><strong>Invoice No:</strong> #INV-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</p>
-                    <p class="text-gray-600 mb-1"><strong>Date:</strong> {{ $order->created_at->format('d M, Y h:i A') }}</p>
-                    <p class="text-gray-600"><strong>Payment:</strong> <span class="px-2 py-0.5 bg-white border border-gray-200 rounded font-bold uppercase text-xs">{{ $order->payment_method }}</span></p>
+            <div class="w-1/2 text-right flex justify-end gap-6 items-start">
+                @php
+                    $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
+                    $trackLink = $cleanDomain ? 'https://' . $cleanDomain . '/track?phone=' . urlencode($order->customer_phone) : route('shop.track', ['slug' => $client->slug, 'phone' => $order->customer_phone]);
+                    $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($trackLink);
+                @endphp
+                <img src="{{ $qrUrl }}" alt="QR Code" class="w-24 h-24 rounded-lg border-2 border-gray-200 p-1 bg-white opacity-90 hidden sm:block">
+                <div>
+                    <h2 class="text-4xl font-black theme-text tracking-widest uppercase mb-2">INVOICE</h2>
+                    <div class="inline-block text-left bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <p class="text-gray-600 mb-1"><strong>Order ID:</strong> #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</p>
+                        <p class="text-gray-600 mb-1"><strong>Date:</strong> {{ $order->created_at->format('d M, Y h:i A') }}</p>
+                        <p class="text-gray-600"><strong>Payment:</strong> <span class="px-2 py-0.5 bg-white border border-gray-200 rounded font-bold uppercase text-xs">{{ $order->payment_method }}</span></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -152,11 +160,17 @@
                     <span class="text-gray-600 font-semibold">Subtotal:</span>
                     <span class="text-gray-800 font-medium">৳{{ number_format($subtotal, 2) }}</span>
                 </div>
-                <div class="flex justify-between py-2 text-sm border-b border-gray-200">
+                <div class="flex justify-between py-2 text-sm">
                     <span class="text-gray-600 font-semibold">Delivery Charge:</span>
-                    <span class="text-gray-800 font-medium">৳{{ number_format((float)$order->total_amount - $subtotal, 2) }}</span>
+                    <span class="text-gray-800 font-medium">৳{{ number_format((float)$order->shipping_charge, 2) }}</span>
                 </div>
-                <div class="flex justify-between py-4 mt-1">
+                @if(isset($order->discount_amount) && $order->discount_amount > 0)
+                <div class="flex justify-between py-2 text-sm border-t border-gray-100">
+                    <span class="text-green-600 font-bold">Discount {{ $order->coupon_code ? '('.$order->coupon_code.')' : '' }}:</span>
+                    <span class="text-green-600 font-bold">- ৳{{ number_format($order->discount_amount, 2) }}</span>
+                </div>
+                @endif
+                <div class="flex justify-between py-4 mt-1 border-t border-gray-200">
                     <span class="text-xl font-black text-gray-800">Grand Total:</span>
                     <span class="text-2xl font-black theme-text">৳{{ number_format($order->total_amount, 2) }}</span>
                 </div>
