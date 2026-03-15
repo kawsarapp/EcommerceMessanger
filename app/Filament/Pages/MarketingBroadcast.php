@@ -126,7 +126,7 @@ class MarketingBroadcast extends Page implements HasForms
 
         // ২. ব্রডকাস্ট সেন্ড করা
         $successCount = 0;
-        $messengerService = app(\App\Services\MessengerResponseService::class);
+        $messengerService = app(\App\Services\Messenger\MessengerResponseService::class);
         $imgUrl = $image ? asset('storage/' . $image) : null;
         $waApiUrl = config('services.whatsapp.api_url');
         
