@@ -54,11 +54,30 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Filament প্যানেল এক্সেস চেক
+     * Filament প্যানেল এক্সেস চেক (Security enforcement on Domains)
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true; // ক্লায়েন্ট এবং এডমিন দুজনেই ড্যাশবোর্ড এক্সেস পাবে
+        if (!$this->is_active) {
+            return false;
+        }
+
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Domain Check: Ensure user cannot login via another seller's custom domain
+        $host = request()->getHost();
+        $mainDomain = parse_url(config('app.url'), PHP_URL_HOST);
+
+        if ($host !== $mainDomain && $host !== '127.0.0.1' && $host !== 'localhost') {
+            $client = $this->client;
+            if (!$client || $client->custom_domain !== $host) {
+                return false; // Wrong custom domain for this user
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -85,10 +104,15 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Relationship with Client
+     * Seller owns the client (hasOne). Staff belongs to the client (belongsTo).
      */
     public function client()
     {
-        return $this->hasOne(Client::class);
+        if ($this->role === 'staff') {
+            return $this->belongsTo(Client::class, 'client_id');
+        }
+        
+        return $this->hasOne(Client::class, 'user_id');
     }
 
     /**

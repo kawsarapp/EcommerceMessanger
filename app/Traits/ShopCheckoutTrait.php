@@ -59,6 +59,8 @@ trait ShopCheckoutTrait
             $client = $this->clientService->getSafeClient($request, $slug);
         }
 
+        if (!$client || !$client->exists) return redirect('/');
+
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|min:11',

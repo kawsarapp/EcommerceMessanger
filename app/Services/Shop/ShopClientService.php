@@ -22,7 +22,8 @@ class ShopClientService
             if ($client) return $client;
         }
 
-        return Client::where('status', 'active')->first() ?? new Client();
+        // Return empty client instead of falling back to another random active shop
+        return new Client();
     }
 
     /**
