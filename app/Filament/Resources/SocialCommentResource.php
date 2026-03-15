@@ -29,18 +29,30 @@ class SocialCommentResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        if ($user->isStaff()) {
+            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_facebook_messenger')) {
+                return false;
+            }
+            return $user->hasStaffPermission('view_customers');
+        }
+
         $client = $user->client;
         if (!$client || !$client->hasActivePlan()) return false;
 
         return $client->canAccessFeature('allow_facebook_messenger');
     }
 
-    // সেলার শুধু নিজের শপের কমেন্ট দেখবে
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        if (auth()->user()?->isSuperAdmin()) return $query;
-        return $query->where('client_id', auth()->user()->client->id ?? null);
+        $user = auth()->user();
+
+        if ($user?->isSuperAdmin()) {
+            return $query;
+        }
+
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function table(Table $table): Table

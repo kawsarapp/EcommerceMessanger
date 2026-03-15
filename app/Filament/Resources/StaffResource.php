@@ -65,7 +65,7 @@ class StaffResource extends Resource
     public static function form(Form $form): Form
     {
         $user = auth()->user();
-        $clientId = $user->isSuperAdmin() ? null : $user->client?->id;
+        $clientId = $user?->isSuperAdmin() ? null : $user?->client?->id;
 
         return $form->schema([
             Section::make('Staff Account')->schema([
@@ -101,7 +101,7 @@ class StaffResource extends Resource
                     ->bulkToggleable()
                     ->required(),
             ]),
-        ])->statePath('data');
+        ]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

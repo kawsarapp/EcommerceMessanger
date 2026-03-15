@@ -31,6 +31,13 @@ class ReviewResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        if ($user->isStaff()) {
+            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_review')) {
+                return false;
+            }
+            return $user->hasStaffPermission('view_reviews');
+        }
+
         $client = $user->client;
         if (!$client || !$client->hasActivePlan()) return false;
 
@@ -40,15 +47,14 @@ class ReviewResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
+        $user = auth()->user();
         
-        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($user?->isSuperAdmin()) {
             return $query;
         }
 
-        return $query->whereHas('client', function (Builder $query) {
-            $query->where('user_id', auth()->id());
-        });
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
 
@@ -58,9 +64,9 @@ class ReviewResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Review Details')
                     ->schema([
-                        // Hidden Field: অটোমেটিক ইউজারের Client ID সেভ করবে
+                        // Hidden Field: নিজে থেকেই ইউজারের Client ID সেভ করবে
                         Forms\Components\Hidden::make('client_id')
-                            ->default(fn () => auth()->user()->client?->id ?? 1)
+                            ->default(fn () => auth()->user()->isSuperAdmin() ? 1 : (auth()->user()->client?->id ?? auth()->user()->client_id))
                             ->required(),
 
                         // 🔥 FIX: Admin থেকে রিভিউ বানালে sender_id মিসিং থাকে, তাই ডিফল্ট ভ্যালু দিয়ে দেওয়া হলো
@@ -72,7 +78,8 @@ class ReviewResource extends Resource
                         Forms\Components\Select::make('product_id')
                             ->relationship('product', 'name', function (Builder $query) {
                                 if (!auth()->user()?->isSuperAdmin()) {
-                                    $query->where('client_id', auth()->user()->client?->id);
+                                    $clientId = auth()->user()->client?->id ?? auth()->user()->client_id;
+                                    $query->where('client_id', $clientId);
                                 }
                             })
                             ->searchable()
@@ -149,5 +156,49 @@ class ReviewResource extends Resource
             'create' => Pages\CreateReview::route('/create'),
             'edit' => Pages\EditReview::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_reviews');
+        }
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) {
+            return false;
+        }
+
+        return $client->canAccessFeature('allow_review');
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_reviews') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $user->client->id === $record->client_id && $user->client->hasActivePlan();
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_reviews') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $user->client->id === $record->client_id;
     }
 }

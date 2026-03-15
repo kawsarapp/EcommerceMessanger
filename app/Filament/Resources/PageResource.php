@@ -25,18 +25,26 @@ class PageResource extends Resource
     /**
      * 🔥 ডাটা আইসোলেশন: ক্লায়েন্ট শুধুমাত্র নিজের পেজ দেখবে।
      */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false; // Staff shouldn't edit static pages usually
+
+        return true;
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
+        $user = auth()->user();
         
-        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($user?->isSuperAdmin()) {
             return $query;
         }
 
-        return $query->whereHas('client', function (Builder $query) {
-            $query->where('user_id', auth()->id());
-        });
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function form(Form $form): Form
@@ -47,7 +55,7 @@ class PageResource extends Resource
                     ->schema([
                         // Hidden Field: নিজে থেকেই ইউজারের Client ID সেভ করবে
                         Forms\Components\Hidden::make('client_id')
-                            ->default(fn () => auth()->user()->client?->id ?? 1)
+                            ->default(fn () => auth()->user()->isSuperAdmin() ? 1 : (auth()->user()->client?->id ?? auth()->user()->client_id))
                             ->required(),
 
                         Forms\Components\TextInput::make('title')
@@ -142,5 +150,33 @@ class PageResource extends Resource
             'create' => Pages\CreatePage::route('/create'),
             'edit' => Pages\EditPage::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false;
+        return true;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        return $user->client && $user->client->id === $record->client_id;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        return $user->client && $user->client->id === $record->client_id;
     }
 }

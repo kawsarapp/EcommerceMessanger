@@ -39,15 +39,14 @@ class ProductResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['client', 'category']);
+        $user = auth()->user();
 
-        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা দেখবে
-        if (auth()->user()?->isSuperAdmin()) { 
+        if ($user?->isSuperAdmin()) { 
             return $query;
         }
 
-        return $query->whereHas('client', function ($q) {
-            $q->where('user_id', auth()->id());
-        });
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function getPages(): array
@@ -66,7 +65,12 @@ class ProductResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
+        if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_products');
+        }
 
         return $user->client && $user->client->hasActivePlan();
     }
@@ -74,22 +78,30 @@ class ProductResource extends Resource
     public static function canCreate(): bool
     {
         $user = auth()->user();
-        
+        if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
-        $client = $user->client;
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('edit_products');
+        }
 
+        $client = $user->client;
         if (!$client || !$client->hasActivePlan()) {
             return false; 
         }
 
-        return $client->products()->count() < $client->plan->product_limit;
+        return !$client->hasReachedProductLimit();
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
+        if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('edit_products') && $user->client_id === $record->client_id;
+        }
 
         return $user->client && 
                $user->client->id === $record->client_id && 
@@ -99,7 +111,12 @@ class ProductResource extends Resource
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
+        if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('delete_products') && $user->client_id === $record->client_id;
+        }
 
         return $user->client && $user->client->id === $record->client_id;
     }

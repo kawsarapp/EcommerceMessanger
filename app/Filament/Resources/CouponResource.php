@@ -28,6 +28,13 @@ class CouponResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        if ($user->isStaff()) {
+            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_coupon')) {
+                return false;
+            }
+            return $user->hasStaffPermission('view_coupons');
+        }
+
         $client = $user->client;
         if (!$client || !$client->hasActivePlan()) return false;
 
@@ -37,13 +44,14 @@ class CouponResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        // সুপার এডমিন সব দেখবে, বাকিরা শুধু নিজেরটা
-        if (auth()->user()?->isSuperAdmin()) {
+        $user = auth()->user();
+        
+        if ($user?->isSuperAdmin()) {
             return $query;
         }
-        return $query->whereHas('client', function (Builder $query) {
-            $query->where('user_id', auth()->id());
-        });
+
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function form(Form $form): Form
@@ -52,9 +60,9 @@ class CouponResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Coupon Details')
                     ->schema([
-                        // Hidden Field: অটোমেটিক ইউজারের Client ID সেভ করবে
+                        // Hidden Field: নিজে থেকেই ইউজারের Client ID সেভ করবে
                         Forms\Components\Hidden::make('client_id')
-                            ->default(fn () => auth()->user()->client?->id ?? 1)
+                            ->default(fn () => auth()->user()->isSuperAdmin() ? 1 : (auth()->user()->client?->id ?? auth()->user()->client_id))
                             ->required(),
 
                         Forms\Components\TextInput::make('code')
@@ -164,5 +172,49 @@ class CouponResource extends Resource
             'create' => Pages\CreateCoupon::route('/create'),
             'edit' => Pages\EditCoupon::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_coupons');
+        }
+
+        $client = $user->client;
+        if (!$client || !$client->hasActivePlan()) {
+            return false;
+        }
+
+        return $client->canAccessFeature('allow_coupon');
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_coupons') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $user->client->id === $record->client_id && $user->client->hasActivePlan();
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_coupons') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $user->client->id === $record->client_id;
     }
 }

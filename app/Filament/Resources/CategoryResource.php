@@ -22,26 +22,56 @@ class CategoryResource extends Resource
     
     protected static ?string $navigationGroup = 'Shop Management';
 
-    /**
-     * এডমিন কন্ট্রোল: শুধুমাত্র ইউজার আইডি ১ (আপনি) তৈরি/এডিট/ডিলিট করতে পারবেন।
-     */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('view_products');
+        }
+
+        return $user->client && $user->client->hasActivePlan();
+    }
+
     public static function canCreate(): bool
     {
-        return !auth()->user()?->isStaff();
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('edit_products');
+        }
+
+        return $user->client && $user->client->hasActivePlan();
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = auth()->user();
-        if ($user?->isSuperAdmin()) return true;
-        return $record->client_id === $user?->client?->id;
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('edit_products') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $record->client_id === $user->client->id && $user->client->hasActivePlan();
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = auth()->user();
-        if ($user?->isSuperAdmin()) return true;
-        return $record->client_id === $user?->client?->id;
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->isStaff()) {
+            return $user->hasStaffPermission('delete_products') && $user->client_id === $record->client_id;
+        }
+
+        return $user->client && $record->client_id === $user->client->id;
     }
 
     /**
@@ -53,7 +83,7 @@ class CategoryResource extends Resource
         if ($user?->isSuperAdmin()) {
             return parent::getEloquentQuery();
         }
-        $clientId = $user?->client?->id;
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
         return parent::getEloquentQuery()->where('client_id', $clientId);
     }
 

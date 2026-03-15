@@ -30,6 +30,13 @@ class CourierReportResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        if ($user->isStaff()) {
+            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_delivery_integration')) {
+                return false;
+            }
+            return $user->hasStaffPermission('view_reports');
+        }
+
         $client = $user->client;
         if (!$client || !$client->hasActivePlan()) return false;
 
@@ -40,14 +47,14 @@ class CourierReportResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->whereNotNull('courier_name'); // Sudhu courier a pathano order gulo asbe
+        $user = auth()->user();
 
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($user?->isSuperAdmin()) {
             return $query; // Admin sob dekhbe
         }
 
-        return $query->whereHas('client', function (Builder $query) {
-            $query->where('user_id', auth()->id());
-        });
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function table(Table $table): Table

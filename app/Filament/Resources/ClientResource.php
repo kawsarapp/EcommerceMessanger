@@ -56,8 +56,14 @@ class ClientResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        if (auth()->user()?->isSuperAdmin()) return $query;
-        return $query->where('user_id', auth()->id());
+        $user = auth()->user();
+
+        if ($user?->isSuperAdmin()) {
+            return $query;
+        }
+        
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('id', $clientId);
     }
     
     public static function getPages(): array
@@ -70,6 +76,15 @@ class ClientResource extends Resource
     }
 
     // --- Permissions ---
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false; // Staff shouldn't see shop settings
+
+        return true;
+    }
+
     public static function canCreate(): bool 
     { 
         return auth()->user()?->isSuperAdmin() ?? false; 
@@ -82,6 +97,11 @@ class ClientResource extends Resource
     
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->isSuperAdmin() || $record->user_id === auth()->id();
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isStaff()) return false;
+        if ($user->isSuperAdmin()) return true;
+
+        return $record->user_id === $user->id;
     }
 }

@@ -31,6 +31,13 @@ class AbandonedCartResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        if ($user->isStaff()) {
+            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_abandoned_cart')) {
+                return false;
+            }
+            return $user->hasStaffPermission('view_abandoned');
+        }
+
         $client = $user->client;
         if (!$client || !$client->hasActivePlan()) return false;
 
@@ -40,15 +47,17 @@ class AbandonedCartResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
+        $user = auth()->user();
         
         // শুধু অসম্পূর্ণ সেশনগুলো দেখাবে
         $query->where('customer_info->step', '!=', 'completed');
 
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($user?->isSuperAdmin()) {
             return $query;
         }
 
-        return $query->where('client_id', auth()->user()->client->id ?? null);
+        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
+        return $query->where('client_id', $clientId);
     }
 
     public static function table(Table $table): Table
