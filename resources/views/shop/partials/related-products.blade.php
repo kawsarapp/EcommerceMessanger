@@ -1,6 +1,7 @@
 @if($client->show_related_products ?? true)
     @php
         $relatedProducts = \App\Models\Product::where('category_id', $product->category_id)
+                        ->where('client_id', $client->id)
                         ->where('id', '!=', $product->id)
                         ->take(4)->get();
     @endphp

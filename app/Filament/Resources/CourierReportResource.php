@@ -30,17 +30,17 @@ class CourierReportResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        // canAccessFeature() checks admin override first, then plan
+        if (!$client->canAccessFeature('allow_delivery_integration')) return false;
+
         if ($user->isStaff()) {
-            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_delivery_integration')) {
-                return false;
-            }
             return $user->hasStaffPermission('view_reports');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) return false;
-
-        return $client->canAccessFeature('allow_delivery_integration');
+        return true;
     }
 
     // 100% Data Isolation (Seller sudhu nijer data dekhbe)

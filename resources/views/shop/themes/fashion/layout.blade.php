@@ -38,10 +38,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#111111"}};
+            --mob-primary: {{$client->primary_color ?? "#111111"}};
         }
         [x-cloak]{display:none!important} 
         .hide-scroll::-webkit-scrollbar{display:none}
         .fashion-border { border: 1px solid rgba(0,0,0,0.05); }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1.4rem!important;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        }
     </style>
 </head>
 <body class="bg-white text-gray-900 antialiased flex flex-col min-h-screen">
@@ -53,23 +57,23 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @endif
 
     <header class="bg-white sticky top-0 z-50 transition-all border-b border-gray-100">
-        <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-20 md:h-24 flex justify-between items-center">
-            
-            <div class="w-1/3 flex items-center">
-                 <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-black transition">Track</a>
+        <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
+            <!-- Left: Track (desktop only) -->
+            <div class="w-1/3 hidden md:flex items-center">
+                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-black transition">Track</a>
             </div>
-
-            <div class="w-1/3 flex justify-center items-center">
+            <!-- Center: Logo -->
+            <div class="flex-1 md:w-1/3 flex justify-start md:justify-center items-center">
                 <a href="{{$baseUrl}}" class="flex items-center gap-3">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain">
+                        <img src="{{asset('storage/'.$client->logo)}}" class="h-9 md:h-12 object-contain">
                     @else
-                        <span class="text-3xl md:text-4xl font-heading font-black tracking-tight text-primary">{{$client->shop_name}}</span>
+                        <span class="shop-name-text text-2xl md:text-4xl font-heading font-black tracking-tight text-primary">{{$client->shop_name}}</span>
                     @endif
                 </a>
             </div>
-            
-            <div class="w-1/3 flex justify-end items-center gap-6">
+            <!-- Right: Messenger -->
+            <div class="w-auto md:w-1/3 flex justify-end items-center gap-4">
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-400 hover:text-black transition">
                     <i class="fab fa-facebook-messenger text-lg md:text-xl"></i>
@@ -99,7 +103,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

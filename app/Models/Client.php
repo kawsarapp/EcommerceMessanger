@@ -111,18 +111,35 @@ class Client extends Model
 
     /**
      * চেক করবে ক্লায়েন্টের প্ল্যান একটিভ আছে কিনা
+     *
+     * ✅ Admin Bypass: admin_permissions-এ যদি কোনো feature override থাকে
+     *    এবং status 'active' হয়, তাহলে plan না থাকলেও বা expire হলেও
+     *    এটি true দেবে — seller কাজ করতে পারবে।
      */
     public function hasActivePlan(): bool
     {
         // ১. Super Admin হলে বাইপাস
         if ($this->user?->isSuperAdmin()) return true;
 
-        // ২. প্ল্যান আইডি না থাকলে বা স্ট্যাটাস ইনঅ্যাক্টিভ হলে ফলস
-        if (!$this->plan_id || $this->status !== 'active') {
+        // ২. স্ট্যাটাস inactive/suspended হলে সব বন্ধ
+        if ($this->status === 'inactive') {
             return false;
         }
 
-        // ৩. মেয়াদ শেষ হয়ে গেছে কিনা চেক
+        // ৩. Admin Permission Override আছে কিনা চেক
+        //    যদি super admin অন্তত একটা feature override করে রাখে,
+        //    তাহলে plan expire/নেই হলেও seller operate করতে পারবে
+        $adminPerms = $this->admin_permissions ?? [];
+        if (!empty($adminPerms) && $this->status === 'active') {
+            return true;
+        }
+
+        // ৪. Plan আইডি না থাকলে false
+        if (!$this->plan_id) {
+            return false;
+        }
+
+        // ৫. মেয়াদ শেষ হয়ে গেছে কিনা চেক
         if ($this->plan_ends_at && now()->gt($this->plan_ends_at)) {
             return false;
         }
@@ -135,10 +152,15 @@ class Client extends Model
      */
     public function hasReachedProductLimit(): bool
     {
-        if (!$this->plan) return true; 
-        if ($this->plan->product_limit == 0) return false; // 0 means Unlimited
+        $adminPerms = $this->admin_permissions ?? [];
+        $limit = isset($adminPerms['product_limit'])
+            ? (int) $adminPerms['product_limit']
+            : (int) ($this->plan?->product_limit ?? -1);
 
-        return $this->products()->count() >= $this->plan->product_limit;
+        if ($limit === -1) return true;  // plan নেই, কোনো override নেই
+        if ($limit === 0) return false;  // 0 = Unlimited
+
+        return $this->products()->count() >= $limit;
     }
 
     /**
@@ -146,15 +168,20 @@ class Client extends Model
      */
     public function hasReachedOrderLimit(): bool
     {
-        if (!$this->plan) return true;
-        if ($this->plan->order_limit == 0) return false;
+        $adminPerms = $this->admin_permissions ?? [];
+        $limit = isset($adminPerms['order_limit'])
+            ? (int) $adminPerms['order_limit']
+            : (int) ($this->plan?->order_limit ?? -1);
+
+        if ($limit === -1) return true;  // plan নেই, কোনো override নেই
+        if ($limit === 0) return false;  // 0 = Unlimited
 
         $monthlyOrders = $this->orders()
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-            
-        return $monthlyOrders >= $this->plan->order_limit;
+
+        return $monthlyOrders >= $limit;
     }
 
     /**
@@ -175,24 +202,30 @@ class Client extends Model
 
     /**
      * 🔑 Central Permission Check: Admin Override > Plan Feature
-     * 
+     *
      * Usage: $client->canAccessFeature('allow_ai')
-     * 
-     * First checks admin_permissions overrides (set by Super Admin),
-     * then falls back to the Plan's feature flags.
+     *
+     * ✅ যদি admin_permissions-এ override থাকে, তাহলে plan active আছে কিনা
+     *    সেটা check করে না — seller-এর জন্যও কাজ করবে।
+     * ✅ Override না থাকলে plan-এর feature flag থেকে নেয়।
      */
     public function canAccessFeature(string $feature): bool
     {
         // Super Admin client always has all features
         if ($this->user?->isSuperAdmin()) return true;
 
-        // Check admin_permissions override first
+        // 🔑 Check admin_permissions override FIRST (plan active না থাকলেও কাজ করবে)
         $adminPerms = $this->admin_permissions ?? [];
         if (array_key_exists($feature, $adminPerms)) {
             return (bool) $adminPerms[$feature];
         }
 
-        // Fall back to plan
+        // Admin override নেই — এখন plan active আছে কিনা check করো
+        if (!$this->hasActivePlan()) {
+            return false;
+        }
+
+        // Fall back to plan feature flag
         if ($this->plan) {
             return (bool) ($this->plan->$feature ?? false);
         }
@@ -201,8 +234,19 @@ class Client extends Model
     }
 
     /**
+     * ✅ Seller/Staff এর canViewAny() এ ব্যবহারের জন্য shortcut:
+     *    admin_permissions override আছে কিনা চেক করে।
+     *    থাকলে plan-active requirement bypass হবে।
+     */
+    public function hasAdminOverrideFor(string $feature): bool
+    {
+        $adminPerms = $this->admin_permissions ?? [];
+        return array_key_exists($feature, $adminPerms);
+    }
+
+    /**
      * Get effective limit — admin override trumps plan limit
-     * Returns -1 if not overridden (use plan), 0 = unlimited
+     * Returns 0 if not overridden and no plan (use plan default)
      */
     public function getEffectiveLimit(string $limitKey): int
     {

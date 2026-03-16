@@ -34,7 +34,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </script>
     <style>
-        :root { --tw-color-primary: {{$client->primary_color ?? "#f85606"}}; }
+        :root { --tw-color-primary: {{$client->primary_color ?? "#f85606"}}; --mob-primary: {{$client->primary_color ?? "#f85606"}}; }
         [x-cloak]{display:none!important}
         body { background-color: #f5f5f5; }
         .hide-scroll::-webkit-scrollbar{display:none}
@@ -175,8 +175,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
     {{-- Floating Chat --}}
     @include('shop.partials.floating-chat', ['client' => $client])
-
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

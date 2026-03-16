@@ -37,17 +37,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#d4af37"}};
+            --mob-primary: {{$client->primary_color ?? "#d4af37"}};
         }
         [x-cloak]{display:none!important} 
         .hide-scroll::-webkit-scrollbar{display:none}
-        .luxury-gradient { 
-            background: linear-gradient(135deg, rgba(20,20,20,1) 0%, rgba(10,10,10,1) 100%); 
-        }
-        .gold-text {
-            background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+        .luxury-gradient { background: linear-gradient(135deg, rgba(20,20,20,1) 0%, rgba(10,10,10,1) 100%); }
+        .gold-text { background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1.1rem!important;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.1em}
         }
     </style>
 </head>
@@ -60,29 +57,28 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @endif
 
     <header class="bg-dark/95 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 transition-all">
-        <div class="max-w-[100rem] mx-auto px-4 sm:px-12 h-24 flex justify-between items-center">
-            
-            <div class="w-1/3 flex items-center gap-6">
-                <!-- Hamburger pseudo for luxury feel, left aligned -->
-                <button type="button" class="text-gray-300 hover:text-primary transition flex flex-col gap-1.5 w-6">
+        <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
+            <!-- Left -->
+            <div class="w-1/3 flex items-center gap-4">
+                <button type="button" class="text-gray-300 hover:text-primary transition flex flex-col gap-1.5 w-5">
                     <span class="block w-full h-[1px] bg-current"></span>
                     <span class="block w-4/5 h-[1px] bg-current"></span>
                     <span class="block w-full h-[1px] bg-current"></span>
                 </button>
             </div>
-
-            <div class="w-1/3 flex justify-center items-center">
-                <a href="{{$baseUrl}}" class="flex items-center gap-3">
+            <!-- Center logo -->
+            <div class="w-1/3 flex justify-center">
+                <a href="{{$baseUrl}}" class="flex items-center gap-2">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-12 md:h-14 object-contain brightness-0 invert">
+                        <img src="{{asset('storage/'.$client->logo)}}" class="h-9 md:h-14 object-contain brightness-0 invert">
                     @else
-                        <span class="text-3xl md:text-4xl font-serif font-medium tracking-widest text-white uppercase">{{$client->shop_name}}</span>
+                        <span class="shop-name-text text-xl md:text-4xl font-serif font-medium tracking-widest text-white uppercase">{{$client->shop_name}}</span>
                     @endif
                 </a>
             </div>
-            
-            <div class="w-1/3 flex justify-end items-center gap-6">
-                 <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hidden md:block text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition">Track</a>
+            <!-- Right -->
+            <div class="w-1/3 flex justify-end items-center gap-4 md:gap-6">
+                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hidden md:block text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition">Track</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-400 hover:text-primary transition">
                     <i class="fab fa-facebook-messenger text-lg"></i>
@@ -134,7 +130,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

@@ -31,17 +31,17 @@ class ReviewResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        // canAccessFeature() checks admin override first, then plan
+        if (!$client->canAccessFeature('allow_review')) return false;
+
         if ($user->isStaff()) {
-            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_review')) {
-                return false;
-            }
             return $user->hasStaffPermission('view_reviews');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) return false;
-
-        return $client->canAccessFeature('allow_review');
+        return true;
     }
 
     public static function getEloquentQuery(): Builder
@@ -164,16 +164,16 @@ class ReviewResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        if (!$client->canAccessFeature('allow_review')) return false;
+
         if ($user->isStaff()) {
             return $user->hasStaffPermission('view_reviews');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) {
-            return false;
-        }
-
-        return $client->canAccessFeature('allow_review');
+        return true;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
@@ -186,7 +186,9 @@ class ReviewResource extends Resource
             return $user->hasStaffPermission('view_reviews') && $user->client_id === $record->client_id;
         }
 
-        return $user->client && $user->client->id === $record->client_id && $user->client->hasActivePlan();
+        $client = $user->client;
+        return $client && $client->id === $record->client_id
+            && $client->canAccessFeature('allow_review');
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool

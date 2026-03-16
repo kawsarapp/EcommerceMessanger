@@ -31,17 +31,17 @@ class AbandonedCartResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        // canAccessFeature() checks admin override first, then plan
+        if (!$client->canAccessFeature('allow_abandoned_cart')) return false;
+
         if ($user->isStaff()) {
-            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_abandoned_cart')) {
-                return false;
-            }
             return $user->hasStaffPermission('view_abandoned');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) return false;
-
-        return $client->canAccessFeature('allow_abandoned_cart');
+        return true;
     }
 
     public static function getEloquentQuery(): Builder

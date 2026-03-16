@@ -34,11 +34,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#000000"}};
+            --mob-primary: {{$client->primary_color ?? "#000000"}};
         }
         [x-cloak]{display:none!important} 
         .hide-scroll::-webkit-scrollbar{display:none}
         .modern-hover { transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
         .modern-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1rem!important;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        }
     </style>
 </head>
 <body class="bg-[#fafafa] text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white">
@@ -50,25 +54,21 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @endif
 
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 transition-all">
-        <div class="max-w-[90rem] mx-auto px-6 h-20 flex justify-between items-center">
-            
-            <a href="{{$baseUrl}}" class="flex items-center gap-3">
+        <div class="max-w-[90rem] mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">
+            <a href="{{$baseUrl}}" class="flex items-center gap-2 min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-10 object-contain">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-7 md:h-10 object-contain flex-shrink-0">
                 @endif
-                <span class="text-2xl font-black tracking-tighter uppercase">{{$client->shop_name}}</span>
+                <span class="shop-name-text text-xl md:text-2xl font-black tracking-tighter uppercase">{{$client->shop_name}}</span>
             </a>
-            
-            <div class="flex gap-6 items-center">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-black hover:after:w-full after:transition-all after:duration-300">TRACK ORDER</a>
-                
+            <div class="hidden md:flex gap-6 items-center">
+                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors">TRACK ORDER</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all">
                     <i class="fab fa-facebook-messenger"></i>
                 </a>
                 @endif
             </div>
-            
         </div>
     </header>
 
@@ -115,7 +115,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

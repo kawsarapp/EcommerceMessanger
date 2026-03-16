@@ -72,7 +72,9 @@ class ProductResource extends Resource
             return $user->hasStaffPermission('view_products');
         }
 
-        return $user->client && $user->client->hasActivePlan();
+        $client = $user->client;
+        // hasActivePlan() now respects admin_permissions override
+        return $client && $client->hasActivePlan();
     }
 
     public static function canCreate(): bool
@@ -103,8 +105,8 @@ class ProductResource extends Resource
             return $user->hasStaffPermission('edit_products') && $user->client_id === $record->client_id;
         }
 
-        return $user->client && 
-               $user->client->id === $record->client_id && 
+        return $user->client &&
+               $user->client->id === $record->client_id &&
                $user->client->hasActivePlan();
     }
 

@@ -46,10 +46,10 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at'  => 'datetime',
-            'password'           => 'hashed',
-            'staff_permissions'  => 'array',
-            'is_active'          => 'boolean',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'staff_permissions' => 'array',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -95,7 +95,8 @@ class User extends Authenticatable implements FilamentUser
 
     public function hasStaffPermission(string $permission): bool
     {
-        if ($this->isSuperAdmin()) return true;
+        if ($this->isSuperAdmin())
+            return true;
         if ($this->isStaff()) {
             return in_array($permission, $this->staff_permissions ?? []);
         }
@@ -108,11 +109,22 @@ class User extends Authenticatable implements FilamentUser
      */
     public function client()
     {
+        // For 'staff', client_id exists on the User model
         if ($this->role === 'staff') {
-            return $this->belongsTo(Client::class, 'client_id');
+            return $this->belongsTo(Client::class , 'client_id');
         }
-        
-        return $this->hasOne(Client::class, 'user_id');
+
+        // For 'seller' or 'admin', client is connected via user_id
+        return $this->hasOne(Client::class , 'user_id');
+    }
+
+    /**
+     * Helper to reliably get the client for the user, regardless of role.
+     * This makes it easy to just do $user->activeClient()->id anywhere.
+     */
+    public function getActiveClientAttribute()
+    {
+        return $this->client;
     }
 
     /**
@@ -123,9 +135,9 @@ class User extends Authenticatable implements FilamentUser
         // 🛑 [BUG FIX]: ডাবল শপ তৈরি হওয়া ঠেকাতে এখান থেকে অটো-শপ ক্রিয়েট কোডটি মুছে দেওয়া হলো।
         // এখন শুধুমাত্র CustomRegister (Filament) থেকেই শপ তৈরি হবে, 
         // যাতে সেলার রেজিস্ট্রেশনের সময় যে নাম দিবে, ঠিক সেই নামেই ১টি মাত্র শপ তৈরি হয়।
-        
+
         static::created(function ($user) {
-            // ভবিষ্যতে যদি অন্য কোনো ইউজার ইভেন্ট যুক্ত করতে চান, তবে এখানে করবেন।
+        // ভবিষ্যতে যদি অন্য কোনো ইউজার ইভেন্ট যুক্ত করতে চান, তবে এখানে করবেন।
         });
     }
 }

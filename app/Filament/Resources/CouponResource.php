@@ -28,17 +28,17 @@ class CouponResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        // canAccessFeature() checks admin override first, then plan
+        if (!$client->canAccessFeature('allow_coupon')) return false;
+
         if ($user->isStaff()) {
-            if (!$user->client || !$user->client->hasActivePlan() || !$user->client->canAccessFeature('allow_coupon')) {
-                return false;
-            }
             return $user->hasStaffPermission('view_coupons');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) return false;
-
-        return $client->canAccessFeature('allow_coupon');
+        return true;
     }
 
     public static function getEloquentQuery(): Builder
@@ -180,16 +180,16 @@ class CouponResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        $client = $user->client;
+        if (!$client) return false;
+
+        if (!$client->canAccessFeature('allow_coupon')) return false;
+
         if ($user->isStaff()) {
             return $user->hasStaffPermission('view_coupons');
         }
 
-        $client = $user->client;
-        if (!$client || !$client->hasActivePlan()) {
-            return false;
-        }
-
-        return $client->canAccessFeature('allow_coupon');
+        return true;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool

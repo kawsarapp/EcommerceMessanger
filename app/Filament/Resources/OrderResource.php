@@ -90,7 +90,9 @@ class OrderResource extends Resource
             return $user->hasStaffPermission('view_orders');
         }
 
-        return $user->client && $user->client->hasActivePlan();
+        $client = $user->client;
+        // hasActivePlan() now respects admin_permissions override
+        return $client && $client->hasActivePlan();
     }
 
     public static function canCreate(): bool
@@ -98,9 +100,9 @@ class OrderResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
-        
+
         if ($user->isStaff()) {
-            return $user->hasStaffPermission('edit_orders'); // Assuming creating order is part of editing
+            return $user->hasStaffPermission('edit_orders');
         }
 
         $client = $user->client;
@@ -119,7 +121,8 @@ class OrderResource extends Resource
             return $user->hasStaffPermission('edit_orders') && $user->client_id === $record->client_id;
         }
 
-        return $user->client && $user->client->id === $record->client_id && $user->client->hasActivePlan();
+        $client = $user->client;
+        return $client && $client->id === $record->client_id && $client->hasActivePlan();
     }
 
     public static function canDelete(Model $record): bool

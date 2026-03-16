@@ -39,11 +39,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#10b981"}};
+            --mob-primary: {{$client->primary_color ?? "#10b981"}};
         }
         [x-cloak]{display:none!important} 
         body { background-color: #f8fafc; }
         .hide-scroll::-webkit-scrollbar{display:none}
         .blob-bg { background-image: radial-gradient(circle at top left, rgba(16, 185, 129, 0.05), transparent 40%), radial-gradient(circle at bottom right, rgba(250, 204, 21, 0.05), transparent 40%); }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1.1rem!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen blob-bg selection:bg-primary selection:text-white">
@@ -55,39 +59,34 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @endif
 
     <header class="bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-slate-200 transition-all shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex justify-between items-center">
-            
-            <a href="{{$baseUrl}}" class="flex items-center gap-2 group">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">
+            <a href="{{$baseUrl}}" class="flex items-center gap-2 group min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain group-hover:scale-105 transition">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 group-hover:scale-105 transition">
                 @else
-                    <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary text-xl">
+                    <div class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary text-lg flex-shrink-0">
                         <i class="fas fa-shopping-basket"></i>
                     </div>
                 @endif
-                <span class="text-2xl font-black tracking-tight text-slate-800 group-hover:text-primary transition ml-1">{{$client->shop_name}}</span>
+                <span class="shop-name-text text-xl md:text-2xl font-black tracking-tight text-slate-800 group-hover:text-primary transition">{{$client->shop_name}}</span>
             </a>
-
-            <!-- Search Bar Mockup -->
+            <!-- Desktop: search + actions -->
             <div class="hidden md:flex flex-1 max-w-xl mx-8 relative">
                 <input type="text" placeholder="Search for fresh vegetables, fruits, meat..." class="w-full bg-slate-100 border-none px-6 py-3 rounded-full text-slate-700 font-semibold focus:ring-2 focus:ring-primary focus:bg-white transition shadow-inner">
                 <button class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-emerald-600 transition shadow-sm">
                     <i class="fas fa-search text-xs"></i>
                 </button>
             </div>
-            
-            <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-4">
                 <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-600 hover:text-primary transition flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-200 hover:border-primary/50">
-                    <i class="fas fa-truck-fast text-primary"></i> <span class="hidden sm:inline-block">Track Status</span>
+                    <i class="fas fa-truck-fast text-primary"></i> <span>Track Status</span>
                 </a>
-                
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition shadow-sm">
                     <i class="fab fa-facebook-messenger text-lg"></i>
                 </a>
                 @endif
             </div>
-            
         </div>
     </header>
 
@@ -168,7 +167,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

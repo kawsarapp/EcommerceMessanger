@@ -35,34 +35,22 @@
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#6366f1"}};
+            --mob-primary: {{$client->primary_color ?? "#6366f1"}};
         }
         [x-cloak] { display: none !important; }
         .hide-scroll::-webkit-scrollbar { display: none; }
-        
-        /* Premium Glassmorphism */
         .glass-nav {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
-        
-        .hover-lift {
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
-        }
-        .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1);
-        }
-        
-        .btn-premium {
-            background: linear-gradient(135deg, var(--tw-color-primary) 0%, #818cf8 100%);
-            transition: all 0.3s ease;
-        }
-        .btn-premium:hover {
-            background: linear-gradient(135deg, #4f46e5 0%, var(--tw-color-primary) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        .hover-lift { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1); }
+        .btn-premium { background: linear-gradient(135deg, var(--tw-color-primary) 0%, #818cf8 100%); transition: all 0.3s ease; }
+        .btn-premium:hover { background: linear-gradient(135deg, #4f46e5 0%, var(--tw-color-primary) 100%); transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4); }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1rem!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         }
     </style>
 </head>
@@ -75,22 +63,19 @@
     @endif
 
     <header class="glass-nav sticky top-0 z-50 w-full transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
-            
-            <a href="{{$baseUrl}}" class="flex items-center gap-3 group">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex justify-between items-center gap-3">
+            <a href="{{$baseUrl}}" class="flex items-center gap-2 group min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" alt="{{$client->shop_name}}" class="h-10 w-auto object-contain transition group-hover:scale-105">
+                    <img src="{{asset('storage/'.$client->logo)}}" alt="{{$client->shop_name}}" class="h-8 md:h-10 w-auto object-contain flex-shrink-0 transition group-hover:scale-105">
                 @endif
-                <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">
+                <span class="shop-name-text text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">
                     {{$client->shop_name}}
                 </span>
             </a>
-
-            <div class="flex items-center gap-5">
+            <div class="hidden md:flex items-center gap-5">
                 <a href="{{$clean ? $baseUrl.'/track-order' : route('shop.track',$client->slug)}}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors flex items-center gap-2 bg-gray-100/80 px-4 py-2 rounded-full hover:bg-white hover:shadow-sm">
                     <i class="fas fa-truck-fast"></i> Track Order
                 </a>
-                
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md">
                     <i class="fab fa-facebook-messenger text-lg"></i>
@@ -132,7 +117,7 @@
         </div>
     </footer>
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

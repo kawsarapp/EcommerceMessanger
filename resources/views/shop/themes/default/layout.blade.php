@@ -59,11 +59,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#6366f1"}};
+            --mob-primary: {{$client->primary_color ?? "#6366f1"}};
         }
         [x-cloak]{display:none!important}
         body { background-color: #fafafa; }
         .hide-scroll::-webkit-scrollbar{display:none}
         .premium-transition { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1.1rem!important;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary">
@@ -81,45 +85,36 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
     <!-- Modern Glass Header -->
     <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200/60 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex justify-between items-center group">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">
             
-            <a href="{{$baseUrl}}" class="flex items-center gap-3 premium-transition hover:opacity-80">
+            <a href="{{$baseUrl}}" class="flex items-center gap-2 premium-transition hover:opacity-80 min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0">
                 @else
-                    <div class="w-10 h-10 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary">
+                    <div class="w-9 h-9 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                         <i class="fas fa-shopping-bag"></i>
                     </div>
-                @endif
-                @if(!$client->logo)
-                <span class="text-2xl font-extrabold tracking-tight text-slate-900 ml-1">{{$client->shop_name}}</span>
+                    <span class="shop-name-text text-xl md:text-2xl font-extrabold tracking-tight text-slate-900">{{$client->shop_name}}</span>
                 @endif
             </a>
 
-            <!-- Search Bar -->
+            <!-- Desktop Search Bar -->
             <form action="{{ $baseUrl }}" method="GET" class="hidden md:flex flex-1 max-w-md mx-8 relative group/search">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary premium-transition"></i>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search for products..." class="w-full bg-slate-100/50 hover:bg-slate-100 border-2 border-transparent focus:border-primary/20 focus:bg-white pl-11 pr-5 py-2.5 rounded-2xl text-slate-700 text-sm font-medium focus:ring-4 focus:ring-primary/5 premium-transition placeholder-slate-400 outline-none">
             </form>
             
-            <!-- Actions -->
-            <div class="flex items-center gap-3">
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-primary hover:bg-primary/5 premium-transition">
+            <!-- Desktop Actions -->
+            <div class="hidden md:flex items-center gap-3">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-primary hover:bg-primary/5 premium-transition">
                     <i class="fas fa-truck-fast"></i> <span>Track Order</span>
                 </a>
-                
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-primary hover:text-white flex items-center justify-center text-slate-600 premium-transition shadow-sm">
                     <i class="fab fa-facebook-messenger text-lg"></i>
                 </a>
                 @endif
-                
-                <!-- Mobile Search Toggle -->
-                <button class="md:hidden w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                    <i class="fas fa-search"></i>
-                </button>
             </div>
-            
         </div>
     </header>
 
@@ -206,7 +201,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

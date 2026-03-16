@@ -42,15 +42,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <style>
         :root {
             --tw-color-primary: {{$client->primary_color ?? "#f43f5e"}};
+            --mob-primary: {{$client->primary_color ?? "#f43f5e"}};
         }
         [x-cloak]{display:none!important} 
         body { background-color: #fce7f3; background-image: radial-gradient(#f9a8d4 2px, transparent 2px); background-size: 40px 40px; }
         .hide-scroll::-webkit-scrollbar{display:none}
         .cloud-border { border-radius: 60px 20px 50px 30px / 30px 40px 60px 40px; }
         .bouncy:hover { animation: bounce-fun 0.5s ease; }
-        @keyframes bounce-fun {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        @keyframes bounce-fun { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @media(max-width:767px){
+            .shop-name-text{font-size:1.3rem!important;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         }
     </style>
 </head>
@@ -65,42 +66,35 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @endif
 
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b-4 border-slate-200 transition-all shadow-cloud">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 h-20 md:h-24 flex justify-between items-center group">
-            
-            <a href="{{$baseUrl}}" class="flex items-center gap-3 bouncy relative">
-                <!-- Decorative hidden cloud element -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-24 flex justify-between items-center gap-3">
+            <a href="{{$baseUrl}}" class="flex items-center gap-2 bouncy relative min-w-0">
                 <div class="absolute -top-6 -left-6 w-20 h-20 bg-primary/10 rounded-full blur-xl z-0 transition-opacity opacity-0 group-hover:opacity-100"></div>
-                
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-12 md:h-16 object-contain z-10 relative">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-16 object-contain z-10 relative flex-shrink-0">
                 @else
-                    <div class="w-12 h-12 md:w-16 md:h-16 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-lg border-4 border-pink-200 z-10 relative transform -rotate-6 group-hover:rotate-0 transition-transform">
-                        <i class="fas fa-puzzle-piece text-2xl md:text-3xl"></i>
+                    <div class="w-10 h-10 md:w-16 md:h-16 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-lg border-4 border-pink-200 z-10 relative transform -rotate-6 group-hover:rotate-0 transition-transform flex-shrink-0">
+                        <i class="fas fa-puzzle-piece text-xl md:text-3xl"></i>
                     </div>
                 @endif
-                <span class="text-2xl md:text-4xl font-heading tracking-wide text-slate-800 group-hover:text-primary transition z-10 relative ml-2 drop-shadow-sm">{{$client->shop_name}}</span>
+                <span class="shop-name-text text-2xl md:text-4xl font-heading tracking-wide text-slate-800 group-hover:text-primary transition z-10 relative">{{$client->shop_name}}</span>
             </a>
-
-            <!-- Search Mock -->
+            <!-- Desktop search -->
             <div class="hidden lg:flex w-full max-w-lg mx-6 relative">
-                <input type="text" placeholder="Find toys, clothes, games..." class="w-full bg-slate-100 border-4 border-white shadow-inner px-6 py-3.5 rounded-full text-slate-700 font-bold focus:ring-4 focus:ring-funblue/30 focus:border-funblue transition">
-                <button class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-funblue text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition shadow-md">
+                <input type="text" placeholder="Find toys, clothes, games..." class="w-full bg-slate-100 border-4 border-white shadow-inner px-6 py-3 rounded-full text-slate-700 font-bold focus:ring-4 focus:ring-funblue/30 focus:border-funblue transition">
+                <button class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-funblue text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition shadow-md">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
-            
-            <div class="flex items-center gap-3 md:gap-5">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-700 hover:text-white transition flex items-center gap-2 bg-white px-5 py-2.5 rounded-full border-4 border-slate-200 hover:border-funblue hover:bg-funblue shadow-sm bouncy transform-gpu whitespace-nowrap">
-                    <i class="fas fa-map-marker-alt text-funblue group-hover:text-white"></i> <span class="hidden sm:inline-block">Track Magic</span>
+            <div class="hidden md:flex items-center gap-3">
+                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-700 hover:text-white transition flex items-center gap-2 bg-white px-4 py-2.5 rounded-full border-4 border-slate-200 hover:border-funblue hover:bg-funblue shadow-sm bouncy whitespace-nowrap">
+                    <i class="fas fa-map-marker-alt text-funblue"></i> Track
                 </a>
-                
                 @if($client->fb_page_id)
-                <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-12 h-12 rounded-full bg-white border-4 border-slate-200 flex items-center justify-center text-funblue hover:bg-funblue hover:text-white hover:border-funblue transition shadow-sm bouncy">
+                <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-11 h-11 rounded-full bg-white border-4 border-slate-200 flex items-center justify-center text-funblue hover:bg-funblue hover:text-white transition shadow-sm bouncy">
                     <i class="fab fa-facebook-messenger text-xl"></i>
                 </a>
                 @endif
             </div>
-            
         </div>
     </header>
 
@@ -174,7 +168,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
-
-        @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
