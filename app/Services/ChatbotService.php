@@ -69,8 +69,8 @@ class ChatbotService
 
         if ($base64Image) {
             $visionTags = $this->utility->analyzeImageWithGoogleVision($base64Image);
-            $promptContext = $visionTags ? "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে। Google Vision API স্ক্যান করে ছবিতে এই জিনিসগুলো পেয়েছে: '{$visionTags}'। ⚠️ তুমি ছবির গায়ে লেখা কোনো টেক্সট (OCR) দিয়ে প্রোডাক্ট খুঁজবে না! শুধুমাত্র এই ভিজ্যুয়াল ট্যাগগুলো ব্যবহার করে ইনভেন্টরি থেকে সঠিক প্রোডাক্টটি খুঁজে বের করো।] " : "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে। ছবিটির ভিজ্যুয়াল প্যাটার্ন বুঝে ইনভেন্টরি থেকে সিমিলার প্রোডাক্ট খুঁজে বের করো।] ";
-            $userMessage = empty(trim($userMessage)) ? $promptContext . "এই ছবির মতো কোনো প্রোডাক্ট কি আপনার স্টকে আছে?" : $promptContext . "কাস্টমারের মেসেজ: " . $userMessage;
+            $promptContext = $visionTags ? "[সিস্টেম নোট: কাস্টমার ছবি পাঠিয়েছে। Google Vision API স্ক্যান রেজাল্ট: '{$visionTags}'। ⚠️ যদি ছবির গায়ে কোনো SKU, ID বা টেক্সট লেখা থাকে, তাহলে ঠিক সেই SKU বা টেক্সট দিয়ে স্টকে সার্চ করবে।] " : "[সিস্টেম নোট: কাস্টমার ছবি পাঠিয়েছে। ইনভেন্টরি থেকে এই ছবির মতো প্রোডাক্ট খুঁজবে।] ";
+            $userMessage = empty(trim($userMessage)) ? $promptContext . "এই ছবির মতো প্রোডাক্ট বা এই SKU এর প্রোডাক্ট স্টকে আছে কি?" : $promptContext . "কাস্টমারের মেসেজ: " . $userMessage;
         }
         elseif (empty(trim($userMessage)) && !$base64Image)
             return null;

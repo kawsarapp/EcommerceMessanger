@@ -99,6 +99,14 @@ class InventoryService
                 ? asset('storage/' . ltrim($p->thumbnail, '/')) 
                 : ($p->image ? asset('storage/' . ltrim($p->image, '/')) : null);
 
+            $galleryUrls = [];
+            $galleryArray = is_array($p->gallery) ? $p->gallery : (is_string($p->gallery) ? json_decode($p->gallery, true) ?? [] : []);
+            foreach ($galleryArray as $gPath) {
+                if (!empty($gPath)) {
+                    $galleryUrls[] = asset('storage/' . ltrim($gPath, '/'));
+                }
+            }
+
             return [
                 'id' => $p->id,
                 'sku' => $p->sku ?? 'N/A',
@@ -109,7 +117,9 @@ class InventoryService
                 'stock' => $p->stock_quantity,
                 'desc' => Str::limit(strip_tags($p->description ?? $p->short_description), 150),
                 'link' => route('shop.product.details', [$client->slug, $p->slug]),
-                'image_url' => $mainImage
+                'image_url' => $mainImage,
+                'gallery_images' => $galleryUrls,
+                'video_url' => $p->video_url ?? 'N/A'
             ];
         })->toJson();
     }

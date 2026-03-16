@@ -128,12 +128,15 @@ class Product extends Model
 
             // Note: If fonts/roboto.ttf is missing, this might throw an error, 
             // but we are catching \Throwable so it won't crash the server.
-            $img->text($watermarkText, $img->width() - 20, $img->height() - 20, function ($font) {
+            $img->text($watermarkText, $img->width() - 40, $img->height() - 40, function ($font) {
                 if (file_exists(public_path('fonts/roboto.ttf'))) {
                     $font->filename(public_path('fonts/roboto.ttf'));
+                } elseif (file_exists(public_path('fonts/arial.ttf'))) {
+                    $font->filename(public_path('fonts/arial.ttf'));
                 }
-                $font->size(45);
-                $font->color('rgba(0, 0, 0, 0.6)'); // Added opacity so it looks like a watermark
+                
+                $font->size(80);
+                $font->color('rgba(0, 0, 0, 0.7)'); // Added opacity so it looks like a watermark
                 $font->align('right');
                 $font->valign('bottom');
             });
