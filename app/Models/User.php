@@ -140,4 +140,13 @@ class User extends Authenticatable implements FilamentUser
         // ভবিষ্যতে যদি অন্য কোনো ইউজার ইভেন্ট যুক্ত করতে চান, তবে এখানে করবেন।
         });
     }
+
+    /**
+     * Send the password reset notification.
+     * Overrides default to use our beautiful custom template.
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\CustomResetPassword($token));
+    }
 }
