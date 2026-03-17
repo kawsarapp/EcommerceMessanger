@@ -36,15 +36,16 @@ class PlanUpgradeRequestResource extends Resource
         $user = auth()->user();
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
-        // Sellers can see their own requests
-        return !$user->isStaff() && $user->client && $user->client->hasActivePlan();
+        // All sellers can see upgrade requests (even without an active plan — that's WHY they want to upgrade!)
+        return !$user->isStaff() && (bool) $user->client;
     }
 
     public static function canCreate(): bool
     {
         $user = auth()->user();
         if (!$user || $user->isSuperAdmin() || $user->isStaff()) return false;
-        // Only seller can submit upgrade request
+        // Any seller with a client profile can submit an upgrade request
+        // (even if they have no plan yet — they want to buy one!)
         return (bool) $user->client;
     }
 

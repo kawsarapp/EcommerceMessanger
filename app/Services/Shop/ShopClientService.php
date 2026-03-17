@@ -18,7 +18,10 @@ class ShopClientService
         }
 
         if ($slug) {
-            $client = Client::where('slug', $slug)->where('status', 'active')->first();
+            // Allow 'active' and 'inactive' shops — only block 'suspended' shops entirely
+            $client = Client::where('slug', $slug)
+                ->whereIn('status', ['active', 'inactive'])
+                ->first();
             if ($client) return $client;
         }
 
