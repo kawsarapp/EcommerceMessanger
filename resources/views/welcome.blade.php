@@ -134,7 +134,7 @@
             </p>
             
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="{{ route('register') }}" class="px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-lg shadow-[0_10px_30px_-10px_rgba(245,48,3,0.5)] transition-all transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
+                <a href="{{ route('filament.admin.auth.register') }}" class="px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-lg shadow-[0_10px_30px_-10px_rgba(245,48,3,0.5)] transition-all transform hover:-translate-y-1 w-full sm:w-auto flex items-center justify-center gap-2">
                     <i class="fas fa-rocket"></i> ৭ দিনের ফ্রি ট্রায়াল শুরু করুন
                 </a>
                 <a href="#features" class="px-8 py-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-lg transition-all w-full sm:w-auto flex items-center justify-center gap-2">
@@ -350,10 +350,10 @@
             <h2 class="text-3xl md:text-5xl font-bold mb-4 z-10 font-bangla">আপনার সেলস বাড়াতে প্রস্তুত?</h2>
             <p class="text-gray-300 md:text-xl mb-10 max-w-2xl z-10 font-bangla">আজই যুক্ত হোন আমাদের প্ল্যাটফর্মে এবং আপনার ই-কমার্স ব্যবসাকে দিন এআই এর শক্তি। প্রথম ৭ দিন সম্পূর্ণ ফ্রি ব্যবহার করে দেখুন!</p>
             <div class="flex flex-col sm:flex-row gap-4 z-10">
-                <a href="{{ route('register') }}" class="px-8 py-4 bg-brand-500 hover:bg-brand-600 rounded-xl font-bold text-lg shadow-[0_10px_30px_-10px_rgba(245,48,3,0.5)] transition-all transform hover:-translate-y-1">
+                <a href="{{ route('filament.admin.auth.register') }}" class="px-8 py-4 bg-brand-500 hover:bg-brand-600 rounded-xl font-bold text-lg shadow-[0_10px_30px_-10px_rgba(245,48,3,0.5)] transition-all transform hover:-translate-y-1">
                     গেট স্টার্টেড (ফ্রি)
                 </a>
-                <a href="{{ route('login') }}" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl font-bold text-lg transition-all">
+                <a href="{{ route('filament.admin.auth.login') }}" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl font-bold text-lg transition-all">
                     লগইন করুন
                 </a>
             </div>
