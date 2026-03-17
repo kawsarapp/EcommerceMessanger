@@ -21,32 +21,32 @@
 </div>
 
 {{-- ========== HOW IT WORKS ========== --}}
-<div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">⚡ How It Works — 3 Simple Steps</h2>
+<div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">⚡ How It Works — 3 Simple Steps</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-700">
             <div class="text-3xl mb-2">1️⃣</div>
-            <h3 class="font-bold text-indigo-800">Connect Your Store</h3>
-            <p class="text-sm text-indigo-600 mt-1">Use our WordPress plugin, npm package, or REST API to push your product data to our system using your API Key.</p>
+            <h3 class="font-bold text-indigo-800 dark:text-indigo-300">Connect Your Store</h3>
+            <p class="text-sm text-indigo-600 dark:text-indigo-400 mt-1">Use our WordPress plugin, npm package, or REST API to push your product data to our system using your API Key.</p>
         </div>
-        <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-700">
             <div class="text-3xl mb-2">2️⃣</div>
-            <h3 class="font-bold text-purple-800">Connect Your Channel</h3>
-            <p class="text-sm text-purple-600 mt-1">Link your Facebook Page or WhatsApp number. The AI bot will now listen on your channels.</p>
+            <h3 class="font-bold text-purple-800 dark:text-purple-300">Connect Your Channel</h3>
+            <p class="text-sm text-purple-600 dark:text-purple-400 mt-1">Link your Facebook Page or WhatsApp number. The AI bot will now listen on your channels.</p>
         </div>
-        <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-100 dark:border-green-700">
             <div class="text-3xl mb-2">3️⃣</div>
-            <h3 class="font-bold text-green-800">It Works Automatically</h3>
-            <p class="text-sm text-green-600 mt-1">Customers ask questions → AI reads your DB → Replies instantly. Orders are created automatically.</p>
+            <h3 class="font-bold text-green-800 dark:text-green-300">It Works Automatically</h3>
+            <p class="text-sm text-green-600 dark:text-green-400 mt-1">Customers ask questions → AI reads your DB → Replies instantly. Orders are created automatically.</p>
         </div>
     </div>
 </div>
 
 {{-- ========== TABS ========== --}}
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
 
     {{-- Tab Bar --}}
-    <div class="flex overflow-x-auto border-b border-gray-200 bg-gray-50">
+    <div class="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
         @foreach([
             ['id' => 'wordpress',    'icon' => '🔷', 'label' => 'WordPress'],
             ['id' => 'laravel',      'icon' => '🔴', 'label' => 'Laravel / PHP'],
@@ -59,7 +59,7 @@
         ] as $tab)
         <button
             @click="activeTab = '{{ $tab['id'] }}'"
-            :class="activeTab === '{{ $tab['id'] }}' ? 'border-b-2 border-indigo-600 text-indigo-700 bg-white font-semibold' : 'text-gray-500 hover:text-gray-700'"
+            :class="activeTab === '{{ $tab['id'] }}' ? 'border-b-2 border-indigo-600 text-indigo-700 bg-white dark:bg-gray-800 dark:text-indigo-400 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
             class="px-5 py-3.5 text-sm whitespace-nowrap transition flex items-center gap-1.5">
             {{ $tab['icon'] }} {{ $tab['label'] }}
         </button>
@@ -73,8 +73,8 @@
         <div class="flex items-center gap-3">
             <span class="text-4xl">🔷</span>
             <div>
-                <h2 class="text-xl font-bold text-gray-800">WordPress / WooCommerce</h2>
-                <p class="text-gray-500 text-sm">Install our plugin — products sync automatically to the AI bot.</p>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">WordPress / WooCommerce</h2>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Install our plugin — products sync automatically to the AI bot.</p>
             </div>
         </div>
 
@@ -87,8 +87,8 @@
             </ol>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">⚙️ Step 2 — Configure in WordPress</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">⚙️ Step 2 — Configure in WordPress</p>
             <p class="text-sm text-gray-600 mb-2">In your WP Admin, click <strong>"AI Commerce Bot"</strong> in the sidebar and enter your API Key:</p>
             <div class="bg-gray-900 rounded-lg p-3">
                 <pre class="text-green-400 text-sm font-mono whitespace-pre-wrap">Seller API Key: {{ $apiKey }}</pre>
@@ -113,20 +113,20 @@
         <div class="flex items-center gap-3">
             <span class="text-4xl">🔴</span>
             <div>
-                <h2 class="text-xl font-bold text-gray-800">Laravel / PHP Integration</h2>
-                <p class="text-gray-500 text-sm">Push your products using our REST API with a simple HTTP call.</p>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Laravel / PHP Integration</h2>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Push your products using our REST API with a simple HTTP call.</p>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">📦 Install via Composer (optional helper)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">📦 Install via Composer (optional helper)</p>
             <div class="bg-gray-900 rounded-lg p-4">
                 <pre class="text-green-400 font-mono text-sm"># No package needed — just use Laravel Http facade</pre>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🔄 Sync Products (sync on product save/update)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🔄 Sync Products (sync on product save/update)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-sm">use Illuminate\Support\Facades\Http;
 
@@ -154,8 +154,8 @@ Http::withHeaders([
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">✅ Test the Connection</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">✅ Test the Connection</p>
             <div class="bg-gray-900 rounded-lg p-4">
 <pre class="text-green-400 font-mono text-sm">$response = Http::withHeaders(['X-Api-Key' => '{{ $apiKey }}'])
     ->get('{{ $appUrl }}/api/connector/verify');
@@ -165,8 +165,8 @@ dd($response->json());</pre>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🤖 Get the JS Chatbot Snippet for Your Site</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🤖 Get the JS Chatbot Snippet for Your Site</p>
             <div class="bg-gray-900 rounded-lg p-4">
 <pre class="text-green-400 font-mono text-sm">$snippet = Http::withHeaders(['X-Api-Key' => '{{ $apiKey }}'])
     ->get('{{ $appUrl }}/api/connector/js-snippet')
@@ -182,20 +182,20 @@ dd($response->json());</pre>
         <div class="flex items-center gap-3">
             <span class="text-4xl">🟢</span>
             <div>
-                <h2 class="text-xl font-bold text-gray-800">Node.js Integration</h2>
-                <p class="text-gray-500 text-sm">Works with Express, NestJS, Next.js, or any Node framework.</p>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Node.js Integration</h2>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Works with Express, NestJS, Next.js, or any Node framework.</p>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">📦 Install (terminal)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">📦 Install (terminal)</p>
             <div class="bg-gray-900 rounded-lg p-4">
                 <pre class="text-green-400 font-mono text-sm">npm install axios   # or use built-in fetch</pre>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🔄 Sync Products</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🔄 Sync Products</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-sm">const axios = require('axios');
 
@@ -228,16 +228,16 @@ syncProducts([
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">✅ Verify Connection (2 lines)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">✅ Verify Connection (2 lines)</p>
             <div class="bg-gray-900 rounded-lg p-4">
 <pre class="text-green-400 font-mono text-sm">const res = await axios.get(`{{ $appUrl }}/api/connector/verify`, { headers: { 'X-Api-Key': '{{ $apiKey }}' } });
 console.log(res.data); // { success: true, shop: '{{ $shopName }}', products: 42 }</pre>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🔁 Auto-Sync on Product Save (Express example)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🔁 Auto-Sync on Product Save (Express example)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-sm">app.post('/admin/products', async (req, res) => {
   // Save to your own DB...
@@ -261,19 +261,19 @@ console.log(res.data); // { success: true, shop: '{{ $shopName }}', products: 42
             <span class="text-4xl">🐍</span>
             <div>
                 <h2 class="text-xl font-bold text-gray-800">Python Integration</h2>
-                <p class="text-gray-500 text-sm">Works with Django, Flask, FastAPI, or any Python backend.</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Works with Django, Flask, FastAPI, or any Python backend.</p>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">📦 Install (terminal)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">📦 Install (terminal)</p>
             <div class="bg-gray-900 rounded-lg p-4">
                 <pre class="text-green-400 font-mono text-sm">pip install requests</pre>
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🔄 Sync Products (2–4 lines)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🔄 Sync Products (2–4 lines)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-sm">import requests
 
@@ -294,8 +294,8 @@ sync_products([
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">✅ Verify Connection</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">✅ Verify Connection</p>
             <div class="bg-gray-900 rounded-lg p-4">
 <pre class="text-green-400 font-mono text-sm">r = requests.get(f'{BASE_URL}/api/connector/verify', headers=HEADERS)
 print(r.json())  # {'success': True, 'shop': '{{ $shopName }}'}</pre>
@@ -309,7 +309,7 @@ print(r.json())  # {'success': True, 'shop': '{{ $shopName }}'}</pre>
             <span class="text-4xl">🌐</span>
             <div>
                 <h2 class="text-xl font-bold text-gray-800">Any Website (HTML / Static / Custom)</h2>
-                <p class="text-gray-500 text-sm">No framework needed. Just paste 2 lines of code.</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">No framework needed. Just paste 2 lines of code.</p>
             </div>
         </div>
 
@@ -329,8 +329,8 @@ window.AICB_URL = '{{ $appUrl }}';
             </button>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🔄 Push Products via plain JavaScript (fetch)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🔄 Push Products via plain JavaScript (fetch)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-sm">fetch('{{ $appUrl }}/api/connector/sync-products', {
   method: 'POST',
@@ -361,7 +361,7 @@ window.AICB_URL = '{{ $appUrl }}';
             <span class="text-4xl">📘</span>
             <div>
                 <h2 class="text-xl font-bold text-gray-800">Facebook Page Connection</h2>
-                <p class="text-gray-500 text-sm">Connect your Facebook Business Page to the AI bot. Customers send messages → AI replies automatically.</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Connect your Facebook Business Page to the AI bot. Customers send messages → AI replies automatically.</p>
             </div>
         </div>
 
@@ -392,8 +392,8 @@ window.AICB_URL = '{{ $appUrl }}';
         </div>
 
         <div class="space-y-3">
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <p class="font-semibold text-gray-700 mb-2">📖 Step-by-Step Setup</p>
+            <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+                <p class="font-semibold text-gray-700 dark:text-gray-200 mb-2">📖 Step-by-Step Setup</p>
                 <ol class="list-decimal ml-4 text-sm text-gray-600 space-y-2">
                     <li>Go to <a href="https://developers.facebook.com" target="_blank" class="text-blue-600 underline">developers.facebook.com</a> → Create App → Select "Business"</li>
                     <li>Add the <strong>Messenger</strong> product to your app</li>
@@ -432,7 +432,7 @@ window.AICB_URL = '{{ $appUrl }}';
             <span class="text-4xl">💬</span>
             <div>
                 <h2 class="text-xl font-bold text-gray-800">WhatsApp Connection</h2>
-                <p class="text-gray-500 text-sm">Connect via QR scan (personal/business number) or WhatsApp Business API (for high volume).</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Connect via QR scan (personal/business number) or WhatsApp Business API (for high volume).</p>
             </div>
         </div>
 
@@ -464,8 +464,8 @@ window.AICB_URL = '{{ $appUrl }}';
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">📊 WhatsApp API Endpoints</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">📊 WhatsApp API Endpoints</p>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-200">
@@ -498,7 +498,7 @@ window.AICB_URL = '{{ $appUrl }}';
             <span class="text-4xl">📡</span>
             <div>
                 <h2 class="text-xl font-bold text-gray-800">REST API Reference</h2>
-                <p class="text-gray-500 text-sm">Full list of endpoints. Use any HTTP client — curl, Postman, Axios, requests, etc.</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Full list of endpoints. Use any HTTP client — curl, Postman, Axios, requests, etc.</p>
             </div>
         </div>
 
@@ -544,10 +544,10 @@ window.AICB_URL = '{{ $appUrl }}';
                 'response' => '{ "success": true, "message": "Synced X products" }',
             ],
         ] as $ep)
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
                 <span class="bg-{{ $ep['color'] }}-100 text-{{ $ep['color'] }}-700 font-bold font-mono text-xs px-2 py-1 rounded">{{ $ep['method'] }}</span>
-                <code class="text-gray-800 font-mono text-sm font-semibold">{{ $appUrl }}{{ $ep['path'] }}</code>
+                <code class="text-gray-800 dark:text-gray-200 font-mono text-sm font-semibold">{{ $appUrl }}{{ $ep['path'] }}</code>
             </div>
             <p class="text-sm text-gray-600 mb-2">{{ $ep['desc'] }}</p>
             <div class="bg-gray-900 rounded-lg p-2">
@@ -556,8 +556,8 @@ window.AICB_URL = '{{ $appUrl }}';
         </div>
         @endforeach
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">📦 Product Object Schema (for sync-products)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">📦 Product Object Schema (for sync-products)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-xs">{
   "name":            "Product Name",        // required
@@ -580,8 +580,8 @@ window.AICB_URL = '{{ $appUrl }}';
             </div>
         </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="font-semibold text-gray-700 mb-3">🧪 Test with curl (terminal)</p>
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-4">
+            <p class="font-semibold text-gray-700 dark:text-gray-200 mb-3">🧪 Test with curl (terminal)</p>
             <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
 <pre class="text-green-400 font-mono text-xs"># Verify connection
 curl -H "X-Api-Key: {{ $apiKey }}" {{ $appUrl }}/api/connector/verify
