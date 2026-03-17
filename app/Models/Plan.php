@@ -50,12 +50,14 @@ class Plan extends Model
         'allow_ai',
         'allowed_ai_models',
         'allow_own_api_key',
+        'hidden_menus',
     ];
 
     protected $casts = [
         'features'                 => 'array',
         'is_featured'              => 'boolean',
         'is_active'                => 'boolean',
+        'hidden_menus'             => 'array',
         'allow_custom_domain'      => 'boolean',
         'remove_branding'          => 'boolean',
         'priority_support'         => 'boolean',

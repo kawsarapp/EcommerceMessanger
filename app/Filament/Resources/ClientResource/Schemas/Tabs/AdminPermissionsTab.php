@@ -28,7 +28,7 @@ class AdminPermissionsTab
 
                     Section::make('🤖 AI Access Override')
                         ->schema([
-                            Grid::make()->columns(3)->schema([
+                            Grid::make()->columns(['md' => 3])->schema([
                                 Toggle::make('admin_permissions.allow_ai')
                                     ->label('Allow AI Bot')
                                     ->onColor('success')
@@ -141,6 +141,27 @@ class AdminPermissionsTab
                             ]),
                         ])->columns(1),
 
+                    Section::make('🚫 Hidden Menus / Tabs')
+                        ->description('নিচের যে মেনুগুলোতে সিলেক্ট করবেন, সেই মেনুগুলো সেলার বা তার স্টাফরা আর দেখতে বা এডিট করতে পারবে না।')
+                        ->schema([
+                            \Filament\Forms\Components\CheckboxList::make('admin_permissions.hidden_menus')
+                                ->label('Select the menus you want to hide for this shop:')
+                                ->options([
+                                    'basic-info' => 'Basic Info',
+                                    'storefront' => 'Storefront',
+                                    'domain-seo' => 'Domain & SEO',
+                                    'ai-brain' => 'AI Brain & Automation',
+                                    'logistics' => 'Logistics',
+                                    'courier-api' => 'Courier API',
+                                    'integrations' => 'Integrations & Social',
+                                    'inbox-automation' => 'Inbox Automation',
+                                    'store-sync' => 'Store Sync',
+                                    'whatsapp-api' => 'WhatsApp API Settings',
+                                ])
+                                ->columns(3)
+                                ->bulkToggleable(),
+                        ]),
+
                     Section::make('📊 Limit Override')
                         ->description('0 = Unlimited. -1 = প্ল্যান থেকে নেবে (ডিফল্ট)।')
                         ->schema([
@@ -184,7 +205,13 @@ class AdminPermissionsTab
 
                     Section::make('📅 Plan Extension')
                         ->schema([
-                            Grid::make()->columns(2)->schema([
+                            Grid::make()->columns(3)->schema([
+                                Select::make('plan_id')
+                                    ->label('Assigned Plan')
+                                    ->relationship('plan', 'name')
+                                    ->preload()
+                                    ->searchable(),
+
                                 Select::make('status')
                                     ->label('Shop Status')
                                     ->options([

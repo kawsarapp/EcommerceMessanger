@@ -334,7 +334,32 @@ class PlanResource extends Resource
                 ])->columns(1),
 
             // ══════════════════════════════════════════
-            // ✅ SECTION 6: Availability
+            // 🚫 SECTION 6: Hidden Menus Control
+            // ══════════════════════════════════════════
+            Section::make('🚫 Hidden Menus Control')
+                ->description('এই প্ল্যানের আন্ডারে থাকা সকল সেলারদের জন্য কোন মেনুগুলো হাইড করা থাকবে তা নিরর্ধারণ করুন।')
+                ->icon('heroicon-m-eye-slash')
+                ->schema([
+                    \Filament\Forms\Components\CheckboxList::make('hidden_menus')
+                        ->label('Select the menus you want to hide for this plan:')
+                        ->options([
+                            'basic-info' => 'Basic Info',
+                            'storefront' => 'Storefront',
+                            'domain-seo' => 'Domain & SEO',
+                            'ai-brain' => 'AI Brain & Automation',
+                            'logistics' => 'Logistics',
+                            'courier-api' => 'Courier API',
+                            'integrations' => 'Integrations & Social',
+                            'inbox-automation' => 'Inbox Automation',
+                            'store-sync' => 'Store Sync',
+                            'whatsapp-api' => 'WhatsApp API Settings',
+                        ])
+                        ->columns(3)
+                        ->bulkToggleable(),
+                ]),
+
+            // ══════════════════════════════════════════
+            // ✅ SECTION 7: Availability
             // ══════════════════════════════════════════
             Section::make('✅ Plan Availability')
                 ->icon('heroicon-m-eye')

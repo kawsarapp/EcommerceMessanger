@@ -46,6 +46,16 @@ class StaffResource extends Resource
             'view_reviews'      => 'View & Manage Reviews',
             'view_reports'      => 'View Sales Reports',
             'view_abandoned'    => 'View Abandoned Carts',
+            'manage_basic_info' => 'Manage Shop Basic Info',
+            'manage_storefront' => 'Manage Storefront Settings',
+            'manage_domain_seo' => 'Manage Domain & SEO',
+            'manage_ai_brain' => 'Manage AI Brain & Automation',
+            'manage_logistics' => 'Manage Logistics',
+            'manage_courier_api' => 'Manage Courier API',
+            'manage_integrations' => 'Manage Integrations & Social',
+            'manage_inbox_automation' => 'Manage Inbox Automation',
+            'manage_store_sync' => 'Manage Store Sync',
+            'manage_whatsapp' => 'Manage WhatsApp API Settings',
         ];
     }
 
