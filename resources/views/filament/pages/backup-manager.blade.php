@@ -73,13 +73,13 @@
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ $client->shop_name }}</div>
                         <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-0.5">
-                            <span>@php
+                            <span class="text-gray-600 dark:text-gray-300">@php
                                 $ordCount = \App\Models\Order::where('client_id',$client->id)->count();
                                 $prodCount = \App\Models\Product::where('client_id',$client->id)->count();
                             @endphp
                             {{ $prodCount }} products · {{ $ordCount }} orders</span>
                             @if($client->plan)
-                                <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded font-bold text-[10px]">{{ $client->plan->name }}</span>
+                                <span class="bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-white px-2 py-0.5 rounded font-bold text-[10px]">{{ $client->plan->name }}</span>
                             @endif
                         </div>
                     </div>
@@ -108,9 +108,26 @@
         {{-- System Info --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             @php
-                $dbSize = collect(DB::select("SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size FROM information_schema.tables WHERE table_schema = DATABASE()"))->first()->size ?? '?';
+                $driver = DB::connection()->getDriverName();
+                $dbSize = '?';
+                $tableCount = 0;
+                
+                if ($driver === 'pgsql') {
+                    $databaseName = DB::connection()->getDatabaseName();
+                    $result = DB::select("SELECT ROUND(pg_database_size(?) / 1024.0 / 1024.0, 2) AS size", [$databaseName]);
+                    $dbSize = $result[0]->size ?? '?';
+                    
+                    $tablesResult = DB::select("SELECT count(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+                    $tableCount = $tablesResult[0]->count ?? 0;
+                } else {
+                    $result = DB::select("SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size FROM information_schema.tables WHERE table_schema = DATABASE()");
+                    $dbSize = $result[0]->size ?? '?';
+                    
+                    $tablesResult = DB::select('SHOW TABLES');
+                    $tableCount = count($tablesResult);
+                }
+                
                 $storageSize = round(array_sum(array_map('filesize', File::allFiles(storage_path('app/public')))) / 1024 / 1024, 2);
-                $tableCount = count(DB::select('SHOW TABLES'));
                 $clientCount = \App\Models\Client::count();
             @endphp
 

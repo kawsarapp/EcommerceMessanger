@@ -57,6 +57,9 @@ class CustomRegister extends Register
             try {
                 // ১. প্রথমে ইউজার তৈরি হবে (Laravel Default)
                 $user = parent::handleRegistration($data);
+                
+                // Set explicitly as a seller
+                $user->update(['role' => 'seller']);
 
                 // ২. এরপর এই ইউজারের জন্য ১টি শপ (Client Profile) তৈরি হবে
                 Client::create([
