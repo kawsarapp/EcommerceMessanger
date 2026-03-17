@@ -14,21 +14,12 @@ class Category extends Model
 
     protected $guarded = ['id'];
 
-    protected $fillable = [
-        'client_id',
-        'name', 
-        'slug', 
-        'description', 
-        'image',
-        'status',
-        'banner_image', 'banner_link', 'sort_order', 'is_visible'
-    ];
-
     protected $casts = [
         'is_visible' => 'boolean',
+        'is_global'  => 'boolean',
     ];
 
-    // 🔥 অটোমেটিক স্লাগ জেনারেশন (নাম লিখলে অটোমেটিক URL তৈরি হবে)
+    // ── Auto-slug ───────────────────────────────────────
     protected static function boot()
     {
         parent::boot();
@@ -39,31 +30,38 @@ class Category extends Model
         });
     }
 
-    // ==========================================
-    // RELATIONSHIPS
-    // ==========================================
+    // ── Relationships ────────────────────────────────────
 
-    /**
-     * এই ক্যাটাগরির অধীনে থাকা সব প্রোডাক্ট
-     */
+    /** এই ক্যাটাগরির অধীনে থাকা সব প্রোডাক্ট */
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
 
-    /**
-     * শুধুমাত্র স্টকে থাকা এবং একটিভ প্রোডাক্টগুলো পাওয়ার জন্য
-     */
+    /** শুধুমাত্র স্টকে থাকা এবং একটিভ প্রোডাক্টগুলো */
     public function activeProducts(): HasMany
     {
         return $this->hasMany(Product::class)->where('stock_status', 'in_stock');
     }
 
-    /**
-     * SaaS এর জন্য: এই ক্যাটাগরিটি কোন ক্লায়েন্ট/দোকানের
-     */
+    /** SaaS: এই ক্যাটাগরিটি কোন ক্লায়েন্টের */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    // ── Scope Helpers ────────────────────────────────────
+
+    /**
+     * একটি নির্দিষ্ট seller-এর জন্য যে categories দেখানো উচিত:
+     *   - global (super admin তৈরি) categories
+     *   - seller-এর নিজের private categories
+     */
+    public static function forClient(int $clientId)
+    {
+        return static::where(function ($q) use ($clientId) {
+            $q->where('is_global', true)
+              ->orWhere('client_id', $clientId);
+        });
     }
 }

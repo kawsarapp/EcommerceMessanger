@@ -6,6 +6,7 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\Api\StoreSyncController;
 use App\Http\Controllers\Api\WhatsAppWebhookController;
+use App\Http\Controllers\Api\WebsiteConnectorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,16 @@ Route::prefix('v1')->group(function () {
 Route::post('/v1/whatsapp/status', [WhatsAppWebhookController::class, 'updateStatus']);
 Route::post('/v1/whatsapp/receive', [WhatsAppWebhookController::class, 'receiveMessage']);
 Route::post('/v1/import-products', [StoreSyncController::class, 'pushProducts']);
+
+// ===========================================
+// 🔌 UNIVERSAL WEBSITE CONNECTOR
+// ===========================================
+// Any website (WordPress, Shopify, custom HTML, React) can use these.
+Route::prefix('connector')->group(function () {
+    Route::get('/verify',        [WebsiteConnectorController::class, 'verify']);
+    Route::post('/sync-products',[WebsiteConnectorController::class, 'syncProducts']);
+    Route::get('/js-snippet',    [WebsiteConnectorController::class, 'getJsSnippet']);
+});
 
 // Courier Webhook Route (Multi-tenant)
 Route::post('/webhook/courier/{client_id}/{courier_name}', [\App\Http\Controllers\CourierWebhookController::class, 'handle'])->name('webhook.courier');

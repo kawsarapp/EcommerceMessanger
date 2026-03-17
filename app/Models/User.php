@@ -54,7 +54,13 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Filament প্যানেল এক্সেস চেক (Security enforcement on Domains)
+     * Filament প্যানেল এক্সেস চেক (Security enforcement)
+     *
+     * Rules:
+     *  - Super Admin: always OK
+     *  - Staff: blocked completely if plan expired / inactive
+     *  - Seller: can login (to see renewal notice) even if plan expired
+     *  - is_active = false: always blocked
      */
     public function canAccessPanel(Panel $panel): bool
     {
@@ -66,17 +72,28 @@ class User extends Authenticatable implements FilamentUser
             return true;
         }
 
-        // Domain Check: Ensure user cannot login via another seller's custom domain
+        // Domain Check: prevent cross-domain access
         $host = request()->getHost();
         $mainDomain = parse_url(config('app.url'), PHP_URL_HOST);
 
         if ($host !== $mainDomain && $host !== '127.0.0.1' && $host !== 'localhost') {
             $client = $this->client;
             if (!$client || $client->custom_domain !== $host) {
-                return false; // Wrong custom domain for this user
+                return false;
             }
         }
 
+        // ── Plan Expiry enforcement ────────────────────
+        $client = $this->client;
+
+        // Staff: completely blocked when plan expired
+        if ($this->isStaff()) {
+            if (!$client || $client->isPlanExpired()) {
+                return false; // Staff cannot login at all
+            }
+        }
+
+        // Seller: allowed to login (they'll see the renewal banner)
         return true;
     }
 

@@ -10,47 +10,40 @@ return new class extends Migration
     public function up(): void
     {
         // ===================================================
-        // 1. PRODUCTS TABLE — সবচেয়ে বেশি query হয়
+        // 1. PRODUCTS TABLE
         // ===================================================
         Schema::table('products', function (Blueprint $table) {
-            // Stock status filter (shop page এ সবচেয়ে বেশি ব্যবহার)
             if (!$this->indexExists('products', 'idx_products_client_stock')) {
                 $table->index(['client_id', 'stock_status'], 'idx_products_client_stock');
             }
-            // Category filter + shop
             if (!$this->indexExists('products', 'idx_products_client_category')) {
                 $table->index(['client_id', 'category_id'], 'idx_products_client_category');
             }
-            // Featured products query
             if (!$this->indexExists('products', 'idx_products_featured')) {
                 $table->index(['client_id', 'is_featured'], 'idx_products_featured');
             }
-            // Slug lookup (product page)
             if (!$this->indexExists('products', 'idx_products_slug_client')) {
                 $table->index(['slug', 'client_id'], 'idx_products_slug_client');
             }
         });
 
         // ===================================================
-        // 2. ORDERS TABLE — tracking ও dashboard এ query
+        // 2. ORDERS TABLE
         // ===================================================
         Schema::table('orders', function (Blueprint $table) {
-            // Customer phone tracking
             if (!$this->indexExists('orders', 'idx_orders_phone_client')) {
                 $table->index(['customer_phone', 'client_id'], 'idx_orders_phone_client');
             }
-            // Order status filter
             if (!$this->indexExists('orders', 'idx_orders_status_client')) {
                 $table->index(['order_status', 'client_id'], 'idx_orders_status_client');
             }
-            // Date-based queries
             if (!$this->indexExists('orders', 'idx_orders_created_client')) {
                 $table->index(['client_id', 'created_at'], 'idx_orders_created_client');
             }
         });
 
         // ===================================================
-        // 3. CONVERSATIONS TABLE — সবচেয়ে বড় হয়
+        // 3. CONVERSATIONS TABLE
         // ===================================================
         if (Schema::hasTable('conversations')) {
             Schema::table('conversations', function (Blueprint $table) {
@@ -67,7 +60,7 @@ return new class extends Migration
         }
 
         // ===================================================
-        // 4. MESSAGES TABLE — সব চ্যাট message store হয়
+        // 4. MESSAGES TABLE
         // ===================================================
         if (Schema::hasTable('messages')) {
             Schema::table('messages', function (Blueprint $table) {
@@ -85,21 +78,10 @@ return new class extends Migration
                 $table->index(['product_id', 'is_visible'], 'idx_reviews_product_visible');
             }
         });
-
-        // ===================================================
-        // 6. MySQL Performance Settings (only if supported)
-        // ===================================================
-        try {
-            // Enable query cache (old setting, ignored in MySQL 8)
-            DB::statement('SET GLOBAL innodb_buffer_pool_size = 256*1024*1024'); // 256MB
-        } catch (\Exception $e) {
-            // Skip if not permitted
-        }
     }
 
     public function down(): void
     {
-        // Remove indexes safely
         $this->dropIndexIfExists('products', 'idx_products_client_stock');
         $this->dropIndexIfExists('products', 'idx_products_client_category');
         $this->dropIndexIfExists('products', 'idx_products_featured');
@@ -110,9 +92,22 @@ return new class extends Migration
         $this->dropIndexIfExists('reviews', 'idx_reviews_product_visible');
     }
 
+    /**
+     * PostgreSQL + MySQL compatible index check
+     */
     private function indexExists(string $table, string $index): bool
     {
-        $result = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$index]);
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            $result = DB::select(
+                "SELECT indexname FROM pg_indexes WHERE tablename = ? AND indexname = ?",
+                [$table, $index]
+            );
+        } else {
+            $result = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$index]);
+        }
+
         return count($result) > 0;
     }
 

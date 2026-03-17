@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
-use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,21 +16,19 @@ use Illuminate\Database\Eloquent\Builder;
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-tag';
-    
     protected static ?string $navigationGroup = 'Shop Management';
+
+    // ── Access Control ─────────────────────────────────────
 
     public static function canViewAny(): bool
     {
         $user = auth()->user();
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
+        if ($user->isStaff()) return $user->hasStaffPermission('view_products');
 
-        if ($user->isStaff()) {
-            return $user->hasStaffPermission('view_products');
-        }
-
+        // Seller can view if they have an active plan
         return $user->client && $user->client->hasActivePlan();
     }
 
@@ -42,10 +39,14 @@ class CategoryResource extends Resource
         if ($user->isSuperAdmin()) return true;
 
         if ($user->isStaff()) {
-            return $user->hasStaffPermission('edit_products');
+            return $user->hasStaffPermission('edit_products')
+                && $user->client?->canAccessFeature('allow_seller_categories');
         }
 
-        return $user->client && $user->client->hasActivePlan();
+        // Seller can create PRIVATE categories only if plan allows
+        return $user->client
+            && $user->client->hasActivePlan()
+            && $user->client->canAccessFeature('allow_seller_categories');
     }
 
     public static function canEdit(Model $record): bool
@@ -54,11 +55,17 @@ class CategoryResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        // Nobody can edit global categories except super admin
+        if ($record->is_global) return false;
+
         if ($user->isStaff()) {
-            return $user->hasStaffPermission('edit_products') && $user->client_id === $record->client_id;
+            return $user->hasStaffPermission('edit_products')
+                && $user->client_id === $record->client_id;
         }
 
-        return $user->client && $record->client_id === $user->client->id && $user->client->hasActivePlan();
+        return $user->client
+            && $record->client_id === $user->client->id
+            && $user->client->hasActivePlan();
     }
 
     public static function canDelete(Model $record): bool
@@ -67,106 +74,152 @@ class CategoryResource extends Resource
         if (!$user) return false;
         if ($user->isSuperAdmin()) return true;
 
+        // Cannot delete global categories
+        if ($record->is_global) return false;
+
         if ($user->isStaff()) {
-            return $user->hasStaffPermission('delete_products') && $user->client_id === $record->client_id;
+            return $user->hasStaffPermission('delete_products')
+                && $user->client_id === $record->client_id;
         }
 
         return $user->client && $record->client_id === $user->client->id;
     }
 
+    // ── Query Isolation ────────────────────────────────────
+
     /**
-     * ডাটা আইসোলেশন: সেলার শুধু নিজের ক্যাটাগরি দেখবে, super admin সব দেখবে
+     * Super admin দেখবে সব।
+     * Seller/Staff দেখবে: global categories + নিজের private categories।
      */
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+
         if ($user?->isSuperAdmin()) {
             return parent::getEloquentQuery();
         }
-        $clientId = $user?->client ? $user->client->id : ($user?->client_id ?? null);
-        return parent::getEloquentQuery()->where('client_id', $clientId);
+
+        $clientId = $user?->isStaff()
+            ? $user->client_id
+            : $user?->client?->id;
+
+        return parent::getEloquentQuery()->whereNested(function ($q) use ($clientId) {
+            $q->where('is_global', true)
+              ->orWhere('client_id', $clientId);
+        });
     }
+
+    // ── Form ───────────────────────────────────────────────
 
     public static function form(Form $form): Form
     {
         $user = auth()->user();
         $isSuperAdmin = $user?->isSuperAdmin();
 
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Category Details')
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
-                            
-                        Forms\Components\TextInput::make('slug')
-                            ->required()
-                            ->unique(ignoreRecord: true),
+        return $form->schema([
+            Forms\Components\Section::make('Category Details')
+                ->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
-                        // Super Admin হলে কোন ক্লায়েন্টের জন্য ক্যাটাগরি তৈরি হবে সেটা সিলেক্ট করতে পারবে
-                        Forms\Components\Select::make('client_id')
-                            ->label('Shop / Client')
-                            ->relationship('client', 'shop_name')
-                            ->searchable()
-                            ->required()
-                            ->visible($isSuperAdmin)
-                            ->columnSpanFull(),
-                    ])->columns(2),
+                    Forms\Components\TextInput::make('slug')
+                        ->required()
+                        ->unique(ignoreRecord: true),
 
-                // 🔥 নতুন সেকশন: Category Banner & Settings
-                Forms\Components\Section::make('Category Banner & Settings')
-                    ->schema([
-                        Forms\Components\FileUpload::make('banner_image')
-                            ->label('Category Banner (Optional)')
-                            ->image()
-                            ->directory('categories/banners')
-                            ->columnSpanFull(),
-                        Forms\Components\TextInput::make('banner_link')
-                            ->label('Banner Link (URL)')
-                            ->url(),
-                        Forms\Components\TextInput::make('sort_order')
-                            ->label('Serial / Sort Order (e.g. 1, 2, 3)')
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\TextInput::make('homepage_products_count')
-                            ->label('Homepage Products Count')
-                            ->helperText('হোমপেজে এই ক্যাটাগরি থেকে কয়টি প্রোডাক্ট দেখাবে')
-                            ->numeric()
-                            ->default(4)
-                            ->minValue(1)
-                            ->maxValue(20),
-                        Forms\Components\Toggle::make('is_visible')
-                            ->label('Show on Homepage')
-                            ->default(true),
-                    ])->columns(2),
-            ]);
+                    // Super Admin: assign to a client or make it global
+                    Forms\Components\Toggle::make('is_global')
+                        ->label('Global Category (visible to ALL sellers)')
+                        ->helperText('ON করলে এই ক্যাটাগরি সকল সেলারের জন্য দেখাবে। OFF করলে শুধু selected shop এর জন্য।')
+                        ->visible($isSuperAdmin)
+                        ->live()
+                        ->default(true),
+
+                    Forms\Components\Select::make('client_id')
+                        ->label('Shop / Client (for private category)')
+                        ->relationship('client', 'shop_name')
+                        ->searchable()
+                        ->visible($isSuperAdmin)
+                        ->nullable()
+                        ->columnSpanFull()
+                        ->hidden(fn (\Filament\Forms\Get $get) => $isSuperAdmin && $get('is_global')),
+                ])->columns(2),
+
+            Forms\Components\Section::make('Category Banner & Settings')
+                ->schema([
+                    Forms\Components\FileUpload::make('banner_image')
+                        ->label('Category Banner (Optional)')
+                        ->image()
+                        ->directory('categories/banners')
+                        ->columnSpanFull(),
+
+                    Forms\Components\TextInput::make('banner_link')
+                        ->label('Banner Link (URL)')
+                        ->url(),
+
+                    Forms\Components\TextInput::make('sort_order')
+                        ->label('Serial / Sort Order')
+                        ->numeric()
+                        ->default(0),
+
+                    Forms\Components\TextInput::make('homepage_products_count')
+                        ->label('Homepage Products Count')
+                        ->helperText('হোমপেজে এই ক্যাটাগরি থেকে কয়টি প্রোডাক্ট দেখাবে')
+                        ->numeric()
+                        ->default(4)
+                        ->minValue(1)
+                        ->maxValue(20),
+
+                    Forms\Components\Toggle::make('is_visible')
+                        ->label('Show on Homepage')
+                        ->default(true),
+                ])->columns(2),
+        ]);
     }
+
+    // ── Table ──────────────────────────────────────────────
 
     public static function table(Table $table): Table
     {
+        $isSuperAdmin = auth()->user()?->isSuperAdmin();
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
-                
+
                 Tables\Columns\TextColumn::make('slug')
-                    ->color('gray'),
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                // Global badge
+                Tables\Columns\IconColumn::make('is_global')
+                    ->label('Type')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-globe-alt')
+                    ->falseIcon('heroicon-o-lock-closed')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn ($record) => $record->is_global ? 'Global (all sellers)' : 'Private (seller only)')
+                    ->visible($isSuperAdmin),
+
+                Tables\Columns\TextColumn::make('client.shop_name')
+                    ->label('Shop')
+                    ->default('—')
+                    ->visible($isSuperAdmin),
 
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Products')
-                    ->counts('products') // এই ক্যাটাগরিতে কয়টি প্রোডাক্ট আছে তা দেখাবে
+                    ->counts('products')
                     ->badge(),
 
-                // 🔥 নতুন কলাম: হোমপেজে সিরিয়াল সাজানোর জন্য (Inline Editable)
                 Tables\Columns\TextInputColumn::make('sort_order')
                     ->label('Serial')
                     ->sortable(),
 
-                // 🔥 নতুন কলাম: হাইড/শো করার জন্য (Inline Editable)
                 Tables\Columns\ToggleColumn::make('is_visible')
                     ->label('Visible'),
 
@@ -175,39 +228,30 @@ class CategoryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
-            
+            ->filters([])
             ->actions([
-                // এডমিন হলে এডিট বাটন, বাকিদের জন্য ভিউ বাটন
-                auth()->user()?->isSuperAdmin() 
-                    ? Tables\Actions\EditAction::make() 
-                    : Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn ($record) => static::canEdit($record)),
+                Tables\Actions\ViewAction::make()
+                    ->visible(fn ($record) => !static::canEdit($record)),
             ])
             ->bulkActions(
-                // এখানে সরাসরি কন্ডিশনাল অ্যারে ব্যবহার করা হয়েছে
-                auth()->user()?->isSuperAdmin() 
-                    ? [
-                        Tables\Actions\BulkActionGroup::make([
-                            Tables\Actions\DeleteBulkAction::make(),
-                        ]),
-                    ] 
-                    : [] // এডমিন না হলে খালি অ্যারে
+                $isSuperAdmin
+                    ? [Tables\Actions\BulkActionGroup::make([
+                        Tables\Actions\DeleteBulkAction::make(),
+                    ])]
+                    : []
             );
     }
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
+    public static function getRelations(): array { return []; }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
+            'index'  => Pages\ListCategories::route('/'),
             'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'edit'   => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 }

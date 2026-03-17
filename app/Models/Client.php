@@ -105,6 +105,16 @@ class Client extends Model
         return $this->hasMany(Conversation::class);
     }
 
+    public function planUpgradeRequests(): HasMany
+    {
+        return $this->hasMany(PlanUpgradeRequest::class);
+    }
+
+    public function feedbacks(): HasMany
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     // ==========================================
     // HELPER METHODS (Logic & Limits)
     // ==========================================
@@ -301,6 +311,26 @@ class Client extends Model
     {
         if ($this->user?->isSuperAdmin()) return true; // Super Admin always active
         return $this->plan_ends_at && $this->plan_ends_at->isFuture();
+    }
+
+    /**
+     * প্ল্যানের মেয়াদ শেষ হয়েছে কিনা (UI ব্যানারের জন্য)
+     */
+    public function isPlanExpired(): bool
+    {
+        if ($this->user?->isSuperAdmin()) return false;
+        if ($this->status === 'inactive') return true;
+        if (!$this->plan_id) return true;
+        return $this->plan_ends_at && now()->gt($this->plan_ends_at);
+    }
+
+    /**
+     * Plan expires কত দিন পরে
+     */
+    public function daysUntilExpiry(): int
+    {
+        if (!$this->plan_ends_at) return 0;
+        return max(0, (int) now()->diffInDays($this->plan_ends_at, false));
     }
 
 
