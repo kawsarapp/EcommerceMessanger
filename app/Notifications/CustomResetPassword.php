@@ -16,7 +16,7 @@ class CustomResetPassword extends ResetPasswordNotification
      */
     public function toMail($notifiable)
     {
-        if (static::$toMailCallback) {
+        if (is_callable(static::$toMailCallback)) {
             return call_user_func(static::$toMailCallback, $notifiable, $this->token);
         }
 
