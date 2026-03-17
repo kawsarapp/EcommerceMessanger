@@ -56,7 +56,7 @@ class AdminPanelProvider extends PanelProvider
             // --- [ Widgets ] ---
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
+                Widgets\StaffAccountWidget::class,
                 // Widgets\FilamentInfoWidget::class, // এটি কমেন্ট করা হলো যাতে ডকুমেন্টেশন লিংক না দেখায়
             ])
 

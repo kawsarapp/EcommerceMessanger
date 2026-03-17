@@ -64,7 +64,7 @@ class PlanResource extends Resource
                             ->helperText('কম নম্বর = আগে দেখাবে'),
                     ]),
 
-                    Grid::make()->columns(3)->schema([
+                    Grid::make()->columns(['sm' => 3])->schema([
                         ColorPicker::make('color')
                             ->label('Brand Color')
                             ->default('#4f46e5'),
