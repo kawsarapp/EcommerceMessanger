@@ -135,7 +135,7 @@ class Product extends Model
                     $font->filename(public_path('fonts/arial.ttf'));
                 }
                 
-                $font->size(80);
+                $font->size(90);
                 $font->color('rgba(0, 0, 0, 0.7)'); // Added opacity so it looks like a watermark
                 $font->align('right');
                 $font->valign('bottom');
