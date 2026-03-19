@@ -21,85 +21,80 @@ class InventoryService
             'আছে', 'কী', 'কি', 'দাও', 'কত', 'দাম', 'দেখাও', 'কিনবো', 'nibo', 'chai', 'চাই'
         ];
 
-        // 🔥 Use mb_strtolower for Bengali support
         $keywords = array_filter(
             explode(' ', mb_strtolower($cleanMessage, 'UTF-8')),
             fn($w) => mb_strlen($w) > 2 && !in_array($w, $stopWords)
         );
 
-        // ==========================================
-        // 🔥 SaaS Feature: REAL-TIME EXTERNAL API LOOKUP
-        // ==========================================
+        // ── External API fallback ────────────────────────────────────────────
         if (!empty($client->external_api_url)) {
             try {
                 $searchQuery = implode(' ', $keywords);
-                $queryStr = http_build_query(['q' => $searchQuery, 'buyer_message' => $safeMessage]);
-                $url = rtrim($client->external_api_url, '/') . '?' . $queryStr;
-                
-                $pendingRequest = \Illuminate\Support\Facades\Http::timeout(10);
-                if (!empty($client->external_product_api_key)) {
-                    $pendingRequest = $pendingRequest->withToken($client->external_product_api_key);
-                }
+                $queryStr    = http_build_query(['q' => $searchQuery, 'buyer_message' => $safeMessage]);
+                $url         = rtrim($client->external_api_url, '/') . '?' . $queryStr;
 
-                $response = $pendingRequest->get($url);
+                $req = \Illuminate\Support\Facades\Http::timeout(10);
+                if (!empty($client->external_product_api_key)) {
+                    $req = $req->withToken($client->external_product_api_key);
+                }
+                $response = $req->get($url);
                 if ($response->successful() && is_array($response->json())) {
-                    // API returns JSON, just convert arrays to JSON strings and return
-                    // Assume the external API returns a format similar to our local mapped format
                     return json_encode(array_slice($response->json(), 0, 8), JSON_UNESCAPED_UNICODE);
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("External API Sync failed for Client ID {$client->id}: " . $e->getMessage());
-                // Fallback to local DB if API fails
+                \Illuminate\Support\Facades\Log::error("External API failed for Client #{$client->id}: " . $e->getMessage());
             }
         }
 
-        $query = Product::where('client_id', $client->id)
-            ->where('stock_status', 'in_stock');
+        // ── Local DB search ──────────────────────────────────────────────────
+        $query = Product::where('client_id', $client->id)->with('category');
 
         if (!empty($keywords)) {
-            $query->where(function($q) use ($keywords) {
+            $query->where(function ($q) use ($keywords) {
                 foreach ($keywords as $word) {
                     $safeWord = addcslashes($word, '%_');
-                    $q->orWhere('name', 'like', "%{$safeWord}%")
-                      ->orWhere('tags', 'like', "%{$safeWord}%")
+                    $q->orWhere('name',  'like', "%{$safeWord}%")
+                      ->orWhere('tags',  'like', "%{$safeWord}%")
                       ->orWhere('brand', 'like', "%{$safeWord}%")
-                      ->orWhere('sku', 'like', "%{$safeWord}%")
-                      ->orWhereHas('category', function($cq) use ($safeWord) {
-                          $cq->where('name', 'like', "%{$safeWord}%");
-                      });
+                      ->orWhere('sku',   'like', "%{$safeWord}%")
+                      ->orWhere('short_description', 'like', "%{$safeWord}%")
+                      ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', "%{$safeWord}%"));
                 }
             });
         } else {
             $query->inRandomOrder();
         }
 
-        $products = $query->limit(8)->get();
+        // Return both in-stock AND out-of-stock so AI can suggest alternatives
+        $products = $query->limit(10)->get();
 
         if ($products->isEmpty()) {
             $products = Product::where('client_id', $client->id)
+                ->with('category')
                 ->where('stock_status', 'in_stock')
                 ->inRandomOrder()
                 ->limit(5)
                 ->get();
         }
 
-        return $products->map(function($p) use ($client) {
+        return $products->map(function ($p) use ($client) {
 
-            $finalPrice = ($p->sale_price > 0 && $p->sale_price < $p->regular_price) 
-                ? $p->sale_price 
+            $finalPrice = ($p->sale_price > 0 && $p->sale_price < $p->regular_price)
+                ? $p->sale_price
                 : $p->regular_price;
 
+            // ── Variants ────────────────────────────────────────────────────
             $colorsArray = is_array($p->colors) ? $p->colors : (is_string($p->colors) ? json_decode($p->colors, true) ?? [] : []);
-            $sizesArray = is_array($p->sizes) ? $p->sizes : (is_string($p->sizes) ? json_decode($p->sizes, true) ?? [] : []);
-
+            $sizesArray  = is_array($p->sizes)  ? $p->sizes  : (is_string($p->sizes)  ? json_decode($p->sizes,  true) ?? [] : []);
             $colors = !empty($colorsArray) ? implode(', ', $colorsArray) : 'N/A';
-            $sizes  = !empty($sizesArray) ? implode(', ', $sizesArray) : 'N/A';
+            $sizes  = !empty($sizesArray)  ? implode(', ', $sizesArray)  : 'N/A';
 
-            $mainImage = $p->thumbnail 
-                ? asset('storage/' . ltrim($p->thumbnail, '/')) 
+            // ── Images ──────────────────────────────────────────────────────
+            $mainImage = $p->thumbnail
+                ? asset('storage/' . ltrim($p->thumbnail, '/'))
                 : ($p->image ? asset('storage/' . ltrim($p->image, '/')) : null);
 
-            $galleryUrls = [];
+            $galleryUrls  = [];
             $galleryArray = is_array($p->gallery) ? $p->gallery : (is_string($p->gallery) ? json_decode($p->gallery, true) ?? [] : []);
             foreach ($galleryArray as $gPath) {
                 if (!empty($gPath)) {
@@ -107,20 +102,37 @@ class InventoryService
                 }
             }
 
+            // ── Description (full short_desc + truncated long desc) ─────────
+            $shortDesc = strip_tags($p->short_description ?? '');
+            $longDesc  = strip_tags($p->description ?? '');
+            $desc = $shortDesc ?: Str::limit($longDesc, 300);
+
+            // ── Stock label ─────────────────────────────────────────────────
+            $stockLabel = $p->stock_status === 'in_stock'
+                ? ($p->stock_quantity > 0 ? "In Stock ({$p->stock_quantity} pcs)" : "In Stock")
+                : "Out of Stock ❌";
+
             return [
-                'id' => $p->id,
-                'sku' => $p->sku ?? 'N/A',
-                'name' => $p->name,
-                'available_colors' => $colors,
-                'available_sizes' => $sizes,
-                'price' => $finalPrice . " Tk",
-                'stock' => $p->stock_quantity,
-                'desc' => Str::limit(strip_tags($p->description ?? $p->short_description), 150),
-                'link' => route('shop.product.details', [$client->slug, $p->slug]),
-                'image_url' => $mainImage,
-                'gallery_images' => $galleryUrls,
-                'video_url' => $p->video_url ?? 'N/A'
+                'id'              => $p->id,
+                'sku'             => $p->sku            ?? 'N/A',
+                'name'            => $p->name,
+                'brand'           => $p->brand          ?? 'N/A',
+                'category'        => $p->category?->name ?? 'N/A',
+                'price'           => "৳{$finalPrice}",
+                'regular_price'   => "৳{$p->regular_price}",
+                'sale_price'      => $p->sale_price > 0 ? "৳{$p->sale_price}" : null,
+                'stock'           => $stockLabel,
+                'description'     => $desc,
+                'colors'          => $colors,
+                'sizes'           => $sizes,
+                'main_image'      => $mainImage,
+                // ✅ Gallery: AI uses [ATTACH_IMAGE: url] for each of these
+                'gallery_images'  => $galleryUrls,
+                // ✅ Video: AI sends direct link when customer asks
+                'video_url'       => $p->video_url ?? null,
+                'product_url'     => route('shop.product.details', [$client->slug, $p->slug]),
+                'weight'          => $p->weight         ?? null,
             ];
-        })->toJson();
+        })->toJson(JSON_UNESCAPED_UNICODE);
     }
 }

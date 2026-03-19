@@ -264,50 +264,53 @@ class StorefrontTab
                         ->columnSpanFull(),
                 ])->columns(2),
 
-            Section::make('🧩 Widget Controls')
-                ->description('আপনার শপের প্রতিটি UI widget আলাদাভাবে ON/OFF করুন।')
+            Section::make('🧩 Dynamic Widget Controls')
+                ->description('আপনার শপের প্রতিটি UI widget আলাদাভাবে কাস্টমাইজ করুন (রং, টেক্সট, লিংক এবং শো/হাইড)।')
                 ->schema([
-                    Toggle::make('widgets.show_hero_banner')
-                        ->label('Hero Banner')
-                        ->helperText('হোম পেজের উপরে বড় ব্যানার ইমেজ')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_search_bar')
-                        ->label('Search Bar')
-                        ->helperText('হেডারে প্রোডাক্ট সার্চ বার')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_category_filter')
-                        ->label('Category Filter')
-                        ->helperText('ক্যাটাগরি ফিল্টার ট্যাব/পিল')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_trust_badges')
-                        ->label('Trust Badges')
-                        ->helperText('ডেলিভারি, সিকিউরিটি, রিটার্ন ব্যাজ')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_reviews')
-                        ->label('Customer Reviews')
-                        ->helperText('প্রোডাক্ট রিভিউ সেকশন')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_floating_chat')
-                        ->label('Floating Chat Widget')
-                        ->helperText('নিচে ডান পাশে ফ্লোটিং চ্যাট বাটন')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_announcement_bar')
-                        ->label('Announcement Bar')
-                        ->helperText('হেডারের উপরে অ্যানাউন্সমেন্ট বার')
-                        ->default(true)
-                        ->onColor('success'),
-                    Toggle::make('widgets.show_social_links')
-                        ->label('Social Media Links')
-                        ->helperText('ফুটারে সোশ্যাল মিডিয়া লিংক')
-                        ->default(true)
-                        ->onColor('success'),
-                ])->columns(2),
+                    Section::make('Hero Banner Widget')
+                        ->schema([
+                            Toggle::make('widgets.hero_banner.active')->label('Enable Hero Banner')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.hero_banner.text')->label('Banner Overlay Text')->placeholder('Welcome to our shop!'),
+                            TextInput::make('widgets.hero_banner.link')->label('Banner Link')->url(),
+                            ColorPicker::make('widgets.hero_banner.color')->label('Text/Accent Color'),
+                        ])->columns(3)->collapsible(),
+
+                    Section::make('Search Bar Widget')
+                        ->schema([
+                            Toggle::make('widgets.search_bar.active')->label('Enable Search Bar')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.search_bar.text')->label('Search Placeholder')->placeholder('Search for products...'),
+                            ColorPicker::make('widgets.search_bar.color')->label('Search Button Color'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('Category Filter Widget')
+                        ->schema([
+                            Toggle::make('widgets.category_filter.active')->label('Enable Category Filter')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.category_filter.text')->label('Section Title')->placeholder('Categories'),
+                            ColorPicker::make('widgets.category_filter.color')->label('Active Tab/Badge Color'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('Featured / Flash Sale Widget')
+                        ->schema([
+                            Toggle::make('widgets.flash_sale.active')->label('Enable Featured Section')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.flash_sale.text')->label('Section Title')->placeholder('Feature Products'),
+                            TextInput::make('widgets.flash_sale.link')->label('View All Link')->url(),
+                            ColorPicker::make('widgets.flash_sale.color')->label('Section Badge Color')->default('#ef4444'),
+                        ])->columns(3)->collapsible(),
+
+                    Section::make('Trust Badges Widget')
+                        ->schema([
+                            Toggle::make('widgets.trust_badges.active')->label('Enable Trust Badges')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.trust_badges.text')->label('Section Title')->placeholder('Why Choose Us?'),
+                            ColorPicker::make('widgets.trust_badges.color')->label('Icon Color')->default('#10b981'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('Floating Chat Widget')
+                        ->schema([
+                            Toggle::make('widgets.floating_chat.active')->label('Enable Floating Chat')->default(true)->columnSpanFull()->onColor('success'),
+                            TextInput::make('widgets.floating_chat.link')->label('Chat Link')->url(),
+                            ColorPicker::make('widgets.floating_chat.color')->label('Chat Icon Color')->default('#25D366'),
+                        ])->columns(2)->collapsible(),
+                ]),
         ];
     }
 }

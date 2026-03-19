@@ -53,6 +53,25 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                 @endif
             </div>
             
+            <!-- Video Player -->
+            @if($product->video_url)
+            <div class="lg:col-span-5 flex flex-col mt-4">
+                <h4 class="text-sm font-bold tracking-widest uppercase text-slate-800 mb-3"><i class="fas fa-play-circle text-primary mr-1"></i> Product Video</h4>
+                <div class="w-full aspect-video rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-slate-50">
+                    @php
+                        // Convert standard YT link to embed
+                        $videoEmbed = $product->video_url;
+                        if(str_contains($videoEmbed, 'youtu.be/')) {
+                            $videoEmbed = str_replace('youtu.be/', 'www.youtube.com/embed/', $videoEmbed);
+                        } elseif (str_contains($videoEmbed, 'watch?v=')) {
+                            $videoEmbed = str_replace('watch?v=', 'embed/', $videoEmbed);
+                        }
+                    @endphp
+                    <iframe class="w-full h-full" src="{{ $videoEmbed }}" title="Product Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+            @endif
+            
             <!-- Details & Actions (Right) -->
             <div class="lg:col-span-7 flex flex-col">
                 <div class="mb-8">

@@ -167,6 +167,259 @@ class IntegrationsTab
                             }),
                     ]),
                 ]),
+
+            // ====================================================================
+            // 🔌 WEBSITE / EXTERNAL CONNECTOR (SaaS Integration Hub)
+            // ====================================================================
+            Section::make('🔌 Website & External Connector')
+                ->description('আপনার API Key দিয়ে যেকোনো website থেকে AI Chatbot ও Product Sync করুন।')
+                ->icon('heroicon-o-code-bracket')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+
+                    // ── API Key ──────────────────────────────────────────────────
+                    TextInput::make('api_token')
+                        ->label('🔑 Your API Key')
+                        ->readOnly()
+                        ->helperText('এই Key দিয়ে WordPress, Shopify বা যেকোনো website আপনার shop-এর সাথে connect করতে পারবে।')
+                        ->suffixActions([
+                            Action::make('copy_api_key')
+                                ->icon('heroicon-m-clipboard')
+                                ->tooltip('Copy API Key')
+                                ->action(function ($record) {
+                                    Notification::make()->title('✅ API Key Copied!')->success()->send();
+                                }),
+                            Action::make('regenerate_api_key')
+                                ->icon('heroicon-m-arrow-path')
+                                ->tooltip('Regenerate API Key')
+                                ->color('warning')
+                                ->requiresConfirmation()
+                                ->modalHeading('Regenerate API Key?')
+                                ->modalDescription('পুরানো API Key অবৈধ হয়ে যাবে। আগে connected সব website তে নতুন key update করতে হবে।')
+                                ->action(function ($record) {
+                                    if ($record) {
+                                        $record->update(['api_token' => \Illuminate\Support\Str::random(40)]);
+                                        Notification::make()->title('✅ নতুন API Key তৈরি হয়েছে!')->warning()->send();
+                                    }
+                                }),
+                        ]),
+
+                    // ── JS Snippet Preview ───────────────────────────────────────
+                    Placeholder::make('js_snippet_info')
+                        ->label('📋 Chatbot Embed Snippet')
+                        ->content(fn ($record) => $record
+                            ? new HtmlString('
+                                <div class="bg-slate-900 rounded-xl p-4 font-mono text-xs text-green-400 overflow-x-auto leading-relaxed">&lt;!-- AI Commerce Bot | Paste before &lt;/body&gt; --&gt;
+&lt;script&gt;
+(function() {
+  window.AICB_CONFIG = {
+    apiKey: "' . $record->api_token . '",
+    shopName: "' . e($record->shop_name) . '",
+    baseUrl: "' . config('app.url') . '",
+    position: "bottom-right"
+  };
+  var s = document.createElement("script");
+  s.src = "' . config('app.url') . '/js/chatbot-widget.js";
+  document.head.appendChild(s);
+})();
+&lt;/script&gt;</div>
+                                <p class="text-xs text-gray-500 mt-2">👆 এই snippet টি আপনার website-এর <strong>&lt;/body&gt;</strong> tag-এর আগে paste করুন।</p>
+                                <a href="' . config('app.url') . '/api/connector/verify?api_key=' . $record->api_token . '" target="_blank"
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline mt-2 block">
+                                    🔗 Connection Test করুন ↗
+                                </a>'
+                            )
+                            : new HtmlString('<p class="text-gray-400 text-sm">Shop save করার পর snippet দেখাবে।</p>')),
+
+                    // ── API Reference ────────────────────────────────────────────
+                    Placeholder::make('api_endpoints_ref')
+                        ->label('🛠️ Developer API Endpoints')
+                        ->content(fn ($record) => new HtmlString('
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                    <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded text-[10px] shrink-0 mt-0.5">GET</span>
+                                    <div>
+                                        <code class="text-slate-800 font-mono">/api/connector/verify</code>
+                                        <p class="text-gray-500 mt-0.5">API Key সঠিক কিনা test করুন</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                    <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 font-bold rounded text-[10px] shrink-0 mt-0.5">POST</span>
+                                    <div>
+                                        <code class="text-slate-800 font-mono">/api/connector/sync-products</code>
+                                        <p class="text-gray-500 mt-0.5">WooCommerce / Shopify / Custom store থেকে product import</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                    <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 font-bold rounded text-[10px] shrink-0 mt-0.5">POST</span>
+                                    <div>
+                                        <code class="text-slate-800 font-mono">/api/v1/chat/widget</code>
+                                        <p class="text-gray-500 mt-0.5">Embedded chatbot widget-এর real-time AI chat</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                    <span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 font-bold rounded text-[10px] shrink-0 mt-0.5">POST</span>
+                                    <div>
+                                        <code class="text-slate-800 font-mono">/api/v1/import-products</code>
+                                        <p class="text-gray-500 mt-0.5">Bulk product import (WooCommerce webhook compatible)</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-400 mt-3 bg-amber-50 border border-amber-100 rounded p-2">
+                                    🔐 সব API call-এ header পাঠান: <code class="bg-amber-100 px-1 rounded font-mono">X-Api-Key: YOUR_API_KEY</code>
+                                </p>
+                            </div>')),
+                ]),
+
+            // ══════════════════════════════════════════════════════════════════
+            // DEVELOPER SDK DOWNLOADS
+            // ══════════════════════════════════════════════════════════════════
+            Section::make('🧩 Developer SDK & Integration')
+                ->description('Laravel, Node.js, Next.js বা যেকোনো platform থেকে সহজে connect করতে এই SDK গুলো ব্যবহার করুন।')
+                ->icon('heroicon-o-code-bracket')
+                ->collapsible()
+                ->schema([
+                    // ── SDK Download Cards ────────────────────────────────────
+                    Placeholder::make('sdk_downloads')
+                        ->label('📦 SDK Download করুন')
+                        ->content(fn () => new HtmlString('
+                            <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+
+                                <a href="' . config('app.url') . '/sdks/laravel/AiCommerceBot.php" download
+                                    class="flex flex-col items-center gap-2 bg-white border-2 border-indigo-100 hover:border-indigo-400 rounded-xl p-4 text-center transition-all group">
+                                    <span class="text-3xl">🐘</span>
+                                    <strong class="text-sm text-slate-700 group-hover:text-indigo-600">Laravel SDK</strong>
+                                    <span class="text-xs text-gray-400">AiCommerceBot.php</span>
+                                    <span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">PHP</span>
+                                </a>
+
+                                <a href="' . config('app.url') . '/sdks/nodejs/aiCommerceBot.js" download
+                                    class="flex flex-col items-center gap-2 bg-white border-2 border-green-100 hover:border-green-400 rounded-xl p-4 text-center transition-all group">
+                                    <span class="text-3xl">🟢</span>
+                                    <strong class="text-sm text-slate-700 group-hover:text-green-600">Node.js SDK</strong>
+                                    <span class="text-xs text-gray-400">aiCommerceBot.js</span>
+                                    <span class="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full">JS / Express</span>
+                                </a>
+
+                                <a href="' . config('app.url') . '/sdks/nodejs/aiCommerceBot.ts" download
+                                    class="flex flex-col items-center gap-2 bg-white border-2 border-blue-100 hover:border-blue-400 rounded-xl p-4 text-center transition-all group">
+                                    <span class="text-3xl">🔷</span>
+                                    <strong class="text-sm text-slate-700 group-hover:text-blue-600">Next.js SDK</strong>
+                                    <span class="text-xs text-gray-400">aiCommerceBot.ts</span>
+                                    <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">TypeScript</span>
+                                </a>
+
+                                <a href="' . config('app.url') . '/api/v1/wordpress-plugin/download"
+                                    class="flex flex-col items-center gap-2 bg-white border-2 border-purple-100 hover:border-purple-400 rounded-xl p-4 text-center transition-all group">
+                                    <span class="text-3xl">🔌</span>
+                                    <strong class="text-sm text-slate-700 group-hover:text-purple-600">WordPress Plugin</strong>
+                                    <span class="text-xs text-gray-400">ai-commerce-bot.zip</span>
+                                    <span class="text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">WooCommerce</span>
+                                </a>
+
+                            </div>
+
+                            <div class="mt-4">
+                                <a href="' . config('app.url') . '/sdks/INTEGRATION.md" target="_blank"
+                                    class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-lg transition-all">
+                                    📖 Full Integration Guide দেখুন ↗
+                                </a>
+                            </div>
+                        ')),
+
+                    // ── Feature Summary ───────────────────────────────────────
+                    Placeholder::make('sdk_features')
+                        ->label('🎁 Connect করার পর যা যা পাবেন')
+                        ->content(fn () => new HtmlString('
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                <div class="flex items-start gap-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">🤖</span>
+                                    <div>
+                                        <strong class="text-emerald-800">AI Chatbot Widget</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">Floating chatbot — Bangla, English, Banglish সব ভাষায়</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">📦</span>
+                                    <div>
+                                        <strong class="text-blue-800">Product AI Search</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">Real database থেকে product খুঁজে উত্তর দেবে</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">🛒</span>
+                                    <div>
+                                        <strong class="text-orange-800">Order Assistant</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">AI chatbot-এ order নিয়ে সরাসরি WooCommerce-এ create করে</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 bg-pink-50 border border-pink-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">📸</span>
+                                    <div>
+                                        <strong class="text-pink-800">Image & Voice Search</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">ছবি পাঠিয়ে product খুঁজবে, voice note-ও বুঝবে</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 bg-teal-50 border border-teal-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">🟢</span>
+                                    <div>
+                                        <strong class="text-teal-800">Live Chat Handover</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">Customer চাইলে human agent-এ switch করতে পারবে</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2 bg-violet-50 border border-violet-100 rounded-lg p-3">
+                                    <span class="text-lg shrink-0">🔔</span>
+                                    <div>
+                                        <strong class="text-violet-800">Notifications</strong>
+                                        <p class="text-xs text-gray-500 mt-0.5">নতুন order বা chat-এ Telegram/Email alert পাবেন</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ')),
+
+                    // ── Quick Connection Guide ────────────────────────────────
+                    Placeholder::make('quick_connect_guide')
+                        ->label('⚡ Quick Connect (যেকোনো website)')
+                        ->columnSpanFull()
+                        ->content(fn ($record) => new HtmlString('
+                            <div class="space-y-3">
+                                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Step 1 — .env file-এ যোগ করুন</p>
+                                    <div class="bg-slate-900 rounded-lg p-3 font-mono text-xs text-green-300">
+                                        AICB_API_KEY=<span class="text-yellow-300">' . ($record?->api_token ?? 'your_api_key_here') . '</span><br>
+                                        AICB_BASE_URL=<span class="text-yellow-300">' . config('app.url') . '</span>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Step 2 — SDK ফাইলটি আপনার project-এ রাখুন</p>
+                                    <div class="grid grid-cols-3 gap-2 text-xs">
+                                        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-2 text-center">
+                                            <p class="font-semibold text-indigo-700">Laravel</p>
+                                            <code class="text-[10px] text-gray-600">app/Services/AiCommerceBot.php</code>
+                                        </div>
+                                        <div class="bg-green-50 border border-green-100 rounded-lg p-2 text-center">
+                                            <p class="font-semibold text-green-700">Node.js</p>
+                                            <code class="text-[10px] text-gray-600">lib/aiCommerceBot.js</code>
+                                        </div>
+                                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
+                                            <p class="font-semibold text-blue-700">Next.js</p>
+                                            <code class="text-[10px] text-gray-600">lib/aiCommerceBot.ts</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Step 3 — Chatbot Widget যোগ করুন</p>
+                                    <div class="bg-slate-900 rounded-lg p-3 font-mono text-xs">
+                                        <span class="text-purple-300">// Laravel Blade (before &lt;/body&gt;)</span><br>
+                                        <span class="text-yellow-300">{!! App\Services\AiCommerceBot::embedScript() !!}</span><br><br>
+                                        <span class="text-purple-300">// Next.js layout.tsx</span><br>
+                                        <span class="text-green-300">&lt;div dangerouslySetInnerHTML=</span><span class="text-blue-300">{{ __html: getEmbedSnippet() }}</span><span class="text-green-300"> /&gt;</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ')),
+                ]),
         ];
     }
 }
+

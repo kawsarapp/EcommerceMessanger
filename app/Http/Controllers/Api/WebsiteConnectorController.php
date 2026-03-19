@@ -60,14 +60,19 @@ class WebsiteConnectorController extends Controller
         }
 
         return response()->json([
-            'success'      => true,
-            'message'      => 'Connected successfully! 🎉',
-            'shop'         => $client->shop_name,
-            'plan'         => $client->plan?->name ?? 'No Plan',
-            'plan_active'  => $client->hasActivePlan(),
-            'products'     => $client->products()->count(),
-            'integration'  => 'custom_website',
-        ]);
+            'success'       => true,
+            'message'       => 'Connected successfully! 🎉',
+            'shop'          => $client->shop_name,
+            'plan'          => $client->plan?->name ?? 'No Plan',
+            'plan_active'   => $client->hasActivePlan(),
+            'products'      => $client->products()->count(),
+            'integration'   => 'custom_website',
+            'endpoints'     => [
+                'chat'         => config('app.url') . '/api/v1/chat/widget',
+                'sync'         => config('app.url') . '/api/connector/sync-products',
+                'widget_js'    => config('app.url') . '/js/chatbot-widget.js',
+            ],
+        ])->withHeaders(['Access-Control-Allow-Origin' => '*']);
     }
 
     // =========================================================
@@ -187,6 +192,7 @@ class WebsiteConnectorController extends Controller
         $appUrl = config('app.url');
         $apiKey = $request->query('api_key') ?? $request->bearerToken() ?? $request->header('X-Api-Key');
 
+        $primaryColor = $client->primary_color ?? '#4f46e5';
         $snippet = <<<JS
 <!-- AI Commerce Bot — Paste this before </body> -->
 <script>
@@ -195,10 +201,9 @@ class WebsiteConnectorController extends Controller
     apiKey: "{$apiKey}",
     shopName: "{$client->shop_name}",
     baseUrl: "{$appUrl}",
-    chatEndpoint: "{$appUrl}/api/v1/chat/{$client->api_token}",
     position: "bottom-right",
-    primaryColor: "#4f46e5",
-    greeting: "Hi! 👋 How can I help you today?"
+    primaryColor: "{$primaryColor}",
+    greeting: "আমি আপনাকে সাহায্য করতে পারি! 👋 কী খুঁজছেন?"
   };
   var s = document.createElement('script');
   s.src = "{$appUrl}/js/chatbot-widget.js";
@@ -210,15 +215,16 @@ class WebsiteConnectorController extends Controller
 JS;
 
         return response()->json([
-            'success' => true,
-            'snippet' => $snippet,
+            'success'      => true,
+            'snippet'      => $snippet,
+            'chat_endpoint'=> $appUrl . '/api/v1/chat/widget',
             'instructions' => [
                 '1. Copy the snippet above.',
                 '2. Paste it just before the </body> tag on every page of your website.',
-                '3. The AI chatbot will appear automatically, connected to your product database.',
-                '4. No further setup is needed.',
+                '3. The AI chatbot will appear automatically with your brand color & product data.',
+                '4. No other configuration needed.',
             ],
-        ]);
+        ])->withHeaders(['Access-Control-Allow-Origin' => '*']);
     }
 
     // =========================================================

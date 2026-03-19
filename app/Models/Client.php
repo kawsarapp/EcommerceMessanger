@@ -73,7 +73,19 @@ class Client extends Model
     public function widget(string $key, bool $default = true): bool
     {
         $widgets = $this->widgets ?? [];
-        return $widgets[$key] ?? $default;
+        if (isset($widgets[$key]) && is_array($widgets[$key])) {
+            return $widgets[$key]['active'] ?? $default;
+        }
+        return (bool) ($widgets[$key] ?? $default);
+    }
+
+    /**
+     * Widget configuration helper - উইজেটের কালার, টেক্সট, লিংক ইত্যাদি আনবে
+     */
+    public function widgetConfig(string $key): array
+    {
+        $widgets = $this->widgets ?? [];
+        return is_array($widgets[$key] ?? null) ? $widgets[$key] : [];
     }
 
     // ==========================================

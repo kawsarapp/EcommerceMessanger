@@ -11,39 +11,27 @@ class AiBrainTab
     public static function schema(): array
     {
         return [
+            // ─── AI Model: Only Super Admin can see & change ───────────────────
             Section::make('🤖 AI Model Selection')
                 ->description('এই স্টোরের জন্য কোন AI ব্যবহার হবে তা সিলেক্ট করুন।')
+                ->visible(fn () => auth()->user()?->isSuperAdmin())
                 ->schema([
                     Select::make('ai_model')
                         ->label('AI Model সিলেক্ট করুন')
-                        ->options(function () {
-                            $client = filament()->getTenant() ?? auth()->user()?->client;
-                            $allModels = [
-                                'gemini-pro'              => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
-                                'gemini-pro-full'         => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
-                                'gpt-4o'                  => '🟩 OpenAI GPT-4o (Best Quality)',
-                                'gpt-4o-mini'             => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
-                                'gpt-3.5-turbo'           => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
-                                'claude-3-opus-20240229'  => '🟧 Anthropic Claude 3 Opus (Smartest)',
-                                'claude-3-haiku-20240307' => '🟧 Anthropic Claude 3 Haiku (Fast)',
-                                'deepseek-chat'           => '🟪 DeepSeek Chat (Cheap & Powerful)',
-                                'deepseek-reasoner'       => '🟪 DeepSeek R1 (Reasoning Model)',
-                            ];
-
-                            // Super admin sees all
-                            if (auth()->user()?->isSuperAdmin()) return $allModels;
-
-                            // Filter by plan's allowed models (if set)
-                            $plan = $client?->plan;
-                            if ($plan && !empty($plan->allowed_ai_models)) {
-                                return array_intersect_key($allModels, array_flip($plan->allowed_ai_models));
-                            }
-
-                            return $allModels;
-                        })
+                        ->options([
+                            'gemini-pro'              => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
+                            'gemini-pro-full'         => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
+                            'gpt-4o'                  => '🟩 OpenAI GPT-4o (Best Quality)',
+                            'gpt-4o-mini'             => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
+                            'gpt-3.5-turbo'           => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
+                            'claude-3-opus-20240229'  => '🟧 Anthropic Claude 3 Opus (Smartest)',
+                            'claude-3-haiku-20240307' => '🟧 Anthropic Claude 3 Haiku (Fast)',
+                            'deepseek-chat'           => '🟪 DeepSeek Chat (Cheap & Powerful)',
+                            'deepseek-reasoner'       => '🟪 DeepSeek R1 (Reasoning Model)',
+                        ])
                         ->default('gemini-pro')
                         ->required()
-                        ->helperText('⚙️ আপনার প্ল্যান অনুযায়ী AI মডেলের অ্যাক্সেস নির্ধারিত। নিজের API Key যোগ করতে পারবেন।')
+                        ->helperText('⚙️ Admin only — Seller এই সেটিং দেখতে বা পরিবর্তন করতে পারবে না।')
                         ->live(),
 
                     \Filament\Forms\Components\TextInput::make('gemini_api_key')
@@ -82,6 +70,7 @@ class AiBrainTab
                         ->visible(fn (callable $get) => str_starts_with($get('ai_model') ?? '', 'groq')),
                 ]),
 
+            // ─── Knowledge Base: Seller can edit ──────────────────────────────
             Section::make('Knowledge Base')
                 ->description('দোকানের নিয়মকানুন এখানে লিখুন। AI এটি পড়েই কাস্টমারকে উত্তর দিবে।')
                 ->schema([
@@ -91,6 +80,7 @@ class AiBrainTab
                         ->rows(6),
                 ]),
 
+            // ─── Bot Personality: Seller can edit ─────────────────────────────
             Section::make('Bot Personality')
                 ->description('Advanced: AI behavior control.')
                 ->collapsed()

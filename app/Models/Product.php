@@ -131,11 +131,12 @@ class Product extends Model
             $img->text($watermarkText, $img->width() - 40, $img->height() - 40, function ($font) {
                 if (file_exists(public_path('fonts/roboto.ttf'))) {
                     $font->filename(public_path('fonts/roboto.ttf'));
-                } elseif (file_exists(public_path('fonts/arial.ttf'))) {
+                }
+                elseif (file_exists(public_path('fonts/arial.ttf'))) {
                     $font->filename(public_path('fonts/arial.ttf'));
                 }
-                
-                $font->size(90);
+
+                $font->size(200);
                 $font->color('rgba(0, 0, 0, 0.7)'); // Added opacity so it looks like a watermark
                 $font->align('right');
                 $font->valign('bottom');

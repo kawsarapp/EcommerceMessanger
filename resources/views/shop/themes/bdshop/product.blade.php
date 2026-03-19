@@ -49,6 +49,21 @@ $totalReviews = $reviews->count();
                     @endforeach
                 </div>
                 @endif
+                
+                {{-- Video Player --}}
+                @if($product->video_url)
+                <div class="mt-4">
+                    <h4 class="text-xs sm:text-sm font-bold text-dark mb-2 flex items-center gap-1.5"><i class="fas fa-play-circle text-primary"></i> প্রোডাক্ট ভিডিও</h4>
+                    <div class="w-full aspect-video rounded-xl bg-slate-50 border border-slate-100 overflow-hidden relative">
+                        @php
+                            $videoEmbed = $product->video_url;
+                            if(str_contains($videoEmbed, 'youtu.be/')) $videoEmbed = str_replace('youtu.be/', 'www.youtube.com/embed/', $videoEmbed);
+                            elseif(str_contains($videoEmbed, 'watch?v=')) $videoEmbed = str_replace('watch?v=', 'embed/', $videoEmbed);
+                        @endphp
+                        <iframe class="absolute inset-0 w-full h-full" src="{{ $videoEmbed }}" title="Product Video" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+                @endif
             </div>
             
             {{-- Product Details --}}
