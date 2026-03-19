@@ -61,13 +61,48 @@ class WhatsAppWebhookController extends Controller{
                 if(!empty($aiReply)){Http::post(config('services.whatsapp.api_url') . '/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>$aiReply]);}
                 foreach($outgoingImages as $index=>$imgUrl){
                     try{
-                        $imageContent=file_get_contents($imgUrl);
-                        if($imageContent!==false){
-                            $mimeType=(new \finfo(FILEINFO_MIME_TYPE))->buffer($imageContent);$base64Image=base64_encode($imageContent);
-                            Http::post(config('services.whatsapp.api_url') . '/api/send-message',['instance_id'=>$instanceId,'to'=>$senderPhone,'message'=>'','media'=>['mimetype'=>$mimeType,'data'=>$base64Image,'filename'=>'product_image_'.$index]]);
+                        // ✅ Use cURL with SSL disabled (fixes self-signed cert issue on asianhost.net)
+                        $ch = curl_init($imgUrl);
+                        curl_setopt_array($ch, [
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_FOLLOWLOCATION => true,
+                            CURLOPT_TIMEOUT        => 20,
+                            CURLOPT_SSL_VERIFYPEER => false,
+                            CURLOPT_SSL_VERIFYHOST => 0,
+                        ]);
+                        $imageContent = curl_exec($ch);
+                        $httpCode     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                        curl_close($ch);
+
+                        if($imageContent !== false && $httpCode < 400){
+                            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                            $mimeType = $finfo->buffer($imageContent);
+                            $base64Image = base64_encode($imageContent);
+                            Http::post(config('services.whatsapp.api_url') . '/api/send-message',[
+                                'instance_id' => $instanceId,
+                                'to'          => $senderPhone,
+                                'message'     => '',
+                                'media'       => [
+                                    'mimetype' => $mimeType,
+                                    'data'     => $base64Image,
+                                    'filename' => 'product_image_' . $index,
+                                ],
+                            ]);
+                            Log::info("✅ WA Image Sent | To: {$senderPhone} | URL: " . substr($imgUrl, 0, 80));
+                        } else {
+                            // Fallback: image URL পাঠিয়ে দাও
+                            Http::post(config('services.whatsapp.api_url') . '/api/send-message',[
+                                'instance_id' => $instanceId,
+                                'to'          => $senderPhone,
+                                'message'     => "📸 Product Image: " . $imgUrl,
+                            ]);
+                            Log::warning("⚠️ WA Image Download Failed (HTTP {$httpCode}), sent URL fallback: {$imgUrl}");
                         }
-                    }catch(\Exception $imgEx){}
+                    }catch(\Exception $imgEx){
+                        Log::error("❌ WA Image Send Error: " . $imgEx->getMessage());
+                    }
                 }
+
                 
                 if($conversation){
                     $conversation->update(['bot_response'=>$aiReply]);

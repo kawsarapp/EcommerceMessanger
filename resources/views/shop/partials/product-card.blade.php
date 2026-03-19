@@ -2,7 +2,11 @@
     Reusable Product Card - Used in all theme index pages
     Required: $product (or aliased as $p), $baseUrl, $client
 --}}
-@php $p = $product ?? $p; @endphp
+@php
+    $p = $product ?? $p;
+    $baseUrl = $baseUrl ?? url('/');
+@endphp
+
 <a href="{{$baseUrl.'/product/'.$p->slug}}" class="product-card group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 relative">
     
     @if($p->sale_price)

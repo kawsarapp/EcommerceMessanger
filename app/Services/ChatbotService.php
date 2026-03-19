@@ -169,7 +169,13 @@ class ChatbotService
                         $stepName = 'start';
                     }
                     elseif (!$newProduct) {
-                        foreach (['menu', 'start', 'offer', 'ki ace', 'home', 'suru'] as $word) {
+                        $greetingKeywords = [
+                            'menu', 'start', 'offer', 'ki ace', 'home', 'suru',
+                            'hi', 'hello', 'হ্যালো', 'হ্যাল', 'হ্যা', 'salaam', 'salam',
+                            'assalamu', 'assalam', 'আস্সালামু', 'আমি', 'alo', 'aloo',
+                            'নমস্কার', 'শুভেচ্ছা', 'হাই',
+                        ];
+                        foreach ($greetingKeywords as $word) {
                             if (stripos($userMessage, $word) !== false) {
                                 $session->update(['customer_info' => ['step' => 'start', 'history' => []]]);
                                 $stepName = 'start';
@@ -295,9 +301,12 @@ class ChatbotService
                 CURLOPT_TIMEOUT        => 5,
                 CURLOPT_HEADER         => true,
                 CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_SSL_VERIFYPEER => false,  // Fix: self-signed cert
+                CURLOPT_SSL_VERIFYHOST => 0,
             ]);
             $headers  = curl_exec($ch);
             curl_close($ch);
+
 
             if ($headers && preg_match('/Content-Type:\s*([^\r\n;]+)/i', $headers, $m)) {
                 return str_contains(strtolower($m[1]), 'audio');

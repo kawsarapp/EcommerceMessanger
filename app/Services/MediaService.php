@@ -53,7 +53,10 @@ class MediaService
                 CURLOPT_TIMEOUT        => 25,
                 CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; AiCommerceBot/1.0)',
                 CURLOPT_HEADER         => true,
+                CURLOPT_SSL_VERIFYPEER => false,  // Fix: self-signed cert on hosting servers
+                CURLOPT_SSL_VERIFYHOST => 0,
             ]);
+
             $raw        = curl_exec($ch);
             $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
