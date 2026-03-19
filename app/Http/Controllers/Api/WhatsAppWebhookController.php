@@ -1,6 +1,13 @@
 <?php
 namespace App\Http\Controllers\Api;
-use App\Http\Controllers\Controller;use Illuminate\Http\Request;use App\Models\{Client,Conversation,OrderSession};use Illuminate\Support\Facades\{Http,Storage,Log};use App\Services\ChatbotService;use Illuminate\Support\Str;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\{Client,Conversation,OrderSession};
+use Illuminate\Support\Facades\{Http,Storage,Log,Cache};
+use App\Services\ChatbotService;
+use App\Jobs\ProcessBatchedMessage;
+use Illuminate\Support\Str;
+
 class WhatsAppWebhookController extends Controller{
     protected $chatbot;
     public function __construct(ChatbotService $chatbot){$this->chatbot=$chatbot;}
@@ -42,7 +49,47 @@ class WhatsAppWebhookController extends Controller{
             if(!$session){$session=OrderSession::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'is_human_agent_active'=>false,'customer_info'=>['history'=>[]]]);}
         }catch(\Illuminate\Database\UniqueConstraintViolationException $e){$session=OrderSession::where('client_id',$client->id)->where('sender_id',$senderPhone)->first();}
         if($session&&$session->is_human_agent_active) return response()->json(['success'=>true,'message'=>'Human mode active.']);
+
+        // ━━━ MESSAGE BATCHING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        if ($client->message_batch_enabled) {
+            $delayMs  = max(500, min(10000, (int) ($client->message_batch_delay_ms ?? 2000)));
+            $delaySec = $delayMs / 1000;
+
+            $tsKey   = "batch_last_ts_{$client->id}_{$senderPhone}";
+            $msgsKey = "batch_msgs_{$client->id}_{$senderPhone}";
+            $imgKey  = "batch_img_{$client->id}_{$senderPhone}";
+
+            // Accumulate messages in cache
+            $existing = Cache::get($msgsKey, []);
+            if (!empty($messageBody) && $messageBody !== '[User sent an attachment]') {
+                $existing[] = $messageBody;
+            }
+            Cache::put($msgsKey, $existing, now()->addMinutes(5));
+
+            // Store attachment URL (last one wins)
+            if ($attachmentUrl) {
+                Cache::put($imgKey, $attachmentUrl, now()->addMinutes(5));
+            }
+
+            // Record timestamp and dispatch delayed job
+            $now = (string) microtime(true);
+            Cache::put($tsKey, $now, now()->addMinutes(5));
+
+            ProcessBatchedMessage::dispatch(
+                $client->id,
+                $senderPhone,
+                'whatsapp',
+                $now,
+                $instanceId
+            )->delay(now()->addSeconds($delaySec));
+
+            Log::info("⏳ WA Batch queued | Shop: {$client->shop_name} | Sender: {$senderPhone} | Delay: {$delayMs}ms | Msgs so far: " . count($existing));
+            return response()->json(['success' => true, 'batching' => true]);
+        }
+        // ━━━ END BATCHING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
         try{
+
             $aiReply=$this->chatbot->handleMessage($client,$senderPhone,$messageBody,$attachmentUrl);
             if($aiReply){
                 $outgoingImages=[];

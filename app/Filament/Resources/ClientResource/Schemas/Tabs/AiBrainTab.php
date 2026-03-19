@@ -5,6 +5,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 
 class AiBrainTab
 {
@@ -121,6 +122,36 @@ class AiBrainTab
                         ->default(3)
                         ->required()
                         ->visible(fn (callable $get) => $get('is_review_collection_active')),
+                ])->columns(2),
+
+            // ─── MESSAGE BATCHING ────────────────────────────────────────────────
+            Section::make('🧩 Message Batching')
+                ->description(
+                    'Customer যদি দ্রুত অনেকগুলো ভাগ ভাগ message পাঠায় তাহলে AI সবগুলোকে একসাথে join করে process করবে। ' .
+                    'যত ms wait নির্ধারণ করবেন, তত সময় নতুন message এলে timer reset হয়। মিনিমাম 500ms, ম্যাক্স 10000ms।'
+                )
+                ->schema([
+                    Toggle::make('message_batch_enabled')
+                        ->label('Enable Message Batching')
+                        ->helperText('On করলে AI কিছুক্ষণ wait করে সব message join করে process করবে।')
+                        ->default(false)
+                        ->reactive(),
+
+                    Select::make('message_batch_delay_ms')
+                        ->label('Wait Duration (milliseconds)')
+                        ->helperText('নতুন message না এলে যতক্ষণ পরে AI উত্তর দেবে')
+                        ->options([
+                            500  => '500ms  (0.5 সেকেন্ড — অতি দ্রুত)',
+                            1000 => '1000ms (1 সেকেন্ড — দ্রুত)',
+                            1500 => '1500ms (1.5 সেকেন্ড)',
+                            2000 => '2000ms (2 সেকেন্ড — প্রস্তাবিত) ⭐',
+                            3000 => '3000ms (3 সেকেন্ড)',
+                            4000 => '4000ms (4 সেকেন্ড)',
+                            5000 => '5000ms (5 সেকেন্ড — পরিশ্রমী কাস্টমারদের জন্য)',
+                        ])
+                        ->default(2000)
+                        ->required()
+                        ->visible(fn (callable $get) => (bool) $get('message_batch_enabled')),
                 ])->columns(2),
         ];
     }
