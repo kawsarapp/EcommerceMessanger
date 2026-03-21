@@ -135,31 +135,58 @@ class MarketingBroadcast extends Page implements HasForms
         foreach ($finalTargets as $target) {
             $personalizedMsg = str_replace(['{{name}}', '{{shop}}'], [$target['name'], $client->shop_name], $message);
             try {
-                if ($target['platform'] === 'messenger' && $client->fb_page_token) {
+                if ($target['platform'] === 'messenger') {
+                    if (!$client->fb_page_token) {
+                        Log::warning("⚠️ Broadcast SKIP [{$target['id']}]: fb_page_token not configured for {$client->shop_name}");
+                        continue;
+                    }
                     $messengerService->sendMessengerMessage($target['id'], $personalizedMsg, $client->fb_page_token, $imgUrl, [], $btnText, $btnUrl);
                     $successCount++;
-                } elseif ($target['platform'] === 'whatsapp' && $client->wa_instance_id) {
+
+                } elseif ($target['platform'] === 'whatsapp') {
+                    if (!$client->wa_instance_id || !$waApiUrl) {
+                        Log::warning("⚠️ Broadcast SKIP [{$target['id']}]: wa_instance_id or waApiUrl not configured for {$client->shop_name}");
+                        continue;
+                    }
+                    // WhatsApp ID ফরম্যাট ঠিক করা — @s.whatsapp.net দরকার হলে যোগ করা
+                    $waId = str_contains($target['id'], '@') ? $target['id'] : $target['id'] . '@s.whatsapp.net';
+
                     if ($image) {
-                        $imgContent = file_get_contents(storage_path('app/public/' . $image));
-                        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($imgContent);
-                        $base64 = base64_encode($imgContent);
-                        Http::timeout(15)->post($waApiUrl . '/api/send-message', [
-                            'instance_id' => $client->wa_instance_id,
-                            'to'          => $target['id'],
-                            'message'     => $personalizedMsg,
-                            'media'       => ['mimetype' => $mime, 'data' => $base64, 'filename' => 'offer.jpg'],
-                        ]);
+                        $imgContent = @file_get_contents(storage_path('app/public/' . $image));
+                        if ($imgContent) {
+                            $mime   = (new \finfo(FILEINFO_MIME_TYPE))->buffer($imgContent);
+                            $base64 = base64_encode($imgContent);
+                            $resp = Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                                'instance_id' => $client->wa_instance_id,
+                                'to'          => $waId,
+                                'message'     => $personalizedMsg,
+                                'media'       => ['mimetype' => $mime, 'data' => $base64, 'filename' => 'offer.jpg'],
+                            ]);
+                        } else {
+                            $resp = Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                                'instance_id' => $client->wa_instance_id,
+                                'to'          => $waId,
+                                'message'     => $personalizedMsg,
+                            ]);
+                        }
                     } else {
-                        Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                        $resp = Http::timeout(15)->post($waApiUrl . '/api/send-message', [
                             'instance_id' => $client->wa_instance_id,
-                            'to'          => $target['id'],
+                            'to'          => $waId,
                             'message'     => $personalizedMsg,
                         ]);
                     }
-                    $successCount++;
+
+                    if (isset($resp) && $resp->status() < 400) {
+                        $successCount++;
+                    } else {
+                        Log::warning("⚠️ WA Broadcast failed for {$waId}: " . (isset($resp) ? $resp->body() : 'No response'));
+                    }
+                } else {
+                    Log::warning("⚠️ Broadcast SKIP: Unknown platform '{$target['platform']}' for {$target['id']}");
                 }
             } catch (\Exception $e) {
-                Log::error("Broadcast Error: " . $e->getMessage());
+                Log::error("❌ Broadcast Error [{$target['platform']}] → {$target['id']}: " . $e->getMessage());
             }
         }
 

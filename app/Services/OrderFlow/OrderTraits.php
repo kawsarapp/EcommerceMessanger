@@ -30,17 +30,18 @@ trait OrderTraits
 
 
         //---
-        // 🔥 NEW: Direct SKU Match (কাস্টমার মেসেজে SKU লিখলে সরাসরি ক্যাচ করবে)
+        // 🔥 Direct SKU Match (কাস্টমার মেসেজে SKU লিখলে সরাসরি ক্যাচ করবে)
+        // ⚠️ Out-of-stock product-ও match করবে — AI তারপর বিকল্প suggest করবে
         $words = explode(' ', $message);
         foreach ($words as $w) {
             $cleanWord = trim($w);
             if (strlen($cleanWord) > 2) {
                 $skuMatch = Product::where('client_id', $clientId)
                     ->where('sku', $cleanWord)
-                    ->where('stock_status', 'in_stock')
-                    ->first();
+                    ->first(); // ✅ no stock_status filter — out-of-stock SKU also searchable
                 if ($skuMatch) {
-                    Log::info("✅ Product Found by EXACT SKU: {$skuMatch->name} ({$skuMatch->sku})");
+                    $stockInfo = $skuMatch->stock_status === 'in_stock' ? 'in stock' : 'OUT OF STOCK';
+                    Log::info("✅ Product Found by EXACT SKU: {$skuMatch->name} ({$skuMatch->sku}) [{$stockInfo}]");
                     return $skuMatch;
                 }
             }
@@ -52,8 +53,7 @@ trait OrderTraits
             $sku = $matches[1];
             $product = Product::where('client_id', $clientId)
                 ->where('sku', $sku)
-                ->where('stock_status', 'in_stock')
-                ->first();
+                ->first(); // ✅ no stock filter — out-of-stock SKU searchable
             if ($product) {
                 Log::info("✅ Product Found by SKU from FB Message: {$product->name}");
                 return $product;

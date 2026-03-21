@@ -42,12 +42,12 @@ class ChatbotService
         $this->utility = $utility;
     }
 
-    public function handleMessage($client, $senderId, $messageText, $incomingImageUrl = null)
+    public function handleMessage($client, $senderId, $messageText, $incomingImageUrl = null, $platform = 'messenger')
     {
-        return $this->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl);
+        return $this->getAiResponse($messageText, $client->id, $senderId, $incomingImageUrl, $platform);
     }
 
-    public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null)
+    public function getAiResponse($userMessage, $clientId, $senderId, $imageUrl = null, $platform = 'messenger')
     {
         $lock = Cache::lock("processing_user_{$senderId}", 5);
         $client = Client::find($clientId);
@@ -144,13 +144,21 @@ class ChatbotService
             return "দুঃখিত, আমি আপনার কথা বুঝতে পারছি না। আমাদের একজন প্রতিনিধি শীঘ্রই আপনার সাথে যোগাযোগ করবেন।";
         }
 
-        return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image, $imageUrl, $client, $shopName) {
-            $session = OrderSession::firstOrCreate(['sender_id' => $senderId], ['client_id' => $clientId, 'customer_info' => ['step' => 'start', 'history' => []]]);
+        return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image, $imageUrl, $client, $shopName, $platform) {
+            $session = OrderSession::firstOrCreate(
+                ['sender_id' => $senderId],
+                ['client_id' => $clientId, 'platform' => $platform, 'customer_info' => ['step' => 'start', 'history' => []]]
+            );
             $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
+            // Backfill platform for existing sessions (পুরোনো sessions এ platform নেই)
+            if (empty($session->platform)) {
+                $session->update(['platform' => $platform]);
+            }
             if ($session->is_human_agent_active)
                 return null;
 
             $session->refresh();
+
             $stepName = $session->customer_info['step'] ?? 'start';
             $isTracking = $this->utility->isTrackingIntent($userMessage);
 
@@ -209,7 +217,21 @@ class ChatbotService
 
             $inventoryData = $this->inventory->getFormattedInventory($client, $userMessage);
             $orderHistory = $this->promptService->buildOrderContext($clientId, $senderId, $userMessage);
-            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName);
+                // ── Session product context inject করো (collect_info/confirm step এ হারিয়ে যাওয়া product বাঁচাতে)
+            $sessionProductContext = null;
+            if (!empty($session->customer_info['product_id'])) {
+                $sessionProduct = Product::find($session->customer_info['product_id']);
+                if ($sessionProduct) {
+                    $finalPrice = ($sessionProduct->sale_price > 0 && $sessionProduct->sale_price < $sessionProduct->regular_price)
+                        ? $sessionProduct->sale_price : $sessionProduct->regular_price;
+                    $variant = $session->customer_info['variant'] ?? [];
+                    $variantStr = !empty($variant) ? ' [Variant: ' . implode(', ', array_filter($variant)) . ']' : '';
+                    $sessionProductContext = "✅ কাস্টমার এই product টা select করেছে: '{$sessionProduct->name}' (দাম: ৳{$finalPrice}{$variantStr}). এই product সম্পর্কে কথা বলো — অন্য product suggest করো না।";
+                    Log::info("✅ SELECTED_PRODUCT_CONTEXT injected: {$sessionProduct->name}");
+                }
+            }
+
+            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext);
 
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             $history = $session->customer_info['history'] ?? [];
@@ -285,6 +307,10 @@ class ChatbotService
         $audioExtensions = ['ogg', 'oga', 'mp3', 'm4a', 'aac', 'wav', 'webm', 'amr', 'flac'];
         $ext = pathinfo(parse_url($lower, PHP_URL_PATH), PATHINFO_EXTENSION);
         if (in_array($ext, $audioExtensions)) return true;
+
+        // ✅ Fix: local storage audio URL detect (WhatsApp saves audio as .ogg locally)
+        if (str_contains($lower, 'chat_attachments/') && in_array($ext, $audioExtensions)) return true;
+        if (str_contains($lower, 'storage/') && str_contains($lower, 'wa_') && in_array($ext, $audioExtensions)) return true;
 
         // URL keyword-based detection (Facebook/WhatsApp voice URLs contain these)
         $audioKeywords = ['audio', 'voice', 'sound', 'speech', '.ogg', '.mp3', '.m4a', '.aac', '.wav'];

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotPromptService
 {
-    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start')
+    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start', $sessionProductContext = null)
     {
         Log::info("🤖 Generating AI Prompt | Shop ID: {$client->id} | Step: {$currentStep}");
 
@@ -19,11 +19,22 @@ class ChatbotPromptService
             Log::info("📝 Injected DATA_EXTRACTION rules for step: {$currentStep}");
         }
 
+        // ── Session product context (prevents context loss in collect_info/confirm) ─
+        $selectedProductBlock = "";
+        if (!empty($sessionProductContext)) {
+            $selectedProductBlock = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                . "🛒 SELECTED PRODUCT (CRITICAL — ভুলবে না)\n"
+                . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                . $sessionProductContext . "\n"
+                . "⚠️ কাস্টমার \"ata\", \"eta\", \"aita\", \"ataaa\", \"এটা\", \"ওটা\" বললে এই selected product বুঝবে।\n"
+                . "⚠️ এই product এর কথা চলছে — হঠাৎ \"স্টকে নেই\" বলবে না।\n";
+        }
+
         // ── Master prompt ────────────────────────────────────────────────────
-        $masterRules = <<<EOT
+        $masterRules = <<<'EOT'
 তুমি {{shop_name}} এর একজন অভিজ্ঞ, প্রফেশনাল E-commerce Sales Assistant।
 তোমার কাজ: কাস্টমারকে সৎভাবে সেবা দেওয়া — ঠিক একজন ভালো দোকানদারের মতো।
-
+{{selected_product}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🗣️ COMMUNICATION STYLE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -55,9 +66,12 @@ class ChatbotPromptService
 🧠 MEMORY — আগের কথা মনে রাখো
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ কাস্টমার আগে কোন product নিয়ে কথা বলেছিল মনে রেখো।
-  ✅ "ok", "confirm", "hobe", "thik ache" বললে বুঝো সে আগের কথা confirm করছে।
+  ✅ "ok", "confirm", "hobe", "thik ache", "Ji", "হ্যা", "yes" বললে বুঝো সে আগের কথা confirm করছে।
+  ✅ "ata", "eta", "aita", "eita", "এটা", "ওটা" বললে বুঝো সে SELECTED PRODUCT বোঝাচ্ছে।
+  ✅ "1 number ta", "2 number ta" বললে বুঝো সে আগের list-এর ঐ নম্বর product চাইছে।
   ✅ আগে নাম/phone/address নেওয়া হলে আবার জিজ্ঞেস করবে না।
   ❌ প্রতিটি message-কে "প্রথম message" ভাববে না।
+  ❌ Context হারালেও "স্টকে নেই" বলবে না — আগের chat history থেকে product বোঝার চেষ্টা করো।
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎤 VOICE MESSAGE
@@ -104,18 +118,19 @@ EOT;
         $recentOrderInfo = $recentOrder ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" : "কোনো সাম্প্রতিক অর্ডার নেই।";
 
         $tags = [
-            '{{shop_name}}'       => $client->shop_name,
-            '{{knowledge_base}}'  => $knowledgeBase,
-            '{{delivery_info}}'   => $deliveryInfo,
-            '{{instruction}}'     => $instruction,
-            '{{product_context}}' => $prodCtx,
-            '{{order_history}}'   => $ordCtx,
-            '{{inventory}}'       => $invData,
-            '{{time}}'            => $time,
-            '{{customer_name}}'   => $userName,
-            '{{last_order}}'      => $recentOrderInfo,
-            '{{step_rules}}'      => $stepSpecificRules,
-            '{{current_step}}'    => strtoupper(str_replace('_', ' ', $currentStep)),
+            '{{shop_name}}'        => $client->shop_name,
+            '{{knowledge_base}}'   => $knowledgeBase,
+            '{{delivery_info}}'    => $deliveryInfo,
+            '{{instruction}}'      => $instruction,
+            '{{product_context}}'  => $prodCtx,
+            '{{order_history}}'    => $ordCtx,
+            '{{inventory}}'        => $invData,
+            '{{time}}'             => $time,
+            '{{customer_name}}'    => $userName,
+            '{{last_order}}'       => $recentOrderInfo,
+            '{{step_rules}}'       => $stepSpecificRules,
+            '{{current_step}}'     => strtoupper(str_replace('_', ' ', $currentStep)),
+            '{{selected_product}}' => $selectedProductBlock,
         ];
 
         Log::info("✅ Prompt generated for Shop ID: {$client->id}");

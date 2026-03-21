@@ -66,7 +66,7 @@ class ProcessBatchedMessage implements ShouldQueue
         if (!$client) return;
 
         try {
-            $aiReply = $chatbot->handleMessage($client, $this->senderId, $combinedMessage, $attachmentUrl);
+            $aiReply = $chatbot->handleMessage($client, $this->senderId, $combinedMessage, $attachmentUrl, $this->platform);
             if (!$aiReply) return;
 
             match ($this->platform) {

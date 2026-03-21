@@ -28,14 +28,25 @@ class WhatsAppWebhookController extends Controller{
         if(!$client) return response()->json(['success'=>false,'message'=>'Bot is offline']);
         Log::info("📨 INCOMING WhatsApp | Shop: {$client->shop_name} | From: {$senderPhone} ({$senderName}) | Msg: " . substr($messageBody, 0, 100));
         $attachmentUrl=null;
+        $isAudioAttachment=false;
         if($attachmentBase64){
             try{
                 if(preg_match('/^data:([^;]+);base64,(.+)$/',$attachmentBase64,$matches)){
                     $mimeType=$matches[1];$base64Data=$matches[2];
-                    $extension='file';if(str_contains($mimeType,'image')) $extension='jpg';elseif(str_contains($mimeType,'video')) $extension='mp4';elseif(str_contains($mimeType,'audio')) $extension='ogg'; 
+                    $isAudioAttachment=str_contains($mimeType,'audio');
+                    $extension='file';
+                    if(str_contains($mimeType,'image')) $extension='jpg';
+                    elseif(str_contains($mimeType,'video')) $extension='mp4';
+                    elseif($isAudioAttachment) $extension='ogg';
                     $fileName='wa_'.time().'_'.uniqid().'.'.$extension;$filePath='chat_attachments/'.$fileName;
                     Storage::disk('public')->put($filePath,base64_decode($base64Data));$attachmentUrl=asset('storage/'.$filePath);
-                    if(empty($messageBody)||str_starts_with($messageBody,'[Received a')) $messageBody="[User sent an attachment]"; 
+                    // 🎤 Audio হলে messageBody খালি রাখো — ChatbotService voice transcription করবে
+                    if($isAudioAttachment){
+                        $messageBody=''; // Intentionally empty so isVoiceUrl() can handle it
+                        Log::info("🎤 WA Audio Received | Shop: {$client->shop_name} | From: {$senderPhone} | URL: {$attachmentUrl}");
+                    } elseif(empty($messageBody)||str_starts_with($messageBody,'[Received a')){
+                        $messageBody="[User sent an attachment]";
+                    }
                 }
             }catch(\Exception $e){Log::error("WA Webhook - Attachment Processing Error: ".$e->getMessage());}
         }
@@ -46,7 +57,8 @@ class WhatsAppWebhookController extends Controller{
         
         try{
             $session=OrderSession::where('client_id',$client->id)->where('sender_id',$senderPhone)->first();
-            if(!$session){$session=OrderSession::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'is_human_agent_active'=>false,'customer_info'=>['history'=>[]]]);}
+            if(!$session){$session=OrderSession::create(['client_id'=>$client->id,'sender_id'=>$senderPhone,'platform'=>'whatsapp','is_human_agent_active'=>false,'customer_info'=>['history'=>[]]]);
+            } elseif(empty($session->platform)){$session->update(['platform'=>'whatsapp']);} // backfill
         }catch(\Illuminate\Database\UniqueConstraintViolationException $e){$session=OrderSession::where('client_id',$client->id)->where('sender_id',$senderPhone)->first();}
         if($session&&$session->is_human_agent_active) return response()->json(['success'=>true,'message'=>'Human mode active.']);
 
@@ -90,7 +102,7 @@ class WhatsAppWebhookController extends Controller{
 
         try{
 
-            $aiReply=$this->chatbot->handleMessage($client,$senderPhone,$messageBody,$attachmentUrl);
+            $aiReply=$this->chatbot->handleMessage($client,$senderPhone,$messageBody,$attachmentUrl,'whatsapp');
             if($aiReply){
                 $outgoingImages=[];
                 // 🔥 NEW: Extracting the secret ATTACH_IMAGE tags

@@ -9,12 +9,13 @@ class OrderSession extends Model
 {
     protected $fillable = [
         'sender_id', 
-        'client_id', 
+        'client_id',
+        'platform',         // 🔥 whatsapp / messenger / instagram / telegram
         'customer_info', 
         'is_human_agent_active',
         'status',
-        'reminder_status', // 🔥 NEW
-        'last_interacted_at' // 🔥 NEW
+        'reminder_status',
+        'last_interacted_at'
     ];
 
     protected $casts = [

@@ -63,7 +63,7 @@ class MessengerWebhookService{
                     }
                 }
                 if($messageText||$incomingImageUrl){
-                    $reply=$this->chatbot->handleMessage($client,$senderId,$messageText,$incomingImageUrl);
+                    $reply=$this->chatbot->handleMessage($client,$senderId,$messageText,$incomingImageUrl,'messenger');
                     $this->responseService->sendSenderAction($senderId,$client->fb_page_token,'typing_off');
                     if($reply){
                         $outgoingImages=[];$quickReplies=[];$carouselIds=null;
