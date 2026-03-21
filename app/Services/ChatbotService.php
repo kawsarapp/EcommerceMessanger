@@ -19,18 +19,20 @@ use App\Services\OrderFlow\VariantStep;
 use App\Services\OrderFlow\AddressStep;
 use App\Services\OrderFlow\ConfirmStep;
 use App\Services\OrderFlow\OrderTraits;
+use App\Services\Chatbot\ChatbotFeatureService;
 
 
 class ChatbotService
 {
     use OrderTraits;
 
-    protected $orderService, $notify, $media, $inventory, $safety, $promptService, $utility;
+    protected $orderService, $notify, $media, $inventory, $safety, $promptService, $utility, $features;
 
     public function __construct(
         OrderService $orderService, NotificationService $notify, MediaService $media,
         InventoryService $inventory, SafetyGuardService $safety,
-        ChatbotPromptService $promptService, ChatbotUtilityService $utility
+        ChatbotPromptService $promptService, ChatbotUtilityService $utility,
+        ChatbotFeatureService $features
         )
     {
         $this->orderService = $orderService;
@@ -40,6 +42,7 @@ class ChatbotService
         $this->safety = $safety;
         $this->promptService = $promptService;
         $this->utility = $utility;
+        $this->features = $features;
     }
 
     public function handleMessage($client, $senderId, $messageText, $incomingImageUrl = null, $platform = 'messenger')
@@ -159,8 +162,49 @@ class ChatbotService
 
             $session->refresh();
 
+            // ── Feature Detection: Coupon, Return, Flash Sale, Loyalty, Referral ──────
+            $featureContext = '';
+
+            // 🔴 Return/Refund Request
+            if ($this->features->isReturnRequest($userMessage)) {
+                $lastOrder = $this->features->getLastOrderForReturn($clientId, $senderId);
+                if ($lastOrder) {
+                    $this->features->createReturnRequest($clientId, $lastOrder, $senderId, $userMessage);
+                    $featureContext .= "\n[SYSTEM: কাস্টমার Order #{$lastOrder->id} ফেরত দিতে চাইছে। Return request তৈরি হয়েছে। কাস্টমারকে জানাও যে তার request নিবন্ধিত হয়েছে এবং ২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।]";
+                } else {
+                    $featureContext .= "\n[SYSTEM: কাস্টমার return চাইছে কিন্তু eligible কোনো order নেই। বিনয়ের সাথে জানাও।]";
+                }
+            }
+
+            // 💎 Loyalty Points Query
+            if ($this->features->isPointsQuery($userMessage)) {
+                $featureContext .= $this->features->getPointsContext($clientId, $senderId);
+            }
+
+            // 🎁 Referral Code Query
+            if ($this->features->isReferralQuery($userMessage)) {
+                $featureContext .= $this->features->getReferralContext($clientId, $senderId);
+            }
+
+            // 🔥 Flash Sale Active Context
+            $featureContext .= $this->features->getFlashSaleContext($clientId);
+
+            // 🎟️ Coupon Detection — will run after $stepName is assigned below
+
             $stepName = $session->customer_info['step'] ?? 'start';
             $isTracking = $this->utility->isTrackingIntent($userMessage);
+
+            // 🎟️ Coupon Detection (confirm_order step এ)
+            if ($stepName === 'confirm_order') {
+                $couponCode = $this->features->detectCouponCode($userMessage);
+                if ($couponCode) {
+                    $result = $this->features->validateCoupon($clientId, $couponCode);
+                    $featureContext .= "\n[SYSTEM: কাস্টমার coupon code '{$couponCode}' দিয়েছে। " . $result['message'] . "]";
+                    if ($result['valid']) {
+                        $session->update(['customer_info' => array_merge($session->customer_info, ['coupon_code' => $couponCode, 'coupon_discount' => $result['discount']])]);
+                    }
+                }
+            }
 
             if ($stepName === 'collect_info' || $stepName === 'confirm_order')
                 $isTracking = false;
@@ -229,6 +273,11 @@ class ChatbotService
                     $sessionProductContext = "✅ কাস্টমার এই product টা select করেছে: '{$sessionProduct->name}' (দাম: ৳{$finalPrice}{$variantStr}). এই product সম্পর্কে কথা বলো — অন্য product suggest করো না।";
                     Log::info("✅ SELECTED_PRODUCT_CONTEXT injected: {$sessionProduct->name}");
                 }
+            }
+
+            // Append feature context to instruction
+            if (!empty($featureContext)) {
+                $instruction .= $featureContext;
             }
 
             $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext);
