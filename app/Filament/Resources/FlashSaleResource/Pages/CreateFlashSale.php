@@ -1,21 +1,8 @@
 <?php
-
 namespace App\Filament\Resources\FlashSaleResource\Pages;
-
 use App\Filament\Resources\FlashSaleResource;
 use App\Models\Client;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Resources\Pages\EditRecord;
-
-class ListFlashSales extends ListRecords
-{
-    protected static string $resource = FlashSaleResource::class;
-    protected function getHeaderActions(): array
-    {
-        return [\Filament\Actions\CreateAction::make()];
-    }
-}
 
 class CreateFlashSale extends CreateRecord
 {
@@ -27,12 +14,5 @@ class CreateFlashSale extends CreateRecord
         }
         return $data;
     }
-    protected function getRedirectUrl(): string { return $this->getResource()::getUrl('index'); }
-}
-
-class EditFlashSale extends EditRecord
-{
-    protected static string $resource = FlashSaleResource::class;
-    protected function getHeaderActions(): array { return [\Filament\Actions\DeleteAction::make()]; }
     protected function getRedirectUrl(): string { return $this->getResource()::getUrl('index'); }
 }
