@@ -316,4 +316,47 @@
         }
     }, 5000);
 
+    // ─── Seller Reply Polling ─────────────────────────────────────────────────────
+    // Polls every 4 seconds. When seller (human agent) sends a reply from dashboard,
+    // this picks it up and shows it in the chat bubble automatically.
+    var lastPollTime = Math.floor(Date.now() / 1000);
+    var pollEndpoint = baseUrl + '/api/v1/chat/widget/poll';
+
+    function pollForSellerReplies() {
+        if (!apiKey || !sessionId) return;
+
+        fetch(pollEndpoint + '?api_key=' + encodeURIComponent(apiKey)
+            + '&session_id=' + encodeURIComponent(sessionId)
+            + '&since=' + lastPollTime, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+            if (!data) return;
+
+            // Update our clock from server to stay in sync
+            if (data.server_time) lastPollTime = data.server_time;
+
+            // Show new seller messages
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(function(msg) {
+                    addMessage('👤 ' + msg.text, 'bot');
+                    history.push({ role: 'assistant', content: msg.text });
+                });
+
+                // If chat is closed, show badge
+                if (!isOpen) {
+                    badge.style.display = 'flex';
+                    badge.textContent = (parseInt(badge.textContent) || 0) + data.messages.length;
+                }
+            }
+        })
+        .catch(function() { /* ignore poll errors silently */ });
+    }
+
+    // Start polling every 4 seconds
+    setInterval(pollForSellerReplies, 4000);
+
 })();
+
