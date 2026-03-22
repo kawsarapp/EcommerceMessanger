@@ -69,11 +69,11 @@ class LoyaltyPointResource extends Resource
                 Tables\Columns\TextColumn::make('customer_phone')->label('Phone'),
                 Tables\Columns\BadgeColumn::make('type')->colors([
                     'success' => 'earned', 'info' => 'bonus',
-                    'danger'  => fn ($s) => in_array($s, ['redeemed', 'expired']),
+                    'danger'  => fn ($state) => in_array($state, ['redeemed', 'expired']),
                 ]),
                 Tables\Columns\TextColumn::make('points')->label('Points')
-                    ->formatStateUsing(fn($s) => $s > 0 ? "+{$s}" : (string)$s)
-                    ->color(fn($s) => $s > 0 ? 'success' : 'danger'),
+                    ->formatStateUsing(fn($state) => $state > 0 ? "+{$state}" : (string)$state)
+                    ->color(fn($state) => $state > 0 ? 'success' : 'danger'),
                 Tables\Columns\TextColumn::make('note')->label('Note')->limit(40),
                 Tables\Columns\TextColumn::make('created_at')->label('Date')->date('d M Y'),
             ])

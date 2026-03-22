@@ -60,7 +60,7 @@ class ReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('customer_name')->label('Customer'),
                 Tables\Columns\TextColumn::make('customer_phone')->label('Phone'),
                 Tables\Columns\TextColumn::make('reason_type')->label('কারণ')
-                    ->formatStateUsing(fn($s) => match($s) {
+                    ->formatStateUsing(fn($state) => match($state) {
                         'defective' => 'ত্রুটিপূর্ণ', 'wrong_item' => 'ভুল আইটেম',
                         'size_issue' => 'সাইজ সমস্যা', 'not_as_described' => 'বর্ণনা অনুযায়ী নয়',
                         default => 'অন্যান্য'
@@ -68,7 +68,7 @@ class ReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('reason')->label('বিস্তারিত')->limit(50),
                 Tables\Columns\BadgeColumn::make('status')->label('Status')->colors([
                     'warning' => 'requested',
-                    'success' => fn($s) => in_array($s, ['approved','returned','refunded']),
+                    'success' => fn($state) => in_array($state, ['approved','returned','refunded']),
                     'danger'  => 'rejected',
                 ]),
                 Tables\Columns\TextColumn::make('refund_amount')->label('Refund')->prefix('৳')->placeholder('—'),
