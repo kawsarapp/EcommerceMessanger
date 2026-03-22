@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -55,17 +55,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-funyellow selection:text-black">
-
-    @if($client->announcement_text)
-    <div class="bg-funyellow text-slate-800 text-center py-2.5 text-sm font-bold tracking-widest uppercase shadow-sm flex items-center justify-center gap-2 border-b-4 border-yellow-500">
-        <i class="fas fa-star text-yellow-600 animate-spin-slow"></i> 
-        {!! $client->announcement_text !!} 
-        <i class="fas fa-star text-yellow-600 animate-spin-slow"></i>
-    </div>
-    @endif
-
-    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b-4 border-slate-200 transition-all shadow-cloud">
+ $args[0].Groups[1].Value + "`n    {{-- ⚡ Flash Sale Banner --}}`n    @include('shop.partials.flash-sale-bar', ['client' => `$client])`n`n    " + $args[0].Groups[3].Value  class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b-4 border-slate-200 transition-all shadow-cloud">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-24 flex justify-between items-center gap-3">
             <a href="{{$baseUrl}}" class="flex items-center gap-2 bouncy relative min-w-0">
                 <div class="absolute -top-6 -left-6 w-20 h-20 bg-primary/10 rounded-full blur-xl z-0 transition-opacity opacity-0 group-hover:opacity-100"></div>

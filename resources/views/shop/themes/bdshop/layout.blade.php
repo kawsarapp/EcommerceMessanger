@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -41,17 +41,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         .smooth-transition { transition: all 0.25s ease; }
     </style>
 </head>
-<body class="text-dark antialiased font-sans min-h-screen flex flex-col">
-
-    {{-- Top Bar --}}
-    @if($client->widget('show_announcement_bar') && ($client->announcement_text ?? false))
-    <div class="bg-primary text-white text-center py-2 px-4 text-xs font-semibold tracking-wide">
-        <i class="fas fa-bolt mr-1"></i> {!! $client->announcement_text !!}
-    </div>
-    @endif
-
-    {{-- Header --}}
-    <header class="bg-primary sticky top-0 z-50 shadow-md">
+ $args[0].Groups[1].Value + "`n    {{-- ⚡ Flash Sale Banner --}}`n    @include('shop.partials.flash-sale-bar', ['client' => `$client])`n`n    " + $args[0].Groups[3].Value  class="bg-primary sticky top-0 z-50 shadow-md">
         <div class="max-w-[1280px] mx-auto px-4">
             {{-- Main Row --}}
             <div class="flex items-center gap-4 h-14 md:h-16">

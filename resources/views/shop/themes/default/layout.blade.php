@@ -83,6 +83,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </div>
     @endif
 
+    {{-- ⚡ Flash Sale Banner (auto-shows when active flash sale exists) --}}
+    @include('shop.partials.flash-sale-bar', ['client' => $client])
+
     <!-- Modern Glass Header -->
     <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200/60 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">

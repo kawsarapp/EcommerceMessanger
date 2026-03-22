@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -48,15 +48,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-dark text-gray-200 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-black">
-
-    @if($client->announcement_text)
-    <div class="bg-primary text-black text-center py-2 text-[10px] font-semibold tracking-[0.3em] uppercase">
-        {!! $client->announcement_text !!}
-    </div>
-    @endif
-
-    <header class="bg-dark/95 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 transition-all">
+ $args[0].Groups[1].Value + "`n    {{-- ⚡ Flash Sale Banner --}}`n    @include('shop.partials.flash-sale-bar', ['client' => `$client])`n`n    " + $args[0].Groups[3].Value  class="bg-dark/95 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 transition-all">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
             <!-- Left -->
             <div class="w-1/3 flex items-center gap-4">
