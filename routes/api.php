@@ -62,6 +62,14 @@ Route::prefix('v1')->group(function () {
      * Used by chatbot-widget.js to send/receive messages.
      * Auth: X-Api-Key header  |  Throttle: 60 msg/min
      */
+    // Browser sends OPTIONS preflight before cross-origin POST — must return 200 immediately
+    Route::options('/chat/widget', function () {
+        return response()->json('OK', 200, [
+            'Access-Control-Allow-Origin'  => '*',
+            'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+        ]);
+    });
     Route::middleware(['throttle:60,1'])->post('/chat/widget', [WidgetChatController::class, 'handle'])
          ->name('api.chat.widget');
 });

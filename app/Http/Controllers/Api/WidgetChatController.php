@@ -30,13 +30,25 @@ class WidgetChatController extends Controller
 
     public function handle(Request $request)
     {
-        // ─── 1. Resolve Client from API Key ─────────────────────────────────────
+        // ─── 0. CORS — Allow any external website to call this endpoint ───────────
+        $corsHeaders = [
+            'Access-Control-Allow-Origin'  => '*',
+            'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+        ];
+
+        // Handle browser OPTIONS preflight request
+        if ($request->isMethod('OPTIONS')) {
+            return response()->json('OK', 200, $corsHeaders);
+        }
+
+
         $apiKey = $request->header('X-Api-Key')
             ?? $request->bearerToken()
             ?? $request->query('api_key');
 
         if (!$apiKey) {
-            return response()->json(['error' => 'API Key is required.'], 401);
+            return response()->json(['error' => 'API Key is required.'], 401, $corsHeaders);
         }
 
         /** @var Client|null $client */
@@ -45,15 +57,15 @@ class WidgetChatController extends Controller
         });
 
         if (!$client) {
-            return response()->json(['error' => 'Invalid API Key.'], 401);
+            return response()->json(['error' => 'Invalid API Key.'], 401, $corsHeaders);
         }
 
         if (!$client->hasActivePlan()) {
-            return response()->json(['error' => 'Your plan has expired. Please renew to continue using the chatbot.'], 403);
+            return response()->json(['error' => 'Your plan has expired. Please renew to continue using the chatbot.'], 403, $corsHeaders);
         }
 
         if (!$client->is_ai_enabled) {
-            return response()->json(['error' => 'AI Chatbot is disabled for this shop.'], 403);
+            return response()->json(['error' => 'AI Chatbot is disabled for this shop.'], 403, $corsHeaders);
         }
 
         // ─── 3. Validate Request ─────────────────────────────────────────────────
@@ -80,13 +92,13 @@ class WidgetChatController extends Controller
                 $reply = 'দুঃখিত, এই মুহূর্তে সাড়া দিতে পারছি না। একটু পরে চেষ্টা করুন।';
             }
 
-            return response()->json(['reply' => $reply]);
+            return response()->json(['reply' => $reply], 200, $corsHeaders);
 
         } catch (\Exception $e) {
             Log::error("WidgetChat Error for client #{$client->id}: " . $e->getMessage());
             return response()->json([
                 'reply' => 'সাময়িক সমস্যা হচ্ছে। একটু পরে আবার চেষ্টা করুন।',
-            ]);
+            ], 200, $corsHeaders);
         }
     }
 }
