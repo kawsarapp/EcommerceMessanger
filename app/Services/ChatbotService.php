@@ -20,6 +20,7 @@ use App\Services\OrderFlow\AddressStep;
 use App\Services\OrderFlow\ConfirmStep;
 use App\Services\OrderFlow\OrderTraits;
 use App\Services\Chatbot\ChatbotFeatureService;
+use App\Services\Store\StoreDriverFactory;
 
 
 class ChatbotService
@@ -264,14 +265,19 @@ class ChatbotService
                 // ── Session product context inject করো (collect_info/confirm step এ হারিয়ে যাওয়া product বাঁচাতে)
             $sessionProductContext = null;
             if (!empty($session->customer_info['product_id'])) {
-                $sessionProduct = Product::find($session->customer_info['product_id']);
-                if ($sessionProduct) {
-                    $finalPrice = ($sessionProduct->sale_price > 0 && $sessionProduct->sale_price < $sessionProduct->regular_price)
-                        ? $sessionProduct->sale_price : $sessionProduct->regular_price;
-                    $variant = $session->customer_info['variant'] ?? [];
+                $productId = $session->customer_info['product_id'];
+                // Driver-aware product fetch (hosted or external)
+                $driver        = StoreDriverFactory::for($client);
+                $sessionPData  = $driver->getProduct($productId);
+                // Fallback to Eloquent for hosted mode backward compat
+                $sessionProduct = $sessionPData ? null : Product::find($productId);
+                $spName  = $sessionPData['title'] ?? $sessionPData['name'] ?? $sessionProduct?->name;
+                $spPrice = $sessionPData['sale_price'] ?? $sessionPData['price'] ?? $sessionProduct?->regular_price;
+                if ($spName) {
+                    $variant    = $session->customer_info['variant'] ?? [];
                     $variantStr = !empty($variant) ? ' [Variant: ' . implode(', ', array_filter($variant)) . ']' : '';
-                    $sessionProductContext = "✅ কাস্টমার এই product টা select করেছে: '{$sessionProduct->name}' (দাম: ৳{$finalPrice}{$variantStr}). এই product সম্পর্কে কথা বলো — অন্য product suggest করো না।";
-                    Log::info("✅ SELECTED_PRODUCT_CONTEXT injected: {$sessionProduct->name}");
+                    $sessionProductContext = "✅ কাস্টমার এই product টা select করেছে: '{$spName}' (দাম: ৳{$spPrice}{$variantStr}). এই product সম্পর্কে কথা বলো — অন্য product suggest করো না।";
+                    Log::info("✅ SELECTED_PRODUCT_CONTEXT injected: {$spName}");
                 }
             }
 
@@ -401,15 +407,40 @@ class ChatbotService
     {
         if (empty(trim($detectedText))) return null;
 
-        // Clean detected text — remove newlines, keep only useful chars
-        $clean = trim(preg_replace('/\s+/', ' ', $detectedText));
-
-        // Split into tokens (words/codes) and try each
+        $clean  = trim(preg_replace('/\s+/', ' ', $detectedText));
         $tokens = array_filter(array_map('trim', preg_split('/[\s,|]+/', $clean)));
 
+        // Driver-aware search (works for both hosted and external)
+        $client = Client::find($clientId);
+        if ($client && $client->integration_type === 'external_api') {
+            try {
+                $driver   = StoreDriverFactory::for($client);
+                $results  = $driver->searchProducts($clean, ['limit' => 1]);
+                if (!empty($results)) {
+                    // Return a synthetic Product-like result as anonymous object
+                    // for compatibility with existing code that expects Product
+                    $r = $results[0];
+                    $p = new Product();
+                    $p->id    = $r['id'];
+                    $p->name  = $r['title'] ?? $r['name'] ?? '';
+                    $p->sku   = $r['sku'] ?? '';
+                    $p->regular_price = $r['price'] ?? 0;
+                    $p->sale_price    = $r['sale_price'] ?? null;
+                    $p->stock_status  = ($r['in_stock'] ?? true) ? 'in_stock' : 'out_of_stock';
+                    $p->stock_quantity = $r['stock'] ?? 0;
+                    $p->thumbnail     = $r['image'] ?? null;
+                    $p->description   = $r['description'] ?? '';
+                    $p->client_id     = $clientId;
+                    return $p;
+                }
+            } catch (\Throwable $e) {
+                Log::warning("findProductBySkuOrText ExternalDriver failed: " . $e->getMessage());
+            }
+        }
+
+        // Local DB fallback (hosted mode)
         foreach ($tokens as $token) {
             if (strlen($token) < 3) continue;
-
             $product = Product::where('client_id', $clientId)
                 ->where(function ($q) use ($token) {
                     $q->where('sku', $token)
@@ -417,11 +448,9 @@ class ChatbotService
                       ->orWhere('name', 'LIKE', "%{$token}%");
                 })
                 ->first();
-
             if ($product) return $product;
         }
 
-        // Last resort: search full detected text in product names
         return Product::where('client_id', $clientId)
             ->where('name', 'LIKE', '%' . $clean . '%')
             ->first();
