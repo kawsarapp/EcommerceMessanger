@@ -27,7 +27,7 @@ class MessageHeatmapWidget extends Widget
         $rows = Conversation::query()
             ->when($clientId, fn($q) => $q->where('client_id', $clientId))
             ->where('created_at', '>=', now()->subDays(28))
-            ->selectRaw('HOUR(created_at) as hour, DAYOFWEEK(created_at) as dow, COUNT(*) as cnt')
+            ->selectRaw('EXTRACT(HOUR FROM created_at)::int as hour, EXTRACT(DOW FROM created_at)::int + 1 as dow, COUNT(*) as cnt')
             ->groupBy('hour', 'dow')
             ->get();
 

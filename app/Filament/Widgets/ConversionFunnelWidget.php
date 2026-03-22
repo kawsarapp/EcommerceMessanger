@@ -39,14 +39,14 @@ class ConversionFunnelWidget extends Widget
         $productViewed = OrderSession::query()
             ->when($clientId, fn($q) => $q->where('client_id', $clientId))
             ->where('updated_at', '>=', $period)
-            ->whereRaw("JSON_EXTRACT(customer_info, '$.product_id') IS NOT NULL")
+            ->whereRaw("(customer_info->>'product_id') IS NOT NULL")
             ->count();
 
         // Step 3: Reached collect_info (address step)
         $reachedAddress = OrderSession::query()
             ->when($clientId, fn($q) => $q->where('client_id', $clientId))
             ->where('updated_at', '>=', $period)
-            ->whereRaw("JSON_EXTRACT(customer_info, '$.step') IN ('collect_info', 'confirm_order', 'completed')")
+            ->whereRaw("(customer_info->>'step') IN ('collect_info', 'confirm_order', 'completed')")
             ->count();
 
         // Step 4: Orders placed
