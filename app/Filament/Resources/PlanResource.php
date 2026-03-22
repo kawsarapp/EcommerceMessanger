@@ -292,6 +292,50 @@ class PlanResource extends Resource
                             ->onColor('info')
                             ->helperText('Facebook Messenger & Auto Reply'),
                     ]),
+
+                    // 🛒 NEW: Sales & Growth Features
+                    \Filament\Forms\Components\Fieldset::make('🛒 Sales & Growth Features')
+                        ->schema([
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_flash_sale')
+                                    ->label('⚡ Flash Sale / Countdown')
+                                    ->onColor('danger')
+                                    ->default(false)
+                                    ->helperText('Flash sale তৈরি ও website এ countdown দেখাবে'),
+
+                                Toggle::make('allow_loyalty')
+                                    ->label('⭐ Loyalty Points')
+                                    ->onColor('warning')
+                                    ->default(false)
+                                    ->helperText('Customer loyalty points earn ও redeem করতে পারবে'),
+
+                                Toggle::make('allow_referral')
+                                    ->label('🎁 Referral Program')
+                                    ->onColor('success')
+                                    ->default(false)
+                                    ->helperText('Referral code দিয়ে বন্ধুকে invite করতে পারবে'),
+                            ]),
+
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_return_refund')
+                                    ->label('📦 Return/Refund Flow')
+                                    ->onColor('warning')
+                                    ->default(false)
+                                    ->helperText('Bot থেকে return request তৈরি ও admin panel এ manage'),
+
+                                Toggle::make('allow_webhook')
+                                    ->label('🔗 Zapier/Make Webhook')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('Events হলে Zapier/Make/Slack এ পাঠাবে'),
+
+                                Toggle::make('allow_api_rate_limit')
+                                    ->label('🚦 API Rate Limiting')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('Per-client API rate limit control'),
+                            ]),
+                        ])->columnSpanFull(),
                 ])->columns(1),
 
             // ══════════════════════════════════════════

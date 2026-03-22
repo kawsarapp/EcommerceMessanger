@@ -138,6 +138,32 @@ class AdminPermissionsTab
                                     ->label('Payment Gateway')
                                     ->default(fn ($record) => $record?->plan?->allow_payment_gateway ?? false)
                                     ->onColor('success'),
+
+                                // 🛒 NEW Sales & Growth Features
+                                Toggle::make('admin_permissions.allow_flash_sale')
+                                    ->label('⚡ Flash Sale')
+                                    ->default(fn ($record) => $record?->plan?->allow_flash_sale ?? false)
+                                    ->onColor('danger'),
+
+                                Toggle::make('admin_permissions.allow_loyalty')
+                                    ->label('⭐ Loyalty Points')
+                                    ->default(fn ($record) => $record?->plan?->allow_loyalty ?? false)
+                                    ->onColor('warning'),
+
+                                Toggle::make('admin_permissions.allow_referral')
+                                    ->label('🎁 Referral Program')
+                                    ->default(fn ($record) => $record?->plan?->allow_referral ?? false)
+                                    ->onColor('success'),
+
+                                Toggle::make('admin_permissions.allow_return_refund')
+                                    ->label('📦 Return/Refund')
+                                    ->default(fn ($record) => $record?->plan?->allow_return_refund ?? false)
+                                    ->onColor('warning'),
+
+                                Toggle::make('admin_permissions.allow_webhook')
+                                    ->label('🔗 Zapier/Webhook')
+                                    ->default(fn ($record) => $record?->plan?->allow_webhook ?? false)
+                                    ->onColor('info'),
                             ]),
                         ])->columns(1),
 
