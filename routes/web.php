@@ -47,6 +47,11 @@ Route::middleware(['auth'])->get('/orders/{order}/print', function (Order $order
     return view('filament.pages.invoice-print', compact('order'));
 })->name('orders.print');
 
+// Plugin Download (Auth protected)
+Route::middleware(['auth'])->get('/download/neuralcart-plugin', [
+    \App\Http\Controllers\PluginDownloadController::class, 'download'
+])->name('plugin.download');
+
 // =============================================================
 // 🛍️ DYNAMIC SHOP ENGINE (Powered by DomainMappingMiddleware)
 // =============================================================
