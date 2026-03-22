@@ -50,7 +50,8 @@ class Client extends Model
         'homepage_banner_active' => 'boolean',
         'homepage_banner_timer' => 'datetime',
         'admin_permissions' => 'array',
-        'popup_pages' => 'array',
+        'popup_pages'                  => 'array',
+        'seller_settings'              => 'array',
     ];
 
     /**
@@ -264,6 +265,16 @@ class Client extends Model
     {
         $adminPerms = $this->admin_permissions ?? [];
         return array_key_exists($feature, $adminPerms);
+    }
+
+    /**
+     * Seller নিজে feature enable রেখেছে কিনা check করো
+     * Default: true (যদি seller explicitly off না করে)
+     */
+    public function sellerEnabled(string $feature): bool
+    {
+        $settings = $this->seller_settings ?? [];
+        return (bool) ($settings["{$feature}_enabled"] ?? true);
     }
 
     /**

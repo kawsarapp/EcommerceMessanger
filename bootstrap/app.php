@@ -12,11 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Http\Middleware\CheckCustomDomain::class);
+        // Custom Domain mapping middleware
+        $middleware->append(\App\Http\Middleware\CustomDomainMiddleware::class);
+
+        // Named aliases for route-level usage
+        $middleware->alias([
+            'api.rate-limit' => \App\Http\Middleware\ClientApiRateLimiter::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
-            //'webhook',           // Facebook Webhook এর জন্য
-            'telegram/webhook',  // ✅ Telegram Webhook এর জন্য (শুধুমাত্র এই দুটিই দরকার)
-            'webhook/*',          // ✅ Facebook এবং Telegram সব ওয়েবহুক এর জন্য একবারে কাজ করবে
+            'telegram/webhook',
+            'webhook/*',
             'shop-api/*'
         ]);
     })

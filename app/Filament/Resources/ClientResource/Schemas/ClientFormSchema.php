@@ -60,6 +60,7 @@ class ClientFormSchema
                         Tab::make('Store Sync')->icon('heroicon-m-arrow-path-rounded-square')->schema(ClientTabs\StoreSyncTab::schema()),
                         Tab::make('WhatsApp API')->icon('heroicon-m-chat-bubble-oval-left-ellipsis')->schema(ClientTabs\WhatsAppApiTab::schema()),
                         Tab::make('🔑 Admin Permissions')->icon('heroicon-m-shield-check')->schema(ClientTabs\AdminPermissionsTab::schema())->visible(fn () => auth()->user()?->isSuperAdmin()),
+                        Tab::make('⚙️ Features & Toggles')->icon('heroicon-m-adjustments-horizontal')->schema(ClientTabs\FeaturesTab::schema()),
                     ])
                     ->columnSpanFull(),
             ])->columnSpanFull(),
