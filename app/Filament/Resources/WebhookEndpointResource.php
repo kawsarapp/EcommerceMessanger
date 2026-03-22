@@ -31,6 +31,13 @@ class WebhookEndpointResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Webhook Configuration')->schema([
+                // Admin only: select which shop
+                Forms\Components\Select::make('client_id')
+                    ->label('Shop / Client')
+                    ->relationship('client', 'shop_name')
+                    ->searchable()->preload()->required()
+                    ->visible(fn() => auth()->user()?->isSuperAdmin()),
+
                 Forms\Components\TextInput::make('name')->label('নাম')->required()->placeholder('My Zapier Hook'),
                 Forms\Components\TextInput::make('url')->label('Webhook URL')->required()->url()->placeholder('https://hooks.zapier.com/...'),
                 Forms\Components\TextInput::make('secret')->label('Secret Key (Optional)')->helperText('HMAC signature verify করতে ব্যবহার হবে'),

@@ -31,6 +31,13 @@ class LoyaltyPointResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Points Entry')->schema([
+                // Admin only: select which shop
+                Forms\Components\Select::make('client_id')
+                    ->label('Shop / Client')
+                    ->relationship('client', 'shop_name')
+                    ->searchable()->preload()->required()
+                    ->visible(fn() => auth()->user()?->isSuperAdmin()),
+
                 Forms\Components\TextInput::make('sender_id')->label('Customer ID')->required(),
                 Forms\Components\TextInput::make('customer_name')->label('নাম'),
                 Forms\Components\TextInput::make('customer_phone')->label('Phone'),

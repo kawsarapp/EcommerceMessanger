@@ -31,12 +31,19 @@ class FlashSaleResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Flash Sale তৈরি করুন')->schema([
+                // Admin: কোন shop এর জন্য flash sale
+                Forms\Components\Select::make('client_id')
+                    ->label('Shop / Client')
+                    ->relationship('client', 'shop_name')
+                    ->searchable()->preload()->required()
+                    ->visible(fn() => auth()->user()?->isSuperAdmin()),
+
                 Forms\Components\TextInput::make('title')->label('শিরোনাম')->required()->maxLength(100),
                 Forms\Components\Textarea::make('description')->label('বিবরণ')->rows(2),
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\Select::make('discount_type')->label('ছাড়ের ধরন')
                         ->options(['percent' => 'শতকরা (%)','fixed' => 'নির্দিষ্ট টাকা'])
-                        ->default('percent')->required(),
+                        ->default('percent')->required()->live(),
                     Forms\Components\TextInput::make('discount_percent')->label('ছাড় (%)')->numeric()->default(10)
                         ->visible(fn(Forms\Get $get) => $get('discount_type') === 'percent'),
                     Forms\Components\TextInput::make('discount_amount')->label('ছাড় (৳)')->numeric()->default(0)
@@ -91,11 +98,5 @@ class FlashSaleResource extends Resource
         ];
     }
 
-    public static function mutateFormDataBeforeCreate(array $data): array
-    {
-        if (!auth()->user()?->isSuperAdmin()) {
-            $data['client_id'] = Client::where('user_id', auth()->id())->value('id');
-        }
-        return $data;
-    }
+    // Note: mutateFormDataBeforeCreate must be in the Pages/CreateFlashSale.php, not here
 }
