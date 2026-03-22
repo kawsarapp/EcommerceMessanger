@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 class ExternalStoreConnectionResource extends Resource
 {
     protected static ?string $model = ExternalStoreConnection::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-plug';
+    protected static ?string $navigationIcon  = 'heroicon-o-link';
     protected static ?string $navigationGroup = 'Platform';
     protected static ?string $navigationLabel = 'Store Connections';
     protected static ?int    $navigationSort  = 10;
