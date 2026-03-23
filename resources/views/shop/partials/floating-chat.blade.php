@@ -87,7 +87,7 @@
 @if(!empty($apiToken) && ($client->is_ai_enabled ?? false) && ($client->show_ai_chat_widget ?? true))
 <script>
 window.AICB_KEY      = '{!! addslashes($apiToken) !!}';
-window.AICB_URL      = '{{ rtrim(config("app.url"), "/") }}';
+window.AICB_URL      = '{{ rtrim(url("/"), "/") }}';
 window.AICB_SHOP     = @json($client->widget_name ?: $client->shop_name);
 window.AICB_COLOR    = '{{ $client->primary_color ?? "#4f46e5" }}';
 window.AICB_POSITION = '{{ $client->widget_position ?? "bottom-right" }}';
@@ -95,5 +95,5 @@ window.AICB_POSITION = '{{ $client->widget_position ?? "bottom-right" }}';
 window.AICB_GREETING = @json($client->widget_greeting);
 @endif
 </script>
-<script src="{{ rtrim(config('app.url'), '/') }}/js/chatbot-widget.js?v=1.1" async></script>
+<script src="{{ asset('js/chatbot-widget.js') }}?v=1.2" async></script>
 @endif
