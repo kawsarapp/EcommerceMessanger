@@ -81,9 +81,12 @@
      Auto-loads on all shop pages when AI chatbot is enabled for this client.
      Uses client's api_token so no manual setup needed.
 --}}
-@if(($client->is_ai_enabled ?? false) && ($client->api_token ?? false) && ($client->show_ai_chat_widget ?? true))
+@php
+    $apiToken = trim($client->api_token ?? '');
+@endphp
+@if(!empty($apiToken) && ($client->is_ai_enabled ?? false) && ($client->show_ai_chat_widget ?? true))
 <script>
-window.AICB_KEY      = '{{ $client->api_token }}';
+window.AICB_KEY      = '{!! addslashes($apiToken) !!}';
 window.AICB_URL      = '{{ rtrim(config("app.url"), "/") }}';
 window.AICB_SHOP     = @json($client->widget_name ?: $client->shop_name);
 window.AICB_COLOR    = '{{ $client->primary_color ?? "#4f46e5" }}';

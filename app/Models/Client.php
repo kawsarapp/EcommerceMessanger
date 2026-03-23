@@ -68,6 +68,18 @@ class Client extends Model
     ];
 
     /**
+     * Auto-generate api_token on create if not set.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Client $client) {
+            if (empty($client->api_token)) {
+                $client->api_token = \Illuminate\Support\Str::random(60);
+            }
+        });
+    }
+
+    /**
      * Widget toggle helper - সেলার কোন UI element ON/OFF রেখেছে চেক করবে
      * Default: সব কিছু ON থাকবে যতক্ষণ না সেলার নিজে বন্ধ করবে
      */
