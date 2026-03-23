@@ -29,11 +29,11 @@ class ChatbotUtilityService
         $selectedModel = $client ? ($client->ai_model ?? 'gemini-pro') : 'gemini-pro';
 
         // Fetch keys from Client first (if provided), otherwise fallback to .env configuration
-        $geminiKey    = ($client->gemini_api_key ?? null) ?: config('services.gemini.api_key');
-        $openAiKey    = ($client->openai_api_key ?? null) ?: config('services.openai.api_key');
-        $anthropicKey = ($client->claude_api_key ?? null) ?: config('services.anthropic.api_key');
-        $deepseekKey  = ($client->deepseek_api_key ?? null) ?: config('services.deepseek.api_key');
-        $groqKey      = ($client->groq_api_key ?? null) ?: config('services.groq.api_key', '');
+        $geminiKey    = trim($client->gemini_api_key ?? '') ?: config('services.gemini.api_key');
+        $openAiKey    = trim($client->openai_api_key ?? '') ?: config('services.openai.api_key');
+        $anthropicKey = trim($client->claude_api_key ?? '') ?: config('services.anthropic.api_key');
+        $deepseekKey  = trim($client->deepseek_api_key ?? '') ?: config('services.deepseek.api_key');
+        $groqKey      = trim($client->groq_api_key ?? '') ?: config('services.groq.api_key', '');
         
         Log::info("🚀 AI Requesting [Model: {$selectedModel}] for client: " . ($client->id ?? 'N/A'));
 
