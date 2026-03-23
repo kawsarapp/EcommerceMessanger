@@ -43,11 +43,14 @@ class WidgetChatController extends Controller
         }
 
 
-        $apiKey = $request->header('X-Api-Key')
+        $apiKey = trim(
+            $request->header('X-Api-Key')
             ?? $request->bearerToken()
-            ?? $request->query('api_key');
+            ?? $request->query('api_key')
+            ?? ''
+        );
 
-        if (!$apiKey) {
+        if (empty($apiKey)) {
             return response()->json(['error' => 'API Key is required.'], 401, $corsHeaders);
         }
 
@@ -56,7 +59,13 @@ class WidgetChatController extends Controller
             return Client::where('api_token', $apiKey)->first();
         });
 
+        // Debug: log when 401 happens so server log shows the issue
         if (!$client) {
+            Log::warning('Widget 401: api_key not matched', [
+                'received_key'  => substr($apiKey, 0, 10) . '...',
+                'key_length'    => strlen($apiKey),
+                'origin'        => $request->header('Origin'),
+            ]);
             return response()->json(['error' => 'Invalid API Key.'], 401, $corsHeaders);
         }
 
