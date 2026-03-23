@@ -59,7 +59,7 @@ class CustomerLtvWidget extends Widget
             ->when($clientId, fn($q) => $q->where('client_id', $clientId))
             ->selectRaw('sender_id, COUNT(*) as cnt')
             ->groupBy('sender_id')
-            ->havingRaw('cnt > 1')
+            ->havingRaw('COUNT(*) > 1')
             ->count();
 
         return [
