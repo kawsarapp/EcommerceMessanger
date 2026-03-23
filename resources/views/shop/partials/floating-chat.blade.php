@@ -95,5 +95,5 @@ window.AICB_POSITION = '{{ $client->widget_position ?? "bottom-right" }}';
 window.AICB_GREETING = @json($client->widget_greeting);
 @endif
 </script>
-<script src="{{ rtrim(config('app.url'), '/') }}/js/chatbot-widget.js" async></script>
+<script src="{{ rtrim(config('app.url'), '/') }}/js/chatbot-widget.js?v=1.1" async></script>
 @endif
