@@ -47,6 +47,11 @@
     })();
 
 
+    // ─── Safe DOM Init ────────────────────────────────────────────────────────────
+    // async scripts in <head> may run before document.body exists.
+    // We defer DOM work until body is ready.
+    function init() {
+
     // ─── Styles ─────────────────────────────────────────────────────────────────
     var css = `
         #aicb-widget * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -374,6 +379,17 @@
 
     // Start polling every 4 seconds
     setInterval(pollForSellerReplies, 4000);
+
+    } // end init()
+
+    // ─── Safe DOM launcher ────────────────────────────────────────────────────────
+    // If body already exists (script in <body> or document already loaded), run now.
+    // Otherwise wait for DOMContentLoaded (script async in <head>).
+    if (document.body) {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+    }
 
 })();
 
