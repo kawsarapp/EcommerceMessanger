@@ -31,9 +31,13 @@ class WidgetChatController extends Controller
     public function handle(Request $request)
     {
         Log::info('WidgetChatController hit', [
-            'method' => $request->method(),
-            'url'    => $request->fullUrl(),
-            'key'    => substr($request->header('X-Api-Key') ?? '', 0, 5) . '...',
+            'method'         => $request->method(),
+            'url'            => $request->fullUrl(),
+            'x_api_key'      => $request->header('X-Api-Key'),
+            'auth_header'    => $request->header('Authorization'),
+            'bearer_token'   => $request->bearerToken(),
+            'query_api_key'  => $request->query('api_key'),
+            'all_headers'    => $request->headers->all(), // see what we actually received
         ]);
 
         // ─── 0. CORS — Allow any external website to call this endpoint ───────────
