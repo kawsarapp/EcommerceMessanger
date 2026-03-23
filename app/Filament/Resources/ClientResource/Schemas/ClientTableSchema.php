@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ClientResource\Schemas;
 use App\Models\Client;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\ImageColumn;
 
 class ClientTableSchema
@@ -45,8 +45,13 @@ class ClientTableSchema
                 ->color(fn ($state) => $state ? 'success' : 'danger')
                 ->icon(fn ($state) => $state ? 'heroicon-m-check-badge' : 'heroicon-m-clock'),
 
-            ToggleColumn::make('status')
-                ->label('Active')
+            SelectColumn::make('status')
+                ->label('Status')
+                ->options([
+                    'active' => 'Active',
+                    'inactive' => 'Inactive',
+                    'suspended' => 'Suspended',
+                ])
                 ->visible(fn () => auth()->user()?->isSuperAdmin()),
 
             TextColumn::make('created_at')
