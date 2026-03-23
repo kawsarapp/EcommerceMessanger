@@ -137,7 +137,7 @@ class WidgetEmbedPage extends Page implements HasForms
 <script>
 window.AICB_KEY  = '{$key}';
 window.AICB_URL  = '{$url}';
-window.AICB_SHOP = {$this->js($name)};{$greetingLine}{$posLine}
+window.AICB_SHOP = {$this->toJs($name)};{$greetingLine}{$posLine}
 </script>
 <script src="{$url}/js/chatbot-widget.js" async></script>
 <!-- End AI Commerce Bot -->
@@ -160,13 +160,13 @@ HTML;
 <script>
   window.AICB_KEY  = '{$key}';
   window.AICB_URL  = '{$url}';
-  window.AICB_SHOP = {$this->js($name)};{$greetingLine}{$posLine}
+  window.AICB_SHOP = {$this->toJs($name)};{$greetingLine}{$posLine}
 </script>
 <script src="{$url}/js/chatbot-widget.js" async></script>
 HTML;
     }
 
-    private function js(string $val): string
+    private function toJs(string $val): string
     {
         return json_encode($val, JSON_UNESCAPED_UNICODE);
     }
