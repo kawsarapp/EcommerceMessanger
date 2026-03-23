@@ -4,8 +4,12 @@
 --}}
 @if($client->widget('show_floating_chat', true) && ($client->show_chat_button ?? true))
 @php
-    $hasWhatsApp = $client->is_whatsapp_active && $client->wa_status === 'connected' && ($client->phone ?? false);
-    $hasMessenger = $client->fb_page_id ?? false;
+    $hasWhatsApp  = ($client->show_whatsapp_button  ?? true)
+                    && $client->is_whatsapp_active
+                    && $client->wa_status === 'connected'
+                    && ($client->phone ?? false);
+    $hasMessenger = ($client->show_messenger_button ?? true)
+                    && ($client->fb_page_id ?? false);
     $waPhone = preg_replace('/[^0-9]/', '', $client->phone ?? '');
 @endphp
 
@@ -77,7 +81,7 @@
      Auto-loads on all shop pages when AI chatbot is enabled for this client.
      Uses client's api_token so no manual setup needed.
 --}}
-@if(($client->is_ai_enabled ?? false) && ($client->api_token ?? false))
+@if(($client->is_ai_enabled ?? false) && ($client->api_token ?? false) && ($client->show_ai_chat_widget ?? true))
 <script>
 window.AICB_KEY      = '{{ $client->api_token }}';
 window.AICB_URL      = '{{ rtrim(config("app.url"), "/") }}';

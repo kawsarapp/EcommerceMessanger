@@ -33,10 +33,13 @@ class WidgetEmbedPage extends Page implements HasForms
         $client = $this->getClient();
         if ($client) {
             $this->form->fill([
-                'widget_name'            => $client->widget_name     ?? $client->shop_name,
-                'widget_allowed_domains' => $client->widget_allowed_domains ?? '',
-                'widget_position'        => $client->widget_position ?? 'bottom-right',
-                'widget_greeting'        => $client->widget_greeting ?? '',
+                'widget_name'             => $client->widget_name     ?? $client->shop_name,
+                'widget_allowed_domains'  => $client->widget_allowed_domains ?? '',
+                'widget_position'         => $client->widget_position ?? 'bottom-right',
+                'widget_greeting'         => $client->widget_greeting ?? '',
+                'show_whatsapp_button'    => $client->show_whatsapp_button  ?? true,
+                'show_messenger_button'   => $client->show_messenger_button ?? true,
+                'show_ai_chat_widget'     => $client->show_ai_chat_widget   ?? true,
             ]);
         }
     }
@@ -81,6 +84,28 @@ class WidgetEmbedPage extends Page implements HasForms
                             ->helperText('⚠️ এটা খালি থাকলে যেকোনো site আপনার API key use করতে পারবে। Production এ domain দিন।')
                             ->rows(2),
                     ]),
+
+                Forms\Components\Section::make('📱 Chat Channels — ON/OFF')
+                    ->description('Shop website এ কোন chat button গুলো দেখাবে তা control করুন।')
+                    ->schema([
+                        Forms\Components\Toggle::make('show_whatsapp_button')
+                            ->label('📗 WhatsApp Button')
+                            ->helperText('WhatsApp connected থাকলে shop এ button দেখাবে')
+                            ->default(true)
+                            ->inline(false),
+
+                        Forms\Components\Toggle::make('show_messenger_button')
+                            ->label('💙 Facebook Messenger Button')
+                            ->helperText('Facebook Page connected থাকলে shop এ button দেখাবে')
+                            ->default(true)
+                            ->inline(false),
+
+                        Forms\Components\Toggle::make('show_ai_chat_widget')
+                            ->label('🤖 AI Live Chat Widget')
+                            ->helperText('Shop এ AI chatbot bubble দেখাবে — customer সরাসরি AI এর সাথে chat করতে পারবে')
+                            ->default(true)
+                            ->inline(false),
+                    ]),
             ]);
     }
 
@@ -94,10 +119,13 @@ class WidgetEmbedPage extends Page implements HasForms
 
         $data = $this->form->getState();
         $client->update([
-            'widget_name'            => $data['widget_name'],
-            'widget_allowed_domains' => $data['widget_allowed_domains'],
-            'widget_position'        => $data['widget_position'],
-            'widget_greeting'        => $data['widget_greeting'],
+            'widget_name'             => $data['widget_name'],
+            'widget_allowed_domains'  => $data['widget_allowed_domains'],
+            'widget_position'         => $data['widget_position'],
+            'widget_greeting'         => $data['widget_greeting'],
+            'show_whatsapp_button'    => $data['show_whatsapp_button']  ?? true,
+            'show_messenger_button'   => $data['show_messenger_button'] ?? true,
+            'show_ai_chat_widget'     => $data['show_ai_chat_widget']   ?? true,
         ]);
 
         Notification::make()->success()->title('Widget settings saved ✅')->send();
