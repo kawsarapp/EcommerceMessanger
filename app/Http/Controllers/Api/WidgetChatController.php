@@ -150,8 +150,13 @@ class WidgetChatController extends Controller
             $reply = preg_replace('/\[CAROUSEL:[^\]]+\]/i', '', $reply);
             $reply = trim($reply);
 
+            $session->refresh();
             if (empty($reply)) {
-                $reply = 'দুঃখিত, এই মুহূর্তে সাড়া দিতে পারছি না। একটু পরে চেষ্টা করুন।';
+                if ($session->is_human_agent_active) {
+                    $reply = null;
+                } else {
+                    $reply = 'দুঃখিত, এই মুহূর্তে সাড়া দিতে পারছি না। একটু পরে চেষ্টা করুন।';
+                }
             }
 
             return response()->json(['reply' => $reply], 200, $corsHeaders);
