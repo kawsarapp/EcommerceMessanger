@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotPromptService
 {
-    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start', $sessionProductContext = null)
+    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start', $sessionProductContext = null, $senderId = null)
     {
         Log::info("🤖 Generating AI Prompt | Shop ID: {$client->id} | Step: {$currentStep}");
 
@@ -114,7 +114,8 @@ EOT;
             ? "Shop Owner's Guideline:\n" . $clientPrompt . "\n\n" . $masterRules
             : $masterRules;
 
-        $recentOrder    = Order::where('client_id', $client->id)->where('sender_id', request('sender_id') ?? 0)->latest()->first();
+        $actualSenderId = $senderId ?? request('sender_id') ?? 0;
+        $recentOrder    = Order::where('client_id', $client->id)->where('sender_id', $actualSenderId)->latest()->first();
         $recentOrderInfo = $recentOrder ? "সর্বশেষ অর্ডার: #{$recentOrder->id} ({$recentOrder->order_status})" : "কোনো সাম্প্রতিক অর্ডার নেই।";
 
         $tags = [

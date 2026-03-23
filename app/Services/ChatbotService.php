@@ -150,10 +150,10 @@ class ChatbotService
 
         return DB::transaction(function () use ($userMessage, $clientId, $senderId, $base64Image, $imageUrl, $client, $shopName, $platform) {
             $session = OrderSession::firstOrCreate(
-                ['sender_id' => $senderId],
-                ['client_id' => $clientId, 'platform' => $platform, 'customer_info' => ['step' => 'start', 'history' => []]]
+                ['sender_id' => $senderId, 'client_id' => $clientId],
+                ['platform' => $platform, 'customer_info' => ['step' => 'start', 'history' => []]]
             );
-            $session = OrderSession::where('sender_id', $senderId)->lockForUpdate()->first();
+            $session = OrderSession::where('sender_id', $senderId)->where('client_id', $clientId)->lockForUpdate()->first();
             // Backfill platform for existing sessions (পুরোনো sessions এ platform নেই)
             if (empty($session->platform)) {
                 $session->update(['platform' => $platform]);
@@ -286,7 +286,7 @@ class ChatbotService
                 $instruction .= $featureContext;
             }
 
-            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext);
+            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext, $senderId);
 
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             $history = $session->customer_info['history'] ?? [];
