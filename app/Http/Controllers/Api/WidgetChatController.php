@@ -60,6 +60,32 @@ class WidgetChatController extends Controller
             return response()->json(['error' => 'Invalid API Key.'], 401, $corsHeaders);
         }
 
+        // ─── 2. Domain Whitelist Security Check ──────────────────────────────────
+        // If client has set allowed_domains, only those domains can use this key.
+        // This prevents others from stealing the key and embedding on their sites.
+        $allowedDomains = $client->widget_allowed_domains ?? null;
+        if (!empty($allowedDomains)) {
+            $origin = $request->header('Origin') ?? $request->header('Referer') ?? '';
+            // Normalize: strip protocol, www, trailing slashes
+            $originHost = preg_replace('/^https?:\/\/(www\.)?/', '', rtrim($origin, '/'));
+            $originHost = explode('/', $originHost)[0]; // strip path
+
+            $allowed = array_map(
+                fn($d) => strtolower(trim(preg_replace('/^https?:\/\/(www\.)?/', '', $d))),
+                explode(',', $allowedDomains)
+            );
+            $allowed = array_filter($allowed);
+
+            if (!empty($allowed) && !in_array(strtolower($originHost), $allowed)) {
+                Log::warning("Widget blocked for domain: {$originHost} (client #{$client->id})");
+                return response()->json([
+                    'error' => 'This API key is not authorized for this domain.'
+                ], 403, array_merge($corsHeaders, [
+                    'Access-Control-Allow-Origin' => $origin ?: '*',
+                ]));
+            }
+        }
+
         if (!$client->hasActivePlan()) {
             return response()->json(['error' => 'Your plan has expired. Please renew to continue using the chatbot.'], 403, $corsHeaders);
         }
@@ -67,6 +93,7 @@ class WidgetChatController extends Controller
         if (!$client->is_ai_enabled) {
             return response()->json(['error' => 'AI Chatbot is disabled for this shop.'], 403, $corsHeaders);
         }
+
 
         // ─── 3. Validate Request ─────────────────────────────────────────────────
         $request->validate([

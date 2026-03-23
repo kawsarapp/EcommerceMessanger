@@ -8,14 +8,17 @@
 (function () {
     'use strict';
 
-    // ─── Config (injected by snippet) ───────────────────────────────────────────
+    // ─── Config — supports two formats ──────────────────────────────────────────
+    // Format 1 (simple):  window.AICB_KEY = 'key'; window.AICB_URL = 'https://...';
+    // Format 2 (full):    window.AICB_CONFIG = { apiKey, baseUrl, primaryColor, ... }
     var cfg = window.AICB_CONFIG || {};
-    var apiKey       = cfg.apiKey       || '';
-    var baseUrl      = cfg.baseUrl      || window.location.origin;
-    var primaryColor = cfg.primaryColor || '#4f46e5';
-    var greeting     = cfg.greeting     || 'আমি আপনাকে সাহায্য করতে পারি! 👋';
-    var shopName     = cfg.shopName     || 'AI Shop Assistant';
-    var position     = cfg.position     || 'bottom-right';
+    var apiKey       = window.AICB_KEY       || cfg.apiKey       || '';
+    var baseUrl      = window.AICB_URL       || cfg.baseUrl      || window.location.origin;
+    var primaryColor = window.AICB_COLOR     || cfg.primaryColor || '#4f46e5';
+    var greeting     = window.AICB_GREETING  || cfg.greeting     || 'আমি আপনাকে সাহায্য করতে পারি! 👋';
+    var shopName     = window.AICB_SHOP      || cfg.shopName     || 'AI Shop Assistant';
+    var position     = window.AICB_POSITION  || cfg.position     || 'bottom-right';
+
 
     var chatEndpoint = baseUrl + '/api/v1/chat/widget';
 
