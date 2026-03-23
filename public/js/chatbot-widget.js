@@ -270,7 +270,17 @@
                 })
             });
 
-            var data = await resp.json();
+            var data;
+            try {
+                data = await resp.json();
+            } catch (parseErr) {
+                console.error('[AICB] Server returned non-JSON. Status:', resp.status);
+                hideTyping();
+                addMessage('সাময়িক সমস্যা হচ্ছে। একটু পরে আবার চেষ্টা করুন।', 'bot');
+                sendBtn.disabled = false;
+                scrollToBottom();
+                return;
+            }
 
             hideTyping();
 
@@ -278,11 +288,15 @@
                 addMessage(data.reply, 'bot');
                 history.push({ role: 'assistant', content: data.reply });
             } else if (data.error) {
-                addMessage('দুঃখিত, এই মুহূর্তে সাড়া দিতে পারছি না।', 'bot');
+                addMessage(data.error, 'bot');
+            } else {
+                console.warn('[AICB] Unexpected response:', data);
+                addMessage('দুঃখিত, উত্তর পাওয়া যায়নি।', 'bot');
             }
         } catch (err) {
             hideTyping();
-            addMessage('Connection error. Please try again.', 'bot');
+            console.error('[AICB] Fetch error (likely CORS or network):', err);
+            addMessage('সংযোগ সমস্যা। ইন্টারনেট চেক করুন বা একটু পরে চেষ্টা করুন।', 'bot');
         }
 
         sendBtn.disabled = false;
