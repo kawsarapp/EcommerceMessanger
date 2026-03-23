@@ -268,7 +268,8 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Api-Key': apiKey,
+                    'X-Api-Key': apiKey, // Keep for backward compatibility
+                    'Authorization': 'Bearer ' + apiKey, // Reliable header
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify({
