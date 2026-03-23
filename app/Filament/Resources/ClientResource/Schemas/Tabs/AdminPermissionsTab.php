@@ -47,6 +47,12 @@ class AdminPermissionsTab
                                 ->options([
                                     'gemini-pro'              => '🟦 Gemini 1.5 Flash',
                                     'gemini-pro-full'         => '🟦 Gemini 2.0 Flash',
+                                    'gemini-2.5-flash'        => '🟦 Gemini 2.5 Flash',
+                                    'gemini-2.5-pro'          => '🟦 Gemini 2.5 Pro',
+                                    'gemini-2.5-flash-lite'   => '🟦 Gemini 2.5 Flash-Lite',
+                                    'gemini-3.1-pro-preview'  => '🟦 Gemini 3.1 Pro Preview',
+                                    'gemini-3.1-flash-lite-preview' => '🟦 Gemini 3.1 Flash Lite Preview',
+                                    'gemini-2.5-flash-image'  => '🖼️ Nano Banana (Image Variant)',
                                     'gpt-4o'                  => '🟩 GPT-4o',
                                     'gpt-4o-mini'             => '🟩 GPT-4o Mini',
                                     'gpt-3.5-turbo'           => '🟩 GPT-3.5 Turbo',

@@ -22,13 +22,19 @@ class AiBrainTab
                         ->options([
                             'gemini-pro'              => '🟦 Google Gemini 1.5 Flash (Default – Fast)',
                             'gemini-pro-full'         => '🟦 Google Gemini 2.0 Flash (Latest & Powerful)',
-                            'gpt-4o'                  => '🟩 OpenAI GPT-4o (Best Quality)',
-                            'gpt-4o-mini'             => '🟩 OpenAI GPT-4o Mini (Cheap & Fast)',
-                            'gpt-3.5-turbo'           => '🟩 OpenAI GPT-3.5 Turbo (Budget)',
-                            'claude-3-opus-20240229'  => '🟧 Anthropic Claude 3 Opus (Smartest)',
-                            'claude-3-haiku-20240307' => '🟧 Anthropic Claude 3 Haiku (Fast)',
-                            'deepseek-chat'           => '🟪 DeepSeek Chat (Cheap & Powerful)',
-                            'deepseek-reasoner'       => '🟪 DeepSeek R1 (Reasoning Model)',
+                            'gemini-2.5-flash'        => '🟦 Google Gemini 2.5 Flash',
+                            'gemini-2.5-pro'          => '🟦 Google Gemini 2.5 Pro',
+                            'gemini-2.5-flash-lite'   => '🟦 Google Gemini 2.5 Flash-Lite',
+                            'gemini-3.1-pro-preview'  => '🟦 Google Gemini 3.1 Pro Preview',
+                            'gemini-3.1-flash-lite-preview' => '🟦 Google Gemini 3.1 Flash Lite Preview',
+                            'gemini-2.5-flash-image'  => '🖼️ Nano Banana (Image Variant)',
+                            'gpt-4o'                  => '🟩 OpenAI GPT-4o (Premium)',
+                            'gpt-4o-mini'             => '🟩 OpenAI GPT-4o Mini (Cost-effective)',
+                            'gpt-3.5-turbo'           => '🟩 OpenAI GPT-3.5 Turbo (Legacy)',
+                            'claude-3-opus-20240229'  => '🟧 Claude 3 Opus (Most Powerful)',
+                            'claude-3-haiku-20240307' => '🟧 Claude 3 Haiku (Fastest)',
+                            'deepseek-chat'           => '🟪 DeepSeek V3 (Chat)',
+                            'deepseek-reasoner'       => '🟪 DeepSeek R1 (Advanced Reasoning)',
                         ])
                         ->default('gemini-pro')
                         ->required()
