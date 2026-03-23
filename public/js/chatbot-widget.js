@@ -371,6 +371,8 @@
             if (data.reply) {
                 addMessage(data.reply, 'bot');
                 history.push({ role: 'assistant', content: data.reply });
+            } else if (data.reply === null) {
+                // Human agent is typing, so AI response is intentionally null. Do nothing.
             } else if (data.error) {
                 addMessage(data.error, 'bot');
             } else {

@@ -96,5 +96,5 @@ window.AICB_PRE_CHAT = {{ ($client->require_pre_chat_form ?? false) ? 'true' : '
 window.AICB_GREETING = @json($client->widget_greeting);
 @endif
 </script>
-<script src="{{ asset('js/chatbot-widget.js') }}?v=1.3" async></script>
+<script src="{{ asset('js/chatbot-widget.js') }}?v=1.4" async></script>
 @endif
