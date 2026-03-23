@@ -70,11 +70,11 @@ Route::prefix('v1')->group(function () {
             'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
         ]);
     });
-    Route::middleware(['throttle:60,1'])->post('/chat/widget', [WidgetChatController::class, 'handle'])
+    Route::post('/chat/widget', [WidgetChatController::class, 'handle'])
          ->name('api.chat.widget');
 
     // Poll for seller replies (widget JS calls every 4s)
-    Route::middleware(['throttle:120,1'])->get('/chat/widget/poll', [WidgetChatController::class, 'poll'])
+    Route::get('/chat/widget/poll', [WidgetChatController::class, 'poll'])
          ->name('api.chat.widget.poll');
     Route::options('/chat/widget/poll', function () {
         return response()->json('OK', 200, [
