@@ -15,7 +15,7 @@
         
         <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">Chat with us</p>
         
-        @if($client->is_whatsapp_active && $client->wa_status === 'connected')
+        @if(($client->show_whatsapp_button ?? false) && !empty($client->phone))
         @php
             $waPhone = $client->phone ?? '';
             $waPhone = preg_replace('/[^0-9]/', '', $waPhone);
@@ -47,7 +47,7 @@
         </a>
         @endif
 
-        @if(!($client->is_whatsapp_active && $client->wa_status === 'connected' && ($client->phone ?? false)) && !$client->fb_page_id)
+        @if(!(($client->show_whatsapp_button ?? false) && !empty($client->phone)) && !$client->fb_page_id)
         <p class="text-sm text-slate-400 text-center py-2 font-medium">No chat channels available</p>
         @endif
 

@@ -53,25 +53,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                 @endif
             </div>
             
-            <!-- Video Player -->
-            @if($product->video_url)
-            <div class="lg:col-span-5 flex flex-col mt-4">
-                <h4 class="text-sm font-bold tracking-widest uppercase text-slate-800 mb-3"><i class="fas fa-play-circle text-primary mr-1"></i> Product Video</h4>
-                <div class="w-full aspect-video rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-slate-50">
-                    @php
-                        // Convert standard YT link to embed
-                        $videoEmbed = $product->video_url;
-                        if(str_contains($videoEmbed, 'youtu.be/')) {
-                            $videoEmbed = str_replace('youtu.be/', 'www.youtube.com/embed/', $videoEmbed);
-                        } elseif (str_contains($videoEmbed, 'watch?v=')) {
-                            $videoEmbed = str_replace('watch?v=', 'embed/', $videoEmbed);
-                        }
-                    @endphp
-                    <iframe class="w-full h-full" src="{{ $videoEmbed }}" title="Product Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                </div>
-            </div>
-            @endif
-            
+
             <!-- Details & Actions (Right) -->
             <div class="lg:col-span-7 flex flex-col">
                 <div class="mb-8">
@@ -139,7 +121,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer relative group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only" required>
                                     <span class="block px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:border-slate-900 peer-checked:text-white hover:border-slate-400">{{$c}}</span>
                                 </label>
                                 @endforeach
@@ -153,7 +135,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only" required>
                                     <span class="block px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:border-slate-900 peer-checked:text-white hover:border-slate-400">{{$s}}</span>
                                 </label>
                                 @endforeach
@@ -240,6 +222,20 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                 <i class="fas fa-shield-alt mr-2"></i>Warranty & Return
             </button>
             @endif
+            @if($product->video_url)
+            <button @click="activeTab = 'video'" 
+                :class="activeTab === 'video' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="px-6 sm:px-8 py-5 font-bold text-sm uppercase tracking-wider border-b-2 transition-all whitespace-nowrap">
+                <i class="fas fa-play-circle mr-2"></i>Video
+            </button>
+            @endif
+            @if(isset($product->reviews) && $product->reviews()->where('is_visible', true)->count() > 0)
+            <button @click="activeTab = 'reviews'" 
+                :class="activeTab === 'reviews' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                class="px-6 sm:px-8 py-5 font-bold text-sm uppercase tracking-wider border-b-2 transition-all whitespace-nowrap">
+                <i class="fas fa-star mr-2"></i>Reviews
+            </button>
+            @endif
         </div>
         
         {{-- Tab Content --}}
@@ -290,11 +286,35 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                 </div>
             </div>
             @endif
+
+            {{-- Video --}}
+            @if($product->video_url)
+            <div x-show="activeTab === 'video'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="max-w-4xl w-full aspect-video rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-slate-50">
+                    @php
+                        $videoEmbed = $product->video_url;
+                        if(str_contains($videoEmbed, 'youtu.be/')) {
+                            $videoEmbed = str_replace('youtu.be/', 'www.youtube.com/embed/', $videoEmbed);
+                        } elseif (str_contains($videoEmbed, 'watch?v=')) {
+                            $videoEmbed = str_replace('watch?v=', 'embed/', $videoEmbed);
+                        }
+                    @endphp
+                    <iframe class="w-full h-full" src="{{ $videoEmbed }}" title="Product Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+            @endif
+
+            {{-- Reviews --}}
+            @if(isset($product->reviews) && $product->reviews()->where('is_visible', true)->count() > 0)
+            <div x-show="activeTab === 'reviews'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="-my-8 md:-my-12">
+                    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
-    {{-- Dynamic Reviews Section --}}
-    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
     {{-- Related Products --}}
     @include('shop.partials.related-products', ['client' => $client, 'product' => $product])

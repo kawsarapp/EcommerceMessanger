@@ -62,7 +62,10 @@ class WidgetConversationResource extends Resource
 
                 Tables\Columns\TextColumn::make('customer_info.phone')
                     ->label('Phone')
-                    ->default('—'),
+                    ->default('—')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->orWhere('customer_info->phone', 'like', "%{$search}%");
+                    }),
 
                 Tables\Columns\TextColumn::make('client.shop_name')
                     ->label('Shop')

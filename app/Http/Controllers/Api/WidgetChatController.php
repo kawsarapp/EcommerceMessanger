@@ -9,6 +9,8 @@ use App\Models\OrderSession;
 use App\Services\ChatbotService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Widget Chat Controller
@@ -136,18 +138,19 @@ class WidgetChatController extends Controller
             );
 
             $updateData = ['platform' => 'widget', 'last_interacted_at' => now()];
-            if ($custName)  $updateData['customer_name']  = $custName;
-            if ($custPhone) $updateData['customer_phone'] = $custPhone;
             
+            $info = $session->customer_info ?? [];
+            if ($custName) $info['name'] = $custName;
+            if ($custPhone) $info['phone'] = $custPhone;
+            
+            $updateData['customer_info'] = $info;
             $session->update($updateData);
 
             // Use session_id as the "sender_id" so conversation continues per visitor
             $reply = $this->chatbot->handleMessage($client, $senderId, $message, null);
 
-            // Strip any image tags from widget reply (widgets don't support inline images easily)
-            $reply = preg_replace('/\[ATTACH_IMAGE:[^\]]+\]/i', '', $reply ?? '');
-            $reply = preg_replace('/\[IMAGE:[^\]]+\]/i', '', $reply);
-            $reply = preg_replace('/\[CAROUSEL:[^\]]+\]/i', '', $reply);
+            // Strip only carousel if not supported, but allow images/audio to pass through
+            $reply = preg_replace('/\[CAROUSEL:[^\]]+\]/i', '', $reply ?? '');
             $reply = trim($reply);
 
             $session->refresh();
@@ -272,21 +275,78 @@ class WidgetChatController extends Controller
             $text = $msg['user'] ?? $msg['ai'] ?? '';
             $role = isset($msg['user']) ? 'user' : ($msg['role'] ?? 'ai');
             if ($text) {
-                // Strip images from payload just like in handle()
-                $text = preg_replace('/\[ATTACH_IMAGE:[^\]]+\]/i', '', $text);
-                $text = preg_replace('/\[IMAGE:[^\]]+\]/i', '', $text);
-                $text = preg_replace('/\[CAROUSEL:[^\]]+\]/i', '', $text);
-
-                $formattedMsgs[] = [
-                    'text' => trim($text),
-                    'role' => $role,
-                    'time' => $msg['time'] ?? null
-                ];
             }
         }
 
         return response()->json([
             'history' => $formattedMsgs,
         ], 200, $cors);
+    }
+
+    /**
+     * Handle File Upload from Widget (Image/Voice)
+     */
+    public function upload(Request $request)
+    {
+        $corsHeaders = [
+            'Access-Control-Allow-Origin'  => '*',
+            'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+        ];
+
+        if ($request->isMethod('OPTIONS')) {
+            return response()->json('OK', 200, $corsHeaders);
+        }
+
+        try {
+            $apiKey    = $request->header('X-Api-Key') ?? $request->bearerToken() ?? $request->query('api_key');
+            if (!$apiKey) {
+                return response()->json(['error' => 'Missing API Key/Token'], 401, $corsHeaders);
+            }
+
+            $client = \Illuminate\Support\Facades\Cache::remember("client_by_api_key_{$apiKey}", 300, function () use ($apiKey) {
+                return \App\Models\Client::where('api_token', $apiKey)->first();
+            });
+
+            if (!$client) {
+                return response()->json(['error' => 'Unauthorized or invalid API Key'], 401, $corsHeaders);
+            }
+
+            if (!$request->hasFile('file')) {
+                return response()->json(['error' => 'No file uploaded'], 400, $corsHeaders);
+            }
+
+            $file = $request->file('file');
+            $extension = $file->getClientOriginalExtension();
+            $mime = $file->getMimeType();
+            Log::info('Widget File Upload extension: ' . $extension . ' mime: ' . $mime);
+            
+            $isImage = str_starts_with($mime, 'image/');
+            $isAudio = str_starts_with($mime, 'audio/') || str_starts_with($mime, 'video/') || in_array(strtolower($extension), ['m4a','mp3','ogg','wav','webm']);
+            
+            if (!$isImage && !$isAudio) {
+                return response()->json(['error' => 'Invalid file type'], 400, $corsHeaders);
+            }
+
+            $path = $file->store('chat-widget/' . $client->id, 'public');
+            $url = asset('storage/' . $path);
+
+            if ($isImage) {
+                $tag = '[ATTACH_IMAGE:' . $url . ']';
+            } else {
+                $tag = '[AUDIO:' . $url . ']';
+            }
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'tag' => $tag,
+                'type' => $isImage ? 'image' : 'audio'
+            ], 200, $corsHeaders);
+
+        } catch (\Exception $e) {
+            Log::error('Widget Upload ERRR: '.$e->getMessage());
+            return response()->json(['error' => 'Upload failed.'], 500, $corsHeaders);
+        }
     }
 }

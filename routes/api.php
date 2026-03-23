@@ -74,25 +74,32 @@ Route::prefix('v1')->group(function () {
          ->name('api.chat.widget');
 
     // Poll for seller replies (widget JS calls every 4s)
-    Route::get('/chat/widget/poll', [WidgetChatController::class, 'poll'])
-         ->name('api.chat.widget.poll');
-    Route::options('/chat/widget/poll', function () {
-        return response()->json('OK', 200, [
-            'Access-Control-Allow-Origin'  => '*',
-            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
-        ]);
-    });
+    Route::prefix('chat/widget')->group(function () {
+        Route::get('/poll', [WidgetChatController::class, 'poll'])
+             ->name('api.chat.widget.poll');
+        Route::options('/poll', function () {
+            return response()->json('OK', 200, [
+                'Access-Control-Allow-Origin'  => '*',
+                'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+            ]);
+        });
 
-    // Fetch chat history on widget load
-    Route::get('/chat/widget/history', [WidgetChatController::class, 'history'])
-         ->name('api.chat.widget.history');
-    Route::options('/chat/widget/history', function () {
-        return response()->json('OK', 200, [
-            'Access-Control-Allow-Origin'  => '*',
-            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
-        ]);
+        // Fetch chat history on widget load
+        Route::get('/history', [WidgetChatController::class, 'history'])
+             ->name('api.chat.widget.history');
+        Route::options('/history', function () {
+            return response()->json('OK', 200, [
+                'Access-Control-Allow-Origin'  => '*',
+                'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+            ]);
+        });
+
+        Route::post('/upload', [WidgetChatController::class, 'upload']);
+        Route::options('/upload', function() {
+            return response('', 200, ['Access-Control-Allow-Origin' => '*', 'Access-Control-Allow-Methods' => 'POST, OPTIONS', 'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization']);
+        });
     });
 });
 

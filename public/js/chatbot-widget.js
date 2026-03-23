@@ -175,6 +175,10 @@
             <div id="aicb-messages" aria-live="polite"></div>
             <div id="aicb-footer">
                 <form id="aicb-form" autocomplete="off">
+                    <button type="button" id="aicb-attach" aria-label="Attach File">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
+                    <input type="file" id="aicb-file-input" accept="image/*,audio/*,video/*" style="display:none;">
                     <textarea id="aicb-input" placeholder="Type a message..." rows="1" aria-label="Message"></textarea>
                     <button type="submit" id="aicb-send" aria-label="Send">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -201,14 +205,23 @@
     var prePhoneEl = document.getElementById('aicb-phone');
     var preStartBtn= document.getElementById('aicb-start-btn');
     var footerEl   = document.getElementById('aicb-footer');
+    var attachBtn  = document.getElementById('aicb-attach');
+    var fileInput  = document.getElementById('aicb-file-input');
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
     function addMessage(text, role) {
         var msg = document.createElement('div');
         msg.className = 'aicb-msg ' + (role === 'user' ? 'aicb-user' : 'aicb-bot');
+        
+        let safeText = text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        
+        // Parse Media Tags securely
+        safeText = safeText.replace(/\[ATTACH_IMAGE:(https?:\/\/[^\]]+)\]/gi, '<br><a href="$1" target="_blank"><img src="$1" style="max-width:100%; border-radius:8px; margin-top:8px;"></a>');
+        safeText = safeText.replace(/\[AUDIO:(https?:\/\/[^\]]+)\]/gi, '<br><audio controls src="$1" style="max-width:100%; margin-top:8px; height: 40px; border-radius: 8px;"></audio>');
+        
         msg.innerHTML = `
             <span class="aicb-msg-icon">${role === 'user' ? '👤' : '🤖'}</span>
-            <div class="aicb-bubble">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+            <div class="aicb-bubble">${safeText}</div>
         `;
         messagesEl.appendChild(msg);
         scrollToBottom();
@@ -415,6 +428,45 @@
             badge.textContent = '1';
         }
     }, 5000);
+
+    if (attachBtn) {
+        attachBtn.addEventListener('click', function() {
+            if (fileInput) fileInput.click();
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                uploadFile(e.target.files[0]);
+                fileInput.value = '';
+            }
+        });
+    }
+
+    function uploadFile(file) {
+        var formData = new FormData();
+        formData.append('file', file);
+        showTyping();
+
+        fetch(baseUrl + '/api/v1/chat/widget/upload?api_key=' + encodeURIComponent(apiKey), {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            hideTyping();
+            if (data.success && data.tag) {
+                sendMessage(data.tag, true);
+            } else {
+                addMessage('Upload failed: ' + (data.error || 'Server error'), 'bot');
+            }
+        })
+        .catch(function(err) {
+            hideTyping();
+            addMessage('Error uploading file.', 'bot');
+        });
+    }
 
     // ─── Seller Reply Polling ─────────────────────────────────────────────────────
     // Polls every 4 seconds. When seller (human agent) sends a reply from dashboard,
