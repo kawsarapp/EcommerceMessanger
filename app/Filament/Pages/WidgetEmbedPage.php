@@ -40,6 +40,7 @@ class WidgetEmbedPage extends Page implements HasForms
                 'show_whatsapp_button'    => $client->show_whatsapp_button  ?? true,
                 'show_messenger_button'   => $client->show_messenger_button ?? true,
                 'show_ai_chat_widget'     => $client->show_ai_chat_widget   ?? true,
+                'require_pre_chat_form'   => $client->require_pre_chat_form ?? false,
             ]);
         }
     }
@@ -105,6 +106,12 @@ class WidgetEmbedPage extends Page implements HasForms
                             ->helperText('Shop এ AI chatbot bubble দেখাবে — customer সরাসরি AI এর সাথে chat করতে পারবে')
                             ->default(true)
                             ->inline(false),
+
+                        Forms\Components\Toggle::make('require_pre_chat_form')
+                            ->label('📝 Require Pre-Chat Form')
+                            ->helperText('Chat শুরু করার আগে কাস্টমারকে নাম এবং ফোন নাম্বার দিতে হবে')
+                            ->default(false)
+                            ->inline(false),
                     ]),
             ]);
     }
@@ -126,6 +133,7 @@ class WidgetEmbedPage extends Page implements HasForms
             'show_whatsapp_button'    => $data['show_whatsapp_button']  ?? true,
             'show_messenger_button'   => $data['show_messenger_button'] ?? true,
             'show_ai_chat_widget'     => $data['show_ai_chat_widget']   ?? true,
+            'require_pre_chat_form'   => $data['require_pre_chat_form'] ?? false,
         ]);
 
         Notification::make()->success()->title('Widget settings saved ✅')->send();

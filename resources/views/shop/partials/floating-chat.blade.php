@@ -91,9 +91,10 @@ window.AICB_URL      = '{{ rtrim(url("/"), "/") }}';
 window.AICB_SHOP     = @json($client->widget_name ?: $client->shop_name);
 window.AICB_COLOR    = '{{ $client->primary_color ?? "#4f46e5" }}';
 window.AICB_POSITION = '{{ $client->widget_position ?? "bottom-right" }}';
+window.AICB_PRE_CHAT = {{ ($client->require_pre_chat_form ?? false) ? 'true' : 'false' }};
 @if($client->widget_greeting)
 window.AICB_GREETING = @json($client->widget_greeting);
 @endif
 </script>
-<script src="{{ asset('js/chatbot-widget.js') }}?v=1.2" async></script>
+<script src="{{ asset('js/chatbot-widget.js') }}?v=1.3" async></script>
 @endif

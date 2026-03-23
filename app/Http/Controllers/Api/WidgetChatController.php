@@ -122,15 +122,24 @@ class WidgetChatController extends Controller
 
         $message   = trim($request->input('message'));
         $sessionId = $request->input('session_id');
+        $custName  = trim($request->input('customer_name', ''));
+        $custPhone = trim($request->input('customer_phone', ''));
 
         // ─── 4. Process with Chatbot Service ─────────────────────────────────────
         try {
             $senderId = 'widget_' . $sessionId;
 
-            // ✅ Ensure OrderSession has platform='widget' so it appears in Conversations dashboard
-            \App\Models\OrderSession::where('sender_id', $senderId)
-                ->where('client_id', $client->id)
-                ->update(['platform' => 'widget', 'last_interacted_at' => now()]);
+            // ✅ Ensure OrderSession exists and update customer details if provided
+            $session = \App\Models\OrderSession::firstOrCreate(
+                ['sender_id' => $senderId, 'client_id' => $client->id],
+                ['platform' => 'widget', 'status' => 'active']
+            );
+
+            $updateData = ['platform' => 'widget', 'last_interacted_at' => now()];
+            if ($custName)  $updateData['customer_name']  = $custName;
+            if ($custPhone) $updateData['customer_phone'] = $custPhone;
+            
+            $session->update($updateData);
 
             // Use session_id as the "sender_id" so conversation continues per visitor
             $reply = $this->chatbot->handleMessage($client, $senderId, $message, null);
@@ -209,6 +218,70 @@ class WidgetChatController extends Controller
             'messages'     => $newMsgs,
             'human_agent'  => (bool) $session->is_human_agent_active,
             'server_time'  => time(),
+        ], 200, $cors);
+    }
+
+    /**
+     * GET /api/v1/chat/widget/history
+     * Returns the full chat history for the given widget session.
+     */
+    public function history(Request $request)
+    {
+        $cors = [
+            'Access-Control-Allow-Origin'  => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+        ];
+
+        if ($request->isMethod('OPTIONS')) {
+            return response()->json('OK', 200, $cors);
+        }
+
+        $apiKey    = $request->header('X-Api-Key') ?? $request->bearerToken() ?? $request->query('api_key');
+        $sessionId = $request->query('session_id');
+
+        if (!$apiKey || !$sessionId) {
+            return response()->json(['history' => []], 200, $cors);
+        }
+
+        $client = \Illuminate\Support\Facades\Cache::remember("client_by_api_key_{$apiKey}", 300, function () use ($apiKey) {
+            return \App\Models\Client::where('api_token', $apiKey)->first();
+        });
+
+        if (!$client) {
+            return response()->json(['history' => []], 200, $cors);
+        }
+
+        $session = \App\Models\OrderSession::where('sender_id', 'widget_' . $sessionId)
+            ->where('client_id', $client->id)
+            ->first();
+
+        if (!$session) {
+            return response()->json(['history' => []], 200, $cors);
+        }
+
+        $history  = $session->customer_info['history'] ?? [];
+        $formattedMsgs = [];
+
+        foreach ($history as $msg) {
+            $text = $msg['user'] ?? $msg['ai'] ?? '';
+            $role = isset($msg['user']) ? 'user' : ($msg['role'] ?? 'ai');
+            if ($text) {
+                // Strip images from payload just like in handle()
+                $text = preg_replace('/\[ATTACH_IMAGE:[^\]]+\]/i', '', $text);
+                $text = preg_replace('/\[IMAGE:[^\]]+\]/i', '', $text);
+                $text = preg_replace('/\[CAROUSEL:[^\]]+\]/i', '', $text);
+
+                $formattedMsgs[] = [
+                    'text' => trim($text),
+                    'role' => $role,
+                    'time' => $msg['time'] ?? null
+                ];
+            }
+        }
+
+        return response()->json([
+            'history' => $formattedMsgs,
         ], 200, $cors);
     }
 }

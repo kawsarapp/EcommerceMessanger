@@ -165,6 +165,13 @@
                 </div>
                 <button id="aicb-close" aria-label="Close">✕</button>
             </div>
+            <div id="aicb-prechat" style="display:none; flex:1; padding:20px; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:#f8fafc;">
+                <h3 style="margin-top:0; color:#1e293b; font-size:16px;">স্বাগতম!</h3>
+                <p style="color:#64748b; font-size:13px; margin-bottom:20px;">চ্যাট শুরু করার আগে আপনার নাম ও নাম্বার দিন।</p>
+                <input type="text" id="aicb-name" placeholder="আপনার নাম" style="width:100%; padding:12px; margin-bottom:12px; border:1px solid #e2e8f0; border-radius:12px; font-size:14px; outline:none;">
+                <input type="text" id="aicb-phone" placeholder="ফোন নাম্বার" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #e2e8f0; border-radius:12px; font-size:14px; outline:none;">
+                <button id="aicb-start-btn" style="width:100%; padding:12px; background:${primaryColor}; color:white; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer;">চ্যাট শুরু করুন</button>
+            </div>
             <div id="aicb-messages" aria-live="polite"></div>
             <div id="aicb-footer">
                 <form id="aicb-form" autocomplete="off">
@@ -189,6 +196,11 @@
     var badge      = document.getElementById('aicb-badge');
     var icon       = document.getElementById('aicb-icon');
     var closeBtn   = document.getElementById('aicb-close');
+    var preChatEl  = document.getElementById('aicb-prechat');
+    var preNameEl  = document.getElementById('aicb-name');
+    var prePhoneEl = document.getElementById('aicb-phone');
+    var preStartBtn= document.getElementById('aicb-start-btn');
+    var footerEl   = document.getElementById('aicb-footer');
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
     function addMessage(text, role) {
@@ -233,11 +245,23 @@
         chatWindow.classList.add('aicb-open');
         icon.textContent = '✕';
         badge.style.display = 'none';
-        inputEl.focus();
 
-        if (messagesEl.children.length === 0) {
-            addMessage(greeting, 'bot');
-            history.push({ role: 'assistant', content: greeting });
+        var preChatConfig = window.AICB_PRE_CHAT === true || window.AICB_PRE_CHAT === 'true';
+        var userDetails = localStorage.getItem('aicb_user_details');
+
+        if (preChatConfig && !userDetails) {
+            preChatEl.style.display = 'flex';
+            messagesEl.style.display = 'none';
+            footerEl.style.display = 'none';
+        } else {
+            preChatEl.style.display = 'none';
+            messagesEl.style.display = 'flex';
+            footerEl.style.display = 'block';
+            inputEl.focus();
+
+            if (messagesEl.children.length === 0) {
+                loadHistory();
+            }
         }
     }
 
@@ -246,6 +270,46 @@
         chatWindow.classList.remove('aicb-open');
         icon.textContent = '💬';
         setTimeout(function () { chatWindow.style.display = 'none'; }, 250);
+    }
+
+    async function loadHistory() {
+        try {
+            var url = baseUrl + '/api/v1/chat/widget/history?api_key=' + apiKey + '&session_id=' + sessionId;
+            var resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + apiKey } });
+            var data = await resp.json();
+            if (data.history && data.history.length > 0) {
+                data.history.forEach(function(msg) {
+                    addMessage(msg.text, msg.role);
+                    history.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text });
+                });
+            } else {
+                addMessage(greeting, 'bot');
+                history.push({ role: 'assistant', content: greeting });
+            }
+        } catch (e) {
+            addMessage(greeting, 'bot');
+            history.push({ role: 'assistant', content: greeting });
+        }
+    }
+
+    if (preStartBtn) {
+        preStartBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var n = preNameEl.value.trim();
+            var p = prePhoneEl.value.trim();
+            if (!n || !p) {
+                alert('অনুগ্রহ করে নাম এবং ফোন নাম্বার দিন।');
+                return;
+            }
+            localStorage.setItem('aicb_user_details', JSON.stringify({ name: n, phone: p }));
+            preChatEl.style.display = 'none';
+            messagesEl.style.display = 'flex';
+            footerEl.style.display = 'block';
+            inputEl.focus();
+            if (messagesEl.children.length === 0) {
+                loadHistory();
+            }
+        });
     }
 
     toggleBtn.addEventListener('click', function () { isOpen ? closeChat() : openChat(); });
@@ -264,6 +328,21 @@
         showTyping();
 
         try {
+            var payload = {
+                message  : text,
+                session_id: sessionId,
+                history  : history.slice(-8), // Last 8 messages for context
+            };
+            
+            var userDetails = localStorage.getItem('aicb_user_details');
+            if (userDetails) {
+                try {
+                    var ud = JSON.parse(userDetails);
+                    if (ud.name) payload.customer_name = ud.name;
+                    if (ud.phone) payload.customer_phone = ud.phone;
+                } catch(e) {}
+            }
+
             var resp = await fetch(chatEndpoint, {
                 method: 'POST',
                 headers: {
@@ -272,11 +351,7 @@
                     'Authorization': 'Bearer ' + apiKey, // Reliable header
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({
-                    message  : text,
-                    session_id: sessionId,
-                    history  : history.slice(-8), // Last 8 messages for context
-                })
+                body: JSON.stringify(payload)
             });
 
             var data;

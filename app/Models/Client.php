@@ -52,6 +52,7 @@ class Client extends Model
         'admin_permissions' => 'array',
         'popup_pages'                  => 'array',
         'seller_settings'              => 'array',
+        'require_pre_chat_form'        => 'boolean',
     ];
 
     /**

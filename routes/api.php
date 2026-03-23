@@ -83,6 +83,17 @@ Route::prefix('v1')->group(function () {
             'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
         ]);
     });
+
+    // Fetch chat history on widget load
+    Route::get('/chat/widget/history', [WidgetChatController::class, 'history'])
+         ->name('api.chat.widget.history');
+    Route::options('/chat/widget/history', function () {
+        return response()->json('OK', 200, [
+            'Access-Control-Allow-Origin'  => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Api-Key, Authorization, Accept',
+        ]);
+    });
 });
 
 // ===========================================
