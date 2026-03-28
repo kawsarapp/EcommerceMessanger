@@ -70,6 +70,7 @@ class StorefrontTab
                         'premium'     => '✨ Ultra Premium VIP (Vibrant & Glassmorphism)',
                         'bdshop'      => '🇧🇩 BD Shop (Daraz/BDShop Style)',
                         'bdpro'       => '🔵 BD Pro (Original BDShop Replica)',
+                        'shwapno'     => '🛒 Shwapno (Grocery/Supermarket Style)',
                         'shoppers'    => '💄 Shoppers (Cosmetics/Retail Style)',
                         'athletic'    => '⚡ Athletic (High Energy & Performance)',
                         'daraz'       => '🛍️ Daraz Classic (Marketplace Look)',
