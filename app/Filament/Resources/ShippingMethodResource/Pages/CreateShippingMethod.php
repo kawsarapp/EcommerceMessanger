@@ -13,10 +13,15 @@ class CreateShippingMethod extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = auth()->user();
-        
-        if (!$user->isSuperAdmin()) {
-            $data['client_id'] = $user->client_id ?? ($user->client->id ?? null);
+
+        if ($user->isSuperAdmin()) {
+            // SuperAdmin must pick a client from the form — already filled via Select field.
+            // No override needed; $data['client_id'] is already set.
+            return $data;
         }
+
+        // Regular seller — always force their own client_id regardless of form input.
+        $data['client_id'] = $user->client?->id ?? $user->client_id;
 
         return $data;
     }

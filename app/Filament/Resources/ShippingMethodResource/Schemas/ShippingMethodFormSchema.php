@@ -4,8 +4,10 @@ namespace App\Filament\Resources\ShippingMethodResource\Schemas;
 
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use App\Models\Client;
 
 class ShippingMethodFormSchema
 {
@@ -15,6 +17,15 @@ class ShippingMethodFormSchema
             Section::make('Shipping Options Configuration')
                 ->description('Create dynamic shipping zones or courier methods that your customers can choose during checkout.')
                 ->schema([
+                    // SuperAdmin only: pick which shop this belongs to
+                    Select::make('client_id')
+                        ->label('Assign to Shop')
+                        ->options(Client::orderBy('shop_name')->pluck('shop_name', 'id'))
+                        ->searchable()
+                        ->required()
+                        ->visible(fn () => auth()->user()?->isSuperAdmin())
+                        ->placeholder('Select a shop...'),
+
                     Grid::make(2)
                         ->schema([
                             TextInput::make('name')
