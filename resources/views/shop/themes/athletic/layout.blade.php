@@ -128,7 +128,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             {{-- Right Nav --}}
             <div class="hidden md:flex gap-8 items-center h-full">
                 <a href="{{$baseUrl}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">GEAR</a>
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">TRACK</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">TRACK</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-blue-600 transition-colors border-b-4 border-transparent hover:border-blue-600">SUPPORT</a>
                 @endif
@@ -151,7 +151,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">HEADQUARTERS</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
                     <a href="{{$baseUrl}}" class="hover:text-white transition-colors uppercase w-fit">Browse Gear</a>
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-white transition-colors uppercase w-fit">Locate Package</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition-colors uppercase w-fit">Locate Package</a>
                 </div>
             </div>
 

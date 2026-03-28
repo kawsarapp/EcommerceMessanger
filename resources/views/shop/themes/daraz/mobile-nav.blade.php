@@ -16,7 +16,7 @@ main,footer{padding-bottom:calc(75px + env(safe-area-inset-bottom,0px))!importan
 <nav class="mob-nav" x-data>
     <a href="{{ $baseUrl }}" title="হোম"><i class="fas fa-home"></i><span>হোম</span></a>
     <a href="#" title="সার্চ" @click.prevent="$dispatch('mob-search')"><i class="fas fa-search"></i><span>সার্চ</span></a>
-    <a href="{{ $clean ?? false ? $baseUrl.'/track-order' : route('shop.track',$client->slug) }}" title="ট্র্যাক"><i class="fas fa-truck-fast"></i><span>ট্র্যাক</span></a>
+    <a href="{{ $clean ?? false ? $baseUrl.'/track' : route('shop.track',$client->slug) }}" title="ট্র্যাক"><i class="fas fa-truck-fast"></i><span>ট্র্যাক</span></a>
     @if($client->fb_page_id ?? false)
         <a href="https://m.me/{{ $client->fb_page_id }}" target="_blank" title="চ্যাট"><i class="fab fa-facebook-messenger"></i><span>চ্যাট</span></a>
     @elseif($client->phone ?? false)

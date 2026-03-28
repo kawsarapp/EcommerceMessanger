@@ -65,24 +65,24 @@
                 <span class="shop-name-text text-xl md:text-2xl font-black text-primary uppercase">{{$client->shop_name}}</span>
             </a>
 
-            {{-- Search Bar (Visual) --}}
-            <div class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
-                <input type="text" placeholder="Search for products..." class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition">
-                <button class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[#d04000] transition">
+            {{-- Search Bar --}}
+            <form action="{{$baseUrl}}" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
+                <input type="text" name="search" value="{{request('search')}}" placeholder="পণ্য খুঁজুন..." class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition outline-none">
+                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[#d04000] transition">
                     <i class="fas fa-search"></i>
                 </button>
-            </div>
+            </form>
 
             {{-- Right Actions --}}
             <div class="hidden md:flex items-center gap-6 shrink-0">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
                     <i class="fas fa-truck-fast text-xl mb-1 group-hover:scale-110 transition"></i>
-                    <span class="text-[10px] font-bold uppercase">Track Order</span>
+                    <span class="text-[10px] font-bold uppercase">অর্ডার ট্র্যাক</span>
                 </a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="flex flex-col items-center text-gray-600 hover:text-blue-600 transition group">
                     <i class="fab fa-facebook-messenger text-xl mb-1 group-hover:scale-110 transition"></i>
-                    <span class="text-[10px] font-bold uppercase">Message</span>
+                    <span class="text-[10px] font-bold uppercase">মেসেজ</span>
                 </a>
                 @endif
             </div>
@@ -97,7 +97,7 @@
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="md:col-span-2">
                 <h3 class="font-black text-2xl text-primary mb-4 uppercase">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-sm leading-relaxed max-w-md">100% Authentic Products. Nationwide Delivery. 24/7 Customer Support. Easy Returns & Refunds.</p>
+                <p class="text-gray-500 text-sm leading-relaxed max-w-md">১০০% আসল পণ্য। সারা দেশে ডেলিভারি। ২৪/৭ কাস্টমার সাপোর্ট। সহজ রিটার্ন ও রিফান্ড।</p>
                 
                 <div class="flex gap-4 mt-6">
                     @if($client->fb_page_id)
@@ -107,16 +107,16 @@
             </div>
             
             <div>
-                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">Customer Care</h4>
+                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">কাস্টমার কেয়ার</h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition">Track My Order</a>
-                    <a href="#" class="hover:text-primary transition">Shipping Policy</a>
-                    <a href="#" class="hover:text-primary transition">Return Policy</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">অর্ডার ট্র্যাক করুন</a>
+                    <a href="#" class="hover:text-primary transition">শিপিং পলিসি</a>
+                    <a href="#" class="hover:text-primary transition">রিটার্ন পলিসি</a>
                 </div>
             </div>
 
             <div>
-                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">Contact Us</h4>
+                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">যোগাযোগ</h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-primary"></i> {{$client->phone}}</p> @endif
                     @if($client->email) <p><i class="fas fa-envelope mr-2 text-primary"></i> {{$client->email}}</p> @endif

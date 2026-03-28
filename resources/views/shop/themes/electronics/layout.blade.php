@@ -87,7 +87,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
             </div>
             <div class="hidden md:flex items-center gap-4">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-semibold text-gray-400 hover:text-white transition flex items-center gap-2 bg-dark tech-border px-3 py-1.5 rounded-md hover:border-gray-500">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-xs font-semibold text-gray-400 hover:text-white transition flex items-center gap-2 bg-dark tech-border px-3 py-1.5 rounded-md hover:border-gray-500">
                     <i class="fas fa-crosshairs text-primary"></i> Track Status
                 </a>
                 @if($client->fb_page_id)
@@ -124,7 +124,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                 <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">Support</h4>
                 <div class="flex flex-col space-y-3 text-sm font-medium text-gray-400">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Live Tracking</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Live Tracking</a>
                     <a href="#" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Return Policy</a>
                     <a href="#" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Technical Support</a>
                 </div>

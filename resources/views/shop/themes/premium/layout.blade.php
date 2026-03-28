@@ -76,7 +76,7 @@
                 </span>
             </a>
             <div class="hidden md:flex items-center gap-5">
-                <a href="{{$clean ? $baseUrl.'/track-order' : route('shop.track',$client->slug)}}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors flex items-center gap-2 bg-gray-100/80 px-4 py-2 rounded-full hover:bg-white hover:shadow-sm">
+                <a href="{{$clean ? $baseUrl.'/track' : route('shop.track',$client->slug)}}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors flex items-center gap-2 bg-gray-100/80 px-4 py-2 rounded-full hover:bg-white hover:shadow-sm">
                     <i class="fas fa-truck-fast"></i> Track Order
                 </a>
                 @if($client->fb_page_id)
@@ -103,7 +103,7 @@
             <div class="flex flex-col items-center md:items-start space-y-3">
                 <h4 class="font-bold text-gray-900">Quick Links</h4>
                 <a href="{{$baseUrl}}" class="text-gray-500 hover:text-primary text-sm transition">Home</a>
-                <a href="{{$clean ? $baseUrl.'/track-order' : route('shop.track', $client->slug)}}" class="text-gray-500 hover:text-primary text-sm transition">Track Order</a>
+                <a href="{{$clean ? $baseUrl.'/track' : route('shop.track', $client->slug)}}" class="text-gray-500 hover:text-primary text-sm transition">Track Order</a>
             </div>
             <div class="flex flex-col items-center md:items-end space-y-4">
                 <h4 class="font-bold text-gray-900">Contact Us</h4>

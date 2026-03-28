@@ -59,7 +59,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
             <!-- Left: Track (desktop only) -->
             <div class="w-1/3 hidden md:flex items-center">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-black transition">Track</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-xs font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-black transition">Track</a>
             </div>
             <!-- Center: Logo -->
             <div class="flex-1 md:w-1/3 flex justify-start md:justify-center items-center">
@@ -93,7 +93,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             
             <div class="flex gap-10 text-xs font-semibold tracking-widest uppercase text-gray-400 mb-16">
                 <a href="{{$baseUrl}}" class="hover:text-black transition">Shop</a>
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-black transition">Track Order</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-black transition">Track Order</a>
                 <a href="#" class="hover:text-black transition">Terms</a>
             </div>
 

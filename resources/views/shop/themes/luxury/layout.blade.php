@@ -75,7 +75,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             <!-- Right -->
             <div class="w-1/3 flex justify-end items-center gap-4 md:gap-6">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hidden md:block text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition">Track</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden md:block text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition">Track</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-400 hover:text-primary transition">
                     <i class="fab fa-facebook-messenger text-lg"></i>
@@ -105,7 +105,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-sans text-[10px] uppercase tracking-[0.3em] font-semibold text-gray-300 mb-8">Information</h4>
                 <div class="flex flex-col space-y-4 text-xs font-light tracking-wide text-gray-500">
                     <a href="{{$baseUrl}}" class="hover:text-primary transition">Homepage</a>
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition">Track Order</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">Track Order</a>
                     <a href="#" class="hover:text-primary transition">Client Services</a>
                 </div>
             </div>

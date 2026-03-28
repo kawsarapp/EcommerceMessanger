@@ -81,7 +81,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </button>
             </div>
             <div class="hidden md:flex items-center gap-3">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-700 hover:text-white transition flex items-center gap-2 bg-white px-4 py-2.5 rounded-full border-4 border-slate-200 hover:border-funblue hover:bg-funblue shadow-sm bouncy whitespace-nowrap">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-700 hover:text-white transition flex items-center gap-2 bg-white px-4 py-2.5 rounded-full border-4 border-slate-200 hover:border-funblue hover:bg-funblue shadow-sm bouncy whitespace-nowrap">
                     <i class="fas fa-map-marker-alt text-funblue"></i> Track
                 </a>
                 @if($client->fb_page_id)
@@ -131,7 +131,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <span class="absolute bottom-0 left-0 w-full h-3 bg-primary/30 rotate-2 -z-0"></span>
                 </h4>
                 <div class="flex flex-col space-y-4 font-bold text-base text-slate-600">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-2 w-fit transform duration-200">Where's my order?</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-2 w-fit transform duration-200">Where's my order?</a>
                     <a href="#" class="hover:text-funblue transition hover:translate-x-2 w-fit transform duration-200">Returns are easy</a>
                     <a href="#" class="hover:text-primary transition hover:translate-x-2 w-fit transform duration-200">Safety Information</a>
                 </div>

@@ -88,7 +88,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </button>
             </div>
             <div class="hidden md:flex items-center gap-4">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-600 hover:text-primary transition flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-200 hover:border-primary/50">
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-600 hover:text-primary transition flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-200 hover:border-primary/50">
                     <i class="fas fa-truck-fast text-primary"></i> <span>Track Status</span>
                 </a>
                 @if($client->fb_page_id)
@@ -137,7 +137,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                 <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-heart text-red-400"></i> Customer Care</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Track Your Order</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Track Your Order</a>
                     <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Delivery Information</a>
                     <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Returns & Refunds</a>
                     <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Help Center</a>

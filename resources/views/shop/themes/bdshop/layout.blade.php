@@ -84,7 +84,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Actions --}}
                 <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" 
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" 
                         class="text-white/90 hover:text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition px-2 py-1.5 rounded-lg hover:bg-white/10">
                         <i class="fas fa-truck-fast"></i>
                         <span class="hidden md:inline">ট্র্যাক অর্ডার</span>
@@ -149,7 +149,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div>
                     <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">সাহায্য</h4>
                     <div class="flex flex-col space-y-2.5 text-sm text-slate-400">
-                        <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-white transition w-fit">অর্ডার ট্র্যাক</a>
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition w-fit">অর্ডার ট্র্যাক</a>
                         <a href="#" class="hover:text-white transition w-fit">রিটার্ন পলিসি</a>
                         <a href="#" class="hover:text-white transition w-fit">ডেলিভারি তথ্য</a>
                     </div>

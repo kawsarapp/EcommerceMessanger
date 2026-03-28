@@ -65,7 +65,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <span class="shop-name-text text-xl md:text-2xl font-black tracking-tighter uppercase">{{$client->shop_name}}</span>
             </a>
             <div class="hidden md:flex gap-6 items-center">
-                <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors">TRACK ORDER</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors">TRACK ORDER</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all">
                     <i class="fab fa-facebook-messenger"></i>
@@ -90,7 +90,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">Explore</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                     <a href="{{$baseUrl}}" class="hover:text-primary transition-colors inline-block w-fit">Shop All</a>
-                    <a href="{{$clean?$baseUrl.'/track-order':route('shop.track',$client->slug)}}" class="hover:text-primary transition-colors inline-block w-fit">Track My Order</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition-colors inline-block w-fit">Track My Order</a>
                 </div>
             </div>
 
