@@ -8,6 +8,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title')</title>
+    @include('shop.partials.tracking', ['client' => $client])
     <meta name="description" content="{{ $client->meta_description ?? $client->shop_name . ' - Your Beauty Destination' }}">
     
     <script src="https://cdn.tailwindcss.com"></script>

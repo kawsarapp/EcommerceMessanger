@@ -43,18 +43,26 @@ class ServerSideTrackingService
 
     private function sendFacebookPurchaseRequest(Order $order, string $pixelId, string $token): void
     {
+        $userData = [
+            'client_user_agent' => request()->userAgent() ?? '',
+            'client_ip_address' => request()->ip() ?? ''
+        ];
+
+        if (!empty($order->customer_email)) {
+            $userData['em'] = [hash('sha256', strtolower(trim($order->customer_email)))];
+        }
+
+        if (!empty($order->customer_phone)) {
+            $userData['ph'] = [hash('sha256', preg_replace('/[^0-9]/', '', $order->customer_phone))];
+        }
+
         $payload = [
             'data' => [
                 [
                     'event_name' => 'Purchase',
                     'event_time' => time(),
                     'action_source' => 'website',
-                    'user_data' => [
-                        'em' => [hash('sha256', strtolower(trim($order->customer_email ?? '')))],
-                        'ph' => [hash('sha256', preg_replace('/[^0-9]/', '', $order->customer_phone ?? ''))],
-                        'client_user_agent' => request()->userAgent() ?? '',
-                        'client_ip_address' => request()->ip() ?? ''
-                    ],
+                    'user_data' => $userData,
                     'custom_data' => [
                         'currency' => 'BDT',
                         'value' => (float) $order->total_amount,

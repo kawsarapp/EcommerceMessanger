@@ -297,4 +297,21 @@
 
     </div>
 </div>
+
+<script>
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({
+  event: 'view_item',
+  ecommerce: {
+    currency: 'BDT',
+    value: {{ $product->sale_price ?? $product->regular_price }},
+    items: [{
+      item_id: '{{ $product->id }}',
+      item_name: '{{ $product->name }}',
+      price: {{ $product->sale_price ?? $product->regular_price }},
+      quantity: 1
+    }]
+  }
+});
+</script>
 @endsection
