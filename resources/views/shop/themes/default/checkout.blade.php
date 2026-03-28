@@ -55,9 +55,9 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     <div class="flex flex-col lg:flex-row gap-10 lg:gap-16">
         
         <!-- Left Column: Form -->
-        <div class="w-full lg:w-7/12 order-2 lg:order-1">
-            
-            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="space-y-10 bg-white p-8 md:p-12 rounded-[2rem] border border-slate-100 shadow-soft">
+        <div class="w-full lg:w-7/12 order-2 lg:order-1 relative group/form">
+            <div class="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none group-hover/form:scale-110 premium-transition"></div>
+            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="space-y-10 glass-panel p-8 md:p-12 rounded-[2.5rem] border border-white relative z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 @csrf
                 <input type="hidden" name="product_id" value="{{$product->id}}">
                 <input type="hidden" name="qty" :value="qty">
@@ -129,9 +129,10 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 @include('shop.partials.checkout-extras', ['client' => $client, 'product' => $product])
 
                 <!-- Submit Section -->
-                <div class="pt-6">
-                    <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg uppercase tracking-widest hover:bg-primary premium-transition hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-3">
-                        Confirm Order <i class="fas fa-arrow-right"></i>
+                <div class="pt-6 relative">
+                    <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg uppercase tracking-widest hover:bg-primary premium-transition shadow-lg hover:shadow-primary/30 hover:-translate-y-1 flex items-center justify-center gap-3 relative overflow-hidden group/btn">
+                        <span class="absolute inset-0 w-full h-full bg-white/20 -translate-x-full skew-x-12 group-hover/btn:animate-[shimmer_1.5s_infinite]"></span>
+                        <span class="relative z-10 flex items-center gap-2">Confirm Order <i class="fas fa-arrow-right"></i></span>
                     </button>
                     <div class="flex items-center justify-center gap-2 mt-5 text-slate-400">
                         <i class="fas fa-lock text-sm"></i>
@@ -143,11 +144,13 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
 
         <!-- Right Column: Order Summary (Sticky Sidebar) -->
         <div class="w-full lg:w-5/12 order-1 lg:order-2">
-            <div class="bg-slate-50 rounded-[2rem] p-8 md:p-10 sticky top-28 border border-slate-100">
-                <h3 class="font-bold text-slate-900 text-xl mb-8 tracking-tight">Your Order</h3>
+            <div class="glass-panel bg-white/40 rounded-[2.5rem] p-8 md:p-10 sticky top-28 border border-white shadow-sm overflow-hidden relative group/summary">
+                <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none group-hover/summary:scale-110 premium-transition z-0"></div>
+                
+                <h3 class="font-extrabold text-slate-900 text-2xl mb-8 tracking-tight relative z-10">Your Order</h3>
                 
                 <!-- Product Line Item -->
-                <div class="flex gap-5 mb-8 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative">
+                <div class="flex gap-5 mb-8 bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-white shadow-sm relative premium-transition hover:translate-x-1 hover:shadow-md z-10">
                     <!-- Badge -->
                     <div class="absolute -top-3 -right-3 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md z-10" x-text="qty"></div>
                     
@@ -167,10 +170,10 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     </div>
                 </div>
 
-                <hr class="border-slate-200 mb-6">
+                <hr class="border-slate-200/60 mb-6 relative z-10">
 
                 <!-- Totals -->
-                <div class="space-y-4 text-sm font-semibold text-slate-600">
+                <div class="space-y-4 text-sm font-semibold text-slate-600 relative z-10">
                     <div class="flex justify-between items-center">
                         <span>Items Subtotal</span>
                         <span class="text-slate-900">৳<span x-text="qty * price"></span></span>
@@ -184,9 +187,9 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                         <span>-৳<span x-text="couponDiscount"></span></span>
                     </div>
                     
-                    <div class="pt-6 mt-4 border-t border-slate-200">
-                        <div class="flex justify-between items-center bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                            <span class="font-extrabold text-slate-900 text-lg uppercase tracking-wide">Total Amount</span>
+                    <div class="pt-6 mt-4 border-t border-slate-200/60">
+                        <div class="flex justify-between items-center bg-white/70 backdrop-blur-md p-5 rounded-2xl border border-white shadow-sm hover:shadow-md premium-transition">
+                            <span class="font-extrabold text-slate-900 text-lg uppercase tracking-widest text-[13px]">Total Amount</span>
                             <span class="text-3xl font-extrabold text-primary tracking-tight">৳<span x-text="total"></span></span>
                         </div>
                     </div>

@@ -8,10 +8,10 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
 <main class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
     
-    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start">
+    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 100)">
         
         <!-- Left: Image (Stately & Tall) -->
-        <div class="w-full lg:w-1/2 flex flex-col gap-6">
+        <div class="w-full lg:w-1/2 flex flex-col gap-6 transition-all duration-[2s] ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
             <div class="w-full aspect-square md:aspect-[4/5] bg-surface relative overflow-hidden group border border-white/5">
                 <img :src="mainImg" class="w-full h-full object-cover mix-blend-lighten transition-transform duration-[3s] hover:scale-105">
             </div>
@@ -29,7 +29,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
         
         <!-- Right: Information & Acquisition -->
-        <div class="w-full lg:w-1/2 flex flex-col">
+        <div class="w-full lg:w-1/2 flex flex-col transition-all duration-[2.5s] ease-out delay-300" :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'">
             
             <div class="border-b border-white/10 pb-12 text-center lg:text-left">
                 <span class="text-[9px] font-semibold text-primary uppercase tracking-[0.4em] mb-6 block">{{$product->category->name ?? 'Exquisite Collection'}}</span>

@@ -49,7 +49,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     <div class="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
         
         <!-- Left: Form -->
-        <div class="w-full lg:w-7/12 order-2 lg:order-1 bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
+        <div class="w-full lg:w-7/12 order-2 lg:order-1 grocer-card rounded-[2.5rem] p-8 md:p-12 border-0 overflow-hidden relative">
             <!-- decorative bg blob -->
             <div class="absolute -top-32 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-[80px] z-0"></div>
             
@@ -101,21 +101,21 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label class="cursor-pointer">
                             <input type="radio" name="area" value="inside" @change="insideDhaka = true" class="peer hidden" checked>
-                            <div class="bg-white border-2 border-slate-200 rounded-2xl p-6 peer-checked:bg-emerald-50 peer-checked:border-primary peer-checked:shadow-sm transition-all flex justify-between items-center group-hover:border-slate-300 relative overflow-hidden">
-                                <i class="fas fa-check-circle absolute right-6 top-1/2 -translate-y-1/2 text-primary text-2xl opacity-0 peer-checked:opacity-100 transition-opacity transform scale-50 peer-checked:scale-100 duration-300"></i>
-                                <div class="relative z-10 w-full pr-10">
-                                    <span class="block text-lg font-black text-slate-800 mb-1 leading-tight">Inside Dhaka</span>
-                                    <span class="block text-sm font-bold text-primary">৳{{$client->delivery_charge_inside ?? 60}} <span class="text-slate-400 font-semibold text-xs ml-1">(Fastest)</span></span>
+                            <div class="bg-white border-2 border-slate-200 rounded-[2rem] p-6 peer-checked:bg-emerald-50 peer-checked:border-primary peer-checked:shadow-soft transition-all flex justify-between items-center group-hover:border-slate-300 relative overflow-hidden">
+                                <i class="fas fa-check-circle absolute right-6 top-1/2 -translate-y-1/2 text-primary text-3xl opacity-0 peer-checked:opacity-100 transition-opacity transform scale-50 peer-checked:scale-100 duration-300"></i>
+                                <div class="relative z-10 w-full pr-12">
+                                    <span class="block text-xl font-black text-slate-800 mb-1 leading-tight">Inside Dhaka</span>
+                                    <span class="block text-sm font-bold text-primary">৳{{$client->delivery_charge_inside ?? 60}} <span class="text-slate-400 font-semibold text-xs ml-1 bg-white px-2 py-0.5 rounded-full">(Fastest)</span></span>
                                 </div>
                             </div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="area" value="outside" @change="insideDhaka = false" class="peer hidden">
-                            <div class="bg-white border-2 border-slate-200 rounded-2xl p-6 peer-checked:bg-emerald-50 peer-checked:border-primary peer-checked:shadow-sm transition-all flex justify-between items-center group-hover:border-slate-300 relative overflow-hidden">
-                                <i class="fas fa-check-circle absolute right-6 top-1/2 -translate-y-1/2 text-primary text-2xl opacity-0 peer-checked:opacity-100 transition-opacity transform scale-50 peer-checked:scale-100 duration-300"></i>
-                                <div class="relative z-10 w-full pr-10">
-                                    <span class="block text-lg font-black text-slate-800 mb-1 leading-tight">Outside Dhaka</span>
-                                    <span class="block text-sm font-bold text-primary">৳{{$client->delivery_charge_outside ?? 120}} <span class="text-slate-400 font-semibold text-xs ml-1">(Standard)</span></span>
+                            <div class="bg-white border-2 border-slate-200 rounded-[2rem] p-6 peer-checked:bg-emerald-50 peer-checked:border-primary peer-checked:shadow-soft transition-all flex justify-between items-center group-hover:border-slate-300 relative overflow-hidden">
+                                <i class="fas fa-check-circle absolute right-6 top-1/2 -translate-y-1/2 text-primary text-3xl opacity-0 peer-checked:opacity-100 transition-opacity transform scale-50 peer-checked:scale-100 duration-300"></i>
+                                <div class="relative z-10 w-full pr-12">
+                                    <span class="block text-xl font-black text-slate-800 mb-1 leading-tight">Outside Dhaka</span>
+                                    <span class="block text-sm font-bold text-primary">৳{{$client->delivery_charge_outside ?? 120}} <span class="text-slate-400 font-semibold text-xs ml-1 bg-white px-2 py-0.5 rounded-full">(Standard)</span></span>
                                 </div>
                             </div>
                         </label>
@@ -123,7 +123,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 </div>
 
                 <div class="pt-8 mb-6 relative">
-                    <button type="submit" class="w-full bg-primary text-white py-5 rounded-2xl font-black text-xl hover:bg-emerald-600 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 flex items-center justify-center gap-3">
+                    <button type="submit" class="w-full bg-primary text-white py-5 pill-btn text-xl hover:bg-emerald-600 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30 flex items-center justify-center gap-3">
                         <i class="fas fa-truck-fast"></i> Confirm Order
                     </button>
                     <!-- badge -->

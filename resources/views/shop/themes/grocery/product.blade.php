@@ -17,7 +17,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         <span class="text-slate-800 truncate max-w-[200px] sm:max-w-xs">{{$product->name}}</span>
     </div>
 
-    <div class="bg-white rounded-[2.5rem] p-6 lg:p-12 shadow-sm border border-slate-100 mb-12">
+    <div class="grocer-card rounded-[2.5rem] p-6 lg:p-12 mb-12 border-0">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
             
             <!-- Left: Imagery Gallery -->
@@ -98,7 +98,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer group">
                                     <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
-                                    <span class="block px-5 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-slate-300">{{$c}}</span>
+                                    <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$c}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -112,7 +112,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer group">
                                     <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
-                                    <span class="block px-5 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-slate-300">{{$s}}</span>
+                                    <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$s}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -133,7 +133,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <button type="button" disabled class="flex-1 h-14 bg-slate-200 text-slate-400 rounded-xl font-black text-lg cursor-not-allowed">Product Unavailable</button>
                         @else
-                            <button type="submit" class="flex-1 h-14 bg-primary text-white rounded-xl font-black transition-all hover:bg-emerald-600 hover:shadow-lg hover:-translate-y-1 text-lg flex items-center justify-center gap-3 shadow-md">
+                            <button type="submit" class="flex-1 h-14 bg-primary text-white pill-btn text-lg flex items-center justify-center gap-3 shadow-md hover:bg-emerald-600 hover:shadow-lg">
                                 Buy Fresh Now <i class="fas fa-shopping-basket"></i>
                             </button>
                         @endif
@@ -147,7 +147,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     <!-- Details Section -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        <div class="lg:col-span-8 bg-white border border-slate-100 rounded-[2.5rem] p-8 md:p-12 shadow-sm">
+        <div class="lg:col-span-8 grocer-card rounded-[2.5rem] p-8 md:p-12 border-0">
             <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3"><i class="fas fa-apple-alt text-red-500"></i> What's Inside?</h2>
             <div class="prose prose-slate max-w-none text-base font-semibold text-slate-600 leading-relaxed">
                 {!! clean($product->description ?? $product->long_description) !!}

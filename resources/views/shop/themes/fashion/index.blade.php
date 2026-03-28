@@ -8,16 +8,17 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
 <!-- Vogue Style Hero Split -->
 @if($client->banner)
-<section class="w-full h-[70vh] md:h-[85vh] flex flex-col md:flex-row border-b border-gray-100">
-    <div class="w-full md:w-1/2 h-full bg-nude flex items-center justify-center p-8 md:p-16 relative">
-        <div class="max-w-md text-center md:text-left z-10 w-full">
-            <span class="block text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-4">Latest Arrival</span>
-            <h2 class="text-5xl md:text-7xl font-heading font-black leading-tight text-black mb-8 italic">{{$client->meta_title ?? 'New Season.'}}</h2>
-            <a href="#collection" class="inline-block border-b-2 border-primary text-xs font-bold uppercase tracking-widest pb-1 hover:text-gray-500 transition">Shop Now</a>
+<section class="w-full h-[70vh] md:h-[85vh] flex flex-col md:flex-row border-b border-gray-100 relative overflow-hidden">
+    <div class="w-full md:w-1/2 h-full bg-nude flex items-center justify-center p-8 md:p-16 relative z-10" x-data="{ loaded: false }" x-init="setTimeout(() => loaded = true, 100)">
+        <div class="max-w-md text-center md:text-left z-10 w-full transition-all duration-1000 ease-[cubic-bezier(0.2,0.8,0.2,1)] delay-300" :class="loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
+            <span class="block text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-4 tracking-[0.3em]">Latest Arrival</span>
+            <h2 class="text-5xl md:text-7xl lg:text-8xl font-heading font-black leading-[1.1] text-black mb-8 italic">{{$client->meta_title ?? 'New Season.'}}</h2>
+            <a href="#collection" class="inline-block border-b bg-transparent border-black text-xs font-bold uppercase tracking-[0.2em] pb-1.5 hover:text-gray-500 hover:border-gray-500 transition-all">Shop Now</a>
         </div>
     </div>
-    <div class="w-full md:w-1/2 h-full hidden md:block group overflow-hidden bg-gray-100 relative">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-top transform group-hover:scale-105 transition duration-[2s] ease-out">
+    <div class="w-full md:w-1/2 h-full absolute md:relative inset-0 md:inset-auto block group overflow-hidden bg-gray-100 z-0">
+        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-[3s] ease-out">
+        <div class="absolute inset-0 bg-white/30 md:hidden pointer-events-none"></div>
     </div>
 </section>
 @endif
@@ -37,9 +38,16 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
     <!-- Fashion Product Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-x-8 md:gap-y-16"
+        x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.vogue-item').forEach(el => {
+                setTimeout(() => { el.classList.remove('opacity-0', 'translate-y-12'); el.classList.add('vogue-fade-in'); }, delay);
+                delay += 100; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group block cursor-pointer">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="vogue-item opacity-0 group block cursor-pointer">
                 <!-- Fashion Tall Image -->
                 <div class="aspect-[2/3] md:aspect-[3/4] bg-[#f9f9f9] relative overflow-hidden mb-4">
                     @if($p->sale_price)
@@ -61,13 +69,13 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 </div>
                 
                 <!-- Fashion Info -->
-                <div class="text-center px-2">
-                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-[0.15em] mb-1">{{$p->category->name ?? 'Premium'}}</p>
-                    <h4 class="font-heading font-semibold text-base md:text-lg text-gray-900 leading-snug truncate">{{$p->name}}</h4>
-                    <div class="mt-2 text-sm font-medium tracking-wide">
+                <div class="text-center px-2 mt-6">
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-2">{{$p->category->name ?? 'Premium'}}</p>
+                    <h4 class="font-heading font-medium text-lg text-gray-900 leading-snug truncate group-hover:italic transition-all">{{$p->name}}</h4>
+                    <div class="mt-3 text-sm font-semibold tracking-widest">
                         <span class="text-black">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
                         @if($p->sale_price)
-                            <span class="text-red-500 ml-2">৳{{$p->regular_price}}</span>
+                            <del class="text-gray-400 ml-3 text-xs">৳{{$p->regular_price}}</del>
                         @endif
                     </div>
                 </div>

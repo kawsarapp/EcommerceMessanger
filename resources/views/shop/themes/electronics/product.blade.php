@@ -17,12 +17,13 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         <span class="text-white truncate max-w-[200px]">{{$product->name}}</span>
     </div>
 
-    <div class="bg-panel tech-border rounded-2xl p-4 md:p-8 lg:p-10 mb-10">
+    <div class="hud-panel neon-border rounded-2xl p-4 md:p-8 lg:p-10 mb-10 shadow-[0_0_20px_rgba(14,165,233,0.1)]">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
             
             <!-- Left: Imagery Gallery -->
             <div class="flex flex-col space-y-4">
-                <div class="w-full aspect-square bg-white rounded-xl relative p-8 flex items-center justify-center tech-border overflow-hidden">
+                <div class="w-full aspect-square bg-[#0a0f18] rounded-xl relative p-8 flex items-center justify-center border border-primary/20 overflow-hidden">
+                    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDM5LjVoNDBWNDBIMHptMzkuNSAwdjQwSDQwdi00MHoiIGZpbGw9InJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMikiLz48L3N2Zz4=')] opacity-50 z-0 pointer-events-none"></div>
                     <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply drop-shadow-xl transition-transform duration-500 scale-100 hover:scale-110">
                     
                     @if($product->sale_price)
@@ -32,13 +33,13 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     @endif
                 </div>
                 
-                <div class="flex gap-3 overflow-x-auto hide-scroll pb-2">
-                    <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-20 aspect-square bg-white rounded-lg p-2 flex items-center justify-center border-2 transition-colors shrink-0" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                <div class="flex gap-3 overflow-x-auto hide-scroll pb-2 mt-4 relative z-10">
+                    <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-20 aspect-square bg-[#0a0f18] rounded-lg p-2 flex items-center justify-center border transition-all shrink-0 hover:shadow-[0_0_10px_var(--tw-color-primary)]" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary neon-border' : 'border-gray-800 opacity-60 hover:opacity-100 hover:border-primary/50'">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </button>
                     @foreach($product->gallery ?? [] as $img)
-                    <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-20 aspect-square bg-white rounded-lg p-2 flex items-center justify-center border-2 transition-colors shrink-0" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'">
-                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                    <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-20 aspect-square bg-[#0a0f18] rounded-lg p-2 flex items-center justify-center border transition-all shrink-0 hover:shadow-[0_0_10px_var(--tw-color-primary)]" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary neon-border' : 'border-gray-800 opacity-60 hover:opacity-100 hover:border-primary/50'">
+                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain">
                     </button>
                     @endforeach
                 </div>
@@ -89,7 +90,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer group">
                                     <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only" required>
-                                    <span class="block px-5 py-2.5 rounded-lg border border-gray-700 bg-dark text-gray-400 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-gray-500">{{$c}}</span>
+                                    <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$c}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -106,7 +107,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer group">
                                     <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only" required>
-                                    <span class="block px-5 py-2.5 rounded-lg border border-gray-700 bg-dark text-gray-400 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-gray-500">{{$s}}</span>
+                                    <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$s}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -122,10 +123,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         </div>
                         
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 bg-gray-800 text-gray-500 rounded-xl font-bold font-mono uppercase tracking-widest text-sm cursor-not-allowed">Offline</button>
+                            <button type="button" disabled class="flex-1 bg-gray-900 border border-gray-800 text-gray-600 rounded-none font-bold font-mono uppercase tracking-widest text-sm cursor-not-allowed">SYS_OFFLINE</button>
                         @else
-                            <button type="submit" class="flex-1 bg-primary text-white rounded-xl font-bold bg-dark tech-glow tech-border transition-all hover:bg-white hover:text-black uppercase tracking-widest text-sm flex items-center justify-center gap-2">
-                                <i class="fas fa-rocket"></i> Initialize Checkout
+                            <button type="submit" class="flex-1 bg-primary/10 text-primary rounded-none font-bold neon-border transition-all hover:bg-primary hover:text-dark uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:shadow-[0_0_20px_var(--tw-color-primary)] group/btn relative overflow-hidden">
+                                <span class="absolute inset-0 w-full h-full bg-primary/20 -translate-x-full group-hover/btn:animate-[shimmer_1s_infinite]"></span>
+                                <i class="fas fa-terminal"></i> [ INIT CHECKOUT ]
                             </button>
                         @endif
                     </div>

@@ -50,9 +50,16 @@
     </div>
 
     <!-- Product Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12"
+         x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.premium-item').forEach(el => {
+                setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0) scale(1)'; }, delay);
+                delay += 100; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group block">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="premium-item opacity-0 translate-y-8 scale-95 group block transition-all duration-700 ease-out">
                 <!-- Image Wrapper -->
                 <div class="w-full aspect-[4/5] bg-gray-100 rounded-3xl mb-6 relative overflow-hidden isolate shadow-sm group-hover:shadow-xl transition-all duration-500">
                     

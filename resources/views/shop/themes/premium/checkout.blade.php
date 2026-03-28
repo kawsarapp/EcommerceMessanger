@@ -4,16 +4,24 @@
 @section('content')
 @php $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); @endphp
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="{ insideDhaka: true, qty: {{request('qty',1)}}, price: {{$product->sale_price ?? $product->regular_price}}, deliveryInside: {{$client->delivery_charge_inside ?? 60}}, deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, couponCode: '',
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="{ 
+    show: false,
+    insideDhaka: true, 
+    qty: {{request('qty',1)}}, 
+    price: {{$product->sale_price ?? $product->regular_price}}, 
+    deliveryInside: {{$client->delivery_charge_inside ?? 60}}, 
+    deliveryOutside: {{$client->delivery_charge_outside ?? 120}}, 
+    couponCode: '',
     couponDiscount: 0,
     couponApplied: false,
     couponError: '',
     termsAccepted: true,
     get subtotal() { return this.qty * this.price; },
     get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
-    get total() { return this.subtotal + this.delivery - this.couponDiscount; } }">
+    get total() { return this.subtotal + this.delivery - this.couponDiscount; } 
+}" x-init="setTimeout(() => show = true, 50)">
     
-    <div class="mb-12 text-center max-w-2xl mx-auto">
+    <div class="mb-12 text-center max-w-2xl mx-auto transition-all duration-700 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
         <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">Complete Your Order</h1>
         <p class="text-gray-500 font-medium">Please fill in your details below to place the order.</p>
     </div>
@@ -24,7 +32,7 @@
         </div>
     @endif
 
-    <div class="flex flex-col lg:flex-row gap-12 lg:gap-20">
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 transition-all duration-700 ease-out delay-150" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
         
         <!-- Left: Form -->
         <div class="lg:w-3/5">

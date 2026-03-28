@@ -50,14 +50,21 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
     <!-- Grocery Grid Layout -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
+        x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.grocery-item').forEach(el => {
+                setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0) scale(1)'; }, delay);
+                delay += 50; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group flex flex-col bg-white rounded-2xl md:rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-soft hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="grocery-item opacity-0 translate-y-8 scale-95 group flex flex-col grocer-card">
                 
                 <!-- Image Container -->
-                <div class="aspect-square bg-slate-50/50 relative p-6 flex items-center justify-center overflow-hidden">
+                <div class="aspect-square bg-slate-50/30 relative p-6 flex items-center justify-center overflow-hidden border-b border-primary/5">
                     @if($p->sale_price)
-                        <span class="absolute top-3 left-3 z-10 bg-secondary text-slate-900 text-xs font-black px-3 py-1 rounded-full shadow-md transform -rotate-3">Sale</span>
+                        <span class="absolute top-3 left-3 z-10 bg-secondary text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md transform -rotate-3">100% Organic</span>
                     @endif
                     
                     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
@@ -77,11 +84,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <div class="flex justify-between items-end mt-auto pt-2">
                         <div class="flex flex-col">
                             @if($p->sale_price)
-                                <del class="text-xs text-slate-400 font-bold mb-0.5">৳{{$p->regular_price}}</del>
+                                <del class="text-[11px] text-slate-400 font-bold mb-0.5 mt-2">৳{{$p->regular_price}}</del>
                             @endif
-                            <span class="font-black text-xl text-slate-900 tracking-tight">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
+                            <span class="font-black text-xl text-primary tracking-tight">৳{{number_format($p->sale_price ?? $p->regular_price)}} <span class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">/ Pack</span></span>
                         </div>
-                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-sm border border-slate-200 group-hover:border-primary">
+                        <div class="w-10 h-10 pill-btn bg-slate-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white group-hover:shadow-md border border-slate-200 group-hover:border-primary cursor-pointer border-2">
                             <i class="fas fa-plus"></i>
                         </div>
                     </div>

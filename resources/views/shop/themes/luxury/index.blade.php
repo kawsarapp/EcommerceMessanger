@@ -36,9 +36,16 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
     <!-- Luxury Product Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-20">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-20"
+         x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.lux-item').forEach(el => {
+                setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, delay);
+                delay += 150; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group block cursor-pointer text-center">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="lux-item opacity-0 translate-y-8 group block cursor-pointer text-center transition-all duration-[1.5s] ease-out">
                 <!-- Dark Imagry -->
                 <div class="aspect-square bg-surface mb-8 relative overflow-hidden transition-all duration-700">
                     <div class="absolute inset-0 bg-dark/10 group-hover:bg-transparent z-10 transition duration-500"></div>

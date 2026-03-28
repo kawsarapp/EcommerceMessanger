@@ -80,7 +80,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 </div>
 
                 <div class="pt-6">
-                    <button type="submit" class="w-full bg-primary text-white py-6 font-semibold text-xs tracking-[0.2em] uppercase hover:bg-black transition duration-300">
+                    <button type="submit" class="w-full bg-black text-white py-6 font-semibold text-xs tracking-[0.2em] uppercase hover:bg-gray-900 transition-transform duration-300 active:scale-95">
                         Complete Order
                     </button>
                     <p class="text-center text-[10px] text-gray-400 font-medium tracking-widest uppercase mt-6">Payment upon delivery.</p>

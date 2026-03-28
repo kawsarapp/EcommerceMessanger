@@ -7,6 +7,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
 @endphp
 
 <div class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24" x-data="{ 
+    show: false,
     insideDhaka: true, 
     qty: {{request('qty',1)}}, 
     price: {{$product->sale_price ?? $product->regular_price}}, 
@@ -20,9 +21,9 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     get subtotal() { return this.qty * this.price; },
     get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
     get total() { return this.subtotal + this.delivery - this.couponDiscount; } 
-}">
+}" x-init="setTimeout(() => show = true, 100)">
     
-    <div class="mb-16 md:mb-24 text-center">
+    <div class="mb-16 md:mb-24 text-center transition-all duration-[2s] ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
         <span class="text-[9px] font-bold uppercase tracking-[0.5em] text-primary mb-4 block">Secure Checkout</span>
         <h1 class="font-serif font-light text-5xl md:text-6xl text-white tracking-widest uppercase">The Final Detail</h1>
     </div>
@@ -33,7 +34,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
         </div>
     @endif
 
-    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24">
+    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 transition-all duration-[2.5s] ease-out delay-300" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
         
         <!-- Left: Form -->
         <div class="w-full lg:w-7/12">

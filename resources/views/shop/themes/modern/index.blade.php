@@ -36,9 +36,16 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
     <!-- Product Super Grid Layout -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16"
+         x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.mod-item').forEach(el => {
+                setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, delay);
+                delay += 80; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group block cursor-pointer">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="mod-item opacity-0 translate-y-6 group block cursor-pointer transition-all duration-500 ease-out">
                 <!-- Object Image -->
                 <div class="aspect-[4/5] bg-gray-100 mb-6 relative overflow-hidden modern-hover rounded-sm">
                     @if($p->sale_price)

@@ -7,12 +7,12 @@
 @endphp
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
-    <div class="bg-white rounded-[2.5rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100">
+    <div class="bg-white rounded-[2.5rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100" x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)">
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-stretch">
             
             <!-- ====== Image Gallery Gallery ====== -->
-            <div class="flex flex-col space-y-4">
+            <div class="flex flex-col space-y-4 transition-all duration-700 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
                 <!-- Main Image -->
                 <div class="aspect-[4/5] bg-gray-50 rounded-2xl overflow-hidden relative group">
                     @if($product->sale_price)
@@ -38,7 +38,7 @@
             </div>
 
             <!-- ====== Product Info & Add to Cart ====== -->
-            <div class="flex flex-col justify-center">
+            <div class="flex flex-col justify-center transition-all duration-700 ease-out delay-150" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
                 <!-- Breadcrumbs & Stock Status -->
                 <div class="flex items-center gap-3 mb-6">
                     <span class="text-sm font-bold text-primary bg-primary/10 px-4 py-1.5 rounded-full">{{$product->category->name ?? 'Premium Item'}}</span>
@@ -58,7 +58,6 @@
                         @if(($client->show_return_warranty ?? true) && !empty($product->return_policy))
                             <div class="w-1 h-1 bg-slate-300 rounded-full"></div>
                             <span class="text-orange-500"><i class="fas fa-undo text-[8px] mr-1"></i> {{ $product->return_policy }}</span>
-                        @endif
                         @endif
                     @endif
                 </div>

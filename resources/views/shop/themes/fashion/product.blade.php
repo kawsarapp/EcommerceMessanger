@@ -36,7 +36,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         
         <!-- Details & Checkout (Right) -->
         <div class="flex flex-col py-8">
-            <div class="mb-10 text-center lg:text-left">
+            <div class="mb-10 text-center lg:text-left border-b border-gray-100 pb-8">
                 <div class="text-3xl font-medium tracking-wide">
                     ৳{{number_format($product->sale_price ?? $product->regular_price)}}
                     @if($product->sale_price)
@@ -45,7 +45,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 </div>
             </div>
 
-            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="border-t border-gray-100 pt-10 space-y-10 flex-1">
+            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-10 flex-1">
                 
                 @if($product->colors)
                 <div>
@@ -54,7 +54,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @foreach($product->colors as $c)
                         <label class="cursor-pointer group">
                             <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
-                            <span class="block px-6 py-2 border border-gray-200 text-sm font-medium tracking-widest text-gray-500 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white transition group-hover:border-gray-400">{{$c}}</span>
+                            <span class="block px-6 py-2 border border-black text-sm font-medium tracking-widest text-black peer-checked:bg-black peer-checked:text-white transition-all duration-300 group-hover:bg-gray-50">{{$c}}</span>
                         </label>
                         @endforeach
                     </div>
@@ -68,7 +68,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @foreach($product->sizes as $s)
                         <label class="cursor-pointer group">
                             <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
-                            <span class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-sm font-medium text-gray-500 peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition group-hover:border-gray-400">{{$s}}</span>
+                            <span class="w-12 h-12 flex items-center justify-center rounded-full border border-black text-sm font-medium text-black peer-checked:bg-black peer-checked:text-white transition-all duration-300 group-hover:bg-gray-50">{{$s}}</span>
                         </label>
                         @endforeach
                     </div>
@@ -86,7 +86,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <button type="button" disabled class="w-full bg-gray-100 text-gray-400 py-5 font-semibold text-xs tracking-[0.2em] uppercase cursor-not-allowed text-center">Sold Out</button>
                     @else
                         @if($client->show_order_button ?? true)
-                            <button type="submit" class="w-full bg-primary text-white hover:bg-black py-5 font-semibold text-xs tracking-[0.2em] uppercase transition text-center">Add to Cart</button>
+                            <button type="submit" class="w-full bg-black text-white hover:bg-gray-900 py-5 font-semibold text-xs tracking-[0.2em] uppercase transition-transform active:scale-95 text-center">Add to Cart</button>
                             @endif
 
                             {{-- Chat Button --}}

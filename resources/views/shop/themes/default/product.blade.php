@@ -9,21 +9,22 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '', activeTab: 'description' }">
     
     <!-- Clean Breadcrumb -->
-    <nav class="mb-8 flex items-center text-xs font-bold uppercase tracking-wider text-slate-400 overflow-hidden">
+    <nav class="mb-8 flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 overflow-hidden bg-white/40 backdrop-blur-xl px-5 py-3.5 rounded-2xl w-fit border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <a href="{{$baseUrl}}" class="hover:text-primary premium-transition">Home</a>
         <i class="fas fa-chevron-right text-[10px] mx-3 text-slate-300"></i>
         <a href="{{$baseUrl}}?category={{$product->category->slug ?? ''}}" class="hover:text-primary premium-transition cursor-pointer">{{$product->category->name ?? 'Catalog'}}</a>
         <i class="fas fa-chevron-right text-[10px] mx-3 text-slate-300"></i>
-        <span class="text-slate-800 truncate">{{$product->name}}</span>
+        <span class="text-slate-900 truncate">{{$product->name}}</span>
     </nav>
 
-    <div class="bg-white rounded-[2rem] border border-slate-100 p-6 sm:p-10 lg:p-12 shadow-soft mb-16">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+    <div class="glass-panel rounded-[2.5rem] p-6 sm:p-10 lg:p-12 mb-16 relative group/product">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none premium-transition group-hover/product:scale-110"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 relative z-10">
             
             <!-- Gallery (Left) -->
-            <div class="lg:col-span-5 flex flex-col space-y-6">
+            <div class="lg:col-span-5 flex flex-col space-y-6 lg:sticky lg:top-32 lg:h-fit">
                 <!-- Main Focus Image -->
-                <div class="w-full aspect-square bg-slate-50/50 rounded-3xl relative p-8 flex items-center justify-center group overflow-hidden border border-slate-100">
+                <div class="w-full aspect-square bg-white/60 backdrop-blur-sm rounded-3xl relative p-8 flex items-center justify-center group overflow-hidden border border-white shadow-sm">
                     <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply premium-transition group-hover:scale-110 z-10 duration-[1.5s]">
                     
                     @if($product->sale_price)
@@ -120,9 +121,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <span class="text-xs font-bold text-slate-800 block mb-3 uppercase tracking-widest">Color Variation <span class="text-primary font-normal ml-2 capitalize" x-text="color"></span></span>
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->colors as $c)
-                                <label class="cursor-pointer relative group">
+                                <label class="cursor-pointer relative group block">
                                     <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only" required>
-                                    <span class="block px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:border-slate-900 peer-checked:text-white hover:border-slate-400">{{$c}}</span>
+                                    <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$c}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -134,9 +135,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <span class="text-xs font-bold text-slate-800 block mb-3 uppercase tracking-widest">Size Options <span class="text-primary font-normal ml-2 capitalize" x-text="size"></span></span>
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->sizes as $s)
-                                <label class="cursor-pointer">
+                                <label class="cursor-pointer block">
                                     <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only" required>
-                                    <span class="block px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:border-slate-900 peer-checked:text-white hover:border-slate-400">{{$s}}</span>
+                                    <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$s}}</span>
                                 </label>
                                 @endforeach
                             </div>
@@ -200,7 +201,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
     </div>
     
     <!-- Info Section with Tabs (Bottom) -->
-    <div class="bg-white border rounded-[2rem] border-slate-100 shadow-soft mb-16 overflow-hidden">
+    <div class="glass-panel border-white rounded-[2.5rem] mb-16 overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 pointer-events-none"></div>
         {{-- Tab Bar --}}
         <div class="flex border-b border-slate-100 overflow-x-auto hide-scroll">
             <button @click="activeTab = 'description'" 

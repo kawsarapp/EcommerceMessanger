@@ -66,9 +66,16 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     </div>
 
     <!-- Fun Product Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10"
+        x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.toy-item').forEach(el => {
+                setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0) scale(1)'; }, delay);
+                delay += 75; 
+            });
+        } }">
         @forelse($products as $p) 
-            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="group flex flex-col bg-white rounded-[2.5rem] border-4 border-transparent hover:border-primary/20 overflow-hidden shadow-cloud hover:shadow-float transform hover:-translate-y-2 transition-all duration-300 relative">
+            <a href="{{$baseUrl.'/product/'.$p->slug}}" class="toy-item opacity-0 translate-y-12 scale-90 group flex flex-col bg-white rounded-[2.5rem] border-4 border-transparent hover:border-funblue/30 overflow-hidden shadow-cloud hover:shadow-float transition-all duration-500 relative">
                 
                 @if($p->sale_price)
                     <div class="absolute top-4 left-4 z-20 bg-funyellow text-slate-800 text-sm font-black px-4 py-2 rounded-full shadow-md transform -rotate-12 border-2 border-white bouncy">

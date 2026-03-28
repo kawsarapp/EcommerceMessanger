@@ -7,6 +7,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
 @endphp
 
 <div class="max-w-[90rem] mx-auto px-6 py-16 md:py-24" x-data="{ 
+    show: false,
     insideDhaka: true, 
     qty: {{request('qty',1)}}, 
     price: {{$product->sale_price ?? $product->regular_price}}, 
@@ -20,9 +21,9 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     get subtotal() { return this.qty * this.price; },
     get delivery() { return this.insideDhaka ? this.deliveryInside : this.deliveryOutside; },
     get total() { return this.subtotal + this.delivery - this.couponDiscount; } 
-}">
+}" x-init="setTimeout(() => show = true, 50)">
     
-    <div class="mb-16 max-w-lg">
+    <div class="mb-16 max-w-lg transition-all duration-300 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
         <h1 class="text-4xl lg:text-5xl font-black tracking-tighter uppercase text-black mb-4">Checkout.</h1>
         <p class="text-gray-400 font-bold uppercase tracking-[0.15em] text-xs">Complete your purchase below.</p>
     </div>
@@ -33,7 +34,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 transition-all duration-500 ease-out delay-100" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'">
         
         <!-- Left: Form -->
         <div class="lg:col-span-7">

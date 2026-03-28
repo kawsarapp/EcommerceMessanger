@@ -15,10 +15,10 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)">
         
         <!-- Imagery Left Column (7 cols) -->
-        <div class="lg:col-span-7 flex flex-col-reverse md:flex-row gap-6">
+        <div class="lg:col-span-7 flex flex-col-reverse md:flex-row gap-6 transition-all duration-500 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
             <!-- Thumbnails Horizontal on Mobile, Vertical on Desktop -->
             <div class="flex md:flex-col gap-4 overflow-x-auto hide-scroll md:overflow-y-auto md:max-h-[80vh] w-full md:w-24 shrink-0">
                 <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="relative aspect-[3/4] w-20 md:w-full bg-gray-100 mb-2 focus:outline-none ring-1 ring-gray-200 hover:ring-black transition">
@@ -38,7 +38,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
         
         <!-- Info Right Column (5 cols) -->
-        <div class="lg:col-span-5 flex flex-col lg:sticky lg:top-32">
+        <div class="lg:col-span-5 flex flex-col lg:sticky lg:top-32 transition-all duration-500 ease-out delay-100" :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'">
             
             <div class="mb-8">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 block">{{$product->category->name ?? 'Essential'}}</span>

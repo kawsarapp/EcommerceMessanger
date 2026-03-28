@@ -38,7 +38,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
         <div class="w-full lg:w-7/12 order-2 lg:order-1">
             <h1 class="text-3xl font-black text-white tracking-tight mb-8">Initialize Order Process</h1>
             
-            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="bg-panel tech-border rounded-2xl p-6 md:p-10 space-y-10 group">
+            <form action="{{$baseUrl.'/checkout/process'}}" method="POST" class="hud-panel neon-border shadow-[0_0_20px_rgba(14,165,233,0.1)] rounded-2xl p-6 md:p-10 space-y-10 group">
                 @csrf
                 <input type="hidden" name="product_id" value="{{$product->id}}">
                 <input type="hidden" name="qty" :value="qty">
@@ -54,11 +54,11 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono">End User Name</label>
-                            <input type="text" name="customer_name" required class="bg-dark tech-border rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary transition font-medium" placeholder="E.g. System Admin">
+                            <input type="text" name="customer_name" required class="bg-dark/50 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:neon-border transition font-medium" placeholder="E.g. System Admin">
                         </div>
                         <div class="flex flex-col gap-2">
                             <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono">Mobile Comms (Phone)</label>
-                            <input type="tel" name="customer_phone" required class="bg-dark tech-border rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary transition font-mono tracking-widest" placeholder="01XXXXXXXXX">
+                            <input type="tel" name="customer_phone" required class="bg-dark/50 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:neon-border transition font-mono tracking-widest" placeholder="01XXXXXXXXX">
                         </div>
                     </div>
                 </div>
@@ -72,35 +72,35 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <label class="cursor-pointer">
                             <input type="radio" name="area" value="inside" @change="insideDhaka = true" class="peer hidden" checked>
-                            <div class="bg-dark border border-gray-800 rounded-xl p-5 peer-checked:bg-primary/5 peer-checked:border-primary peer-checked:shadow-[0_0_15px_rgba(14,165,233,0.15)] transition-all flex justify-between items-center group-hover:border-gray-700">
+                            <div class="bg-dark border border-gray-800 rounded-xl p-5 peer-checked:bg-primary/10 peer-checked:neon-border peer-checked:shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-all flex justify-between items-center hover:border-gray-600">
                                 <div>
                                     <span class="block text-sm font-bold text-white mb-1">Local Zone (Dhaka)</span>
                                     <span class="block text-[10px] font-mono uppercase text-gray-500 tracking-widest">Standard Delivery</span>
                                 </div>
-                                <span class="font-mono font-bold text-primary">৳{{$client->delivery_charge_inside ?? 60}}</span>
+                                <span class="font-mono font-bold text-primary neon-text">৳{{$client->delivery_charge_inside ?? 60}}</span>
                             </div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="area" value="outside" @change="insideDhaka = false" class="peer hidden">
-                            <div class="bg-dark border border-gray-800 rounded-xl p-5 peer-checked:bg-primary/5 peer-checked:border-primary peer-checked:shadow-[0_0_15px_rgba(14,165,233,0.15)] transition-all flex justify-between items-center group-hover:border-gray-700">
+                            <div class="bg-dark border border-gray-800 rounded-xl p-5 peer-checked:bg-primary/10 peer-checked:neon-border peer-checked:shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-all flex justify-between items-center hover:border-gray-600">
                                 <div>
                                     <span class="block text-sm font-bold text-white mb-1">Outer Rim</span>
                                     <span class="block text-[10px] font-mono uppercase text-gray-500 tracking-widest">Extended Delivery</span>
                                 </div>
-                                <span class="font-mono font-bold text-primary">৳{{$client->delivery_charge_outside ?? 120}}</span>
+                                <span class="font-mono font-bold text-primary neon-text">৳{{$client->delivery_charge_outside ?? 120}}</span>
                             </div>
                         </label>
                     </div>
 
                     <div class="flex flex-col gap-2 pt-2">
                         <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono">Coordinates / Address</label>
-                        <textarea name="shipping_address" required rows="3" class="bg-dark tech-border rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary transition font-medium" placeholder="Sector 7, Block B, Address"></textarea>
+                        <textarea name="shipping_address" required rows="3" class="bg-dark/50 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:neon-border transition font-medium" placeholder="Sector 7, Block B, Address"></textarea>
                     </div>
                 </div>
 
                 <div class="pt-6 border-t border-gray-800">
-                    <button type="submit" class="w-full bg-primary text-white py-5 rounded-xl font-bold tech-glow tech-border transition-all flex justify-center items-center gap-3 uppercase tracking-widest text-sm hover:bg-white hover:text-black">
-                        <i class="fas fa-lock"></i> Authorize Payment <span class="hidden sm:inline-block">— Cash on Delivery</span>
+                    <button type="submit" class="w-full bg-primary/20 text-primary py-5 rounded-none font-bold neon-border transition-all flex justify-center items-center gap-3 uppercase tracking-widest text-sm hover:bg-primary hover:text-dark shadow-[0_0_20px_rgba(14,165,233,0.2)] hover:shadow-[0_0_30px_rgba(14,165,233,0.6)]">
+                        <i class="fas fa-terminal"></i> AUTHORIZE PAYMENT <span class="hidden sm:inline-block">— Cash on Delivery</span>
                     </button>
                     <div class="flex justify-center gap-6 mt-6">
                         <span class="flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest"><i class="fas fa-shield-alt text-gray-400"></i> Secure Node</span>
@@ -112,7 +112,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
 
         <!-- Right: Order Summary Sidebar -->
         <div class="w-full lg:w-5/12 order-1 lg:order-2">
-            <div class="bg-panel border border-primary/20 rounded-2xl p-6 lg:p-8 sticky top-24 shadow-[0_0_30px_rgba(14,165,233,0.05)]">
+            <div class="hud-panel neon-border rounded-2xl p-6 lg:p-8 sticky top-28 shadow-[0_0_30px_rgba(14,165,233,0.05)]">
                 <div class="flex items-center gap-3 border-b border-gray-800 pb-4 mb-8">
                     <i class="fas fa-list-alt text-primary text-xl"></i>
                     <h3 class="font-bold text-white text-lg">System Cart</h3>
