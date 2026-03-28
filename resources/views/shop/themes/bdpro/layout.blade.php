@@ -151,14 +151,17 @@ $primary='#1a3673';
                 </div>
             </div>
 
-            {{-- Main Links --}}
             <div class="flex items-center ml-6 flex-1 gap-1">
-                <a href="{{$baseUrl}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is('/') ? 'text-yellow-400' : '' }}"><i class="fas fa-home"></i> Home</a>
-                <a href="{{$baseUrl}}?category=hot-deals" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-yellow-400"><i class="fas fa-fire"></i> Hot Deals</a>
-                <a href="{{$baseUrl}}?category=all" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">All Products</a>
-                <a href="#" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">About</a>
-                <a href="#" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">Contact</a>
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-white/90 hover:text-white"><i class="fas fa-truck-fast"></i> Track Order</a>
+                @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)
+                    @foreach($primaryMenu->items as $item)
+                        <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is(ltrim($item->resolved_url, '/')) ? 'text-yellow-400' : 'text-white/90 hover:text-white' }}">{{ $item->label }}</a>
+                    @endforeach
+                @else
+                    <a href="{{$baseUrl}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is('/') ? 'text-yellow-400' : '' }}"><i class="fas fa-home"></i> Home</a>
+                    <a href="{{$baseUrl}}?category=hot-deals" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-yellow-400"><i class="fas fa-fire"></i> Hot Deals</a>
+                    <a href="{{$baseUrl}}?category=all" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">All Products</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-white/90 hover:text-white"><i class="fas fa-truck-fast"></i> Track Order</a>
+                @endif
             </div>
         </div>
     </nav>
@@ -213,45 +216,47 @@ $primary='#1a3673';
                         </div>
                     </div>
 
-                    {{-- Quick Links --}}
                     <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">Quick Links</h4>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu1->name ?? 'Quick Links' }}</h4>
                         <ul class="space-y-3 text-sm text-gray-400">
-                            <li><a href="{{$baseUrl}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Home</a></li>
-                            <li><a href="{{$baseUrl}}?category=all" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Shop</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Special Offers</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> About Us</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Contact</a></li>
-                            <li><a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Track Order</a></li>
-                        </ul>
-                    </div>
-
-                    {{-- Categories --}}
-                    <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">Categories</h4>
-                        <ul class="space-y-3 text-sm text-gray-400">
-                            @if(isset($categories))
-                                @foreach($categories->take(6) as $c)
-                                <li><a href="{{$baseUrl}}?category={{$c->slug}}" class="hover:text-white transition flex items-center gap-2 line-clamp-1"><i class="fas fa-chevron-right text-[10px] text-primary"></i> {{$c->name}}</a></li>
+                            @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
+                                @foreach($footerMenu1->items as $item)
+                                    <li><a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> {{ $item->label }}</a></li>
                                 @endforeach
                             @else
-                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Smartphones</a></li>
-                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Laptops & Computers</a></li>
-                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Gaming</a></li>
-                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Audio & Headphones</a></li>
+                                <li><a href="{{$baseUrl}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Home</a></li>
+                                <li><a href="{{$baseUrl}}?category=all" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Shop</a></li>
+                                <li><a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Track Order</a></li>
                             @endif
                         </ul>
                     </div>
 
-                    {{-- Customer Service & Newsletter --}}
                     <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">Customer Service</h4>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu2->name ?? 'Categories' }}</h4>
+                        <ul class="space-y-3 text-sm text-gray-400">
+                            @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
+                                @foreach($footerMenu2->items as $item)
+                                    <li><a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="hover:text-white transition flex items-center gap-2 line-clamp-1"><i class="fas fa-chevron-right text-[10px] text-primary"></i> {{ $item->label }}</a></li>
+                                @endforeach
+                            @elseif(isset($categories))
+                                @foreach($categories->take(6) as $c)
+                                <li><a href="{{$baseUrl}}?category={{$c->slug}}" class="hover:text-white transition flex items-center gap-2 line-clamp-1"><i class="fas fa-chevron-right text-[10px] text-primary"></i> {{$c->name}}</a></li>
+                                @endforeach
+                            @endif
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu3->name ?? 'Customer Service' }}</h4>
                         <ul class="space-y-3 text-sm text-gray-400 mb-6">
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> FAQ</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Shipping Info</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Returns & Refunds</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Privacy Policy</a></li>
-                            <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Terms & Conditions</a></li>
+                            @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
+                                @foreach($footerMenu3->items as $item)
+                                    <li><a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> {{ $item->label }}</a></li>
+                                @endforeach
+                            @else
+                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Terms & Conditions</a></li>
+                                <li><a href="#" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-[10px] text-primary"></i> Privacy Policy</a></li>
+                            @endif
                         </ul>
                         
                         <h5 class="font-bold text-xs mb-3 text-white">Newsletter</h5>

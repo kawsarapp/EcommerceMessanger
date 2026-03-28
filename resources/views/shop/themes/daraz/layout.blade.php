@@ -107,11 +107,17 @@
             </div>
             
             <div>
-                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">কাস্টমার কেয়ার</h4>
+                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">{{ $footerMenu1->name ?? 'কাস্টমার কেয়ার' }}</h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">অর্ডার ট্র্যাক করুন</a>
-                    <a href="#" class="hover:text-primary transition">শিপিং পলিসি</a>
-                    <a href="#" class="hover:text-primary transition">রিটার্ন পলিসি</a>
+                    @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
+                        @foreach($footerMenu1->items as $item)
+                            <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="hover:text-primary transition">{{ $item->label }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">অর্ডার ট্র্যাক করুন</a>
+                        <a href="#" class="hover:text-primary transition">শিপিং পলিসি</a>
+                        <a href="#" class="hover:text-primary transition">রিটার্ন পলিসি</a>
+                    @endif
                 </div>
             </div>
 

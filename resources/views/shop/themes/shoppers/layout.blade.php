@@ -150,29 +150,34 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </a>
             </div>
 
-            {{-- Main Links (Right of Categories) --}}
             <div class="flex items-center pl-6 flex-1 gap-1">
-                <a href="{{$baseUrl}}" class="nav-link !text-shred {!! request()->is('/') ? 'border-b-2 border-shred' : '' !!}">HOME</a>
-                
-                <a href="{{$baseUrl}}?category=makeup" class="nav-link flex items-center gap-1 group">
-                    <span class="nav-badge badge-hot">Hot</span> MAKEUP SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
-                </a>
-                
-                <a href="{{$baseUrl}}?category=hair-care" class="nav-link flex items-center gap-1 group">
-                    <span class="nav-badge badge-sale">Sale</span> HAIR CARE SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
-                </a>
+                @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)
+                    @foreach($primaryMenu->items as $item)
+                        <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="nav-link {!! request()->is(ltrim($item->resolved_url, '/')) ? '!text-shred border-b-2 border-shred' : '' !!}">{{ mb_strtoupper($item->label) }}</a>
+                    @endforeach
+                @else
+                    <a href="{{$baseUrl}}" class="nav-link !text-shred {!! request()->is('/') ? 'border-b-2 border-shred' : '' !!}">HOME</a>
+                    
+                    <a href="{{$baseUrl}}?category=makeup" class="nav-link flex items-center gap-1 group">
+                        <span class="nav-badge badge-hot">Hot</span> MAKEUP SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
+                    </a>
+                    
+                    <a href="{{$baseUrl}}?category=hair-care" class="nav-link flex items-center gap-1 group">
+                        <span class="nav-badge badge-sale">Sale</span> HAIR CARE SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
+                    </a>
 
-                <a href="#" class="nav-link">MENS PRODUCTS</a>
-                
-                <a href="#" class="nav-link flex items-center gap-1">
-                    <span class="nav-badge badge-hot">Hot</span> HOT OFFERS!
-                </a>
-                
-                <a href="#" class="nav-link flex items-center gap-1">
-                    <span class="nav-badge badge-hot">Hot</span> COMBO
-                </a>
+                    <a href="#" class="nav-link">MENS PRODUCTS</a>
+                    
+                    <a href="#" class="nav-link flex items-center gap-1">
+                        <span class="nav-badge badge-hot">Hot</span> HOT OFFERS!
+                    </a>
+                    
+                    <a href="#" class="nav-link flex items-center gap-1">
+                        <span class="nav-badge badge-hot">Hot</span> COMBO
+                    </a>
 
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="nav-link">CLEARANCE <i class="fas fa-bolt text-yellow-500 ml-1"></i></a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="nav-link">CLEARANCE <i class="fas fa-bolt text-yellow-500 ml-1"></i></a>
+                @endif
             </div>
             
         </div>
@@ -244,36 +249,54 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                     {{-- Column 2 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">CUSTOMER SERVICE</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu1->name ?? 'CUSTOMER SERVICE') }}</h4>
                         <div class="mt-4">
-                            <a href="#" class="footer-link">Shipping & Returns</a>
-                            <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="footer-link">Track Your Order</a>
-                            <a href="#" class="footer-link">International Shipping</a>
-                            <a href="#" class="footer-link">Payment Method</a>
-                            <a href="#" class="footer-link">About Us</a>
+                            @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
+                                @foreach($footerMenu1->items as $item)
+                                    <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                                @endforeach
+                            @else
+                                <a href="#" class="footer-link">Shipping & Returns</a>
+                                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="footer-link">Track Your Order</a>
+                                <a href="#" class="footer-link">International Shipping</a>
+                                <a href="#" class="footer-link">Payment Method</a>
+                                <a href="#" class="footer-link">About Us</a>
+                            @endif
                         </div>
                     </div>
 
                     {{-- Column 3 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">MAKE MONEY WITH US</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu2->name ?? 'MAKE MONEY WITH US') }}</h4>
                         <div class="mt-4">
-                            <a href="#" class="footer-link">Become An Affiliate</a>
-                            <a href="#" class="footer-link">Become A Drop Shipper</a>
-                            <a href="#" class="footer-link">Become A Franchise</a>
-                            <a href="#" class="footer-link">Become A Retailer</a>
-                            <a href="#" class="footer-link">Become A Wholesaler</a>
+                            @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
+                                @foreach($footerMenu2->items as $item)
+                                    <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                                @endforeach
+                            @else
+                                <a href="#" class="footer-link">Become An Affiliate</a>
+                                <a href="#" class="footer-link">Become A Drop Shipper</a>
+                                <a href="#" class="footer-link">Become A Franchise</a>
+                                <a href="#" class="footer-link">Become A Retailer</a>
+                                <a href="#" class="footer-link">Become A Wholesaler</a>
+                            @endif
                         </div>
                     </div>
 
                     {{-- Column 4 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">TERMS & POLICY {{date('Y')}}</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu3->name ?? 'TERMS & POLICY '.date('Y')) }}</h4>
                         <div class="mt-4">
-                            <a href="#" class="footer-link">Terms & Condition Of Use</a>
-                            <a href="#" class="footer-link">Privacy Policy</a>
-                            <a href="#" class="footer-link">Delivery & Return Policy</a>
-                            <a href="#" class="footer-link">Same Day Express Delivery!</a>
+                            @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
+                                @foreach($footerMenu3->items as $item)
+                                    <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                                @endforeach
+                            @else
+                                <a href="#" class="footer-link">Terms & Condition Of Use</a>
+                                <a href="#" class="footer-link">Privacy Policy</a>
+                                <a href="#" class="footer-link">Delivery & Return Policy</a>
+                                <a href="#" class="footer-link">Same Day Express Delivery!</a>
+                            @endif
                         </div>
                     </div>
 

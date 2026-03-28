@@ -137,13 +137,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <span class="text-xs font-black text-gray-800 uppercase tracking-tight group-hover:text-swred transition">SHOP BY CATEGORY</span>
                 </div>
 
-                {{-- Horizontal Links --}}
                 <div class="flex items-center gap-1 xl:gap-3">
-                    <a href="{{$baseUrl}}" class="sw-nav-link {!! request()->is('/') ? '!text-swred border-b-swred' : '' !!}">GREAT DEALS</a>
-                    <a href="{{$baseUrl}}?category=unilever" class="sw-nav-link">UNILEVER-STOCK & SAVE</a>
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="sw-nav-link">BUY & SAVE MORE</a>
-                    <a href="#" class="sw-nav-link">OUR BRANDS</a>
-                    <a href="#" class="sw-nav-link">WOMEN'S CORNER</a>
+                    @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)
+                        @foreach($primaryMenu->items as $item)
+                        <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="sw-nav-link {!! request()->is(ltrim($item->resolved_url, '/')) ? '!text-swred border-b-swred' : '' !!}">{{ $item->label }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{$baseUrl}}" class="sw-nav-link {!! request()->is('/') ? '!text-swred border-b-swred' : '' !!}">GREAT DEALS</a>
+                        <a href="{{$baseUrl}}?category=all" class="sw-nav-link">ALL PRODUCTS</a>
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="sw-nav-link">TRACK ORDER</a>
+                    @endif
                 </div>
             </div>
 
@@ -194,32 +197,47 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </p>
                 </div>
 
-                {{-- Column 2: Information --}}
                 <div class="lg:col-span-1">
-                    <h4 class="footer-heading">Information</h4>
+                    <h4 class="footer-heading">{{ $footerMenu1->name ?? 'Information' }}</h4>
                     <div>
-                        <a href="#" class="footer-link">Office Address</a>
-                        <a href="#" class="footer-link">Shipping & returns</a>
-                        <a href="#" class="footer-link">About us</a>
-                        <a href="#" class="footer-link">Terms & Condition</a>
+                        @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
+                            @foreach($footerMenu1->items as $item)
+                                <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                            @endforeach
+                        @else
+                            <a href="#" class="footer-link">Office Address</a>
+                            <a href="#" class="footer-link">Shipping & returns</a>
+                            <a href="#" class="footer-link">About us</a>
+                            <a href="#" class="footer-link">Terms & Condition</a>
+                        @endif
                     </div>
                 </div>
 
-                {{-- Column 3: Customer Service --}}
                 <div class="lg:col-span-1">
-                    <h4 class="footer-heading">Customer Service</h4>
+                    <h4 class="footer-heading">{{ $footerMenu2->name ?? 'Customer Service' }}</h4>
                     <div>
-                        <a href="#" class="footer-link">Contact Us</a>
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="footer-link">Track Order</a>
+                        @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
+                            @foreach($footerMenu2->items as $item)
+                                <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                            @endforeach
+                        @else
+                            <a href="#" class="footer-link">Contact Us</a>
+                            <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="footer-link">Track Order</a>
+                        @endif
                     </div>
                 </div>
 
-                {{-- Column 4: My Account --}}
                 <div class="lg:col-span-1">
-                    <h4 class="footer-heading">My Account</h4>
+                    <h4 class="footer-heading">{{ $footerMenu3->name ?? 'My Account' }}</h4>
                     <div>
-                        <a href="#" class="footer-link">Sign In</a>
-                        <a href="#" class="footer-link">View Cart</a>
+                        @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
+                            @foreach($footerMenu3->items as $item)
+                                <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
+                            @endforeach
+                        @else
+                            <a href="#" class="footer-link">Sign In</a>
+                            <a href="#" class="footer-link">View Cart</a>
+                        @endif
                     </div>
                 </div>
 
