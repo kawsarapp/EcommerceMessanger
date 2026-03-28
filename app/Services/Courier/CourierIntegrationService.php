@@ -29,6 +29,28 @@ class CourierIntegrationService
     }
 
     /**
+     * 🔥 SYNC STATUS FROM COURIER LIVE
+     */
+    public function syncStatus(Order $order)
+    {
+        if (!$order->tracking_code || !$order->courier_name) {
+            return ['status' => 'error', 'message' => 'Tracking code or courier name is missing.'];
+        }
+
+        $courier = $order->courier_name;
+
+        if ($courier === 'steadfast') {
+            return $this->syncSteadfast($order);
+        } elseif ($courier === 'pathao') {
+            return $this->syncPathao($order);
+        } elseif ($courier === 'redx') {
+            return $this->syncRedx($order);
+        }
+
+        return ['status' => 'error', 'message' => 'Unsupported courier for syncing.'];
+    }
+
+    /**
      * 🚚 STEADFAST INTEGRATION
      */
     private function sendToSteadfast(Order $order, $client)
@@ -75,6 +97,41 @@ class CourierIntegrationService
             return ['status' => 'error', 'message' => $result['message'] ?? 'API Error'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Failed to connect to Steadfast Server.'];
+        }
+    }
+
+    private function syncSteadfast(Order $order)
+    {
+        $client = $order->client;
+        $apiKey = $client->steadfast_api_key;
+        $secretKey = $client->steadfast_secret_key;
+
+        if (empty($apiKey) || empty($secretKey)) return ['status' => 'error', 'message' => 'Steadfast credentials missing.'];
+        if ($apiKey === 'test_api_key') return ['status' => 'success', 'message' => 'Test Mode: Status is static.'];
+
+        try {
+            $response = Http::withHeaders(['Api-Key' => $apiKey, 'Secret-Key' => $secretKey])
+                ->get("https://portal.steadfast.com.bd/api/v1/status_by_cid/{$order->tracking_code}");
+            $result = $response->json();
+
+            if ($response->successful() && isset($result['delivery_status'])) {
+                $status = strtolower($result['delivery_status']);
+                $mappedStatus = $order->order_status;
+                
+                if (in_array($status, ['delivered', 'partial_delivered'])) {
+                    $mappedStatus = 'delivered';
+                } elseif (in_array($status, ['cancelled', 'returned'])) {
+                    $mappedStatus = 'cancelled';
+                }
+
+                if ($mappedStatus !== $order->order_status) {
+                    $order->update(['order_status' => $mappedStatus, 'admin_note' => "Status auto-synced from Steadfast: {$status}\n" . ($order->admin_note ?? '')]);
+                }
+                return ['status' => 'success', 'message' => "Synced. Current Steadfast Status: {$status}"];
+            }
+            return ['status' => 'error', 'message' => 'Invalid API Response from Steadfast'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => 'Failed to reach Steadfast.'];
         }
     }
 
@@ -131,6 +188,41 @@ class CourierIntegrationService
         }
     }
 
+    private function syncPathao(Order $order)
+    {
+        $client = $order->client;
+        $apiKey = $client->pathao_api_key;
+
+        if (empty($apiKey)) return ['status' => 'error', 'message' => 'Pathao credentials missing.'];
+        if ($apiKey === 'test_pathao_key') return ['status' => 'success', 'message' => 'Test Mode: Status is static.'];
+
+        try {
+            $response = Http::withToken($apiKey)->get("https://api-hermes.pathao.com/aladdin/api/v1/orders/{$order->tracking_code}");
+            $result = $response->json();
+
+            if ($response->successful() && isset($result['data']['order_status'])) {
+                $status = strtolower($result['data']['order_status']);
+                $mappedStatus = $order->order_status;
+
+                if (in_array($status, ['delivered', 'partial_delivery'])) {
+                    $mappedStatus = 'delivered';
+                } elseif (in_array($status, ['cancelled', 'returned', 'delivery_failed'])) {
+                    $mappedStatus = 'cancelled';
+                } elseif (str_contains($status, 'pickup') || str_contains($status, 'transit')) {
+                    $mappedStatus = 'shipped';
+                }
+
+                if ($mappedStatus !== $order->order_status) {
+                    $order->update(['order_status' => $mappedStatus, 'admin_note' => "Status auto-synced from Pathao: {$status}\n" . ($order->admin_note ?? '')]);
+                }
+                return ['status' => 'success', 'message' => "Synced. Current Pathao Status: {$status}"];
+            }
+            return ['status' => 'error', 'message' => 'Invalid API Response from Pathao'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => 'Failed to reach Pathao.'];
+        }
+    }
+
     /**
      * 🚚 REDX INTEGRATION
      */
@@ -177,6 +269,41 @@ class CourierIntegrationService
             return ['status' => 'error', 'message' => $result['message'] ?? 'RedX API Error'];
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Failed to connect to RedX Server.'];
+        }
+    }
+
+    private function syncRedx(Order $order)
+    {
+        $client = $order->client;
+        $token = $client->redx_api_token;
+
+        if (empty($token)) return ['status' => 'error', 'message' => 'RedX token missing.'];
+        if ($token === 'test_redx_key') return ['status' => 'success', 'message' => 'Test Mode: Status is static.'];
+
+        try {
+            $response = Http::withToken($token)->get("https://openapi.redx.com.bd/v1.0.0-beta/parcel/{$order->tracking_code}");
+            $result = $response->json();
+
+            if ($response->successful() && isset($result['parcel']['status'])) {
+                $status = strtolower($result['parcel']['status']);
+                $mappedStatus = $order->order_status;
+
+                if (in_array($status, ['delivered', 'partial_delivered'])) {
+                    $mappedStatus = 'delivered';
+                } elseif (in_array($status, ['cancelled', 'returned'])) {
+                    $mappedStatus = 'cancelled';
+                } elseif (str_contains($status, 'transit') || str_contains($status, 'dispatch')) {
+                    $mappedStatus = 'shipped';
+                }
+
+                if ($mappedStatus !== $order->order_status) {
+                    $order->update(['order_status' => $mappedStatus, 'admin_note' => "Status auto-synced from RedX: {$status}\n" . ($order->admin_note ?? '')]);
+                }
+                return ['status' => 'success', 'message' => "Synced. Current RedX Status: {$status}"];
+            }
+            return ['status' => 'error', 'message' => 'Invalid API Response from RedX'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => 'Failed to reach RedX.'];
         }
     }
 }

@@ -128,7 +128,7 @@ class OrderTableSchema
                 ->color('success')
                 ->requiresConfirmation()
                 // 🔥 FIX: এখন pending এবং processing দুই অবস্থাতেই বাটন শো করবে
-                ->visible(fn ($record) => in_array($record->order_status, ['pending', 'processing'])) 
+                ->visible(fn ($record) => in_array($record->order_status, ['pending', 'processing']) && empty($record->tracking_code)) 
                 ->action(function ($record) {
                     $result = app(\App\Services\Courier\CourierIntegrationService::class)->sendParcel($record);
                     
@@ -142,6 +142,28 @@ class OrderTableSchema
                     } else {
                         \Filament\Notifications\Notification::make()
                             ->title('Courier API Error')
+                            ->body($result['message'])
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            Action::make('sync_courier')
+                ->label('Sync Status')
+                ->icon('heroicon-o-arrow-path')
+                ->color('info')
+                ->visible(fn ($record) => !empty($record->tracking_code) && !empty($record->courier_name) && !in_array($record->order_status, ['delivered', 'cancelled']))
+                ->action(function ($record) {
+                    $result = app(\App\Services\Courier\CourierIntegrationService::class)->syncStatus($record);
+                    if ($result['status'] === 'success') {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Live Status Synced')
+                            ->body($result['message'])
+                            ->success()
+                            ->send();
+                    } else {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Sync Failed')
                             ->body($result['message'])
                             ->danger()
                             ->send();
@@ -197,6 +219,24 @@ class OrderTableSchema
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (Collection $records) => $records->each->update(['order_status' => 'shipped'])),
+
+                Tables\Actions\BulkAction::make('sync_courier_bulk')
+                    ->label('Sync API Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->action(function (Collection $records) {
+                        $synced = 0;
+                        foreach ($records as $record) {
+                            if (!empty($record->tracking_code) && !in_array($record->order_status, ['delivered', 'cancelled'])) {
+                                $res = app(\App\Services\Courier\CourierIntegrationService::class)->syncStatus($record);
+                                if ($res['status'] === 'success') $synced++;
+                            }
+                        }
+                        \Filament\Notifications\Notification::make()
+                            ->title("Synced {$synced} Orders")
+                            ->success()
+                            ->send();
+                    }),
 
                 // 📊 Google Sheet Export
                 Tables\Actions\BulkAction::make('export_google_sheet')

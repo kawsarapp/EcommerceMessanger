@@ -11,6 +11,9 @@ Artisan::command('inspire', function () {
 
 Schedule::command('cart:remind')->everyFiveMinutes();
 
+// 🚚 Live Courier Automated Background Synchronization (Runs Every Hour)
+Schedule::command('orders:sync-courier')->hourly();
+
 // প্রতি সোমবার রাত ৩টায় database cleanup (auto, non-interactive)
 Schedule::command('system:optimize --db')->weeklyOn(1, '03:00');
 

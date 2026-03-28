@@ -120,7 +120,41 @@ class CourierReportResource extends Resource
                     })
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(), // Sudhu view korbe, edit korar dorkar nai ekhane
+                Tables\Actions\Action::make('sync')
+                    ->label('Sync')
+                    ->tooltip('Fetch Live Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->visible(fn ($record) => !in_array($record->order_status, ['delivered', 'cancelled']))
+                    ->action(function ($record) {
+                        $result = app(\App\Services\Courier\CourierIntegrationService::class)->syncStatus($record);
+                        if ($result['status'] === 'success') {
+                            \Filament\Notifications\Notification::make()->title('Synced!')->success()->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()->title('Failed')->danger()->send();
+                        }
+                    }),
+                Tables\Actions\ViewAction::make(), 
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkAction::make('sync_courier_bulk')
+                    ->label('Sync API Statuses')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        $synced = 0;
+                        foreach ($records as $record) {
+                            if (!empty($record->tracking_code) && !in_array($record->order_status, ['delivered', 'cancelled'])) {
+                                $res = app(\App\Services\Courier\CourierIntegrationService::class)->syncStatus($record);
+                                if ($res['status'] === 'success') $synced++;
+                            }
+                        }
+                        \Filament\Notifications\Notification::make()
+                            ->title("Synced {$synced} Orders")
+                            ->success()
+                            ->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
             ]);
     }
 
