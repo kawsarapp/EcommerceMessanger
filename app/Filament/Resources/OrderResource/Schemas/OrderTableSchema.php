@@ -191,6 +191,72 @@ class OrderTableSchema
                         ->send();
                 }),
 
+            Action::make('fraud_check')
+                ->label('Fraud Check')
+                ->icon('heroicon-o-shield-exclamation')
+                ->color('danger')
+                ->action(function (Order $record) {
+                    $phone = preg_replace('/[^0-9]/', '', $record->customer_phone ?? '');
+                    
+                    if (strlen($phone) < 10) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Invalid Phone Number')
+                            ->body('This order has no valid phone number to check.')
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+
+                    try {
+                        $response = \Illuminate\Support\Facades\Http::withToken(config('services.bdcourier.api_key'))
+                            ->timeout(8)
+                            ->post('https://api.bdcourier.com/courier-check', [
+                                'phone' => $phone
+                            ]);
+
+                        $data = $response->json();
+
+                        if ($response->successful() && ($data['status'] ?? '') === 'success') {
+                            $couriers = $data['data']['couriers'] ?? [];
+
+                            if (empty($couriers)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('✅ No Courier Record Found')
+                                    ->body("Phone {$phone} has no courier history. Likely a new or low-risk customer.")
+                                    ->success()
+                                    ->persistent()
+                                    ->send();
+                                return;
+                            }
+
+                            $activeCouriers = collect($couriers)->where('status', 'active')->pluck('name')->join(', ');
+                            $allNames = collect($couriers)->pluck('name')->join(', ');
+                            $count = count($couriers);
+
+                            $riskLevel = $count >= 3 ? '🔴 HIGH RISK' : ($count >= 1 ? '🟡 MODERATE' : '🟢 LOW RISK');
+
+                            \Filament\Notifications\Notification::make()
+                                ->title("{$riskLevel} — {$count} Courier(s) Found")
+                                ->body("Phone: {$phone}\nActive on: {$activeCouriers}\nAll records: {$allNames}")
+                                ->warning()
+                                ->persistent()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('✅ Clean Record')
+                                ->body("Phone {$phone} has no known courier fraud record.")
+                                ->success()
+                                ->send();
+                        }
+                    } catch (\Exception $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('API Error')
+                            ->body('BDCourier API unreachable: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
             ActionGroup::make([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

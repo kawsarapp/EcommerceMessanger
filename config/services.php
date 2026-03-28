@@ -71,4 +71,9 @@ return [
         'api_url' => env('WHATSAPP_API_URL', 'http://127.0.0.1:3001'),
     ],
 
+    'bdcourier' => [
+        'api_key' => env('BDCOURIER_API_KEY'),
+        'base_url' => 'https://api.bdcourier.com',
+    ],
+
 ];
