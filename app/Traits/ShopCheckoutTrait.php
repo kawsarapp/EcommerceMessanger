@@ -152,6 +152,9 @@ trait ShopCheckoutTrait
             $product->saveQuietly();
         }
 
+        // 🔥 Server-Side Tracking (Meta CAPI & GA4)
+        app(\App\Services\ServerSideTrackingService::class)->dispatchPurchase($order);
+
         $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
         $redirectUrl = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
 

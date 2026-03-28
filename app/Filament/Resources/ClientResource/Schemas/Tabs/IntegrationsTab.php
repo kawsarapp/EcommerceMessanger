@@ -81,16 +81,56 @@ class IntegrationsTab
                         ->prefixIcon('heroicon-m-play'),
                 ])->columns(2),
 
-            Section::make('Tracking & Analytics')
-                ->description('ফেসবুক পিক্সেল বা অন্যান্য ট্র্যাকিং টুল সেটআপ করুন।')
-                ->icon('heroicon-o-chart-bar')
+            Section::make('Advanced Tracking & Analytics')
+                ->description('আপনার ওয়েবসাইটের ট্রাফিক এবং সেলস নিখুঁতভাবে ট্র্যাক করতে Facebook, Google এবং Tiktok এর API টোকেনগুলো यहाँ বসান। DataLayer এবং Server-side Tracking স্বয়ংক্রিয়ভাবে কাজ করবে।')
+                ->icon('heroicon-o-presentation-chart-line')
+                ->collapsible()
                 ->schema([
-                    TextInput::make('fb_pixel_id')
-                        ->label('Facebook Pixel ID')
-                        ->placeholder('e.g., 293847293847293')
-                        ->helperText('Your Meta Pixel ID for tracking conversions and page views.')
-                        ->prefixIcon('heroicon-o-code-bracket-square'),
-                ])->columns(1),
+                    Group::make()->schema([
+                        Placeholder::make('meta_title')->label('🔵 Facebook / Meta Tracking'),
+                        TextInput::make('fb_pixel_id')
+                            ->label('Facebook Pixel ID')
+                            ->placeholder('e.g. 293847293847293')
+                            ->helperText('Legacy Client-Side Pixel. Leave blank if using CAPI exclusively.'),
+                        TextInput::make('tracking_settings.fb_capi_token')
+                            ->label('Conversion API Access Token')
+                            ->password()
+                            ->revealable()
+                            ->placeholder('e.g. EAAGm0PX...'),
+                    ])->columns(2),
+
+                    Group::make()->schema([
+                        Placeholder::make('google_title')->label('🔴 Google Analytics & GTM'),
+                        TextInput::make('tracking_settings.gtm_id')
+                            ->label('Google Tag Manager ID')
+                            ->placeholder('e.g. GTM-XXXXXXX')
+                            ->helperText('Deploy native DataLayer immediately.'),
+                        TextInput::make('tracking_settings.ga4_measurement_id')
+                            ->label('GA4 Measurement ID')
+                            ->placeholder('e.g. G-XXXXXXX'),
+                        TextInput::make('tracking_settings.ga4_api_secret')
+                            ->label('GA4 Measurement API Secret')
+                            ->placeholder('Needed for Server-Side events'),
+                    ])->columns(3),
+
+                    Group::make()->schema([
+                        Placeholder::make('tiktok_title')->label('⚫ TikTok Tracking'),
+                        TextInput::make('tracking_settings.tiktok_pixel_id')
+                            ->label('TikTok Pixel ID')
+                            ->placeholder('e.g. CXXXXXX')
+                            ->columnSpan(1),
+                    ])->columns(2),
+
+                    Group::make()->schema([
+                        Placeholder::make('tools_title')->label('🛠️ Utilities & Heatmaps'),
+                        TextInput::make('tracking_settings.search_console_tag')
+                            ->label('Google Search Console Meta Tag')
+                            ->placeholder('e.g. sdfjkldsflkjewr3243...'),
+                        TextInput::make('tracking_settings.microsoft_clarity_id')
+                            ->label('Microsoft Clarity Project ID')
+                            ->placeholder('e.g. jfksdf32..'),
+                    ])->columns(2),
+                ]),
 
             Section::make('Facebook Connection')->schema([
                 Placeholder::make('fb_status')

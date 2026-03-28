@@ -53,6 +53,7 @@ class Client extends Model
         'popup_pages'                  => 'array',
         'seller_settings'              => 'array',
         'require_pre_chat_form'        => 'boolean',
+        'tracking_settings'            => 'array',
     ];
 
     /**

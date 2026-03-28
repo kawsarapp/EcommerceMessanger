@@ -11,6 +11,8 @@ $primary='#1a3673';
     <title>@yield('title')</title>
     <meta name="description" content="{{ $client->meta_description ?? $client->shop_name . ' - অনলাইন শপিং করুন সেরা দামে' }}">
     
+    @include('shop.partials.tracking', ['client' => $client])
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">

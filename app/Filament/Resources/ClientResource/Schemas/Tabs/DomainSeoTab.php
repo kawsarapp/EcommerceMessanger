@@ -119,9 +119,6 @@ class DomainSeoTab
                     ->label('Meta Title')
                     ->placeholder('Best Online Shop in BD')
                     ->maxLength(60),
-                TextInput::make('pixel_id')
-                    ->label('Facebook Pixel ID')
-                    ->numeric(),
                 Textarea::make('meta_description')
                     ->label('Meta Description')
                     ->rows(2)
