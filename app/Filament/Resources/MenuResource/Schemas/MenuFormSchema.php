@@ -11,6 +11,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Page;
 use Illuminate\Support\Str;
 
@@ -22,6 +23,15 @@ class MenuFormSchema
             Section::make('Menu Settings')
                 ->description('Configure the core properties of your navigation menu.')
                 ->schema([
+                    // SuperAdmin only: assign this menu to a specific shop
+                    Select::make('client_id')
+                        ->label('Assign to Shop')
+                        ->options(Client::orderBy('shop_name')->pluck('shop_name', 'id'))
+                        ->searchable()
+                        ->required()
+                        ->visible(fn () => auth()->user()?->isSuperAdmin())
+                        ->placeholder('Select a shop...'),
+
                     Grid::make(2)
                         ->schema([
                             TextInput::make('name')
