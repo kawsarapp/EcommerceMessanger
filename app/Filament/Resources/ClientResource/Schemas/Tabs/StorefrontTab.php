@@ -69,6 +69,7 @@ class StorefrontTab
                         'kids'        => 'Kids Corner (Toys & Baby Products)',
                         'premium'     => '✨ Ultra Premium VIP (Vibrant & Glassmorphism)',
                         'bdshop'      => '🇧🇩 BD Shop (Daraz/BDShop Style)',
+                        'bdpro'       => '🔵 BD Pro (Original BDShop Replica)',
                         'athletic'    => '⚡ Athletic (High Energy & Performance)',
                         'daraz'       => '🛍️ Daraz Classic (Marketplace Look)',
                     ])
