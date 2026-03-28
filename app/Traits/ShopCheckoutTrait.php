@@ -74,7 +74,27 @@ trait ShopCheckoutTrait
         ]);
 
         $product = \App\Models\Product::findOrFail($request->product_id);
-        $unitPrice = $product->sale_price ?? $product->regular_price;
+        
+        $variant = null;
+        if ($product->has_variants) {
+            $vQuery = \App\Models\ProductVariant::where('product_id', $product->id)->where('is_active', true);
+            if ($request->filled('color')) $vQuery->where('color', trim($request->color));
+            if ($request->filled('size')) $vQuery->where('size', trim($request->size));
+            $variant = $vQuery->first();
+        }
+
+        if ($variant) {
+            if ($variant->stock_quantity < $request->qty) {
+                return back()->with('error', 'Sorry, the requested variant is out of stock.');
+            }
+            $unitPrice = $variant->price > 0 ? $variant->price : ($product->sale_price ?? $product->regular_price);
+        } else {
+            if ($product->stock_quantity < $request->qty) {
+                return back()->with('error', 'Sorry, selected product is out of stock.');
+            }
+            $unitPrice = $product->sale_price ?? $product->regular_price;
+        }
+
         $subtotal = $unitPrice * $request->qty;
         
         $shipping = 0;
@@ -122,6 +142,15 @@ trait ShopCheckoutTrait
             'price' => $subtotal,
             'attributes' => ['color' => $request->color, 'size' => $request->size]
         ]);
+
+        // Deduct Securely
+        if ($variant) {
+            $variant->decrement('stock_quantity', $request->qty);
+        } else {
+            $product->decrement('stock_quantity', $request->qty);
+            $product->stock_status = $product->stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+            $product->saveQuietly();
+        }
 
         $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
         $redirectUrl = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);

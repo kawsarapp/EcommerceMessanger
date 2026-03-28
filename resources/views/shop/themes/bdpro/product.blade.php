@@ -12,7 +12,46 @@
     qty: 1, 
     color: '', 
     size: '',
-    tab: 'description'
+    tab: 'description',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: @json($product->has_variants ? $product->variants : []),
+    
+    get currentVariant() {
+        if (!this.hasVariants) return null;
+        let c = this.color ? this.color.trim() : null;
+        let s = this.size ? this.size.trim() : null;
+        
+        return this.variants.find(v => {
+            let matchesColor = c ? (v.color && v.color.trim() === c) : true;
+            let matchesSize = s ? (v.size && v.size.trim() === s) : true;
+            return matchesColor && matchesSize;
+        });
+    },
+    
+    get displayPrice() {
+        if (this.currentVariant && this.currentVariant.price > 0) {
+            return parseFloat(this.currentVariant.price).toLocaleString();
+        }
+        return '{{ number_format($product->sale_price ?? $product->regular_price) }}';
+    },
+
+    get stockStatus() {
+        if (this.hasVariants) {
+            if (!this.color && !this.size) return '{{ $product->stock_status }}';
+            if (this.currentVariant) {
+                return this.currentVariant.stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+            }
+            return 'out_of_stock';
+        }
+        return '{{ $product->stock_status }}';
+    },
+
+    get availableStock() {
+        if (this.hasVariants) {
+            return this.currentVariant ? this.currentVariant.stock_quantity : 0;
+        }
+        return {{ $product->stock_quantity ?? 0 }};
+    }
 }">
     <div class="max-w-[1400px] mx-auto px-4">
         
@@ -83,7 +122,7 @@
                 {{-- Pricing --}}
                 <div class="mb-5">
                     <div class="flex items-baseline gap-4">
-                        <span class="text-[40px] font-black text-[#1a85ff] leading-none tracking-tighter">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                        <span class="text-[40px] font-black text-[#1a85ff] leading-none tracking-tighter">৳<span x-text="displayPrice"></span></span>
                         @if($product->sale_price)
                         <div class="flex flex-col">
                             <del class="text-sm font-semibold text-gray-400">৳{{number_format($product->regular_price)}}</del>
@@ -95,17 +134,22 @@
 
                 {{-- Stock --}}
                 <div class="mb-8">
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
+                    <div x-show="stockStatus == 'out_of_stock'">
                         <div class="w-full h-1.5 bg-gray-200 rounded-full mb-2 overflow-hidden">
                             <div class="h-full bg-red-500 w-full"></div>
                         </div>
-                        <span class="text-xs font-bold text-red-500 flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> Out of stock</span>
-                    @else
+                        <span class="text-xs font-bold text-red-500 flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> Out of stock (Select another variation)</span>
+                    </div>
+
+                    <div x-show="stockStatus == 'in_stock'" style="display: none;">
                         <div class="w-full h-1.5 bg-gray-200 rounded-full mb-2 overflow-hidden">
                             <div class="h-full bg-green-500 w-[85%]"></div>
                         </div>
-                        <span class="text-xs font-bold text-green-600 flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> In stock <span class="text-gray-400 font-normal ml-1">({{rand(50, 1500)}} available)</span></span>
-                    @endif
+                        <span class="text-xs font-bold text-green-600 flex items-center gap-1">
+                            <i class="fas fa-circle text-[8px]"></i> In stock 
+                            <span class="text-gray-500 font-bold ml-1">(<span x-text="availableStock"></span> available)</span>
+                        </span>
+                    </div>
                 </div>
 
                 <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-6">
@@ -145,18 +189,18 @@
                         <div class="flex items-center inline-flex border border-gray-300 rounded shadow-sm">
                             <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-l border-r border-gray-200"><i class="fas fa-minus text-xs"></i></button>
                             <input type="number" name="qty" x-model="qty" class="w-14 h-10 text-center font-bold text-dark border-none focus:ring-0 p-0 m-0" readonly>
-                            <button type="button" @click="qty++" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-r border-l border-gray-200"><i class="fas fa-plus text-xs"></i></button>
+                            <button type="button" @click="if(qty < availableStock) qty++" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-r border-l border-gray-200"><i class="fas fa-plus text-xs"></i></button>
                         </div>
                     </div>
 
                     {{-- Action Buttons --}}
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 bg-gray-200 text-gray-500 py-3.5 rounded font-bold uppercase tracking-wider cursor-not-allowed text-sm">Out of Stock</button>
-                        @else
+                    <div class="gap-3 pt-4">
+                        <button type="button" x-show="stockStatus == 'out_of_stock'" disabled class="w-full bg-gray-200 text-gray-500 py-3.5 rounded font-bold uppercase tracking-wider cursor-not-allowed text-sm">Out of Stock</button>
+                        
+                        <div x-show="stockStatus == 'in_stock'" class="flex flex-col sm:flex-row gap-3 w-full" style="display: none;">
                             <button type="button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-lg font-bold text-sm transition shadow-sm flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Add to Order</button>
                             <button type="submit" class="flex-1 bg-bddeep hover:bg-[#111827] text-white py-3.5 rounded-lg font-bold text-sm transition shadow border border-transparent hover:border-white/10 flex items-center justify-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> Buy Now</button>
-                        @endif
+                        </div>
                     </div>
                 </form>
 

@@ -24,6 +24,7 @@ class Product extends Model
         'slug',
         'sub_category',
         'brand',
+        'has_variants',
         'tags',
         'regular_price',
         'sale_price',
@@ -62,6 +63,7 @@ class Product extends Model
         'colors' => 'array',
         'sizes' => 'array',
         'tags' => 'array',
+        'has_variants' => 'boolean',
         'is_featured' => 'boolean',
         'regular_price' => 'decimal:2',
         'sale_price' => 'decimal:2',
@@ -177,6 +179,11 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -194,5 +201,15 @@ class Product extends Model
     public function getImageUrlAttribute()
     {
         return $this->thumbnail ? asset('storage/' . $this->thumbnail) : asset('images/default-product.png');
+    }
+
+    public function recalculateStock()
+    {
+        if ($this->has_variants) {
+            $totalStock = $this->variants()->sum('stock_quantity');
+            $this->stock_quantity = $totalStock;
+            $this->stock_status = $totalStock > 0 ? 'in_stock' : 'out_of_stock';
+            $this->saveQuietly();
+        }
     }
 }

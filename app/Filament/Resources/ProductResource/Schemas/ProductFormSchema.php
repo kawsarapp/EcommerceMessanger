@@ -13,6 +13,7 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Group;
 use Illuminate\Support\Str;
@@ -128,7 +129,8 @@ class ProductFormSchema
                                         ->label('Sale Price')
                                         ->numeric()
                                         ->prefix('৳')
-                                        ->required(),
+                                        ->required()
+                                        ->helperText(fn (callable $get) => $get('has_variants') ? 'Base price. Variants can override this.' : ''),
                                         
                                     TextInput::make('regular_price')
                                         ->label('Regular Price')
@@ -140,6 +142,9 @@ class ProductFormSchema
                                         ->label('Stock Count')
                                         ->numeric()
                                         ->default(10)
+                                        ->disabled(fn (callable $get) => $get('has_variants'))
+                                        ->dehydrated(fn (callable $get) => !$get('has_variants'))
+                                        ->helperText(fn (callable $get) => $get('has_variants') ? 'Stock is auto-calculated from variants sum.' : '')
                                         ->required(),
                                         
                                     Toggle::make('is_featured')
@@ -156,12 +161,14 @@ class ProductFormSchema
                                             'pre_order' => '⏳ Pre Order',
                                         ])
                                         ->default('in_stock')
+                                        ->disabled(fn (callable $get) => $get('has_variants'))
+                                        ->dehydrated(fn (callable $get) => !$get('has_variants'))
                                         ->required(),
                                 ]),
                         ])->columnSpan(1),
                         
                     // Bottom Full Width (Basic Info & Variations)
-                    Section::make('Basic Information & Variations')
+                    Section::make('Basic Information & Routing')
                         ->schema([
                             Grid::make(2)->schema([
                                 TextInput::make('name')
@@ -209,24 +216,77 @@ class ProductFormSchema
                                     ->columnSpanFull(),
                             ]),
 
-                            Section::make('Variations (AI & Display)')
-                                ->description('কালার এবং সাইজ অ্যাড করলে কাস্টমার ডিটেইলস মডালে দেখতে পাবে।')
+                            Section::make('Display Attributes (Tags)')
+                                ->description('কালার এবং সাইজ অ্যাড করলে কাস্টমার ডিটেইলস মডালে দেখতে পাবে (These do not track unique inventory).')
+                                ->collapsible()
+                                ->collapsed()
                                 ->schema([
                                     Grid::make(3)->schema([
                                         TagsInput::make('colors')
                                             ->label('Colors')
-                                            ->placeholder('Add color & Enter')
-                                            ->helperText('Ex: Red, Blue, Black'),
+                                            ->placeholder('Add color & Enter'),
 
                                         TagsInput::make('sizes')
                                             ->label('Sizes')
-                                            ->placeholder('Add size & Enter')
-                                            ->helperText('Ex: M, L, XL, 42, 44'),
+                                            ->placeholder('Add size & Enter'),
 
                                         TextInput::make('material')
                                             ->label('Material')
                                             ->placeholder('e.g. 100% Cotton'),
                                     ]),
+                                ]),
+                                
+                            Section::make('Advanced Inventory Variations')
+                                ->description('Create explicit inventory matrix mapping precise SKU, Prices, and Stock caps per Color/Size combo.')
+                                ->schema([
+                                    Toggle::make('has_variants')
+                                        ->label('Enable Real-Time Variations')
+                                        ->inline(false)
+                                        ->live()
+                                        ->onColor('success'),
+                                        
+                                    Repeater::make('variants')
+                                        ->relationship()
+                                        ->visible(fn (callable $get) => $get('has_variants'))
+                                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data, callable $get) {
+                                            $user = auth()->user();
+                                            $data['client_id'] = $user->isSuperAdmin() ? $get('../../client_id') : ($user->client_id ?? $user->client->id ?? null);
+                                            return $data;
+                                        })
+                                        ->schema([
+                                            Grid::make(5)->schema([
+                                                TextInput::make('color')
+                                                    ->label('Color')
+                                                    ->placeholder('Red')
+                                                    ->columnSpan(1),
+                                                TextInput::make('size')
+                                                    ->label('Size')
+                                                    ->placeholder('XL')
+                                                    ->columnSpan(1),
+                                                TextInput::make('sku')
+                                                    ->label('Unique SKU')
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                                TextInput::make('price')
+                                                    ->label('Variant Price (৳)')
+                                                    ->numeric()
+                                                    ->placeholder('Base Price')
+                                                    ->columnSpan(1),
+                                                TextInput::make('stock_quantity')
+                                                    ->label('Stock Qty')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                            ]),
+                                            Toggle::make('is_active')
+                                                ->label('Available for Purchase')
+                                                ->default(true),
+                                        ])
+                                        ->columns(1)
+                                        ->collapsible()
+                                        ->defaultItems(1)
+                                        ->addActionLabel('Add New Variant'),
                                 ]),
                         ])->columnSpanFull(),
                 ]),
