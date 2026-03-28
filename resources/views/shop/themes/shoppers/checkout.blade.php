@@ -21,12 +21,21 @@
 </style>
 
 <div class="max-w-[1240px] mx-auto bg-[#fafafa]" x-data="{
+    shippingMethods: @json($shippingMethods ?? []),
+    shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
     area: 'inside', // 'inside', 'outside'
     paymentMethod: 'cod',
     qty: {{ request('qty', 1) }},
     price: {{ $product->sale_price ?? $product->regular_price }},
     
-    get delivery() { return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }}; },
+    get delivery() {
+        if (this.shippingMethods && this.shippingMethods.length > 0) {
+            let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
+            return sm ? parseFloat(sm.cost) : 0;
+        } else {
+            return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+        }
+    },
     get subtotal() { return this.qty * this.price; },
     
     couponCode: '', couponDiscount: 0, couponApplied: false, couponError: '',
@@ -64,6 +73,7 @@
             <input type="hidden" name="qty" :value="qty">
             @if(request('color'))<input type="hidden" name="color" value="{{ request('color') }}">@endif
             @if(request('size'))<input type="hidden" name="size" value="{{ request('size') }}">@endif
+            <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
             <input type="hidden" name="area" :value="area">
             <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
             <input type="hidden" name="coupon_discount" :value="couponDiscount">
@@ -94,35 +104,55 @@
 
                 {{-- Delivery Options --}}
                 <div class="sh-box shadow-sm">
-                    <div class="sh-box-title"><span class="bg-shred text-white w-6 h-6 rounded flex items-center justify-center text-xs">2</span> DELIVERY AREA</div>
+                    <div class="sh-box-title"><span class="bg-shred text-white w-6 h-6 rounded flex items-center justify-center text-xs">2</span> DELIVERY OPTION</div>
                     <div class="p-6 grid sm:grid-cols-2 gap-4">
-                        <label class="relative block">
-                            <input type="radio" name="_area_temp" value="inside" @change="area = 'inside'" class="peer hidden sh-radio-input" checked>
-                            <div class="sh-radio-btn h-full shadow-sm">
-                                <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
-                                    <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'inside'}"></div>
+                        @if(isset($shippingMethods) && $shippingMethods->count() > 0)
+                            @foreach($shippingMethods as $method)
+                            <label class="relative block">
+                                <input type="radio" name="_sm_temp" value="{{ $method->id }}" @change="shippingMethodId = {{ $method->id }}" class="peer hidden sh-radio-input" :checked="shippingMethodId == {{ $method->id }}">
+                                <div class="sh-radio-btn h-full shadow-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-[13px] font-bold text-gray-800">{{ $method->name }}</div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">{!! $method->cost > 0 ? 'TK '.number_format($method->cost) : 'Free' !!}</span></div>
+                                        @if($method->estimated_time)
+                                            <div class="text-[10px] text-gray-400 mt-1">{{ $method->estimated_time }}</div>
+                                        @endif
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <div class="text-[13px] font-bold text-gray-800">Inside Dhaka</div>
-                                    <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_inside ?? 50}}</span></div>
-                                    <div class="text-[10px] text-gray-400 mt-1">2-3 Working Days</div>
+                            </label>
+                            @endforeach
+                        @else
+                            <label class="relative block">
+                                <input type="radio" name="_area_temp" value="inside" @change="area = 'inside'" class="peer hidden sh-radio-input" :checked="area === 'inside'">
+                                <div class="sh-radio-btn h-full shadow-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'inside'}"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-[13px] font-bold text-gray-800">Inside Dhaka</div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_inside ?? 50}}</span></div>
+                                        <div class="text-[10px] text-gray-400 mt-1">2-3 Working Days</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
+                            </label>
 
-                        <label class="relative block">
-                            <input type="radio" name="_area_temp" value="outside" @change="area = 'outside'" class="peer hidden sh-radio-input">
-                            <div class="sh-radio-btn h-full shadow-sm">
-                                <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
-                                    <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'outside'}"></div>
+                            <label class="relative block">
+                                <input type="radio" name="_area_temp" value="outside" @change="area = 'outside'" class="peer hidden sh-radio-input" :checked="area === 'outside'">
+                                <div class="sh-radio-btn h-full shadow-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'outside'}"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-[13px] font-bold text-gray-800">Outside Dhaka</div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_outside ?? 100}}</span></div>
+                                        <div class="text-[10px] text-gray-400 mt-1">3-5 Working Days</div>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <div class="text-[13px] font-bold text-gray-800">Outside Dhaka</div>
-                                    <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_outside ?? 100}}</span></div>
-                                    <div class="text-[10px] text-gray-400 mt-1">3-5 Working Days</div>
-                                </div>
-                            </div>
-                        </label>
+                            </label>
+                        @endif
                     </div>
                 </div>
 

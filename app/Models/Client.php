@@ -141,6 +141,26 @@ class Client extends Model
         return $this->hasMany(Feedback::class);
     }
 
+    public function webhooks(): HasMany
+    {
+        return $this->hasMany(WebhookEndpoint::class);
+    }
+    
+    public function externalConnections(): HasMany
+    {
+        return $this->hasMany(ExternalStoreConnection::class);
+    }
+
+    public function menus(): HasMany
+    {
+        return $this->hasMany(Menu::class);
+    }
+    
+    public function shippingMethods(): HasMany
+    {
+        return $this->hasMany(ShippingMethod::class);
+    }
+
     // ==========================================
     // HELPER METHODS (Logic & Limits)
     // ==========================================

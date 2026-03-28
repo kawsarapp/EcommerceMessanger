@@ -8,6 +8,8 @@
 @endphp
 
 <div class="bg-[#f8f9fa] py-8" x-data="{
+    shippingMethods: @json($shippingMethods ?? []),
+    shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
     area: 'inside', // 'office', 'inside', 'outside'
     paymentMethod: 'cod', // COD for simplicity here representing 'Pay in 30 min'
     paymentType: 'full', // 'full', 'partial'
@@ -16,8 +18,13 @@
     
     // Variables for calculations
     get delivery() {
-        if(this.area === 'office') return 0;
-        return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+        if (this.shippingMethods && this.shippingMethods.length > 0) {
+            let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
+            return sm ? parseFloat(sm.cost) : 0;
+        } else {
+            if(this.area === 'office') return 0;
+            return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+        }
     },
     get subtotal() { return this.qty * this.price; },
     
@@ -79,6 +86,7 @@
                     <input type="hidden" name="qty" :value="qty">
                     @if(request('color'))<input type="hidden" name="color" value="{{ request('color') }}">@endif
                     @if(request('size'))<input type="hidden" name="size" value="{{ request('size') }}">@endif
+                    <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
                     <input type="hidden" name="area" :value="area">
                     <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
                     <input type="hidden" name="coupon_discount" :value="couponDiscount">
@@ -113,55 +121,82 @@
 
                     {{-- Select Delivery Area --}}
                     <div class="mb-8">
-                        <h2 class="text-sm font-semibold text-gray-800 mb-3">Select Delivery Area</h2>
+                        <h2 class="text-sm font-semibold text-gray-800 mb-3">Select Delivery Option</h2>
                         
-                        <div class="grid sm:grid-cols-3 gap-3">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="_area_selector" value="office" @change="area = 'office'" class="peer hidden" :checked="area === 'office'">
-                                <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'office'}"></div>
+                        @if(isset($shippingMethods) && $shippingMethods->count() > 0)
+                            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach($shippingMethods as $method)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="temp_sm" value="{{ $method->id }}" @change="shippingMethodId = {{ $method->id }}" class="peer hidden" :checked="shippingMethodId == {{ $method->id }}">
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-bdblue"></i> {{ $method->name }}</div>
+                                            <div class="text-xs text-gray-500 font-medium">{!! $method->cost > 0 ? '৳'.number_format($method->cost) : 'Free' !!}</div>
+                                            @if($method->estimated_time)
+                                                <div class="text-[9px] text-gray-400 mt-0.5"><i class="far fa-clock"></i> {{ $method->estimated_time }}</div>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-building text-gray-400"></i> Office Pickup</div>
-                                        <div class="text-xs text-gray-500 font-medium">Free</div>
+                                </label>
+                                @endforeach
+                            </div>
+                            <div class="mt-3 bg-blue-50/50 border border-blue-100 rounded-md py-2 px-3 flex items-center text-[10px] text-gray-600">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i> 
+                                Selected: <span class="font-bold text-gray-800 ml-1" x-text="shippingMethods.find(m => m.id == shippingMethodId)?.name"></span> 
+                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
+                            </div>
+                        @else
+                            <div class="grid sm:grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="_area_selector" value="office" @change="area = 'office'" class="peer hidden" :checked="area === 'office'">
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'office'}"></div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-building text-gray-400"></i> Office Pickup</div>
+                                            <div class="text-xs text-gray-500 font-medium">Free</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </label>
-                            
-                            <label class="cursor-pointer">
-                                <input type="radio" name="_area_selector" value="inside" @change="area = 'inside'" class="peer hidden" :checked="area === 'inside'">
-                                <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
+                                </label>
+                                
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="_area_selector" value="inside" @change="area = 'inside'" class="peer hidden" :checked="area === 'inside'">
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-blue-500"></i> Inside Dhaka</div>
+                                            <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_inside ?? 50}}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-blue-500"></i> Inside Dhaka</div>
-                                        <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_inside ?? 50}}</div>
-                                    </div>
-                                </div>
-                            </label>
+                                </label>
 
-                            <label class="cursor-pointer">
-                                <input type="radio" name="_area_selector" value="outside" @change="area = 'outside'" class="peer hidden" :checked="area === 'outside'">
-                                <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="_area_selector" value="outside" @change="area = 'outside'" class="peer hidden" :checked="area === 'outside'">
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-green-500"></i> Outside Dhaka</div>
+                                            <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_outside ?? 100}}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-green-500"></i> Outside Dhaka</div>
-                                        <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_outside ?? 100}}</div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                        
-                        <div class="mt-3 bg-blue-50/50 border border-blue-100 rounded-md py-2 px-3 flex items-center text-[10px] text-gray-600">
-                            <i class="fas fa-info-circle text-blue-500 mr-2"></i> Selected: <span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')" class="font-bold text-gray-800 ml-1"></span> 
-                            <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
-                            <span class="mx-2 text-gray-300">•</span> Time: Same day 
-                            <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-bdblue mr-1"></i> Free delivery above ৳10,000.00
-                        </div>
+                                </label>
+                            </div>
+                            
+                            <div class="mt-3 bg-blue-50/50 border border-blue-100 rounded-md py-2 px-3 flex items-center text-[10px] text-gray-600">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i> Selected: <span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')" class="font-bold text-gray-800 ml-1"></span> 
+                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
+                                <span class="mx-2 text-gray-300">•</span> Time: Same day 
+                                <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-bdblue mr-1"></i> Free delivery above ৳10,000.00
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Payment Method --}}
@@ -295,7 +330,14 @@
                             <div class="flex justify-between items-center"><span class="text-gray-500">Subtotal</span><span class="text-gray-700 font-semibold">৳<span x-text="subtotal.toLocaleString()"></span></span></div>
                             
                             <div class="flex justify-between items-center text-gray-500">
-                                <span class="flex items-center gap-1.5"><i class="fas fa-truck text-gray-400"></i> Delivery <span class="text-[9px] bg-gray-100 px-1 rounded ml-1 font-bold text-gray-500">(<span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')"></span>)</span></span>
+                                <span class="flex items-center gap-1.5"><i class="fas fa-truck text-gray-400"></i> Delivery 
+                                    <span class="text-[9px] bg-gray-100 px-1 rounded ml-1 font-bold text-gray-500" x-show="shippingMethods.length === 0">
+                                        (<span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')"></span>)
+                                    </span>
+                                    <span class="text-[9px] bg-gray-100 px-1 rounded ml-1 font-bold text-gray-500" x-show="shippingMethods.length > 0" style="display: none;">
+                                        (<span x-text="shippingMethods.find(m => m.id == shippingMethodId)?.name"></span>)
+                                    </span>
+                                </span>
                                 <span class="text-gray-700 font-semibold text-[11px]" :class="{'text-green-600 font-bold': delivery === 0}" x-text="delivery === 0 ? 'Free' : '৳'+delivery"></span>
                             </div>
                             

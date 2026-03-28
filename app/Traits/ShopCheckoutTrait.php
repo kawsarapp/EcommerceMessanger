@@ -24,8 +24,9 @@ trait ShopCheckoutTrait
         }
 
         $pages = $this->clientService->getActivePages($client->id);
+        $shippingMethods = \App\Models\ShippingMethod::where('client_id', $client->id)->where('is_active', true)->get();
 
-        return $this->themeView($client, 'checkout', compact('client', 'product', 'pages'));
+        return $this->themeView($client, 'checkout', compact('client', 'product', 'pages', 'shippingMethods'));
     }
 
     public function applyCoupon(Request $request)
@@ -65,7 +66,8 @@ trait ShopCheckoutTrait
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|min:11',
             'shipping_address' => 'required|string',
-            'area' => 'required|in:inside,outside',
+            'shipping_method_id' => 'nullable|exists:shipping_methods,id',
+            'area' => 'nullable|in:inside,outside',
             'product_id' => 'required|exists:products,id',
             'qty' => 'required|integer|min:1',
             'payment_method' => 'nullable|string|in:cod,partial,full'
@@ -75,7 +77,13 @@ trait ShopCheckoutTrait
         $unitPrice = $product->sale_price ?? $product->regular_price;
         $subtotal = $unitPrice * $request->qty;
         
-        $shipping = $request->area === 'inside' ? $client->delivery_charge_inside : $client->delivery_charge_outside;
+        $shipping = 0;
+        if ($request->filled('shipping_method_id')) {
+            $sm = \App\Models\ShippingMethod::where('client_id', $client->id)->where('id', $request->shipping_method_id)->first();
+            if ($sm) $shipping = $sm->cost;
+        } else {
+            $shipping = $request->area === 'inside' ? ($client->delivery_charge_inside ?? 0) : ($client->delivery_charge_outside ?? 0);
+        }
         $discount = 0;
         $couponCode = null;
 
