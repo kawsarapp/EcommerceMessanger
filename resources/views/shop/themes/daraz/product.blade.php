@@ -1,4 +1,4 @@
-@extends('shop.daraz.layout')
+@extends('shop.themes.daraz.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')

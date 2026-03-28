@@ -1,4 +1,4 @@
-@extends('shop.daraz.layout')
+@extends('shop.themes.daraz.layout')
 @section('title', 'অর্ডার ট্র্যাক | ' . $client->shop_name)
 
 @section('content')

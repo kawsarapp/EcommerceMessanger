@@ -1,4 +1,4 @@
-@extends('shop.daraz.layout')
+@extends('shop.themes.daraz.layout')
 @section('title', $client->shop_name . ' | সেরা দামে অনলাইন শপিং')
 
 @section('content')
