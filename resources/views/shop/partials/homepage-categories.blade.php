@@ -25,7 +25,7 @@ $homepageCategories = \App\Models\Category::where(function($q) use ($client) {
     @endphp
 
     @if($catProducts->count() > 0)
-    <section class="mb-16">
+    <section class="mb-16 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Category Banner (optional) --}}
         @if(!empty($cat->banner_image))
         <div class="mb-8 rounded-2xl overflow-hidden relative group">
