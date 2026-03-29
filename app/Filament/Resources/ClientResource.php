@@ -81,6 +81,7 @@ class ClientResource extends Resource
             Pages\EditStoreSync::class,
             Pages\EditWhatsAppApi::class,
             Pages\EditAdminPermissions::class,
+            Pages\EditFeatures::class,
         ]);
     }
 
@@ -100,6 +101,7 @@ class ClientResource extends Resource
             'store-sync' => Pages\EditStoreSync::route('/{record}/store-sync'),
             'whatsapp-api' => Pages\EditWhatsAppApi::route('/{record}/whatsapp-api'),
             'admin-permissions' => Pages\EditAdminPermissions::route('/{record}/admin-permissions'),
+            'features' => Pages\EditFeatures::route('/{record}/features'),
         ];
     }
 
