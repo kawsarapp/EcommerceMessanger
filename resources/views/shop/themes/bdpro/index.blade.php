@@ -71,7 +71,7 @@
     <div class="flex flex-col md:flex-row gap-4 mb-16">
         
         <div class="hero-card shadow-sm" style="background-image: url('https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');">
-            <div class="absolute top-6 w-full text-center z-10 px-4"><img src="https://ajkerdeal.com/images/category/flash.png" class="h-16 mx-auto mb-2 opacity-0"><h2 class="text-white font-black text-3xl leading-tight drop-shadow-lg">সুরক্ষিত<br>ওয়েবসাইট</h2></div>
+            <div class="absolute top-6 w-full text-center z-10 px-4"><img src="https://ajkerdeal.com/images/category/flash.png" class="h-16 mx-auto mb-2 opacity-0" loading="lazy"><h2 class="text-white font-black text-3xl leading-tight drop-shadow-lg">সুরক্ষিত<br>ওয়েবসাইট</h2></div>
             <div class="hero-card-content">
                 <h3 class="font-bold text-lg">Electronics Hub</h3>
                 <p class="text-xs text-white/80 mb-2">Latest gadgets</p>
@@ -138,7 +138,7 @@
                             @if($p->sale_price)<span class="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                             
                             <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
-                                <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                             </a>
                             <a href="{{$baseUrl.'/product/'.$p->slug}}">
                                 <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>
@@ -162,7 +162,7 @@
                         <div class="border border-gray-100 rounded p-3 hover:border-gray-300 transition group bg-white relative">
                             @if($p->sale_price)<span class="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}% OFF</span>@endif
                             <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
-                                <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                             </a>
                             <a href="{{$baseUrl.'/product/'.$p->slug}}">
                                 <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>
@@ -186,7 +186,7 @@
                             <span class="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">NEW</span>
                             @if($p->sale_price)<span class="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                             <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
-                                <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                                <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                             </a>
                             <a href="{{$baseUrl.'/product/'.$p->slug}}">
                                 <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>
@@ -228,7 +228,7 @@
                     @endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded-md overflow-hidden aspect-square flex items-center justify-center relative">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                     </a>
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="flex flex-col flex-1">

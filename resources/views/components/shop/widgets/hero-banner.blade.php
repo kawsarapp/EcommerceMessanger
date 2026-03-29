@@ -5,7 +5,7 @@
     <div class="w-full h-[35vh] md:h-[60vh] rounded-[2rem] overflow-hidden relative group shadow-sm" 
          style="{{ !empty($config['color']) ? 'background-color: '.$config['color'].';' : '' }}">
         
-        <img src="{{ asset('storage/'.$client->banner) }}" class="absolute inset-0 w-full h-full object-cover origin-center transition-transform duration-[1.5s] ease-out group-hover:scale-105">
+        <img src="{{ asset('storage/'.$client- loading="lazy">banner) }}" class="absolute inset-0 w-full h-full object-cover origin-center transition-transform duration-[1.5s] ease-out group-hover:scale-105">
         
         <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/40 to-transparent pointer-events-none"></div>
         

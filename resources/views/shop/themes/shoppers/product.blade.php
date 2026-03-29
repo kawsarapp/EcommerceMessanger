@@ -59,7 +59,7 @@
             {{-- Product Main Image --}}
             <div class="md:col-span-5 lg:col-span-4 flex flex-col items-center">
                 <div class="w-full aspect-[4/5] bg-white border border-gray-100 p-2 mb-2 flex items-center justify-center">
-                    <img :src="mainImg" class="max-w-full max-h-full object-contain">
+                    <img :src="mainImg" class="max-w-full max-h-full object-contain" loading="lazy">
                 </div>
                 <div class="bg-gray-500 text-white text-[11px] font-bold py-1.5 px-6 rounded-full flex items-center gap-2 opacity-80 mb-4 cursor-zoom-in hover:opacity-100">
                     <i class="fas fa-search-plus"></i> Hover to zoom
@@ -71,13 +71,13 @@
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                          :class="{ 'border-shred': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-16 h-16 bg-white border cursor-pointer p-1">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-contain">
                     </div>
                     @foreach($product->gallery as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
                          :class="{ 'border-shred': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
                          class="w-16 h-16 bg-white border cursor-pointer p-1">
-                        <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain">
+                        <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain" loading="lazy">
                     </div>
                     @endforeach
                 </div>
@@ -189,14 +189,14 @@
             {{-- Right Promo side banners (matching screenshot) --}}
             <div class="hidden lg:flex flex-col gap-4 lg:col-span-3">
                 <a href="#" class="block hover:opacity-90 transition border border-gray-100 shadow-sm relative overflow-hidden group">
-                    <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=300&h=200&q=80" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500">
+                    <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=300&h=200&q=80" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500" loading="lazy">
                     <div class="absolute top-0 right-0 bg-black text-white px-3 py-2 text-right">
                         <span class="text-[8px] uppercase tracking-widest block leading-tight">Discount<br>UP TO</span>
                         <span class="text-xl font-bold font-serif italic">20%</span>
                     </div>
                 </a>
                 <a href="#" class="block hover:opacity-90 transition border border-gray-100 shadow-sm relative overflow-hidden group">
-                    <img src="https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=300&h=200&q=80" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500">
+                    <img src="https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=300&h=200&q=80" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500" loading="lazy">
                     <div class="absolute top-0 right-0 bg-white border border-gray-200 text-dark px-3 py-2 text-right">
                         <span class="text-[8px] uppercase tracking-widest block leading-tight text-gray-500">GET UP TO</span>
                         <span class="text-xl font-bold font-serif italic">26%</span>
@@ -277,7 +277,7 @@
                     @if($p->sale_price)<span class="absolute top-4 left-4 bg-shred text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                     </a>
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">

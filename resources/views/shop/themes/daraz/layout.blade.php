@@ -61,7 +61,7 @@
             {{-- Logo --}}
             <a href="{{$baseUrl}}" class="flex items-center gap-2 shrink-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain">
+                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-12 object-contain">
                 @endif
                 <span class="shop-name-text text-xl md:text-2xl font-black text-primary uppercase">{{$client->shop_name}}</span>
             </a>

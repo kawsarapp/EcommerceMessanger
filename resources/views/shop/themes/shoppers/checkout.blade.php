@@ -189,7 +189,7 @@
                         {{-- Product Preview --}}
                         <div class="flex gap-4 border-b border-gray-100 pb-4 mb-4">
                             <div class="w-16 h-16 border border-gray-200 bg-white p-1 shrink-0">
-                                <img src="{{ asset('storage/'.$product->thumbnail) }}" class="w-full h-full object-contain">
+                                <img src="{{ asset('storage/'.$product- loading="lazy">thumbnail) }}" class="w-full h-full object-contain">
                             </div>
                             <div class="flex flex-col justify-center">
                                 <h4 class="text-xs font-medium text-gray-700 line-clamp-2 leading-tight mb-2">{{ $product->name }}</h4>

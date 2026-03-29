@@ -158,7 +158,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 <div class="flex gap-4 bg-slate-50 rounded-lg p-3 mb-5 relative">
                     <div class="absolute -top-2 -right-2 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold" x-text="qty"></div>
                     <div class="w-20 h-20 bg-white rounded-lg border p-1.5 shrink-0 flex items-center justify-center">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </div>
                     <div class="flex-1 py-1">
                         <h4 class="font-bold text-dark text-sm line-clamp-2 mb-1">{{$product->name}}</h4>

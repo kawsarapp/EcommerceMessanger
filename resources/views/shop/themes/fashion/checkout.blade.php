@@ -94,7 +94,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 <h3 class="font-heading font-semibold text-2xl mb-10 pb-4 border-b border-gray-200">Summary</h3>
                 
                 <div class="flex gap-6 mb-10">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-24 aspect-[3/4] object-cover border border-gray-200">
+                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-24 aspect-[3/4] object-cover border border-gray-200">
                     <div class="flex flex-col justify-center flex-1">
                         <h4 class="font-heading font-semibold text-xl mb-2">{{$product->name}}</h4>
                         

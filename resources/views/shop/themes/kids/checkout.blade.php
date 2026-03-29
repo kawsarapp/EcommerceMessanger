@@ -129,7 +129,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 
                 <div class="flex gap-6 mb-8 bg-white/10 p-4 rounded-3xl border-4 border-white/20 backdrop-blur-sm shadow-inner group">
                     <div class="w-24 h-24 bg-white rounded-2xl shrink-0 p-2 flex items-center justify-center border-4 border-slate-100 overflow-hidden relative shadow-sm bouncy transform -rotate-3">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-[90%] max-h-[90%] object-contain mix-blend-multiply group-hover:scale-110 transition duration-500">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-[90%] max-h-[90%] object-contain mix-blend-multiply group-hover:scale-110 transition duration-500">
                     </div>
                     <div class="flex flex-col justify-center flex-1 py-1 text-white">
                         <h4 class="font-heading text-xl leading-tight mb-2 drop-shadow-sm">{{$product->name}}</h4>

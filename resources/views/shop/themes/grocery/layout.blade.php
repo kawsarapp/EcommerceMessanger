@@ -73,7 +73,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">
             <a href="{{$baseUrl}}" class="flex items-center gap-2 group min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 group-hover:scale-105 transition">
+                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 group-hover:scale-105 transition">
                 @else
                     <div class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary text-lg flex-shrink-0">
                         <i class="fas fa-shopping-basket"></i>

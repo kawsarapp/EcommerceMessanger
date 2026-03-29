@@ -121,7 +121,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             {{-- Branding --}}
             <a href="{{$baseUrl}}" class="flex items-center gap-4 shrink-0 transition-transform active:scale-95">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-14 object-contain">
+                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 md:h-14 object-contain">
                 @endif
                 <span class="shop-name-text text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-dark">{{$client->shop_name}}</span>
             </a>

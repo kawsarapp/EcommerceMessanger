@@ -74,7 +74,7 @@
             {{-- Right: Image --}}
             @if(!empty($client->homepage_banner_image))
             <div class="w-full lg:w-2/5 flex-shrink-0">
-                <img src="{{ asset('storage/' . $client->homepage_banner_image) }}" class="w-full rounded-2xl shadow-2xl object-cover max-h-72 lg:max-h-80" alt="Offer Banner">
+                <img src="{{ asset('storage/' . $client- loading="lazy">homepage_banner_image) }}" class="w-full rounded-2xl shadow-2xl object-cover max-h-72 lg:max-h-80" alt="Offer Banner">
             </div>
             @endif
         </div>

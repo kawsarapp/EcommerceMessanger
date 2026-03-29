@@ -13,7 +13,7 @@
     <div class="absolute inset-0 bg-primary/20 blur-3xl z-0 transform -translate-y-1/2 scale-150"></div>
     <!-- Main Background -->
     <div class="absolute inset-0 z-10">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center" alt="Cover Banner">
+        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover object-center" alt="Cover Banner">
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
     </div>
     
@@ -72,7 +72,7 @@
                     <!-- Hover overlay gradient -->
                     <div class="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent opacity-0 group-hover:opacity-100 z-10 transition-opacity duration-300 pointer-events-none"></div>
                     
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="w-full h-full object-cover z-0 transform group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="w-full h-full object-cover z-0 transform group-hover:scale-110 transition-transform duration-700 ease-in-out">
                     
                     <!-- Quick view button dummy -->
                     <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">

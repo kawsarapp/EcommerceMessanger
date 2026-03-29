@@ -120,7 +120,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 
                 <div class="flex gap-4 mb-8">
                     <div class="w-20 aspect-square bg-white rounded-lg p-2 tech-border flex items-center justify-center shrink-0">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply">
                     </div>
                     <div class="flex flex-col justify-center flex-1">
                         <h4 class="font-bold text-gray-300 text-sm mb-2 leading-tight">{{$product->name}}</h4>

@@ -79,7 +79,7 @@ $primary='#1a3673';
                 {{-- Logo --}}
                 <a href="{{$baseUrl}}" class="flex items-center shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain" alt="{{$client->shop_name}}">
+                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-12 object-contain" alt="{{$client->shop_name}}">
                     @endif
                     <span class="text-bdblue font-extrabold text-xl ml-2 hidden sm:block">{{$client->shop_name}}</span>
                 </a>
@@ -199,7 +199,7 @@ $primary='#1a3673';
                     <div class="lg:col-span-2">
                         <div class="flex items-center gap-2 mb-4 shrink-0">
                             @if($client->logo)
-                                <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-10 object-contain rounded brightness-0 invert" alt="{{$client->shop_name}}">
+                                <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-10 object-contain rounded brightness-0 invert" alt="{{$client->shop_name}}">
                             @endif
                             <span class="text-white font-extrabold text-2xl uppercase tracking-tighter">{{$client->shop_name}}<sup class="text-[10px] font-normal">&trade;</sup></span>
                         </div>
@@ -280,10 +280,10 @@ $primary='#1a3673';
                     
                     <div class="flex items-center gap-3">
                         <span class="text-xs text-gray-400 mr-2">Secure Payment:</span>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-4 object-contain"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-3 object-contain"></div>
+                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain" loading="lazy"></div>
+                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-4 object-contain" loading="lazy"></div>
+                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain" loading="lazy"></div>
+                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-3 object-contain" loading="lazy"></div>
                     </div>
                 </div>
             </div>

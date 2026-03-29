@@ -10,7 +10,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @if($client->banner)
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8">
     <div class="w-full h-[35vh] md:h-[50vh] rounded-[2rem] overflow-hidden relative shadow-soft group border border-slate-100 bg-emerald-50">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-1000 ease-in-out">
+        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-1000 ease-in-out">
         
         <!-- Subtle Gradient for reading text -->
         <div class="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/30 to-transparent z-10"></div>
@@ -73,7 +73,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
                     <!-- Subtle backdrop circle -->
                     <div class="absolute w-2/3 h-2/3 bg-primary/5 rounded-full z-0 group-hover:scale-110 transition-transform duration-500"></div>
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
+                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
                 </div>
                 
                 <!-- Info Section -->

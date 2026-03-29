@@ -65,7 +65,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Logo / Shop Name --}}
                 <a href="{{$baseUrl}}" class="flex items-center gap-2 shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-10 object-contain rounded" alt="{{$client->shop_name}}">
+                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-10 object-contain rounded" alt="{{$client->shop_name}}">
                     @endif
                     <span class="text-white font-extrabold text-lg md:text-xl tracking-tight hidden sm:block">{{$client->shop_name}}</span>
                 </a>
@@ -172,8 +172,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div class="max-w-[1280px] mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <p class="text-slate-500 text-xs">&copy; {{date('Y')}} {{$client->shop_name}}। সর্বস্বত্ব সংরক্ষিত।</p>
                 <div class="flex items-center gap-3">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Visa_Logo.png/120px-Visa_Logo.png" class="h-5 opacity-40">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/120px-MasterCard_Logo.svg.png" class="h-5 opacity-40">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Visa_Logo.png/120px-Visa_Logo.png" class="h-5 opacity-40" loading="lazy">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/120px-MasterCard_Logo.svg.png" class="h-5 opacity-40" loading="lazy">
                     <span class="text-[10px] text-slate-500 font-bold border border-slate-600 px-2 py-0.5 rounded">ক্যাশ অন ডেলিভারি</span>
                 </div>
             </div>

@@ -10,7 +10,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @if($client->banner)
 <section class="max-w-[100rem] mx-auto px-4 sm:px-8 mt-8 mb-20 relative group overflow-hidden">
     <div class="w-full h-[60vh] md:h-[75vh] relative card-brutal overflow-hidden">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-1000 ease-in-out cursor-pointer filter grayscale hover:grayscale-0">
+        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-1000 ease-in-out cursor-pointer filter grayscale hover:grayscale-0">
         <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent flex flex-col justify-end p-8 md:p-16">
             <h2 class="text-6xl md:text-9xl text-white font-display font-bold uppercase leading-[0.85] tracking-tighter mix-blend-difference drop-shadow-2xl">
                 {{$client->meta_title ?? 'READY. SET. GO.'}}
@@ -70,7 +70,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         </div>
                     @endif
                     
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply group-hover:scale-125 transition duration-[1.5s] ease-in-out">
+                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply group-hover:scale-125 transition duration-[1.5s] ease-in-out">
                 </div>
                 
                 <!-- Aggressive Info Block -->

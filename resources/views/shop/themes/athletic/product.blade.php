@@ -24,7 +24,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         <!-- Left Column: Brutal Imagery (7/12) -->
         <div class="lg:col-span-7 flex flex-col font-sans transition-all duration-[600ms] ease-out delay-100" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'">
             <div class="w-full aspect-square md:aspect-[4/5] bg-gray-50 card-brutal relative group overflow-hidden mb-6 filter contrast-[1.05]">
-                <img :src="mainImg" class="w-full h-full object-cover mix-blend-multiply cursor-crosshair transform group-hover:scale-125 transition-transform duration-[2s] ease-in-out">
+                <img :src="mainImg" class="w-full h-full object-cover mix-blend-multiply cursor-crosshair transform group-hover:scale-125 transition-transform duration-[2s] ease-in-out" loading="lazy">
             </div>
             
             <!-- Brutal Thumbnails -->
@@ -32,14 +32,14 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      class="w-24 h-32 md:w-32 md:h-40 shrink-0 border-4 cursor-pointer transition-all skew-x-[4deg]"
                      :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary shadow-[4px_4px_0_111]' : 'border-dark opacity-60 hover:opacity-100'">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply">
+                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply">
                 </div>
                 
                 @foreach($product->gallery ?? [] as $img)
                 <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
                      class="w-24 h-32 md:w-32 md:h-40 shrink-0 border-4 cursor-pointer transition-all skew-x-[4deg]"
                      :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary shadow-[4px_4px_0_111]' : 'border-dark opacity-60 hover:opacity-100'">
-                    <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-cover mix-blend-multiply">
+                    <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-cover mix-blend-multiply" loading="lazy">
                 </div>
                 @endforeach
             </div>

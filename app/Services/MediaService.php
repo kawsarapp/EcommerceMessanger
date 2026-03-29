@@ -76,9 +76,9 @@ class MediaService
 
             Log::info("🎤 Voice Downloaded | ext:.{$ext} | size:" . strlen($body) . " bytes");
 
-            // ── Step 3: Whisper first, Gemini fallback ──────────────────────
-            $result = $this->transcribeWithWhisper($tempPath, $ext)
-                   ?? $this->transcribeWithGemini($body, $ext);
+            // ── Step 3: Gemini first, Whisper fallback ──────────────────────
+            $result = $this->transcribeWithGemini($body, $ext)
+                   ?? $this->transcribeWithWhisper($tempPath, $ext);
 
             @unlink($tempPath);
 
@@ -179,7 +179,7 @@ class MediaService
         try {
             /** @var \Illuminate\Http\Client\Response $response */
             $response = Http::timeout(40)->post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}",
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={$apiKey}",
                 [
                     'contents' => [[
                         'parts' => [

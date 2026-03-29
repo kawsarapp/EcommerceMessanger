@@ -106,7 +106,9 @@ class MenuFormSchema
                                             $clientId = $user->isSuperAdmin() ? request('client_id') : ($user->client_id ?? ($user->client->id ?? null));
 
                                             if ($get('type') === 'category') {
-                                                return Category::where('client_id', $clientId)->pluck('name', 'id');
+                                                return Category::where('is_global', true)
+                                                    ->orWhere('client_id', $clientId)
+                                                    ->pluck('name', 'id');
                                             }
                                             if ($get('type') === 'page') {
                                                 return Page::where('client_id', $clientId)->pluck('title', 'id');

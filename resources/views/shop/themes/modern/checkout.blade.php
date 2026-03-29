@@ -97,7 +97,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8 border-b border-gray-200 pb-4">Order Summary</h3>
                 
                 <div class="flex gap-6 mb-10 pb-8 border-b border-gray-200">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-20 aspect-[3/4] object-cover mix-blend-multiply border border-gray-200">
+                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-20 aspect-[3/4] object-cover mix-blend-multiply border border-gray-200">
                     <div class="flex flex-col justify-center">
                         <h4 class="font-bold text-gray-900 text-lg uppercase tracking-tight mb-2 leading-none">{{$product->name}}</h4>
                         

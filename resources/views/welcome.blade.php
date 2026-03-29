@@ -146,9 +146,9 @@
             <div class="mt-16 pt-10 border-t border-gray-200 dark:border-gray-800">
                 <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-6">যেসব প্ল্যাটফর্মে সরাসরি সাপোর্ট করে</p>
                 <div class="flex flex-wrap justify-center items-center gap-6 md:gap-12 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/archive/0/05/20191206121908%21Facebook_Messenger_logo_2013.svg" class="h-10 hover:scale-110 transition-transform" alt="Messenger">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" class="h-10 hover:scale-110 transition-transform" alt="WhatsApp">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/9d/WooCommerce_logo.svg" class="h-8 hover:scale-110 transition-transform" alt="WooCommerce">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/archive/0/05/20191206121908%21Facebook_Messenger_logo_2013.svg" class="h-10 hover:scale-110 transition-transform" alt="Messenger" loading="lazy">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png" class="h-10 hover:scale-110 transition-transform" alt="WhatsApp" loading="lazy">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/9d/WooCommerce_logo.svg" class="h-8 hover:scale-110 transition-transform" alt="WooCommerce" loading="lazy">
                     <div class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <i class="fab fa-node-js text-green-500"></i> Node.js
                     </div>

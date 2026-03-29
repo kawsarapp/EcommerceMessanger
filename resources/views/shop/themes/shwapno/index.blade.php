@@ -56,8 +56,17 @@
         {{-- Right Visual Area --}}
         <div class="flex-1 mt-4">
             {{-- Big Hero Banner mimicking "4 WAYS TO SAVE ON EVERY CART" --}}
-            <div class="w-full bg-swred relative overflow-hidden group cursor-pointer border border-red-700 flex items-center p-8 lg:p-12 mb-4 rounded-sm min-h-[160px] md:min-h-[260px]">
-                <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80" class="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay group-hover:scale-105 transition duration-[2s]">
+            @php
+                $heroActive = $client->widgets['hero_banner']['active'] ?? true;
+                $heroText = $client->widgets['hero_banner']['text'] ?? '4 WAYS\nTO SAVE\nON EVERY\nCART!';
+                $heroTextFormatted = nl2br(e($heroText));
+                $heroLink = $client->widgets['hero_banner']['link'] ?? '#';
+                $heroBg = $client->banner ? asset('storage/'.$client->banner) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80';
+            @endphp
+            
+            @if($heroActive)
+            <a href="{{ $heroLink }}" class="w-full bg-swred relative overflow-hidden group cursor-pointer border border-red-700 flex items-center p-8 lg:p-12 mb-4 rounded-sm min-h-[160px] md:min-h-[260px] block">
+                <img src="{{ $heroBg }}" class="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay group-hover:scale-105 transition duration-[2s]" loading="lazy">
                 <div class="relative z-10 w-full flex justify-between items-center h-full">
                     <div class="flex gap-2 lg:gap-4 h-full py-4 items-center">
                         <div class="bg-red-800 text-white w-14 lg:w-20 h-24 lg:h-36 -rotate-[15deg] flex flex-col items-center justify-center p-2 rounded shadow-lg border border-red-500/50">
@@ -75,48 +84,60 @@
                             <span class="text-4xl lg:text-6xl font-black shrink-0 leading-none mb-1">100</span>
                             <span class="text-sm lg:text-base font-bold tracking-widest leading-none">OFF</span>
                         </div>
-                        <div class="bg-red-700 text-white w-14 lg:w-20 h-24 lg:h-36 rotate-[15deg] flex flex-col items-center justify-center p-2 rounded shadow-lg border border-red-500/50">
-                            <span class="text-[10px] lg:text-xs">৳</span>
-                            <span class="text-xl lg:text-3xl font-black">50</span>
-                            <span class="text-[10px] lg:text-xs font-bold">OFF</span>
-                        </div>
                     </div>
                     
-                    <div class="hidden md:flex flex-col items-end text-white">
-                        <h2 class="text-3xl xl:text-5xl font-black text-right uppercase leading-none drop-shadow-md mb-2">
-                            <span class="text-2xl xl:text-4xl">4 WAYS</span><br>
-                            TO SAVE<br>
-                            ON EVERY<br>
-                            <span class="text-swyellow text-4xl xl:text-6xl tracking-tight">CART! <span class="bg-swyellow text-swred px-1 rounded inline-block rotate-[-5deg] text-3xl">%</span></span>
+                    <div class="hidden md:flex flex-col items-end text-white text-right drop-shadow-md relative z-20">
+                        <h2 class="text-3xl xl:text-5xl font-black uppercase leading-tight mb-2">
+                            {!! $heroTextFormatted !!}
                         </h2>
                         <button class="bg-white text-swred font-black px-6 py-2 rounded-full uppercase text-sm mt-4 hover:bg-gray-100 transition shadow">EXPLORE NOW</button>
                     </div>
                 </div>
-            </div>
+            </a>
+            @endif
             
-            {{-- Quick Product Tiles mimicking Eggs, Tea, Soft Drinks, etc. --}}
+            {{-- Quick Product Tiles --}}
             <div class="flex gap-4 overflow-x-auto pb-4 hide-scroll relative items-center group">
                 <button class="w-6 h-6 bg-swyellow rounded-sm hidden lg:flex items-center justify-center absolute left-0 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-xs"></i></button>
                 
-                @php $quickLinks = [
-                    ['name'=>'Eggs', 'img'=>'https://images.unsplash.com/photo-1587486913049-53fc88980bfc?w=200'],
-                    ['name'=>'Tea', 'img'=>'https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=200'],
-                    ['name'=>'Soft Drinks', 'img'=>'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200'],
-                    ['name'=>'Frozen', 'img'=>'https://images.unsplash.com/photo-1588147250640-1f33f6dc3d02?w=200'],
-                    ['name'=>'Coffee', 'img'=>'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=200']
-                ]; @endphp
+                @php 
+                    $clientId = $client->id;
+                    $featuredCats = \App\Models\Category::where(function($q) use ($clientId) {
+                        $q->where('client_id', $clientId)->orWhere('is_global', true);
+                    })->whereNotNull('banner_image')->where('is_visible', true)->take(6)->get();
+                @endphp
                 
-                @foreach($quickLinks as $q)
-                <a href="#" class="min-w-[140px] md:min-w-[180px] flex-1 flex flex-col items-center relative overflow-hidden rounded group shadow-sm">
-                    <div class="w-full h-32 md:h-44 overflow-hidden bg-gray-200">
-                        <img src="{{$q['img']}}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                    </div>
-                    {{-- The yellow overlapping pill text --}}
-                    <div class="absolute bottom-2 bg-swyellow text-swdark font-bold text-[11px] md:text-sm px-8 py-1.5 rounded-full inline-block text-center shadow whitespace-nowrap border border-yellow-300">
-                        {{$q['name']}}
-                    </div>
-                </a>
-                @endforeach
+                @if($featuredCats->count() > 0)
+                    @foreach($featuredCats as $c)
+                    <a href="{{$baseUrl}}?category={{$c->slug}}" class="min-w-[140px] md:min-w-[180px] flex-1 flex flex-col items-center relative overflow-hidden rounded group shadow-sm">
+                        <div class="w-full h-32 md:h-44 overflow-hidden bg-gray-200">
+                            <img src="{{ asset('storage/'.$c->banner_image) }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy" alt="{{$c->name}}">
+                        </div>
+                        <div class="absolute bottom-2 bg-swyellow text-swdark font-bold text-[11px] md:text-sm px-8 py-1.5 rounded-full inline-block text-center shadow whitespace-nowrap border border-yellow-300">
+                            {{$c->name}}
+                        </div>
+                    </a>
+                    @endforeach
+                @else
+                    {{-- Default fallback placeholder if no categories have banner images --}}
+                    @php $quickLinks = [
+                        ['name'=>'Eggs', 'img'=>'https://images.unsplash.com/photo-1587486913049-53fc88980bfc?w=200'],
+                        ['name'=>'Tea', 'img'=>'https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=200'],
+                        ['name'=>'Soft Drinks', 'img'=>'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200'],
+                        ['name'=>'Frozen', 'img'=>'https://images.unsplash.com/photo-1588147250640-1f33f6dc3d02?w=200'],
+                        ['name'=>'Coffee', 'img'=>'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=200']
+                    ]; @endphp
+                    @foreach($quickLinks as $q)
+                    <a href="#" class="min-w-[140px] md:min-w-[180px] flex-1 flex flex-col items-center relative overflow-hidden rounded group shadow-sm">
+                        <div class="w-full h-32 md:h-44 overflow-hidden bg-gray-200">
+                            <img src="{{$q['img']}}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy">
+                        </div>
+                        <div class="absolute bottom-2 bg-swyellow text-swdark font-bold text-[11px] md:text-sm px-8 py-1.5 rounded-full inline-block text-center shadow whitespace-nowrap border border-yellow-300">
+                            {{$q['name']}}
+                        </div>
+                    </a>
+                    @endforeach
+                @endif
                 
                 <button class="w-6 h-6 bg-swyellow rounded-sm hidden lg:flex items-center justify-center absolute right-0 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-xs"></i></button>
             </div>
@@ -169,7 +190,7 @@
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     
                     <div class="text-center mt-auto flex flex-col items-center">
@@ -203,15 +224,17 @@
     </div>
     
     {{-- PROMO BANNER (Full width) --}}
+    @if($client->homepage_banner_active && $client->homepage_banner_image)
     <div class="mb-16">
-        <a href="#" class="block w-full rounded overflow-hidden shadow-sm border border-gray-100 hover:opacity-95 transition relative">
-            <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&h=200&q=80" class="w-full h-32 md:h-48 object-cover object-center">
-            <div class="absolute inset-0 bg-blue-400/80 mix-blend-multiply"></div>
+        <a href="{{ $client->homepage_banner_link ?? '#' }}" class="block w-full rounded overflow-hidden shadow-sm hover:opacity-95 transition relative">
+            <img src="{{ asset('storage/'.$client->homepage_banner_image) }}" class="w-full h-32 md:h-48 object-cover object-center" loading="lazy">
+            <div class="absolute inset-0 bg-blue-900/40 mix-blend-multiply"></div>
             <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-white text-4xl md:text-7xl font-black italic tracking-tighter drop-shadow-md">BEST DEALS!</span>
+                <span class="text-white text-4xl md:text-6xl font-black italic tracking-tighter drop-shadow-md px-4 text-center">{!! nl2br(e($client->homepage_banner_title)) !!}</span>
             </div>
         </a>
     </div>
+    @endif
 
     {{-- DYNAMIC PRODUCTS SECTION 2 --}}
     <div class="mb-20">
@@ -223,7 +246,7 @@
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     
                     <div class="text-center mt-auto flex flex-col items-center">

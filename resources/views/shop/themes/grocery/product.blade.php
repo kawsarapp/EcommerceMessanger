@@ -27,7 +27,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <!-- Subtle decorative blob behind product -->
                     <div class="absolute w-3/4 h-3/4 bg-primary/5 rounded-full filter blur-xl z-0"></div>
                     
-                    <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply drop-shadow-lg transition-transform duration-500 scale-100 hover:scale-[1.05] z-10 relative">
+                    <img :src="mainImg" class="max-w-full max-h-full object-contain mix-blend-multiply drop-shadow-lg transition-transform duration-500 scale-100 hover:scale-[1.05] z-10 relative" loading="lazy">
                     
                     @if($product->sale_price)
                         <div class="absolute top-6 left-6 z-20 bg-secondary text-slate-900 font-black text-sm px-4 py-2 rounded-full shadow-md transform -rotate-3 flex items-center gap-2">
@@ -39,11 +39,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <!-- Thumbnails -->
                 <div class="flex gap-4 overflow-x-auto hide-scroll pb-2 px-1">
                     <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-24 aspect-square bg-slate-50 rounded-2xl p-2 flex items-center justify-center border-2 transition-all shrink-0 relative overflow-hidden group" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary shadow-sm' : 'border-slate-100 hover:border-slate-300'">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform">
                     </button>
                     @foreach($product->gallery ?? [] as $img)
                     <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-24 aspect-square bg-slate-50 rounded-2xl p-2 flex items-center justify-center border-2 transition-all shrink-0 relative overflow-hidden group" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary shadow-sm' : 'border-slate-100 hover:border-slate-300'">
-                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform">
+                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform" loading="lazy">
                     </button>
                     @endforeach
                 </div>

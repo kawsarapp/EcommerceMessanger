@@ -62,7 +62,7 @@
         <div class="flex justify-between items-start pb-8 border-b border-gray-100">
             <div class="w-1/2">
                 @if($client->logo)
-                    <img src="{{ asset('storage/' . $client->logo) }}" alt="Shop Logo" class="h-14 mb-3 object-contain">
+                    <img src="{{ asset('storage/' . $client- loading="lazy">logo) }}" alt="Shop Logo" class="h-14 mb-3 object-contain">
                 @endif
                 <h1 class="text-2xl font-extrabold text-gray-900">{{ $client->shop_name }}</h1>
                 @if($client->address)
@@ -83,7 +83,7 @@
                     $trackLink = $cleanDomain ? 'https://' . $cleanDomain . '/track?phone=' . urlencode($order->customer_phone) : route('shop.track', ['slug' => $client->slug, 'phone' => $order->customer_phone]);
                     $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($trackLink);
                 @endphp
-                <img src="{{ $qrUrl }}" alt="QR Code" class="w-24 h-24 rounded-lg border-2 border-gray-200 p-1 bg-white opacity-90 hidden sm:block">
+                <img src="{{ $qrUrl }}" alt="QR Code" class="w-24 h-24 rounded-lg border-2 border-gray-200 p-1 bg-white opacity-90 hidden sm:block" loading="lazy">
                 <div>
                     <h2 class="text-4xl font-black theme-text tracking-widest uppercase mb-2">INVOICE</h2>
                     <div class="inline-block text-left bg-gray-50 p-4 rounded-lg border border-gray-100">

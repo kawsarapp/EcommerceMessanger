@@ -34,55 +34,17 @@ class CategoryResource extends Resource
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-        if ($user->isSuperAdmin()) return true;
-
-        if ($user->isStaff()) {
-            return $user->hasStaffPermission('edit_products')
-                && $user->client?->canAccessFeature('allow_seller_categories');
-        }
-
-        // Seller can create PRIVATE categories only if plan allows
-        return $user->client
-            && $user->client->hasActivePlan()
-            && $user->client->canAccessFeature('allow_seller_categories');
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     public static function canEdit(Model $record): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-        if ($user->isSuperAdmin()) return true;
-
-        // Nobody can edit global categories except super admin
-        if ($record->is_global) return false;
-
-        if ($user->isStaff()) {
-            return $user->hasStaffPermission('edit_products')
-                && $user->client_id === $record->client_id;
-        }
-
-        return $user->client
-            && $record->client_id === $user->client->id
-            && $user->client->hasActivePlan();
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     public static function canDelete(Model $record): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-        if ($user->isSuperAdmin()) return true;
-
-        // Cannot delete global categories
-        if ($record->is_global) return false;
-
-        if ($user->isStaff()) {
-            return $user->hasStaffPermission('delete_products')
-                && $user->client_id === $record->client_id;
-        }
-
-        return $user->client && $record->client_id === $user->client->id;
+        return auth()->user()?->isSuperAdmin() ?? false;
     }
 
     // ── Query Isolation ────────────────────────────────────

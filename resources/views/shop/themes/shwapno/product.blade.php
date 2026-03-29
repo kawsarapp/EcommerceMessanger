@@ -52,7 +52,7 @@
             @if($product->sale_price)<span class="absolute top-0 left-4 bg-green-600 text-white text-[11px] font-bold px-2 py-0.5 z-10 rounded-sm shadow-sm opacity-90">New</span>@endif
             
             <div class="w-full aspect-square border border-gray-100 p-4 mb-4 flex items-center justify-center relative bg-white">
-                <img :src="mainImg" class="max-w-full max-h-full object-contain">
+                <img :src="mainImg" class="max-w-full max-h-full object-contain" loading="lazy">
                 <div class="absolute bottom-4 right-4 text-gray-400 opacity-60"><i class="fas fa-search"></i></div>
             </div>
 
@@ -62,13 +62,13 @@
                 <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      :class="{ 'border-swred': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                      class="w-16 h-16 bg-white border cursor-pointer p-1.5 rounded-sm">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
+                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-contain">
                 </div>
                 @foreach($product->gallery as $img)
                 <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
                      :class="{ 'border-swred': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
                      class="w-16 h-16 bg-white border cursor-pointer p-1.5 rounded-sm">
-                    <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain">
+                    <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain" loading="lazy">
                 </div>
                 @endforeach
             </div>
@@ -182,8 +182,8 @@
                     <div class="bg-gray-50 px-3 py-2 text-[10px] font-bold text-gray-700 flex justify-between items-center border-b border-gray-200">
                         Other Payment Methods
                         <div class="flex gap-1">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-3 object-contain opacity-50">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain opacity-50">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-3 object-contain opacity-50" loading="lazy">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain opacity-50" loading="lazy">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 divide-x divide-gray-200 bg-white">
@@ -229,7 +229,7 @@
             @forelse($similar as $p)
                 <div class="sw-card group/card">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-32 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
                         <span class="text-[9px] italic text-gray-400 mb-1">Delivery 1-2 hours</span>
@@ -263,7 +263,7 @@
                 <div class="sw-card group/card">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
                         <span class="text-[10px] italic text-gray-400 mb-1">Delivery 1-2 hours</span>

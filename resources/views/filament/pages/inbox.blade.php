@@ -3,7 +3,7 @@
     {{-- ======================== LIGHTBOX MODAL ======================== --}}
     <div id="lightbox" onclick="this.classList.add('hidden')"
          class="hidden fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center cursor-zoom-out p-4 backdrop-blur-sm">
-        <img id="lightbox-img" src="" class="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl object-contain" />
+        <img id="lightbox-img" src="" class="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl object-contain"  loading="lazy" />
         <button onclick="document.getElementById('lightbox').classList.add('hidden')"
                 class="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,7 +155,7 @@
                                         @if($chat->attachment_url)
                                             <div class="{{ $chat->user_message ? 'mt-2' : '' }}">
                                                 @if($isImage)
-                                                    <img src="{{ $chat->attachment_url }}"
+                                                    <img src="{{ $chat- loading="lazy">attachment_url }}"
                                                          onclick="openLightbox('{{ $chat->attachment_url }}')"
                                                          class="max-w-[220px] rounded-lg border dark:border-gray-700 shadow-sm cursor-zoom-in hover:opacity-90 transition"
                                                          alt="Image" loading="lazy" />
@@ -193,7 +193,7 @@
                                         @if($chat->attachment_url && is_null($chat->user_message))
                                             <div class="{{ $chat->bot_response ? 'mt-2' : '' }}">
                                                 @if($isImage)
-                                                    <img src="{{ $chat->attachment_url }}"
+                                                    <img src="{{ $chat- loading="lazy">attachment_url }}"
                                                          onclick="openLightbox('{{ $chat->attachment_url }}')"
                                                          class="max-w-[220px] rounded-lg shadow-sm border border-white/20 cursor-zoom-in hover:opacity-90 transition"
                                                          alt="Image" loading="lazy" />

@@ -91,7 +91,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Logo --}}
                 <a href="{{$baseUrl}}" class="flex items-center shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain bg-white rounded p-1" alt="{{$client->shop_name}}">
+                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 md:h-12 object-contain bg-white rounded p-1" alt="{{$client->shop_name}}">
                     @else
                         <!-- Text Logo if no image -->
                         <div class="text-white font-black text-2xl flex items-center gap-2">
@@ -322,10 +322,10 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 <div class="flex flex-col items-end">
                     <div class="flex gap-2 mb-2">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
                     </div>
                     <div class="text-[9px] text-gray-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</div>
                 </div>

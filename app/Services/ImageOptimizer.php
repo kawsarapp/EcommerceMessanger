@@ -14,8 +14,8 @@ class ImageOptimizer
 
     // WebP supported browser গুলো এটি অনেক ছোট করে
     private const CONFIGS = [
-        'product_thumbnail' => ['width' => 800,  'height' => 800,  'quality' => 78, 'format' => 'webp'],
-        'product_gallery'   => ['width' => 1200, 'height' => 1200, 'quality' => 80, 'format' => 'webp'],
+        'product_thumbnail' => ['width' => 500,  'height' => 500,  'quality' => 80, 'format' => 'webp'],
+        'product_gallery'   => ['width' => 500,  'height' => 500,  'quality' => 80, 'format' => 'webp'],
         'shop_logo'         => ['width' => 400,  'height' => 400,  'quality' => 85, 'format' => 'webp'],
         'shop_banner'       => ['width' => 1600, 'height' => 600,  'quality' => 80, 'format' => 'webp'],
         'default'           => ['width' => 1200, 'height' => 1200, 'quality' => 80, 'format' => 'webp'],
@@ -47,8 +47,8 @@ class ImageOptimizer
             $image = $this->manager->read($fullPath);
         }
 
-        // Resize (aspect ratio maintain করে, crop করবে না)
-        $image->scaleDown($config['width'], $config['height']);
+        // Resize (Force exactly 500x500 width/height cropped)
+        $image->cover($config['width'], $config['height']);
 
         // Encode
         $encoded = $image->toWebp($config['quality']);
@@ -84,7 +84,7 @@ class ImageOptimizer
 
                 $config = self::CONFIGS[$preset] ?? self::CONFIGS['default'];
                 $image  = $this->manager->read($fullPath);
-                $image->scaleDown($config['width'], $config['height']);
+                $image->cover($config['width'], $config['height']);
                 $encoded = $image->toWebp($config['quality']);
 
                 // पुराना ফাইল মুছে, নতুন webp দিয়ে replace করা

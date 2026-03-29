@@ -107,7 +107,7 @@
                 <h3 class="text-xl font-bold text-gray-900 mb-8 border-b border-gray-200 pb-4">Order Summary</h3>
                 
                 <div class="flex gap-6 mb-8 group">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-24 h-32 object-cover rounded-xl shadow-sm border border-gray-100 group-hover:scale-105 transition">
+                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-24 h-32 object-cover rounded-xl shadow-sm border border-gray-100 group-hover:scale-105 transition">
                     <div class="flex flex-col justify-center">
                         <h4 class="font-bold text-gray-900 text-lg leading-snug mb-2">{{$product->name}}</h4>
                         

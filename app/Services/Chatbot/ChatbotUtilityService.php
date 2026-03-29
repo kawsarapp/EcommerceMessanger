@@ -73,7 +73,7 @@ class ChatbotUtilityService
 
                 // মডেল নাম ডাইনামিক করা হলো
                 $modelIdentifier = match($selectedModel) {
-                    'gemini-pro'      => 'gemini-1.5-flash',        // Fast & free
+                    'gemini-pro'      => 'gemini-2.5-pro',        // Fast & free
                     'gemini-pro-full' => 'gemini-2.0-flash-lite',   // Latest & powerful (not deprecated)
                     'gemini-2.5-flash'=> 'gemini-2.5-flash',
                     'gemini-2.5-pro'  => 'gemini-2.5-pro',
@@ -81,7 +81,7 @@ class ChatbotUtilityService
                     'gemini-3.1-pro-preview'        => 'gemini-3.1-pro-preview',
                     'gemini-3.1-flash-lite-preview' => 'gemini-3.1-flash-lite-preview',
                     'gemini-2.5-flash-image'        => 'gemini-2.5-flash-image',
-                    default           => 'gemini-1.5-flash',
+                    default           => 'gemini-2.5-pro',
                 };
 
                 $response = Http::timeout(30)->post("https://generativelanguage.googleapis.com/v1beta/models/{$modelIdentifier}:generateContent?key={$geminiKey}", [

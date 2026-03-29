@@ -2,7 +2,7 @@
     <div class="aspect-square bg-slate-50 rounded-xl overflow-hidden shadow-sm border border-slate-200 relative group cursor-zoom-in"
          @click="showZoomModal = true">
         
-        <img :src="mainImage" class="w-full h-full object-contain p-4 md:p-8 mix-blend-multiply group-hover:scale-105 transition-transform duration-500">
+        <img :src="mainImage" class="w-full h-full object-contain p-4 md:p-8 mix-blend-multiply group-hover:scale-105 transition-transform duration-500" loading="lazy">
         
         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-slate-900/5">
             <div class="bg-slate-900/90 text-white p-4 rounded-full shadow-2xl backdrop-blur-sm">
@@ -21,14 +21,14 @@
         <div @click="mainImage = '{{ asset('storage/' . $product->thumbnail) }}'" 
              class="w-20 h-20 flex-shrink-0 rounded-lg border-2 cursor-pointer overflow-hidden bg-slate-50 p-1.5 transition-all"
              :class="mainImage === '{{ asset('storage/' . $product->thumbnail) }}' ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-slate-200 hover:border-slate-300'">
-            <img src="{{ asset('storage/' . $product->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply">
+            <img src="{{ asset('storage/' . $product- loading="lazy">thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply">
         </div>
         @if($product->gallery)
             @foreach($product->gallery as $img)
             <div @click="mainImage = '{{ asset('storage/' . $img) }}'" 
                  class="w-20 h-20 flex-shrink-0 rounded-lg border-2 cursor-pointer overflow-hidden bg-slate-50 p-1.5 transition-all"
                  :class="mainImage === '{{ asset('storage/' . $img) }}' ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-slate-200 hover:border-slate-300'">
-                <img src="{{ asset('storage/' . $img) }}" class="w-full h-full object-contain mix-blend-multiply">
+                <img src="{{ asset('storage/' . $img) }}" class="w-full h-full object-contain mix-blend-multiply" loading="lazy">
             </div>
             @endforeach
         @endif

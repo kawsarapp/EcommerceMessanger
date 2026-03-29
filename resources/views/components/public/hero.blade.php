@@ -43,7 +43,7 @@
                     <div class="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-inner">
-                                <img src="https://ui-avatars.com/api/?name=Customer&background=random" alt="Customer Avatar">
+                                <img src="https://ui-avatars.com/api/?name=Customer&background=random" alt="Customer Avatar" loading="lazy">
                             </div>
                             <div>
                                 <h3 class="font-bold text-sm">Sharmin Akter</h3>

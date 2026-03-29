@@ -63,7 +63,7 @@
         <div class="flex-1 flex flex-col md:flex-row gap-4">
             {{-- Big Banner --}}
             <div class="flex-1 bg-yellow-50 relative overflow-hidden group cursor-pointer border border-gray-100 flex items-center justify-center p-8 min-h-[300px] md:min-h-[400px]">
-                <img src="https://images.unsplash.com/photo-1596462502278-27bf85033e5a?auto=format&fit=crop&w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700">
+                <img src="https://images.unsplash.com/photo-1596462502278-27bf85033e5a?auto=format&fit=crop&w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700" loading="lazy">
                 <div class="relative z-10 text-center">
                     <h2 class="text-4xl md:text-5xl font-black text-shred mb-2 tracking-tighter drop-shadow-sm">SPECIAL OFFER</h2>
                     <div class="inline-block bg-white px-4 py-2 text-shdark font-bold text-2xl mb-4 border border-shred border-2 shadow-sm">SALE <span class="text-shred font-black text-3xl">UP TO 70% OFF</span></div>
@@ -73,13 +73,13 @@
             {{-- Side Small Banners --}}
             <div class="w-full md:w-[30%] flex flex-col gap-4">
                 <div class="relative h-32 md:h-[31.5%] overflow-hidden border border-gray-100 bg-pink-50">
-                    <img src="https://images.unsplash.com/photo-1512496015851-a1fb8fddfc2a?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500">
+                    <img src="https://images.unsplash.com/photo-1512496015851-a1fb8fddfc2a?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500" loading="lazy">
                 </div>
                 <div class="relative h-32 md:h-[31.5%] overflow-hidden border border-gray-100 bg-green-50">
-                    <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500">
+                    <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500" loading="lazy">
                 </div>
                 <div class="relative h-32 md:h-[31.5%] overflow-hidden border border-gray-100 bg-blue-50">
-                    <img src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500">
+                    <img src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover hover:scale-110 transition duration-500" loading="lazy">
                 </div>
             </div>
         </div>
@@ -119,9 +119,9 @@
 
     {{-- Banner Row --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition"></a>
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition"></a>
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition"></a>
+        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
+        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
+        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
     </div>
 
     {{-- FEATURED BRAND Placeholder --}}
@@ -190,7 +190,7 @@
                     @if($loop->iteration % 2 == 0)<span class="absolute top-4 right-4 bg-[#00bfa5] text-white text-[9px] font-bold px-1.5 py-0.5 z-10">New</span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-48 mb-6 p-4">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                     </a>
                     
                     <div class="text-left px-2">
@@ -235,7 +235,7 @@
             
             {{-- Big Vertical Promo Banner Left (mimicking screenshot) --}}
             <div class="hidden lg:block w-[280px] shrink-0 border-r border-b border-gray-100 relative group overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover">
+                <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover" loading="lazy">
                 <div class="absolute bottom-10 left-0 w-full text-center px-4">
                     <span class="text-white text-xs font-bold block mb-1">EARN EXTRA CASHBACK</span>
                     <span class="text-white text-4xl font-black block leading-none">UP TO</span>
@@ -251,7 +251,7 @@
                         @if($p->sale_price)<span class="absolute top-4 left-4 bg-shred text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                         
                         <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-48 mb-6 p-4">
-                            <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
+                            <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                         </a>
                         
                         <div class="text-left px-2 mt-auto">

@@ -18,18 +18,18 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         <!-- Fashion Photography (Left) -->
         <div class="space-y-4">
             <div class="w-full aspect-[3/4] bg-gray-50 border border-gray-100">
-                <img :src="mainImg" class="w-full h-full object-cover object-top hover:object-center transition-all duration-[3s] cursor-crosshair">
+                <img :src="mainImg" class="w-full h-full object-cover object-top hover:object-center transition-all duration-[3s] cursor-crosshair" loading="lazy">
             </div>
             
             <div class="flex gap-4 overflow-x-auto hide-scroll py-2 px-1">
-                <img src="{{asset('storage/'.$product->thumbnail)}}" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
+                <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      class="w-20 md:w-28 aspect-[3/4] object-cover cursor-pointer hover:opacity-100 transition border"
                      :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-black opacity-100' : 'border-transparent opacity-60'">
                      
                 @foreach($product->gallery ?? [] as $img)
                 <img src="{{asset('storage/'.$img)}}" @click="mainImg = '{{asset('storage/'.$img)}}'" 
                      class="w-20 md:w-28 aspect-[3/4] object-cover cursor-pointer hover:opacity-100 transition border"
-                     :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-black opacity-100' : 'border-transparent opacity-60'">
+                     :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-black opacity-100' : 'border-transparent opacity-60'" loading="lazy">
                 @endforeach
             </div>
         </div>

@@ -73,7 +73,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div class="flex items-center gap-6 shrink-0 w-full md:w-auto justify-between md:justify-start">
                     <a href="{{$baseUrl}}" class="flex items-center bg-black h-16 px-4 md:-ml-6 -my-3 md:my-0">
                         @if($client->logo)
-                            <img src="{{asset('storage/'.$client->logo)}}" class="h-10 object-contain" alt="{{$client->shop_name}}">
+                            <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 object-contain" alt="{{$client->shop_name}}">
                         @else
                             <div class="text-white font-black text-xl flex items-center gap-2">
                                 <span>{{$client->shop_name}}</span>
@@ -88,10 +88,11 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </button>
 
                     {{-- Mobile Cart Icon --}}
-                    <a href="#" class="md:hidden text-white flex items-center gap-2">
+                    @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="md:hidden text-white flex items-center gap-2">
                         <div class="relative">
                             <i class="fas fa-shopping-bag text-2xl"></i>
-                            <span class="absolute -top-1 -right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                            <span class="absolute -top-1 -right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
                         </div>
                     </a>
                 </div>
@@ -109,18 +110,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Right User Actions (Desktop) --}}
                 <div class="hidden md:flex items-center gap-4 shrink-0">
-                    <a href="#" class="h-9 hidden xl:block rounded-sm overflow-hidden border border-yellow-400">
-                        <img src="https://images.unsplash.com/photo-1611162617215-d2274483ae5d?auto=format&fit=crop&w=150&h=40&q=80" class="h-full object-cover" alt="App Download">
-                    </a>
                     <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-4 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">বাংলা</a>
                     
-                    <a href="#" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
-                        <i class="far fa-user text-sm"></i> Sign in / Sign up
+                    <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
+                        <i class="far fa-user text-sm"></i> Track Order
                     </a>
 
-                    <a href="#" class="relative ml-2 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">
+                    @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="relative ml-2 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">
                         <i class="fas fa-shopping-bag text-white text-2xl group-hover:scale-110 transition"></i>
-                        <span class="absolute top-3 right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-swdark shadow-sm">0</span>
+                        <span class="absolute top-3 right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-swdark shadow-sm">{{ $cartCount }}</span>
                     </a>
                 </div>
             </div>
@@ -169,14 +168,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[1340px] mx-auto px-4 lg:px-6">
             
             {{-- Top Pre-Footer Banner Array (Placeholder) --}}
-            <div class="w-full bg-blue-50 border border-blue-100 rounded mb-10 overflow-hidden relative group hidden md:block">
-                <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=1200&h=200&q=80" class="w-full h-40 object-cover opacity-90 group-hover:scale-105 transition duration-700">
+            @if($client->homepage_banner_active && $client->homepage_banner_image)
+            <a href="{{ $client->homepage_banner_link ?? '#' }}" class="w-full bg-blue-50 border border-blue-100 rounded mb-10 overflow-hidden relative group hidden md:block mt-8">
+                <img src="{{ asset('storage/'.$client->homepage_banner_image) }}" class="w-full h-40 object-cover opacity-90 group-hover:scale-105 transition duration-700" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent flex items-center px-12">
                     <div>
-                        <h2 class="text-4xl font-black text-white leading-tight mb-2">Affordable<br>Monthly Grocery<br>Deals!</h2>
+                        <h2 class="text-4xl font-black text-white leading-tight mb-2">{!! nl2br(e($client->homepage_banner_title)) !!}</h2>
                     </div>
                 </div>
-            </div>
+            </a>
+            @endif
 
             {{-- Main Footer Columns --}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-gray-100">
@@ -185,7 +186,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div class="lg:col-span-1">
                     <div class="bg-black inline-block p-2 mb-4">
                         @if($client->logo)
-                            <img src="{{asset('storage/'.$client->logo)}}" class="h-8 object-contain" alt="{{$client->shop_name}}">
+                            <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 object-contain" alt="{{$client->shop_name}}">
                         @else
                             <h3 class="text-white font-black text-lg">{{$client->shop_name}}</h3>
                         @endif
@@ -244,11 +245,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Column 5: Payments & Social --}}
                 <div class="lg:col-span-1">
-                    <h4 class="footer-heading">Pay With</h4>
+                    <h4 class="footer-heading">Payment Options</h4>
                     <div class="flex flex-wrap gap-2 mb-6">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-4 object-contain opacity-70">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-4 object-contain opacity-70">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" class="h-4 object-contain opacity-70">
+                        @if($client->cod_active)
+                        <span class="bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-700 rounded-sm">COD</span>
+                        @endif
+                        @if($client->partial_payment_active || $client->full_payment_active)
+                        <span class="bg-gray-100 px-2 py-1 text-[10px] font-bold text-blue-600 rounded-sm">Cards/Mobile Bank</span>
+                        @endif
                     </div>
 
                     <h4 class="footer-heading">Follow Us</h4>

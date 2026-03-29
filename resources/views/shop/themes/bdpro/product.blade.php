@@ -72,7 +72,7 @@
             {{-- Left Side: Image Gallery --}}
             <div class="lg:col-span-5 flex flex-col gap-4">
                 <div class="aspect-square bg-gray-50 border border-gray-100 rounded-lg p-4 flex justify-center items-center relative">
-                    <img :src="mainImg" class="max-w-full max-h-full object-contain cursor-zoom-in hover:scale-105 transition-transform duration-300">
+                    <img :src="mainImg" class="max-w-full max-h-full object-contain cursor-zoom-in hover:scale-105 transition-transform duration-300" loading="lazy">
                 </div>
                 
                 {{-- Thumbnails --}}
@@ -80,14 +80,14 @@
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                          :class="{ 'border-bdblue shadow-sm ring-1 ring-bdblue': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200 hover:border-bdblue/50': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-20 h-20 bg-white border rounded cursor-pointer transition p-2 flex items-center justify-center shrink-0">
-                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </div>
                     
                     @foreach($product->gallery ?? [] as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
                          :class="{ 'border-bdblue shadow-sm ring-1 ring-bdblue': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200 hover:border-bdblue/50': mainImg !== '{{asset('storage/'.$img)}}' }"
                          class="w-20 h-20 bg-white border rounded cursor-pointer transition p-2 flex items-center justify-center shrink-0">
-                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain" loading="lazy">
                     </div>
                     @endforeach
                 </div>
@@ -284,7 +284,7 @@
                 @foreach($related as $p)
                 <div class="border border-gray-100 rounded-lg p-3 hover:border-bdblue hover:shadow-md transition group bg-white relative">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                     </a>
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">
                         <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>

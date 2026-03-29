@@ -13,7 +13,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         <!-- Glow backing -->
         <div class="absolute inset-0 bg-primary/20 mix-blend-overlay z-10 transition duration-700 group-hover:bg-primary/0"></div>
         
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover z-0">
+        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover z-0">
         
         <!-- Gradient Overlay -->
         <div class="absolute inset-0 bg-gradient-to-r from-dark via-dark/80 to-transparent z-20"></div>
@@ -79,7 +79,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <div class="absolute top-3 right-3 z-10 bg-dark tech-border text-gray-400 text-[10px] font-bold px-2 py-1 rounded">OOS</div>
                     @endif
 
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500">
+                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500">
                 </div>
                 
                 <!-- Info Section -->
