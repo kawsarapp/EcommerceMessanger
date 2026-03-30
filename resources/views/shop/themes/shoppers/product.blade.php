@@ -277,7 +277,7 @@
                     @if($p->sale_price)<span class="absolute top-4 left-4 bg-shred text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-4">
-                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
+                        <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                     </a>
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">

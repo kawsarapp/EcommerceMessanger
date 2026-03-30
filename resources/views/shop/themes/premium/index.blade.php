@@ -72,7 +72,7 @@
                     <!-- Hover overlay gradient -->
                     <div class="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent opacity-0 group-hover:opacity-100 z-10 transition-opacity duration-300 pointer-events-none"></div>
                     
-                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="w-full h-full object-cover z-0 transform group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="w-full h-full object-cover z-0 transform group-hover:scale-110 transition-transform duration-700 ease-in-out">
                     
                     <!-- Quick view button dummy -->
                     <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">

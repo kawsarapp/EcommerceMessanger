@@ -94,7 +94,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         </div>
                     @endif
 
-                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-[85%] max-h-[85%] object-contain mix-blend-multiply z-10 transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 ease-out">
+                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-[85%] max-h-[85%] object-contain mix-blend-multiply z-10 transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 ease-out">
                 </div>
                 
                 <!-- Info Section -->

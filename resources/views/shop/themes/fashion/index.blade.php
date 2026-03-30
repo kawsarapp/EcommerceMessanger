@@ -54,7 +54,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <span class="absolute top-4 right-4 z-10 text-[10px] font-bold text-red-500 uppercase tracking-widest">Sale</span>
                     @endif
                     
-                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="w-full h-full object-cover object-top group-hover:scale-105 transition duration-[1.5s] ease-in-out">
+                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="w-full h-full object-cover object-top group-hover:scale-105 transition duration-[1.5s] ease-in-out">
                     
                     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
                         <div class="absolute inset-x-0 bottom-0 bg-white/90 py-2 text-center border-t border-gray-200">

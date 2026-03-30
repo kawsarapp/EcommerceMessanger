@@ -79,7 +79,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <div class="absolute top-3 right-3 z-10 bg-dark tech-border text-gray-400 text-[10px] font-bold px-2 py-1 rounded">OOS</div>
                     @endif
 
-                    <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500">
+                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500">
                 </div>
                 
                 <!-- Info Section -->
