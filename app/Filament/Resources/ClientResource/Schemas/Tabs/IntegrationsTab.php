@@ -82,55 +82,68 @@ class IntegrationsTab
                 ])->columns(['default' => 1, 'md' => 2]),
 
             Section::make('Advanced Tracking & Analytics')
-                ->description('আপনার ওয়েবসাইটের ট্রাফিক এবং সেলস নিখুঁতভাবে ট্র্যাক করতে Facebook, Google এবং Tiktok এর API টোকেনগুলো यहाँ বসান। DataLayer এবং Server-side Tracking স্বয়ংক্রিয়ভাবে কাজ করবে।')
+                ->description('আপনার ওয়েবসাইটের ট্রাফিক এবং সেলস নিখুঁতভাবে ট্র্যাক করতে Facebook, Google এবং TikTok এর API টোকেনগুলো এখানে বসান।')
                 ->icon('heroicon-o-presentation-chart-line')
                 ->collapsible()
                 ->schema([
-                    Group::make()->schema([
-                        Placeholder::make('meta_title')->label('🔵 Facebook / Meta Tracking'),
-                        TextInput::make('fb_pixel_id')
-                            ->label('Facebook Pixel ID')
-                            ->placeholder('e.g. 293847293847293')
-                            ->helperText('Legacy Client-Side Pixel. Leave blank if using CAPI exclusively.'),
-                        TextInput::make('tracking_settings.fb_capi_token')
-                            ->label('Conversion API Access Token')
-                            ->password()
-                            ->revealable()
-                            ->placeholder('e.g. EAAGm0PX...'),
-                    ])->columns(['default' => 1, 'md' => 2]),
 
-                    Group::make()->schema([
-                        Placeholder::make('google_title')->label('🔴 Google Analytics & GTM'),
-                        TextInput::make('tracking_settings.gtm_id')
-                            ->label('Google Tag Manager ID')
-                            ->placeholder('e.g. GTM-XXXXXXX')
-                            ->helperText('Deploy native DataLayer immediately.'),
-                        TextInput::make('tracking_settings.ga4_measurement_id')
-                            ->label('GA4 Measurement ID')
-                            ->placeholder('e.g. G-XXXXXXX'),
-                        TextInput::make('tracking_settings.ga4_api_secret')
-                            ->label('GA4 Measurement API Secret')
-                            ->placeholder('Needed for Server-Side events'),
-                    ])->columns(['default' => 1, 'sm' => 2, 'lg' => 3]),
+                    Section::make('🔵 Facebook / Meta Pixel & CAPI')
+                        ->description('Client-side Pixel বা Server-side Conversion API সেট করুন।')
+                        ->collapsed()
+                        ->compact()
+                        ->schema([
+                            TextInput::make('fb_pixel_id')
+                                ->label('Facebook Pixel ID')
+                                ->placeholder('e.g. 293847293847293')
+                                ->helperText('CAPI ব্যবহার করলে এটি খালি রাখতে পারেন।'),
+                            TextInput::make('tracking_settings.fb_capi_token')
+                                ->label('Conversion API Access Token')
+                                ->password()
+                                ->revealable()
+                                ->placeholder('e.g. EAAGm0PX...'),
+                        ])->columns(['default' => 1, 'md' => 2]),
 
-                    Group::make()->schema([
-                        Placeholder::make('tiktok_title')->label('⚫ TikTok Tracking'),
-                        TextInput::make('tracking_settings.tiktok_pixel_id')
-                            ->label('TikTok Pixel ID')
-                            ->placeholder('e.g. CXXXXXX')
-                            ->columnSpan(1),
-                    ])->columns(['default' => 1, 'md' => 2]),
+                    Section::make('🔴 Google Analytics & Tag Manager')
+                        ->description('GTM, GA4 Measurement ID ও Server-side API Secret সেট করুন।')
+                        ->collapsed()
+                        ->compact()
+                        ->schema([
+                            TextInput::make('tracking_settings.gtm_id')
+                                ->label('Google Tag Manager ID')
+                                ->placeholder('e.g. GTM-XXXXXXX')
+                                ->helperText('DataLayer automatically activated.'),
+                            TextInput::make('tracking_settings.ga4_measurement_id')
+                                ->label('GA4 Measurement ID')
+                                ->placeholder('e.g. G-XXXXXXX'),
+                            TextInput::make('tracking_settings.ga4_api_secret')
+                                ->label('GA4 API Secret')
+                                ->placeholder('Server-Side events এর জন্য প্রয়োজন'),
+                        ])->columns(['default' => 1, 'sm' => 2, 'lg' => 3]),
 
-                    Group::make()->schema([
-                        Placeholder::make('tools_title')->label('🛠️ Utilities & Heatmaps'),
-                        TextInput::make('tracking_settings.search_console_tag')
-                            ->label('Google Search Console Meta Tag')
-                            ->placeholder('e.g. sdfjkldsflkjewr3243...'),
-                        TextInput::make('tracking_settings.microsoft_clarity_id')
-                            ->label('Microsoft Clarity Project ID')
-                            ->placeholder('e.g. jfksdf32..'),
-                    ])->columns(['default' => 1, 'md' => 2]),
+                    Section::make('⚫ TikTok Pixel')
+                        ->description('TikTok Ads ট্র্যাক করতে Pixel ID বসান।')
+                        ->collapsed()
+                        ->compact()
+                        ->schema([
+                            TextInput::make('tracking_settings.tiktok_pixel_id')
+                                ->label('TikTok Pixel ID')
+                                ->placeholder('e.g. CXXXXXX'),
+                        ])->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('🛠️ Utilities & Heatmaps')
+                        ->description('Google Search Console verification এবং Microsoft Clarity heatmap।')
+                        ->collapsed()
+                        ->compact()
+                        ->schema([
+                            TextInput::make('tracking_settings.search_console_tag')
+                                ->label('Google Search Console Meta Tag')
+                                ->placeholder('e.g. sdfjkldsflkjewr3243...'),
+                            TextInput::make('tracking_settings.microsoft_clarity_id')
+                                ->label('Microsoft Clarity Project ID')
+                                ->placeholder('e.g. jfksdf32..'),
+                        ])->columns(['default' => 1, 'md' => 2]),
                 ]),
+
 
             Section::make('Facebook Connection')->schema([
                 Placeholder::make('fb_status')
