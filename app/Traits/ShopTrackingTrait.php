@@ -12,10 +12,10 @@ trait ShopTrackingTrait
        
         $pages = $this->clientService->getActivePages($client->id);
         
-        if ($request->filled('phone')) {
-            $orders = $this->trackingService->trackOrder($client->id, $request->phone);
-            $phone = $request->phone;
-            return $this->themeView($client, 'tracking', compact('client', 'orders', 'phone', 'pages'));
+        if ($request->filled('order_id')) {
+            $orders = $this->trackingService->trackOrder($client->id, $request->order_id);
+            $orderId = $request->order_id;
+            return $this->themeView($client, 'tracking', compact('client', 'orders', 'orderId', 'pages'));
         }
        
         return $this->themeView($client, 'tracking', compact('client', 'pages'));
@@ -23,15 +23,15 @@ trait ShopTrackingTrait
 
     public function trackOrderSubmit(Request $request, $slug = null)
     {
-        $request->validate(['phone' => 'required|min:11']);
+        $request->validate(['order_id' => 'required|numeric|min:1']);
 
         $client = $this->clientService->getSafeClient($request, $slug);
         if (!$client->exists) return redirect('/');
        
-        $orders = $this->trackingService->trackOrder($client->id, $request->phone);
+        $orders = $this->trackingService->trackOrder($client->id, $request->order_id);
         $pages = $this->clientService->getActivePages($client->id);
-        $phone = $request->phone;
+        $orderId = $request->order_id;
 
-        return $this->themeView($client, 'tracking', compact('client', 'orders', 'phone', 'pages'));
+        return $this->themeView($client, 'tracking', compact('client', 'orders', 'orderId', 'pages'));
     }
-}
+}

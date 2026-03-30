@@ -7,22 +7,17 @@ use App\Models\Order;
 class ShopOrderTrackingService
 {
     /**
-     * ফোন নম্বর দিয়ে অর্ডার ট্র্যাক করা
+     * Order ID দিয়ে অর্ডার ট্র্যাক করা (security-friendly)
+     * Phone number expose করা হবে না — শুধু Order ID দিলেই হবে।
      */
-    public function trackOrder($clientId, $phoneInput)
+    public function trackOrder($clientId, $orderId)
     {
-        // বাংলা নম্বরকে ইংরেজিতে রূপান্তর
-        $phone = str_replace(
-            ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯", "০"], 
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], 
-            $phoneInput
-        );
-
-        return Order::where('client_id', $clientId)
-            ->where('customer_phone', 'LIKE', "%{$phone}%")
+        // শুধুমাত্র exact Order ID match — partial search নয়
+        $order = Order::where('client_id', $clientId)
+            ->where('id', (int) $orderId)
             ->with('orderItems.product')
-            ->latest()
-            ->take(5)
-            ->get();
+            ->first();
+
+        return $order ? collect([$order]) : collect([]);
     }
 }
