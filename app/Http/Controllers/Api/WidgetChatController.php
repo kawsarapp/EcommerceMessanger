@@ -272,9 +272,25 @@ class WidgetChatController extends Controller
         $formattedMsgs = [];
 
         foreach ($history as $msg) {
-            $text = $msg['user'] ?? $msg['ai'] ?? '';
-            $role = isset($msg['user']) ? 'user' : ($msg['role'] ?? 'ai');
-            if ($text) {
+            if (!empty($msg['user'])) {
+                $formattedMsgs[] = [
+                    'text' => $msg['user'],
+                    'role' => 'user',
+                    'time' => $msg['time'] ?? time(),
+                ];
+            }
+            if (!empty($msg['ai'])) {
+                // If role was 'seller', prepend avatar/label to text like polling does
+                $text = $msg['ai'];
+                if (($msg['role'] ?? '') === 'seller') {
+                    $text = '👤 ' . $text;
+                }
+                
+                $formattedMsgs[] = [
+                    'text' => $text,
+                    'role' => 'bot',
+                    'time' => $msg['time'] ?? time(),
+                ];
             }
         }
 
