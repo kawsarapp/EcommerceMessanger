@@ -111,15 +111,17 @@ class FeedbackResource extends Resource
                             'resolved'    => '🟢 Resolved',
                             'closed'      => '⚫ Closed',
                         ])
-                        ->required(),
+                        ->required()
+                        ->disabled(! $isSuperAdmin),
 
                     Forms\Components\Textarea::make('admin_reply')
-                        ->label('Reply to Seller')
+                        ->label(fn () => $isSuperAdmin ? 'Reply to Seller' : 'Message from Admin')
                         ->rows(4)
-                        ->columnSpanFull(),
+                        ->columnSpanFull()
+                        ->disabled(! $isSuperAdmin)
+                        ->placeholder(fn () => $isSuperAdmin ? 'Write your reply...' : 'Waiting for admin response...'),
                 ])
-                ->columns(['default' => 1])
-                ->visible($isSuperAdmin),
+                ->columns(['default' => 1]),
         ]);
     }
 
