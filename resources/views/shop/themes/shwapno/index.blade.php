@@ -27,6 +27,12 @@
     <div class="flex flex-col lg:flex-row gap-0 lg:gap-6 mb-12">
         
         {{-- Left Sidebar Category Menu --}}
+        @php
+            $catActive = $client->widgets['category_filter']['active'] ?? true;
+            $catText = $client->widgets['category_filter']['text'] ?? 'SHOP BY CATEGORY';
+        @endphp
+        
+        @if($catActive)
         <div class="hidden lg:block w-[256px] shrink-0 sw-sidebar self-start shadow-sm rounded-sm mt-4">
             
             @php $icons = ['fa-hamburger', 'fa-baby', 'fa-baby-carriage', 'fa-broom', 'fa-paw', 'fa-heartbeat', 'fa-tshirt', 'fa-blender', 'fa-pen-clip', 'fa-puzzle-piece', 'fa-mobile-alt']; @endphp
@@ -52,9 +58,10 @@
                 <a href="#" class="sw-sidebar-item group"><span class="flex items-center gap-3"><i class="fas fa-mobile-alt text-gray-400 text-sm group-hover:text-swred w-5 text-center"></i> Gadget</span></a>
             @endif
         </div>
+        @endif
 
         {{-- Right Visual Area --}}
-        <div class="flex-1 mt-4">
+        <div class="flex-1 mt-4 {{ !$catActive ? 'w-full' : '' }}">
             {{-- Big Hero Banner mimicking "4 WAYS TO SAVE ON EVERY CART" --}}
             @php
                 $heroActive = $client->widgets['hero_banner']['active'] ?? true;
@@ -68,7 +75,7 @@
             <a href="{{ $heroLink }}" class="w-full bg-swred relative overflow-hidden group cursor-pointer border border-red-700 flex items-center p-8 lg:p-12 mb-4 rounded-sm min-h-[160px] md:min-h-[260px] block">
                 <img src="{{ $heroBg }}" class="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay group-hover:scale-105 transition duration-[2s]" loading="lazy">
                 <div class="relative z-10 w-full flex justify-between items-center h-full">
-                    <div class="flex gap-2 lg:gap-4 h-full py-4 items-center">
+                    <div class="flex gap-2 lg:gap-4 h-full py-4 items-center" style="{{ isset($client->widgets['hero_banner']['color']) ? 'filter: hue-rotate(calc('.hexdec(substr($client->widgets['hero_banner']['color'], 1, 2)).'deg))' : '' }}">
                         <div class="bg-red-800 text-white w-14 lg:w-20 h-24 lg:h-36 -rotate-[15deg] flex flex-col items-center justify-center p-2 rounded shadow-lg border border-red-500/50">
                             <span class="text-[10px] lg:text-xs">৳</span>
                             <span class="text-xl lg:text-3xl font-black">25</span>
@@ -145,30 +152,37 @@
     </div>
     
     {{-- Info Metrics Bar --}}
+    @php
+        $trustActive = $client->widgets['trust_badges']['active'] ?? true;
+        $trustColor = $client->widgets['trust_badges']['color'] ?? '#ef4444';
+        $trustText = $client->widgets['trust_badges']['text'] ?? '';
+    @endphp
+    @if($trustActive)
+    @if($trustText) <h3 class="sw-section-title" style="text-align: left; font-size: 16px;">{{ $trustText }}</h3> @endif
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         <div class="sw-metrics-box">
-            <div class="sw-metrics-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sw-metrics-icon" style="color: {{ $trustColor }}; border-color: {{ $trustColor }}40;"><i class="fas fa-box-open"></i></div>
             <div>
                 <h4 class="text-sm font-bold text-gray-800">60 Mins Delivery</h4>
                 <p class="text-[11px] text-gray-500 mt-0.5">Free shipping over 1500Tk</p>
             </div>
         </div>
         <div class="sw-metrics-box">
-            <div class="sw-metrics-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="sw-metrics-icon" style="color: {{ $trustColor }}; border-color: {{ $trustColor }}40;"><i class="fas fa-shield-alt"></i></div>
             <div>
                 <h4 class="text-sm font-bold text-gray-800">Authorized Products</h4>
                 <p class="text-[11px] text-gray-500 mt-0.5">within 30 days for an exchange</p>
             </div>
         </div>
         <div class="sw-metrics-box">
-            <div class="sw-metrics-icon"><i class="fas fa-headset"></i></div>
+            <div class="sw-metrics-icon" style="color: {{ $trustColor }}; border-color: {{ $trustColor }}40;"><i class="fas fa-headset"></i></div>
             <div>
                 <h4 class="text-sm font-bold text-gray-800">Customer Service Support</h4>
                 <p class="text-[11px] text-gray-500 mt-0.5">8am to 10pm</p>
             </div>
         </div>
         <div class="sw-metrics-box">
-            <div class="sw-metrics-icon"><i class="fas fa-wallet"></i></div>
+            <div class="sw-metrics-icon" style="color: {{ $trustColor }}; border-color: {{ $trustColor }}40;"><i class="fas fa-wallet"></i></div>
             <div>
                 <h4 class="text-sm font-bold text-gray-800">Flexible Payments</h4>
                 <p class="text-[11px] text-gray-500 mt-0.5">Pay with multiple credit cards</p>
@@ -176,18 +190,25 @@
         </div>
     </div>
     @endif
+    @endif
 
-    {{-- DYNAMIC PRODUCTS SECTION 1 --}}
+    {{-- DYNAMIC PRODUCTS SECTION 1 (Flash Sale / Featured) --}}
+    @php
+        $flashActive = $client->widgets['flash_sale']['active'] ?? true;
+        $flashText = $client->widgets['flash_sale']['text'] ?? 'RECOMMENDED FOR YOU';
+        $flashColor = $client->widgets['flash_sale']['color'] ?? '#ef4444';
+    @endphp
+    @if($flashActive && count($products) > 0)
     <div class="mb-16">
-        <h3 class="sw-section-title">RECOMMENDED FOR YOU</h3>
+        <h3 class="sw-section-title">{{ $flashText }}</h3>
         
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 relative group">
             <button class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 shadow"><i class="fas fa-chevron-left text-sm"></i></button>
             
             @forelse($products->take(5) as $p)
-                <div class="sw-card group/card">
+                <div class="sw-card group/card" style="--badge-color: {{ $flashColor }}">
                     {{-- Discount Square Badge --}}
-                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
+                    @if($p->sale_price)<span class="absolute top-0 left-0 text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm" style="background-color: var(--badge-color);"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
                         <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
@@ -222,6 +243,7 @@
             <button class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 shadow"><i class="fas fa-chevron-right text-sm"></i></button>
         </div>
     </div>
+    @endif
     
     {{-- PROMO BANNER (Full width) --}}
     @if($client->homepage_banner_active && $client->homepage_banner_image)

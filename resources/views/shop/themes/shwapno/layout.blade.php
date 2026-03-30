@@ -98,15 +98,24 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </div>
 
                 {{-- Search Bar --}}
+                @php
+                    $searchActive = $client->widgets['search_bar']['active'] ?? true;
+                    $searchText = $client->widgets['search_bar']['text'] ?? 'Search your products';
+                    $searchColor = $client->widgets['search_bar']['color'] ?? '#ffd100';
+                @endphp
+                @if($searchActive)
                 <div class="w-full md:flex-1 max-w-2xl px-0 md:px-4 order-3 md:order-none">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-sm overflow-hidden h-10 shadow-inner">
-                        <input type="text" name="search" value="{{request('search')}}" placeholder="Search your products" 
+                        <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $searchText }}" 
                             class="w-full bg-transparent px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none border-none h-full">
-                        <button class="bg-swyellow hover:bg-yellow-500 text-swdark w-12 h-full flex items-center justify-center transition border-l border-yellow-200">
+                        <button class="text-swdark w-12 h-full flex items-center justify-center transition border-l border-yellow-200" style="background-color: {{ $searchColor }};">
                             <i class="fas fa-search"></i>
                         </button>
                     </form>
                 </div>
+                @else
+                <div class="w-full md:flex-1 max-w-2xl px-0 md:px-4 order-3 md:order-none opacity-0 pointer-events-none"></div>
+                @endif
 
                 {{-- Right User Actions (Desktop) --}}
                 <div class="hidden md:flex items-center gap-4 shrink-0">
