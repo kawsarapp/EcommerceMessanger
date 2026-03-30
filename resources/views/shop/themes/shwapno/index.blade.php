@@ -190,7 +190,7 @@
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     
                     <div class="text-center mt-auto flex flex-col items-center">
@@ -246,7 +246,7 @@
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     
                     <div class="text-center mt-auto flex flex-col items-center">

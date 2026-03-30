@@ -62,7 +62,7 @@
                 <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      :class="{ 'border-swred': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                      class="w-16 h-16 bg-white border cursor-pointer p-1.5 rounded-sm">
-                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-contain">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" loading="lazy" class="w-full h-full object-contain">
                 </div>
                 @foreach($product->gallery as $img)
                 <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
@@ -229,7 +229,7 @@
             @forelse($similar as $p)
                 <div class="sw-card group/card">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-32 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
                         <span class="text-[9px] italic text-gray-400 mb-1">Delivery 1-2 hours</span>
@@ -263,7 +263,7 @@
                 <div class="sw-card group/card">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
                         <span class="text-[10px] italic text-gray-400 mb-1">Delivery 1-2 hours</span>

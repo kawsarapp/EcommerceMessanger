@@ -15,6 +15,8 @@ use App\Services\Messenger\MessengerResponseService;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Placeholder;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AbandonedCartResource extends Resource
 {
@@ -112,6 +114,24 @@ class AbandonedCartResource extends Resource
                     })
                     ->formatStateUsing(fn (?string $state): string => ucfirst($state ?? 'Pending')),
 
+                TextColumn::make('platform')
+                    ->label('Channel')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'whatsapp'  => 'success',
+                        'messenger' => 'info',
+                        'instagram' => 'warning',
+                        'telegram'  => 'primary',
+                        default     => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'whatsapp'  => '📱 WhatsApp',
+                        'messenger' => '💬 Messenger',
+                        'instagram' => '📸 Instagram',
+                        'telegram'  => '✈️ Telegram',
+                        default     => ucfirst($state ?? 'Unknown'),
+                    }),
+
                 TextColumn::make('updated_at')
                     ->label('Last Activity')
                     ->dateTime('d M, h:i A')
@@ -120,11 +140,20 @@ class AbandonedCartResource extends Resource
             ->defaultSort('updated_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('reminder_status')
+                    ->label('Reminder Status')
                     ->options([
-                        'pending' => 'Pending',
-                        'sent' => 'Reminder Sent',
+                        'pending'   => 'Pending',
+                        'sent'      => 'Reminder Sent',
                         'recovered' => 'Recovered (Ordered)',
-                        'ignored' => 'Ignored / Lost',
+                        'ignored'   => 'Ignored / Lost',
+                    ]),
+                Tables\Filters\SelectFilter::make('platform')
+                    ->label('Channel')
+                    ->options([
+                        'whatsapp'  => '📱 WhatsApp',
+                        'messenger' => '💬 Messenger',
+                        'instagram' => '📸 Instagram',
+                        'telegram'  => '✈️ Telegram',
                     ]),
             ])
             ->actions([
@@ -185,23 +214,63 @@ class AbandonedCartResource extends Resource
                         ];
                     })
                     ->action(function (OrderSession $record, array $data) {
-                        $client = $record->client;
-                        if (!$client || !$client->fb_page_token) {
-                            Notification::make()->title('Facebook Page Not Connected')->danger()->send();
-                            return;
-                        }
+                        $client   = $record->client;
+                        $platform = $record->platform ?? 'messenger';
+                        $message  = $data['custom_message'];
+                        $senderId = $record->sender_id;
 
                         try {
-                            // কাস্টম মেসেজটি পাঠানো হচ্ছে
-                            app(MessengerResponseService::class)->sendMessengerMessage($record->sender_id, $data['custom_message'], $client->fb_page_token);
-                            
+                            switch ($platform) {
+                                case 'whatsapp':
+                                    $waApiUrl = config('services.whatsapp.api_url');
+                                    if (!$client->wa_instance_id || !$waApiUrl) {
+                                        Notification::make()->title('WhatsApp Not Connected')->body('এই শপের WhatsApp Instance ID কনফিগার করা নেই।')->danger()->send();
+                                        return;
+                                    }
+                                    $response = Http::timeout(15)->post($waApiUrl . '/api/send-message', [
+                                        'instance_id' => $client->wa_instance_id,
+                                        'to'          => $senderId,
+                                        'message'     => $message,
+                                    ]);
+                                    if ($response->status() >= 400) {
+                                        throw new \Exception('WhatsApp API error: ' . $response->body());
+                                    }
+                                    Log::info("✅ Manual WA Reminder sent to {$senderId}");
+                                    break;
+
+                                case 'telegram':
+                                    if (!$client->telegram_bot_token) {
+                                        Notification::make()->title('Telegram Not Connected')->body('এই শপের Telegram Bot Token কনফিগার করা নেই।')->danger()->send();
+                                        return;
+                                    }
+                                    Http::post("https://api.telegram.org/bot{$client->telegram_bot_token}/sendMessage", [
+                                        'chat_id' => $senderId,
+                                        'text'    => $message,
+                                    ]);
+                                    Log::info("✅ Manual Telegram Reminder sent to {$senderId}");
+                                    break;
+
+                                case 'instagram':
+                                case 'messenger':
+                                default:
+                                    if (!$client->fb_page_token) {
+                                        Notification::make()->title('Facebook Page Not Connected')->body('এই শপের Facebook Page Token কনফিগার করা নেই।')->danger()->send();
+                                        return;
+                                    }
+                                    app(MessengerResponseService::class)->sendMessengerMessage($senderId, $message, $client->fb_page_token);
+                                    Log::info("✅ Manual Messenger/Instagram Reminder sent to {$senderId}");
+                                    break;
+                            }
+
                             $record->update([
-                                'reminder_status' => 'sent',
+                                'reminder_status'    => 'sent',
                                 'last_interacted_at' => now(),
                             ]);
 
-                            Notification::make()->title('Custom Reminder Sent!')->success()->send();
+                            Notification::make()->title('✅ Reminder Sent via ' . ucfirst($platform) . '!')->success()->send();
+
                         } catch (\Exception $e) {
+                            Log::error("❌ Manual reminder failed [{$platform}] to {$senderId}: " . $e->getMessage());
                             Notification::make()->title('Failed to send reminder')->body($e->getMessage())->danger()->send();
                         }
                     }),
@@ -219,7 +288,17 @@ class AbandonedCartResource extends Resource
                         $record->update(['reminder_status' => 'ignored']);
                         Notification::make()->title('Marked as Ignored')->success()->send();
                     }),
-            ]);
+
+                // 🗑️ Delete
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->searchable();
     }
 
     public static function getPages(): array

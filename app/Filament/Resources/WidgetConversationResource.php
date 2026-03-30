@@ -105,7 +105,28 @@ class WidgetConversationResource extends Resource
                     ->action(function (OrderSession $record) {
                         $record->update(['is_human_agent_active' => !$record->is_human_agent_active]);
                     }),
+
+                Tables\Actions\DeleteAction::make(),
             ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'active' => 'Active',
+                        'idle'   => 'Idle',
+                        'closed' => 'Closed',
+                    ]),
+                Tables\Filters\TernaryFilter::make('is_human_agent_active')
+                    ->label('Human Agent')
+                    ->trueLabel('Human Only')
+                    ->falseLabel('AI Only')
+                    ->placeholder('All'),
+            ])
+            ->searchable()
             ->defaultSort('last_interacted_at', 'desc');
     }
 

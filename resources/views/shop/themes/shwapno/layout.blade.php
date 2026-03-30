@@ -73,7 +73,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div class="flex items-center gap-6 shrink-0 w-full md:w-auto justify-between md:justify-start">
                     <a href="{{$baseUrl}}" class="flex items-center bg-black h-16 px-4 md:-ml-6 -my-3 md:my-0">
                         @if($client->logo)
-                            <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 object-contain" alt="{{$client->shop_name}}">
+                            <img src="{{asset('storage/'.$client->logo)}}" loading="lazy" class="h-10 object-contain" alt="{{$client->shop_name}}">
                         @else
                             <div class="text-white font-black text-xl flex items-center gap-2">
                                 <span>{{$client->shop_name}}</span>
@@ -186,7 +186,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div class="lg:col-span-1">
                     <div class="bg-black inline-block p-2 mb-4">
                         @if($client->logo)
-                            <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 object-contain" alt="{{$client->shop_name}}">
+                            <img src="{{asset('storage/'.$client->logo)}}" loading="lazy" class="h-8 object-contain" alt="{{$client->shop_name}}">
                         @else
                             <h3 class="text-white font-black text-lg">{{$client->shop_name}}</h3>
                         @endif
