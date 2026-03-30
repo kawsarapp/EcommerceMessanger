@@ -21,7 +21,25 @@ class ClientResource extends Resource
     
     protected static ?string $navigationGroup = 'Shop Management';
     
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
+
+    public static function getNavigationLabel(): string
+    {
+        return auth()->user()?->isSuperAdmin() ? 'Clients' : 'My Shop Details';
+    }
+
+    public static function getNavigationUrl(): string
+    {
+        $user = auth()->user();
+        if ($user && !$user->isSuperAdmin()) {
+            $clientId = $user->client_id ?? $user->client?->id;
+            if ($clientId) {
+                return static::getUrl('edit', ['record' => $clientId]);
+            }
+        }
+
+        return parent::getNavigationUrl();
+    }
 
     public static function getNavigationBadge(): ?string
     {

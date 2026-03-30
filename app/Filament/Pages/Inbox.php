@@ -16,8 +16,8 @@ class Inbox extends Page
 
     protected static bool $shouldRegisterNavigation = true;
     protected static ?int $navigationSort = 1; 
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
-    protected static ?string $navigationGroup = 'Customer Support';
+    protected static ?string $navigationIcon = 'heroicon-o-inbox';
+    protected static ?string $navigationGroup = '💬 Communication';
     protected static ?string $navigationLabel = 'Live Inbox';
     protected static ?string $title = 'Unified Inbox (Messenger & WhatsApp)';
 

@@ -7,7 +7,7 @@ use Filament\Pages\Page;
 class PermissionGuide extends Page
 {
     protected static ?string $navigationIcon  = 'heroicon-o-shield-check';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static ?string $navigationGroup = '\u2699\ufe0f Settings & Tools';
     protected static ?string $navigationLabel = 'Permission Guide';
     protected static ?string $title           = '🔐 Permission System — সম্পূর্ণ গাইড';
     protected static ?int    $navigationSort  = 11;

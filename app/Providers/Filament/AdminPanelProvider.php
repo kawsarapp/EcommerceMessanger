@@ -34,10 +34,20 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter') // মডার্ন ফন্ট
             ->favicon(asset('favicon.ico')) // আপনার ফ্যাভিকন
             ->colors([
-                'primary' => Color::Blue, // SaaS এর জন্য ব্লু কালার বেশি প্রফেশনাল
+                'primary' => \Filament\Support\Colors\Color::Violet,
             ])
-            ->sidebarCollapsibleOnDesktop() // সাইডবার ছোট-বড় করার সুবিধা
+            ->sidebarCollapsibleOnDesktop() // সাইডবার ছোট-বড় করার সুবিধা
             ->maxContentWidth('full') // ফুল স্ক্রিন ভিউ
+            ->globalSearch() // 🔍 Global Search (Ctrl+K)
+            ->navigationGroups([
+                '🛒 Sales & Orders',
+                '🛍️ Products & Catalog',
+                '👥 Customers & Reviews',
+                '💬 Communication',
+                '🏪 My Store',
+                '🔌 Integrations',
+                '⚙️ Settings & Tools',
+            ])
             
             // --- [ Authentication ] ---
             ->login(CustomLogin::class)  // কাস্টম লগিন — domain isolation + instant error
@@ -56,8 +66,8 @@ class AdminPanelProvider extends PanelProvider
             // --- [ Widgets ] ---
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                \App\Filament\Widgets\QuickActionsWidget::class,
                 \App\Filament\Widgets\StaffAccountWidget::class,
-                // Widgets\FilamentInfoWidget::class, // এটি কমেন্ট করা হলো যাতে ডকুমেন্টেশন লিংক না দেখায়
             ])
 
             // --- [ Middleware ] ---
