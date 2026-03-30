@@ -21,7 +21,8 @@ class SocialCommentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
     protected static ?string $navigationLabel = 'Social Comments';
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '💬 Communication';
+    protected static ?int $navigationSort = 3;
 
     public static function canViewAny(): bool
     {

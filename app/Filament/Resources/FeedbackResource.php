@@ -15,10 +15,10 @@ use Illuminate\Database\Eloquent\Model;
 class FeedbackResource extends Resource
 {
     protected static ?string $model = Feedback::class;
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
-    protected static ?string $navigationGroup = 'Support';
+    protected static ?string $navigationIcon = 'heroicon-o-envelope-open';
+    protected static ?string $navigationGroup = '💬 Communication';
     protected static ?string $navigationLabel = 'Feedback & Support';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     // Unread open tickets badge
     public static function getNavigationBadge(): ?string

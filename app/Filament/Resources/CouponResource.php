@@ -17,7 +17,8 @@ class CouponResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket'; // কুপনের জন্য টিকিটের আইকন
     
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '🛍️ Products & Catalog';
+    protected static ?int $navigationSort = 4;
 
     /**
      * ডাটা আইসোলেশন: ক্লায়েন্ট শুধুমাত্র নিজের কুপন দেখবে।

@@ -18,7 +18,8 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '🛍️ Products & Catalog';
+    protected static ?int $navigationSort = 1;
 
     // 🚀 Schema গুলো আলাদা ক্লাস থেকে কল করা হচ্ছে
     public static function form(Form $form): Form

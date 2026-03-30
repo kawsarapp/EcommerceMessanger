@@ -16,7 +16,7 @@ class ReturnRequestResource extends Resource
 {
     protected static ?string $model = ReturnRequest::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-left';
-    protected static ?string $navigationGroup = 'Orders';
+    protected static ?string $navigationGroup = '🛒 Sales & Orders';
     protected static ?string $navigationLabel = 'Return/Refund';
     protected static ?int $navigationSort = 3;
 

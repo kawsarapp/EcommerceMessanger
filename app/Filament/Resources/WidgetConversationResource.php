@@ -15,10 +15,10 @@ use Illuminate\Database\Eloquent\Builder;
 class WidgetConversationResource extends Resource
 {
     protected static ?string $model = OrderSession::class;
-    protected static ?string $navigationIcon  = 'heroicon-o-chat-bubble-left-right';
-    protected static ?string $navigationGroup = 'Messages';
+    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static ?string $navigationGroup = '💬 Communication';
+    protected static ?int $navigationSort = 2;
     protected static ?string $navigationLabel = 'Widget Conversations';
-    protected static ?int    $navigationSort  = 5;
     protected static ?string $slug            = 'widget-conversations';
 
     public static function canAccess(): bool

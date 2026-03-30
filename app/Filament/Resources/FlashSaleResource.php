@@ -16,9 +16,9 @@ class FlashSaleResource extends Resource
 {
     protected static ?string $model = FlashSale::class;
     protected static ?string $navigationIcon = 'heroicon-o-bolt';
-    protected static ?string $navigationGroup = 'Marketing & Sales';
+    protected static ?string $navigationGroup = '🛍️ Products & Catalog';
     protected static ?string $navigationLabel = 'Flash Sale';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function canAccess(): bool
     {

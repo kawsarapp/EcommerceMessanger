@@ -20,7 +20,8 @@ class ReviewResource extends Resource
     // আইকনটি স্টার (Star) করে দেওয়া হলো, রিভিউর সাথে মানানসই
     protected static ?string $navigationIcon = 'heroicon-o-star'; 
 
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '👥 Customers & Reviews';
+    protected static ?int $navigationSort = 1;
 
     /**
      * 🔥 Data Isolation: ক্লায়েন্ট শুধুমাত্র নিজের পেজ/রিভিউ দেখবে।

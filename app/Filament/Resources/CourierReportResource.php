@@ -22,7 +22,8 @@ class CourierReportResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-truck';
     protected static ?string $navigationLabel = 'Courier Reports';
     protected static ?string $slug = 'courier-reports';
-    protected static ?string $navigationGroup = 'Logistics & Reports';
+    protected static ?string $navigationGroup = '🛒 Sales & Orders';
+    protected static ?int $navigationSort = 4;
 
     public static function canViewAny(): bool
     {

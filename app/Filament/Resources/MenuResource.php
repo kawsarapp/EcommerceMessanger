@@ -18,7 +18,8 @@ class MenuResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-bars-3';
     
-    protected static ?string $navigationGroup = 'Site Settings';
+    protected static ?string $navigationGroup = '🏪 My Store';
+    protected static ?int $navigationSort = 2;
     
     protected static ?string $modelLabel = 'Navigation Menu';
     protected static ?string $pluralModelLabel = 'Navigation Menus';

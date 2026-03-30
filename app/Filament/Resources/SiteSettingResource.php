@@ -21,11 +21,11 @@ class SiteSettingResource extends Resource
 {
     protected static ?string $model = SiteSetting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-globe-alt';
-    protected static ?string $navigationGroup = 'System Settings';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
     protected static ?string $modelLabel = 'Landing Page Setting';
     protected static ?string $pluralModelLabel = 'Landing Page Settings';
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 5;
 
     public static function canCreate(): bool
     {

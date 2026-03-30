@@ -17,9 +17,9 @@ class PlanUpgradeRequestResource extends Resource
 {
     protected static ?string $model = PlanUpgradeRequest::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
-    protected static ?string $navigationGroup = 'Billing & Plans';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
     protected static ?string $navigationLabel = 'Upgrade Requests';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 6;
 
     // Pending badge count on sidebar
     public static function getNavigationBadge(): ?string

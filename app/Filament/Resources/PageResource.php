@@ -20,7 +20,8 @@ class PageResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     // অন্যান্য রিসোর্সের সাথে মিলিয়ে একই গ্রুপে রাখা হলো
-    protected static ?string $navigationGroup = 'Shop Management'; 
+    protected static ?string $navigationGroup = '🏪 My Store'; 
+    protected static ?int $navigationSort = 3;
 
     /**
      * 🔥 ডাটা আইসোলেশন: ক্লায়েন্ট শুধুমাত্র নিজের পেজ দেখবে।

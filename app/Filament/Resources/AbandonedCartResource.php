@@ -22,9 +22,10 @@ class AbandonedCartResource extends Resource
 {
     protected static ?string $model = OrderSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box-x-mark';
     protected static ?string $navigationLabel = 'Abandoned Carts';
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '🛒 Sales & Orders';
+    protected static ?int $navigationSort = 2;
     protected static ?string $slug = 'abandoned-carts';
 
     public static function canViewAny(): bool

@@ -18,7 +18,8 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '🛒 Sales & Orders';
+    protected static ?int $navigationSort = 1;
 
     /**
      * ডাটা আইসোলেশন: ক্লায়েন্ট শুধুমাত্র নিজের অর্ডার দেখবে।

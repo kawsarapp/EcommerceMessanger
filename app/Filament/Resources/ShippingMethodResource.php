@@ -18,7 +18,8 @@ class ShippingMethodResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
     
-    protected static ?string $navigationGroup = 'Shop Settings';
+    protected static ?string $navigationGroup = '🏪 My Store';
+    protected static ?int $navigationSort = 4;
     
     protected static ?string $modelLabel = 'Shipping Option';
     protected static ?string $pluralModelLabel = 'Shipping Options';

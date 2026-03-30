@@ -14,9 +14,9 @@ class ReferralResource extends Resource
 {
     protected static ?string $model = Referral::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
-    protected static ?string $navigationGroup = 'Marketing & Sales';
+    protected static ?string $navigationGroup = '👥 Customers & Reviews';
     protected static ?string $navigationLabel = 'Referrals';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     public static function canAccess(): bool
     {

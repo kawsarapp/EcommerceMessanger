@@ -16,9 +16,9 @@ class WebhookEndpointResource extends Resource
 {
     protected static ?string $model = WebhookEndpoint::class;
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
-    protected static ?string $navigationGroup = 'Developer & API';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
     protected static ?string $navigationLabel = 'Zapier / Webhooks';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function canAccess(): bool
     {

@@ -26,9 +26,9 @@ use Illuminate\Database\Eloquent\Builder;
 class PlanResource extends Resource
 {
     protected static ?string $model = Plan::class;
-    protected static ?string $navigationIcon = 'heroicon-o-star';
-    protected static ?string $navigationGroup = 'System Settings';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationLabel = 'Subscription Plans';
 
     // 🔒 Super Admin Only

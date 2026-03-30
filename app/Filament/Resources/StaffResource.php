@@ -25,9 +25,9 @@ class StaffResource extends Resource
     protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Staff Members';
-    protected static ?string $navigationGroup = 'Shop Management';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
     protected static ?string $modelLabel = 'Staff Member';
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 1;
 
     // All available permissions a staff can be given
     public static function availablePermissions(): array

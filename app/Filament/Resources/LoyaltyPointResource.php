@@ -15,10 +15,10 @@ use Illuminate\Database\Eloquent\Builder;
 class LoyaltyPointResource extends Resource
 {
     protected static ?string $model = LoyaltyPoint::class;
-    protected static ?string $navigationIcon = 'heroicon-o-star';
-    protected static ?string $navigationGroup = 'Marketing & Sales';
+    protected static ?string $navigationIcon = 'heroicon-o-gift';
+    protected static ?string $navigationGroup = '👥 Customers & Reviews';
     protected static ?string $navigationLabel = 'Loyalty Points';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function canAccess(): bool
     {
