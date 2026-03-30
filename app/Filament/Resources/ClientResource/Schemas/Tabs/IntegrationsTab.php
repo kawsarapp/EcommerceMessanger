@@ -65,7 +65,7 @@ class IntegrationsTab
                             ->revealable()
                             ->prefixIcon('heroicon-o-key'),
                     ])->columns(1),
-                ])->columns(2),
+                ])->columns(['default' => 1, 'md' => 2]),
 
             Section::make('Social Media Links')
                 ->description('লিংক দিলে ফুটারে আইকন দেখাবে।')
@@ -79,7 +79,7 @@ class IntegrationsTab
                     TextInput::make('social_youtube')
                         ->label('YouTube Channel URL')
                         ->prefixIcon('heroicon-m-play'),
-                ])->columns(2),
+                ])->columns(['default' => 1, 'md' => 2]),
 
             Section::make('Advanced Tracking & Analytics')
                 ->description('আপনার ওয়েবসাইটের ট্রাফিক এবং সেলস নিখুঁতভাবে ট্র্যাক করতে Facebook, Google এবং Tiktok এর API টোকেনগুলো यहाँ বসান। DataLayer এবং Server-side Tracking স্বয়ংক্রিয়ভাবে কাজ করবে।')
@@ -97,7 +97,7 @@ class IntegrationsTab
                             ->password()
                             ->revealable()
                             ->placeholder('e.g. EAAGm0PX...'),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
 
                     Group::make()->schema([
                         Placeholder::make('google_title')->label('🔴 Google Analytics & GTM'),
@@ -111,7 +111,7 @@ class IntegrationsTab
                         TextInput::make('tracking_settings.ga4_api_secret')
                             ->label('GA4 Measurement API Secret')
                             ->placeholder('Needed for Server-Side events'),
-                    ])->columns(3),
+                    ])->columns(['default' => 1, 'sm' => 2, 'lg' => 3]),
 
                     Group::make()->schema([
                         Placeholder::make('tiktok_title')->label('⚫ TikTok Tracking'),
@@ -119,7 +119,7 @@ class IntegrationsTab
                             ->label('TikTok Pixel ID')
                             ->placeholder('e.g. CXXXXXX')
                             ->columnSpan(1),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
 
                     Group::make()->schema([
                         Placeholder::make('tools_title')->label('🛠️ Utilities & Heatmaps'),
@@ -129,7 +129,7 @@ class IntegrationsTab
                         TextInput::make('tracking_settings.microsoft_clarity_id')
                             ->label('Microsoft Clarity Project ID')
                             ->placeholder('e.g. jfksdf32..'),
-                    ])->columns(2),
+                    ])->columns(['default' => 1, 'md' => 2]),
                 ]),
 
             Section::make('Facebook Connection')->schema([
