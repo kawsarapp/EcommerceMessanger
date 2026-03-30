@@ -15,7 +15,7 @@ class WidgetEmbedPage extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationIcon  = 'heroicon-o-code-bracket';
-    protected static ?string $navigationGroup = '\ud83d\udd0c Integrations';
+    protected static ?string $navigationGroup = '🔌 Integrations';
     protected static ?string $navigationLabel = 'Widget Embed Code';
     protected static ?int    $navigationSort  = 6;
     protected static ?string $slug            = 'widget-embed';

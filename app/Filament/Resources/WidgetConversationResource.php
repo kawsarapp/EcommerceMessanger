@@ -57,21 +57,20 @@ class WidgetConversationResource extends Resource
 
                 Tables\Columns\TextColumn::make('customer_info.name')
                     ->label('Name')
+                    ->weight('bold')
                     ->default('Anonymous')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('customer_info.phone')
-                    ->label('Phone')
-                    ->default('—')
+                    ->description(fn($record) => $record->customer_info['phone'] ?? '—')
                     ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->orWhere('customer_info->phone', 'like', "%{$search}%");
+                        return $query->where('customer_info->name', 'like', "%{$search}%")
+                                     ->orWhere('customer_info->phone', 'like', "%{$search}%");
                     }),
 
                 Tables\Columns\TextColumn::make('client.shop_name')
                     ->label('Shop')
                     ->visible(fn() => auth()->user()?->isSuperAdmin()),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->colors([
                         'success' => 'active',
                         'warning' => 'idle',
@@ -89,6 +88,7 @@ class WidgetConversationResource extends Resource
                 Tables\Columns\TextColumn::make('last_interacted_at')
                     ->label('Last Active')
                     ->since()
+                    ->tooltip(fn($record) => $record->last_interacted_at ? $record->last_interacted_at->format('d M y, h:i A') : null)
                     ->sortable(),
             ])
             ->actions([

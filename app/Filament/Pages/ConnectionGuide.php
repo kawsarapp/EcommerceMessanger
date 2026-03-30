@@ -8,7 +8,7 @@ use App\Models\Client;
 class ConnectionGuide extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-code-bracket-square';
-    protected static ?string $navigationGroup = '\ud83d\udd0c Integrations';
+    protected static ?string $navigationGroup = '🔌 Integrations';
     protected static ?string $navigationLabel = '🔌 Integration & API Docs';
     protected static ?string $title = 'Integration & API Documentation';
     protected static ?int $navigationSort = 5;

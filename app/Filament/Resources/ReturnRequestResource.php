@@ -56,9 +56,11 @@ class ReturnRequestResource extends Resource
                 }
             })
             ->columns([
-                Tables\Columns\TextColumn::make('order.id')->label('Order #')->prefix('#'),
-                Tables\Columns\TextColumn::make('customer_name')->label('Customer'),
-                Tables\Columns\TextColumn::make('customer_phone')->label('Phone'),
+                Tables\Columns\TextColumn::make('order.id')->label('Order #')->prefix('#')->searchable(),
+                Tables\Columns\TextColumn::make('customer_name')->label('Customer')
+                    ->weight('bold')
+                    ->description(fn ($record) => $record->customer_phone)
+                    ->searchable(['customer_name', 'customer_phone']),
                 Tables\Columns\TextColumn::make('reason_type')->label('কারণ')
                     ->formatStateUsing(fn($state) => match($state) {
                         'defective' => 'ত্রুটিপূর্ণ', 'wrong_item' => 'ভুল আইটেম',
@@ -66,13 +68,19 @@ class ReturnRequestResource extends Resource
                         default => 'অন্যান্য'
                     }),
                 Tables\Columns\TextColumn::make('reason')->label('বিস্তারিত')->limit(50),
-                Tables\Columns\BadgeColumn::make('status')->label('Status')->colors([
-                    'warning' => 'requested',
-                    'success' => fn($state) => in_array($state, ['approved','returned','refunded']),
-                    'danger'  => 'rejected',
-                ]),
-                Tables\Columns\TextColumn::make('refund_amount')->label('Refund')->prefix('৳')->placeholder('—'),
-                Tables\Columns\TextColumn::make('created_at')->label('Date')->date('d M Y'),
+                Tables\Columns\SelectColumn::make('status')->label('Status')
+                    ->options([
+                        'requested' => '🟡 Requested',
+                        'approved'  => '🟢 Approved',
+                        'rejected'  => '🔴 Rejected',
+                        'returned'  => '📦 Returned',
+                        'refunded'  => '💸 Refunded',
+                    ]),
+                Tables\Columns\TextColumn::make('refund_amount')->label('Refund')->prefix('৳')->placeholder('—')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Date')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->created_at->format('d M Y'))
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->options([

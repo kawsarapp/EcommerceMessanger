@@ -14,7 +14,7 @@ use ZipArchive;
 class BackupManager extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
-    protected static ?string $navigationGroup = '\u2699\ufe0f Settings & Tools';
+    protected static ?string $navigationGroup = '⚙️ Settings & Tools';
     protected static ?string $navigationLabel = 'Backup Manager';
     protected static ?int $navigationSort = 10;
     protected static string $view = 'filament.pages.backup-manager';

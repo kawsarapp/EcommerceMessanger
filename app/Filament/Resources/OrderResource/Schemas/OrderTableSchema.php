@@ -10,6 +10,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 
@@ -22,6 +23,7 @@ class OrderTableSchema
             
             TextColumn::make('customer_name')
                 ->label('Customer')
+                ->weight('bold')
                 ->searchable()
                 ->sortable()
                 ->description(fn (Order $record): string => $record->customer_phone ?? ''),
@@ -59,6 +61,7 @@ class OrderTableSchema
                 ->money('BDT')
                 ->sortable()
                 ->weight('bold')
+                ->summarize(Sum::make()->money('BDT')->label('Total Sale'))
                 ->description(fn (Order $record): string => $record->discount_amount > 0 ? "Saved: ৳{$record->discount_amount}" : ""),
 
             SelectColumn::make('order_status')
@@ -91,9 +94,10 @@ class OrderTableSchema
 
             TextColumn::make('created_at')
                 ->label('Date')
-                ->dateTime('d M, Y h:i A')
+                ->since()
+                ->tooltip(fn ($record) => $record->created_at->format('d M, Y h:i A'))
                 ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->toggleable(isToggledHiddenByDefault: false),
         ];
     }
 

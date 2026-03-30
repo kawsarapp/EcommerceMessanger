@@ -22,6 +22,7 @@ class ClientTableSchema
                 ->searchable()
                 ->weight('bold')
                 ->sortable()
+                ->copyable()
                 ->description(fn (Client $record) => $record->custom_domain ?: $record->slug),
                 
             TextColumn::make('plan.name')
@@ -55,7 +56,9 @@ class ClientTableSchema
                 ->visible(fn () => auth()->user()?->isSuperAdmin()),
 
             TextColumn::make('created_at')
-                ->dateTime('d M, Y')
+                ->label('Member Since')
+                ->since()
+                ->tooltip(fn ($record) => $record->created_at->format('d M, Y'))
                 ->toggleable(isToggledHiddenByDefault: true),
         ];
     }

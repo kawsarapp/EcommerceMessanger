@@ -35,18 +35,21 @@ class ReferralResource extends Resource
                 }
             })
             ->columns([
-                Tables\Columns\TextColumn::make('sender_id')->label('Referrer ID')->searchable(),
+                Tables\Columns\TextColumn::make('sender_id')->label('Referrer ID')->weight('bold')->searchable(),
                 Tables\Columns\TextColumn::make('referral_code')->label('Code')
                     ->badge()->color('primary')->copyable(),
                 Tables\Columns\TextColumn::make('referred_sender_id')->label('Referred By')->placeholder('—'),
                 Tables\Columns\TextColumn::make('reward_amount')->label('Reward')->prefix('৳'),
                 Tables\Columns\TextColumn::make('discount_amount')->label('Discount Given')->prefix('৳'),
-                Tables\Columns\BadgeColumn::make('status')->colors([
+                Tables\Columns\TextColumn::make('status')->badge()->colors([
                     'warning' => 'pending',
                     'success' => 'completed',
                     'danger'  => 'expired',
                 ]),
-                Tables\Columns\TextColumn::make('created_at')->label('Created')->date('d M Y'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->created_at->format('d M Y')),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -128,7 +128,11 @@ class ReviewResource extends Resource
                 TextColumn::make('rating')->label('Rating')->formatStateUsing(fn ($state) => str_repeat('⭐', $state)),
                 TextColumn::make('comment')->label('Review Comment')->wrap()->limit(50),
                 ToggleColumn::make('is_visible')->label('Show on Website'), // এক ক্লিকেই হাইড/শো
-                TextColumn::make('created_at')->dateTime('d M, Y')->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Date')
+                    ->since()
+                    ->tooltip(fn($record) => $record->created_at->format('d M, Y'))
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

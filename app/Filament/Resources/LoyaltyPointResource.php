@@ -65,17 +65,24 @@ class LoyaltyPointResource extends Resource
                 }
             })
             ->columns([
-                Tables\Columns\TextColumn::make('customer_name')->label('Customer')->searchable(),
-                Tables\Columns\TextColumn::make('customer_phone')->label('Phone'),
-                Tables\Columns\BadgeColumn::make('type')->colors([
+                Tables\Columns\TextColumn::make('customer_name')->label('Customer')
+                    ->weight('bold')
+                    ->description(fn($record) => $record->customer_phone)
+                    ->searchable(['customer_name', 'customer_phone']),
+                Tables\Columns\TextColumn::make('type')->badge()->colors([
                     'success' => 'earned', 'info' => 'bonus',
                     'danger'  => fn ($state) => in_array($state, ['redeemed', 'expired']),
                 ]),
                 Tables\Columns\TextColumn::make('points')->label('Points')
+                    ->weight('bold')
                     ->formatStateUsing(fn($state) => $state > 0 ? "+{$state}" : (string)$state)
                     ->color(fn($state) => $state > 0 ? 'success' : 'danger'),
-                Tables\Columns\TextColumn::make('note')->label('Note')->limit(40),
-                Tables\Columns\TextColumn::make('created_at')->label('Date')->date('d M Y'),
+                Tables\Columns\TextColumn::make('note')->label('Note')->wrap()->limit(40),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Date')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->created_at->format('d M Y'))
+                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc');
     }

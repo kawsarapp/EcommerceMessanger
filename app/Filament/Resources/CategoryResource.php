@@ -149,6 +149,11 @@ class CategoryResource extends Resource
 
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('banner_image')
+                    ->label('Image')
+                    ->circular()
+                    ->defaultImageUrl(asset('images/default-category.png')),
+
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
@@ -187,7 +192,9 @@ class CategoryResource extends Resource
                     ->label('Visible'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('d M, Y')
+                    ->label('Date')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->created_at->format('d M, Y'))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

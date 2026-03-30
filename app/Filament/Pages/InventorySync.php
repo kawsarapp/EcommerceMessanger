@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class InventorySync extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
-    protected static ?string $navigationGroup = '\ud83d\udd0c Integrations';
+    protected static ?string $navigationGroup = '🔌 Integrations';
     protected static ?string $navigationLabel = 'Inventory Sync';
     protected static ?string $title = 'Sync Website Products';
     protected static ?int $navigationSort = 3;

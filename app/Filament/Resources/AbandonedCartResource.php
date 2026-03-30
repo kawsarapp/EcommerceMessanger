@@ -70,17 +70,12 @@ class AbandonedCartResource extends Resource
                 TextColumn::make('customer_name')
                     ->label('Customer Name')
                     ->state(fn (OrderSession $record) => $record->customer_info['name'] ?? 'Unknown Guest')
-                    ->description(fn (OrderSession $record) => $record->sender_id)
+                    ->description(fn (OrderSession $record) => ($record->customer_info['phone'] ?? 'No Phone') . ' • ID: ' . $record->sender_id)
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->where('customer_info->name', 'like', "%{$search}%")
                                      ->orWhere('sender_id', 'like', "%{$search}%");
                     })
                     ->weight('bold'),
-
-                TextColumn::make('customer_phone')
-                    ->label('Phone')
-                    ->state(fn (OrderSession $record) => $record->customer_info['phone'] ?? 'N/A')
-                    ->icon('heroicon-m-phone'),
 
                 TextColumn::make('product_name')
                     ->label('Stuck Product')
@@ -135,7 +130,8 @@ class AbandonedCartResource extends Resource
 
                 TextColumn::make('updated_at')
                     ->label('Last Activity')
-                    ->dateTime('d M, h:i A')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->updated_at->format('d M, h:i A'))
                     ->sortable(),
             ])
             ->defaultSort('updated_at', 'desc')

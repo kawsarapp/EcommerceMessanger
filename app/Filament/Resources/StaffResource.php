@@ -14,7 +14,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\DeleteAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -128,13 +128,11 @@ class StaffResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Name')
-                    ->searchable()
+                    ->label('Staff User')
+                    ->weight('bold')
+                    ->description(fn($record) => $record->email)
+                    ->searchable(['name', 'email'])
                     ->sortable(),
-
-                TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable(),
 
                 TextColumn::make('client.shop_name')
                     ->label('Shop')
@@ -151,13 +149,13 @@ class StaffResource extends Resource
                     ->wrap()
                     ->limit(80),
 
-                IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean(),
+                ToggleColumn::make('is_active')
+                    ->label('Active'),
 
                 TextColumn::make('created_at')
                     ->label('Added')
-                    ->dateTime('d M, Y')
+                    ->since()
+                    ->tooltip(fn ($record) => $record->created_at->format('d M, Y'))
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

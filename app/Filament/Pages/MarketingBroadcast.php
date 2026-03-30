@@ -5,7 +5,7 @@ use Filament\Pages\Page;use Filament\Forms\Contracts\HasForms;use Filament\Forms
 class MarketingBroadcast extends Page implements HasForms
 {
     use InteractsWithForms;
-    protected static ?string $navigationIcon='heroicon-o-megaphone';protected static ?string $navigationGroup='\ud83d\udcac Communication';protected static ?string $navigationLabel='Broadcast Message';protected static ?string $title='Marketing Broadcast';protected static ?int $navigationSort=4;protected static string $view='filament.pages.marketing-broadcast';
+    protected static ?string $navigationIcon='heroicon-o-megaphone';protected static ?string $navigationGroup='💬 Communication';protected static ?string $navigationLabel='Broadcast Message';protected static ?string $title='Marketing Broadcast';protected static ?int $navigationSort=4;protected static string $view='filament.pages.marketing-broadcast';
     public ?array $data=[];
     public function mount():void{$this->form->fill();}
     public static function canAccess():bool{return true;}

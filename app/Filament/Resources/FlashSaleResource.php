@@ -69,21 +69,23 @@ class FlashSaleResource extends Resource
                 }
             })
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('শিরোনাম')->searchable(),
+                Tables\Columns\TextColumn::make('title')->label('শিরোনাম')->weight('bold')->searchable(),
                 Tables\Columns\TextColumn::make('discount_type')->label('ধরন')
                     ->formatStateUsing(fn($state) => $state === 'percent' ? 'শতকরা' : 'নির্দিষ্ট'),
-                Tables\Columns\TextColumn::make('discount_percent')->label('ছাড়')->suffix('%'),
-                Tables\Columns\TextColumn::make('starts_at')->label('শুরু')->dateTime('d M Y, h:i A'),
-                Tables\Columns\TextColumn::make('ends_at')->label('শেষ')->dateTime('d M Y, h:i A'),
-                Tables\Columns\IconColumn::make('is_active')->label('সক্রিয়')->boolean(),
-                Tables\Columns\BadgeColumn::make('status')->getStateUsing(function ($record) {
-                    if (!$record->is_active) return 'বন্ধ';
-                    return $record->isLive() ? '🔴 LIVE' : (now()->lt($record->starts_at) ? 'আসছে' : 'শেষ');
-                })->color(fn($state) => match(true) {
-                    str_contains($state, 'LIVE') => 'success',
-                    str_contains($state, 'আসছে') => 'info',
-                    default => 'danger',
-                }),
+                Tables\Columns\TextColumn::make('discount_percent')->label('ছাড়')->suffix('%')->sortable(),
+                Tables\Columns\TextColumn::make('starts_at')->label('শুরু')->since()->tooltip(fn($record) => $record->starts_at->format('d M y, h:i A'))->sortable(),
+                Tables\Columns\TextColumn::make('ends_at')->label('শেষ')->since()->tooltip(fn($record) => $record->ends_at->format('d M y, h:i A'))->sortable(),
+                Tables\Columns\ToggleColumn::make('is_active')->label('সক্রিয়'),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->getStateUsing(function ($record) {
+                        if (!$record->is_active) return 'বন্ধ';
+                        return (method_exists($record, 'isLive') && $record->isLive()) ? '🔴 LIVE' : (now()->lt($record->starts_at) ? 'আসছে' : 'শেষ');
+                    })->color(fn($state) => match(true) {
+                        str_contains($state, 'LIVE') => 'success',
+                        str_contains($state, 'আসছে') => 'info',
+                        default => 'danger',
+                    }),
             ])
             ->actions([Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make()])
             ->defaultSort('starts_at', 'desc');

@@ -6,6 +6,8 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\SelectColumn;
 use Illuminate\Database\Eloquent\Builder;
 
 class ProductTableSchema
@@ -18,6 +20,9 @@ class ProductTableSchema
                 ->circular(),
 
             TextColumn::make('name')
+                ->label('Product')
+                ->weight('bold')
+                ->description(fn ($record) => $record->sku ? "SKU: {$record->sku}" : '')
                 ->searchable()
                 ->sortable()
                 ->limit(30)
@@ -48,22 +53,21 @@ class ProductTableSchema
                 ->alignCenter()
                 ->color(fn ($state) => $state <= 5 ? 'danger' : 'success'),
 
-            TextColumn::make('stock_status')
+            SelectColumn::make('stock_status')
                 ->label('Status')
-                ->badge()
-                ->color(fn (string $state): string => match ($state) {
-                    'in_stock' => 'success',
-                    'out_of_stock' => 'danger',
-                    'pre_order' => 'warning',
-                    default => 'gray',
-                }),
+                ->options([
+                    'in_stock' => 'In Stock',
+                    'out_of_stock' => 'Out of Stock',
+                    'pre_order' => 'Pre Order',
+                ]),
 
-            IconColumn::make('is_featured')
-                ->boolean()
+            ToggleColumn::make('is_featured')
                 ->label('Featured'),
 
             TextColumn::make('created_at')
-                ->dateTime('d M, Y')
+                ->label('Date')
+                ->since()
+                ->tooltip(fn ($record) => $record->created_at->format('d M, Y'))
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
         ];

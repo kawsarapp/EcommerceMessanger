@@ -140,7 +140,8 @@ class CouponResource extends Resource
 
                 Tables\Columns\TextColumn::make('expires_at')
                     ->label('Expires')
-                    ->date('d M, Y')
+                    ->since()
+                    ->tooltip(fn($record) => $record->expires_at ? $record->expires_at->format('d M, Y') : null)
                     ->sortable(),
 
                 Tables\Columns\ToggleColumn::make('is_active')
