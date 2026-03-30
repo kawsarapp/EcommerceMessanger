@@ -97,7 +97,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 
                 <div class="flex flex-col md:flex-row gap-8 mb-12 items-center md:items-start text-center md:text-left">
                     <div class="w-32 aspect-[4/5] overflow-hidden border border-white/5 bg-dark shrink-0">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-lighten">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-lighten">
                     </div>
                     <div class="flex flex-col justify-center py-2 h-full gap-4">
                         <h4 class="font-serif font-light text-2xl text-white leading-tight tracking-wide">{{$product->name}}</h4>

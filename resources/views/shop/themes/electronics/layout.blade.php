@@ -77,7 +77,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[100rem] mx-auto px-4 md:px-8 h-14 md:h-20 flex justify-between items-center gap-3">
             <a href="{{$baseUrl}}" class="flex items-center gap-2 min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-7 md:h-10 object-contain flex-shrink-0">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-7 md:h-10 object-contain flex-shrink-0">
                 @endif
                 <span class="text-base md:text-2xl font-black tracking-tight text-white truncate max-w-[160px] md:max-w-none">{{$client->shop_name}}</span>
                 <span class="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ml-1 hidden sm:inline-block flex-shrink-0">Tech</span>

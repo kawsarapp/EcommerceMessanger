@@ -70,7 +70,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex justify-between items-center gap-3">
             <a href="{{$baseUrl}}" class="flex items-center gap-2 group min-w-0">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" alt="{{$client->shop_name}}" class="h-8 md:h-10 w-auto object-contain flex-shrink-0 transition group-hover:scale-105">
+                    <img src="{{asset('storage/'.$client->logo)}}" alt="{{$client->shop_name}}" class="h-8 md:h-10 w-auto object-contain flex-shrink-0 transition group-hover:scale-105">
                 @endif
                 <span class="shop-name-text text-lg md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">
                     {{$client->shop_name}}

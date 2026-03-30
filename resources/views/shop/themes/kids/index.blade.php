@@ -10,7 +10,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @if($client->banner)
 <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 md:py-12">
     <div class="w-full h-[45vh] md:h-[65vh] rounded-[3rem] overflow-hidden relative shadow-cloud border-4 border-white bg-funblue/10 group">
-        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105 filter group-hover:brightness-110">
+        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105 filter group-hover:brightness-110">
         
         <!-- Gradient overlay to pop text -->
         <div class="absolute inset-0 bg-gradient-to-r from-slate-900/60 via-slate-900/20 to-transparent z-10 pointer-events-none"></div>

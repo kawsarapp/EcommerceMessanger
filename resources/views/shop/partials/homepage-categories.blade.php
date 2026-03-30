@@ -32,7 +32,7 @@ $homepageCategories = \App\Models\Category::where(function($q) use ($client) {
             @if(!empty($cat->banner_link))
             <a href="{{ $cat->banner_link }}" target="_blank" class="block">
             @endif
-                <img src="{{ asset('storage/' . $cat- loading="lazy">banner_image) }}" class="w-full h-36 sm:h-48 object-cover transform group-hover:scale-105 transition-transform duration-700" alt="{{ $cat->name }} Banner">
+                <img src="{{ asset('storage/' . $cat->banner_image) }}" class="w-full h-36 sm:h-48 object-cover transform group-hover:scale-105 transition-transform duration-700" alt="{{ $cat->name }} Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
                 <div class="absolute bottom-4 left-6 z-10">
                     <h3 class="text-white font-extrabold text-2xl drop-shadow-lg">{{ $cat->name }}</h3>

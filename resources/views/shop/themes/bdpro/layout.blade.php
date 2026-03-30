@@ -79,7 +79,7 @@ $primary='#1a3673';
                 {{-- Logo --}}
                 <a href="{{$baseUrl}}" class="flex items-center shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-12 object-contain" alt="{{$client->shop_name}}">
+                        <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain" alt="{{$client->shop_name}}">
                     @endif
                     <span class="text-bdblue font-extrabold text-xl ml-2 hidden sm:block">{{$client->shop_name}}</span>
                 </a>
@@ -199,7 +199,7 @@ $primary='#1a3673';
                     <div class="lg:col-span-2">
                         <div class="flex items-center gap-2 mb-4 shrink-0">
                             @if($client->logo)
-                                <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-10 object-contain rounded brightness-0 invert" alt="{{$client->shop_name}}">
+                                <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-10 object-contain rounded brightness-0 invert" alt="{{$client->shop_name}}">
                             @endif
                             <span class="text-white font-extrabold text-2xl uppercase tracking-tighter">{{$client->shop_name}}<sup class="text-[10px] font-normal">&trade;</sup></span>
                         </div>

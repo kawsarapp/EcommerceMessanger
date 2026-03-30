@@ -62,7 +62,7 @@
         <div class="flex justify-between items-start pb-8 border-b border-gray-100">
             <div class="w-1/2">
                 @if($client->logo)
-                    <img src="{{ asset('storage/' . $client- loading="lazy">logo) }}" alt="Shop Logo" class="h-14 mb-3 object-contain">
+                    <img src="{{ asset('storage/' . $client->logo) }}" alt="Shop Logo" class="h-14 mb-3 object-contain">
                 @endif
                 <h1 class="text-2xl font-extrabold text-gray-900">{{ $client->shop_name }}</h1>
                 @if($client->address)

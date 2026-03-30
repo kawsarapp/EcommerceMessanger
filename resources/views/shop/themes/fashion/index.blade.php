@@ -17,7 +17,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
     </div>
     <div class="w-full md:w-1/2 h-full absolute md:relative inset-0 md:inset-auto block group overflow-hidden bg-gray-100 z-0">
-        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-[3s] ease-out">
+        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-[3s] ease-out">
         <div class="absolute inset-0 bg-white/30 md:hidden pointer-events-none"></div>
     </div>
 </section>

@@ -141,7 +141,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 
                 <div class="flex gap-6 mb-8 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
                     <div class="w-24 h-24 bg-slate-50 rounded-2xl shrink-0 p-2 flex items-center justify-center border border-slate-100 overflow-hidden relative group">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition duration-500">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition duration-500">
                     </div>
                     <div class="flex flex-col justify-center flex-1 py-1">
                         <h4 class="font-extrabold text-slate-800 text-base leading-tight mb-2 line-clamp-2">{{$product->name}}</h4>

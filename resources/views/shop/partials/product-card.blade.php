@@ -24,7 +24,7 @@
 
     {{-- Image --}}
     <div class="aspect-square bg-slate-50 relative p-4 flex items-center justify-center overflow-hidden">
-        <img src="{{asset('storage/'.$p- loading="lazy">thumbnail)}}" alt="{{$p->name}}" loading="lazy"
+        <img src="{{asset('storage/'.$p->thumbnail)}}" alt="{{$p->name}}" loading="lazy"
             class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
     </div>
     

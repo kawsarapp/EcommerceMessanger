@@ -32,7 +32,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      class="w-24 h-32 md:w-32 md:h-40 shrink-0 border-4 cursor-pointer transition-all skew-x-[4deg]"
                      :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary shadow-[4px_4px_0_111]' : 'border-dark opacity-60 hover:opacity-100'">
-                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply">
                 </div>
                 
                 @foreach($product->gallery ?? [] as $img)

@@ -40,7 +40,7 @@
             
                 @if(!empty($client->popup_image))
                 <div class="w-full relative bg-slate-50">
-                    <img src="{{ asset('storage/' . $client- loading="lazy">popup_image) }}" class="w-full h-auto max-h-[40vh] object-contain sm:object-cover">
+                    <img src="{{ asset('storage/' . $client->popup_image) }}" class="w-full h-auto max-h-[40vh] object-contain sm:object-cover">
                 </div>
                 @endif
                 

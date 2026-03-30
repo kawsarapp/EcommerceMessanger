@@ -25,7 +25,7 @@ $totalReviews = $reviews->count();
             <div class="md:col-span-5 p-4 sm:p-6 border-b md:border-b-0 md:border-r border-slate-100">
                 {{-- Main Image --}}
                 <div class="aspect-square bg-slate-50 rounded-xl flex items-center justify-center p-6 relative overflow-hidden group mb-4">
-                    <img :src="mainImg" class="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-110" alt="{{$product- loading="lazy">name}}">
+                    <img :src="mainImg" class="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-110" alt="{{$product->name}}">
                     @if($product->sale_price)
                         @php $discount = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
                         <span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">-{{$discount}}%</span>
@@ -38,7 +38,7 @@ $totalReviews = $reviews->count();
                     <button @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                         class="w-16 h-16 rounded-lg border-2 p-1 shrink-0 flex items-center justify-center transition"
                         :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-slate-200'">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </button>
                     @foreach($product->gallery as $img)
                     <button @click="mainImg = '{{asset('storage/'.$img)}}'" 

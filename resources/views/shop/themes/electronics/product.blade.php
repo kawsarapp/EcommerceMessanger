@@ -35,7 +35,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 
                 <div class="flex gap-3 overflow-x-auto hide-scroll pb-2 mt-4 relative z-10">
                     <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-20 aspect-square bg-[#0a0f18] rounded-lg p-2 flex items-center justify-center border transition-all shrink-0 hover:shadow-[0_0_10px_var(--tw-color-primary)]" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary neon-border' : 'border-gray-800 opacity-60 hover:opacity-100 hover:border-primary/50'">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </button>
                     @foreach($product->gallery ?? [] as $img)
                     <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-20 aspect-square bg-[#0a0f18] rounded-lg p-2 flex items-center justify-center border transition-all shrink-0 hover:shadow-[0_0_10px_var(--tw-color-primary)]" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary neon-border' : 'border-gray-800 opacity-60 hover:opacity-100 hover:border-primary/50'">

@@ -298,7 +298,7 @@
                         {{-- Product Meta --}}
                         <div class="flex gap-3 mb-6 relative group">
                             <div class="w-12 h-12 bg-white rounded border border-gray-200 p-1 shrink-0 flex items-center justify-center relative">
-                                <img src="{{ asset('storage/'.$product- loading="lazy">thumbnail) }}" class="max-w-full max-h-full object-contain">
+                                <img src="{{ asset('storage/'.$product->thumbnail) }}" class="max-w-full max-h-full object-contain">
                             </div>
                             <div class="flex-1 flex flex-col justify-center">
                                 <h4 class="font-bold text-gray-800 text-[11px] line-clamp-1 pr-10 hover:text-bdblue transition cursor-pointer" title="{{ $product->name }}">{{ $product->name }}</h4>

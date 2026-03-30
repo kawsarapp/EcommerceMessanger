@@ -22,7 +22,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             <!-- Thumbnails Horizontal on Mobile, Vertical on Desktop -->
             <div class="flex md:flex-col gap-4 overflow-x-auto hide-scroll md:overflow-y-auto md:max-h-[80vh] w-full md:w-24 shrink-0">
                 <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="relative aspect-[3/4] w-20 md:w-full bg-gray-100 mb-2 focus:outline-none ring-1 ring-gray-200 hover:ring-black transition">
-                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply opacity-70 hover:opacity-100" :class="{'opacity-100': mainImg == '{{asset('storage/'.$product->thumbnail)}}'}">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-multiply opacity-70 hover:opacity-100" :class="{'opacity-100': mainImg == '{{asset('storage/'.$product->thumbnail)}}'}">
                 </button>
                 @foreach($product->gallery ?? [] as $img)
                 <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="relative aspect-[3/4] w-20 md:w-full bg-gray-100 mb-2 focus:outline-none ring-1 ring-gray-200 hover:ring-black transition">

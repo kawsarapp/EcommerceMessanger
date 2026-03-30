@@ -18,7 +18,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             
             <div class="flex gap-4 overflow-x-auto hide-scroll justify-center">
                 <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-16 h-16 md:w-20 md:h-20 bg-surface border transition" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-transparent opacity-50 hover:opacity-100'">
-                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-cover mix-blend-lighten">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-cover mix-blend-lighten">
                 </button>
                 @foreach($product->gallery ?? [] as $img)
                 <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-16 h-16 md:w-20 md:h-20 bg-surface border transition" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary' : 'border-transparent opacity-50 hover:opacity-100'">

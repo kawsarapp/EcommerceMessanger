@@ -91,7 +91,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Logo --}}
                 <a href="{{$baseUrl}}" class="flex items-center shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 md:h-12 object-contain bg-white rounded p-1" alt="{{$client->shop_name}}">
+                        <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain bg-white rounded p-1" alt="{{$client->shop_name}}">
                     @else
                         <!-- Text Logo if no image -->
                         <div class="text-white font-black text-2xl flex items-center gap-2">

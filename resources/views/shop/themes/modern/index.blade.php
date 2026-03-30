@@ -9,7 +9,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 <!-- Giant Hero Minimalist -->
 @if($client->banner)
 <section class="w-full h-[65vh] md:h-[80vh] relative bg-gray-100 group overflow-hidden">
-    <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out cursor-pointer">
+    <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out cursor-pointer">
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-16">
         <div class="max-w-[90rem] w-full mx-auto">
             <h2 class="text-5xl md:text-8xl text-white font-black tracking-tighter uppercase leading-[0.9] drop-shadow-sm">{{$client->meta_title ?? 'New Era.'}}</h2>

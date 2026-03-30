@@ -80,7 +80,7 @@
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                          :class="{ 'border-bdblue shadow-sm ring-1 ring-bdblue': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200 hover:border-bdblue/50': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-20 h-20 bg-white border rounded cursor-pointer transition p-2 flex items-center justify-center shrink-0">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </div>
                     
                     @foreach($product->gallery ?? [] as $img)

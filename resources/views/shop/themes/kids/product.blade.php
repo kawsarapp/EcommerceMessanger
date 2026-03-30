@@ -37,7 +37,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <!-- Thumbnails -->
                 <div class="flex justify-center lg:justify-start gap-4 overflow-x-auto hide-scroll pb-2 px-2">
                     <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-24 aspect-square bg-white rounded-2xl p-2 flex items-center justify-center border-4 transition-all shrink-0 bouncy shadow-sm" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-slate-100 hover:border-slate-300'">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-[85%] max-h-[85%] object-contain mix-blend-multiply">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-[85%] max-h-[85%] object-contain mix-blend-multiply">
                     </button>
                     @foreach($product->gallery ?? [] as $img)
                     <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-24 aspect-square bg-white rounded-2xl p-2 flex items-center justify-center border-4 transition-all shrink-0 bouncy shadow-sm" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary' : 'border-slate-100 hover:border-slate-300'">

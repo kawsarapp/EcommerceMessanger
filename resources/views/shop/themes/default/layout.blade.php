@@ -98,7 +98,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 
                 <a href="{{$baseUrl}}" class="flex items-center gap-2 hover-lift min-w-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 drop-shadow-sm">
+                        <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 drop-shadow-sm">
                     @else
                         <div class="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl border border-primary/20 flex items-center justify-center text-primary flex-shrink-0 shadow-inner">
                             <i class="fas fa-shopping-bag"></i>

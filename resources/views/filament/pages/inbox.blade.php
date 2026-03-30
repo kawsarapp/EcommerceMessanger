@@ -155,10 +155,10 @@
                                         @if($chat->attachment_url)
                                             <div class="{{ $chat->user_message ? 'mt-2' : '' }}">
                                                 @if($isImage)
-                                                    <img src="{{ $chat- loading="lazy">attachment_url }}"
+                                                    <img src="{{ $chat->attachment_url }}" loading="lazy"
                                                          onclick="openLightbox('{{ $chat->attachment_url }}')"
                                                          class="max-w-[220px] rounded-lg border dark:border-gray-700 shadow-sm cursor-zoom-in hover:opacity-90 transition"
-                                                         alt="Image" loading="lazy" />
+                                                         alt="Image" />
                                                 @elseif($isVideo)
                                                     <video src="{{ $chat->attachment_url }}" controls class="max-w-[220px] rounded-lg shadow-sm"></video>
                                                 @elseif($isAudio)
@@ -193,10 +193,10 @@
                                         @if($chat->attachment_url && is_null($chat->user_message))
                                             <div class="{{ $chat->bot_response ? 'mt-2' : '' }}">
                                                 @if($isImage)
-                                                    <img src="{{ $chat- loading="lazy">attachment_url }}"
+                                                    <img src="{{ $chat->attachment_url }}" loading="lazy"
                                                          onclick="openLightbox('{{ $chat->attachment_url }}')"
                                                          class="max-w-[220px] rounded-lg shadow-sm border border-white/20 cursor-zoom-in hover:opacity-90 transition"
-                                                         alt="Image" loading="lazy" />
+                                                         alt="Image" />
                                                 @elseif($isVideo)
                                                     <video src="{{ $chat->attachment_url }}" controls class="max-w-[220px] rounded-lg shadow-sm border border-white/20"></video>
                                                 @elseif($isAudio)

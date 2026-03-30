@@ -34,7 +34,7 @@
                     
                     {{-- Thumbnails --}}
                     <div class="flex gap-2 overflow-x-auto hide-scroll pb-2">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" 
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" 
                              @click="mainImg = $el.src" 
                              :class="{ 'border-primary': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-transparent opacity-70': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                              class="w-16 h-16 object-cover border-2 rounded cursor-pointer hover:border-primary transition p-1">
@@ -198,7 +198,7 @@
                     @php $related = App\Models\Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(4)->get(); @endphp
                     @foreach($related as $r)
                     <a href="{{$baseUrl.'/product/'.$r->slug}}" class="flex gap-3 group">
-                        <img src="{{asset('storage/'.$r- loading="lazy">thumbnail)}}" class="w-16 h-16 object-cover rounded border border-gray-100">
+                        <img src="{{asset('storage/'.$r->thumbnail)}}" class="w-16 h-16 object-cover rounded border border-gray-100">
                         <div class="flex flex-col">
                             <span class="text-xs text-gray-700 group-hover:text-primary transition line-clamp-2 leading-tight">{{$r->name}}</span>
                             <span class="text-primary font-bold text-sm mt-1">৳{{$r->sale_price ?? $r->regular_price}}</span>

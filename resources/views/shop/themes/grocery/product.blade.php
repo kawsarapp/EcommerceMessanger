@@ -39,7 +39,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <!-- Thumbnails -->
                 <div class="flex gap-4 overflow-x-auto hide-scroll pb-2 px-1">
                     <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="w-24 aspect-square bg-slate-50 rounded-2xl p-2 flex items-center justify-center border-2 transition-all shrink-0 relative overflow-hidden group" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary shadow-sm' : 'border-slate-100 hover:border-slate-300'">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform">
                     </button>
                     @foreach($product->gallery ?? [] as $img)
                     <button type="button" @click="mainImg = '{{asset('storage/'.$img)}}'" class="w-24 aspect-square bg-slate-50 rounded-2xl p-2 flex items-center justify-center border-2 transition-all shrink-0 relative overflow-hidden group" :class="mainImg == '{{asset('storage/'.$img)}}' ? 'border-primary shadow-sm' : 'border-slate-100 hover:border-slate-300'">

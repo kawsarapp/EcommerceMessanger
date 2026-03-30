@@ -21,7 +21,7 @@
         <div @click="mainImage = '{{ asset('storage/' . $product->thumbnail) }}'" 
              class="w-20 h-20 flex-shrink-0 rounded-lg border-2 cursor-pointer overflow-hidden bg-slate-50 p-1.5 transition-all"
              :class="mainImage === '{{ asset('storage/' . $product->thumbnail) }}' ? 'border-primary ring-2 ring-primary/20 scale-95' : 'border-slate-200 hover:border-slate-300'">
-            <img src="{{ asset('storage/' . $product- loading="lazy">thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply">
+            <img src="{{ asset('storage/' . $product->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply">
         </div>
         @if($product->gallery)
             @foreach($product->gallery as $img)

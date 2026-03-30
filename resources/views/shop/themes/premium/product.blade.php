@@ -18,12 +18,12 @@
                     @if($product->sale_price)
                         <span class="absolute top-6 left-6 z-20 bg-accent text-white text-sm font-extrabold px-5 py-2 rounded-full uppercase tracking-wider shadow-lg">Save ৳{{$product->regular_price - $product->sale_price}}</span>
                     @endif
-                    <img :src="mainImg" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" alt="{{$product- loading="lazy">name}}">
+                    <img :src="mainImg" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" alt="{{$product->name}}">
                 </div>
                 
                 <!-- Thumbnails -->
                 <div class="flex gap-4 overflow-x-auto hide-scroll pb-2">
-                    <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" 
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" 
                          @click="mainImg = $el.src" 
                          :class="{ 'ring-2 ring-primary ring-offset-2 opacity-100': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'opacity-60': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-24 h-32 object-cover rounded-xl cursor-pointer hover:opacity-100 transition-all duration-300 border border-gray-200">

@@ -66,7 +66,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <a href="{{$baseUrl}}" class="flex items-center gap-2 bouncy relative min-w-0">
                 <div class="absolute -top-6 -left-6 w-20 h-20 bg-primary/10 rounded-full blur-xl z-0 transition-opacity opacity-0 group-hover:opacity-100"></div>
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client- loading="lazy">logo)}}" class="h-10 md:h-16 object-contain z-10 relative flex-shrink-0">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-16 object-contain z-10 relative flex-shrink-0">
                 @else
                     <div class="w-10 h-10 md:w-16 md:h-16 bg-primary text-white rounded-[2rem] flex items-center justify-center shadow-lg border-4 border-pink-200 z-10 relative transform -rotate-6 group-hover:rotate-0 transition-transform flex-shrink-0">
                         <i class="fas fa-puzzle-piece text-xl md:text-3xl"></i>

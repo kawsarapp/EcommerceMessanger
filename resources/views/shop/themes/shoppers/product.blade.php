@@ -71,7 +71,7 @@
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                          :class="{ 'border-shred': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-16 h-16 bg-white border cursor-pointer p-1">
-                        <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" class="w-full h-full object-contain">
+                        <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
                     </div>
                     @foreach($product->gallery as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 

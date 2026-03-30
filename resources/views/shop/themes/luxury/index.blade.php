@@ -10,7 +10,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @if($client->banner)
 <section class="w-full h-[85vh] relative luxury-gradient group overflow-hidden border-b border-white/5">
     <div class="absolute inset-0 opacity-60 z-10 transition-transform duration-[3s] group-hover:scale-105">
-        <img src="{{asset('storage/'.$client- loading="lazy">banner)}}" class="w-full h-full object-cover">
+        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover">
     </div>
     <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent z-20"></div>
     

@@ -22,7 +22,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             </div>
             
             <div class="flex gap-4 overflow-x-auto hide-scroll py-2 px-1">
-                <img src="{{asset('storage/'.$product- loading="lazy">thumbnail)}}" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
+                <img src="{{asset('storage/'.$product->thumbnail)}}" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
                      class="w-20 md:w-28 aspect-[3/4] object-cover cursor-pointer hover:opacity-100 transition border"
                      :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'border-black opacity-100' : 'border-transparent opacity-60'">
                      
