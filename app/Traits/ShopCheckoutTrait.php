@@ -156,8 +156,9 @@ trait ShopCheckoutTrait
         app(\App\Services\ServerSideTrackingService::class)->dispatchPurchase($order);
 
         $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
-        $redirectUrl = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
+        $trackBase = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
+        $redirectUrl = $trackBase . '?order_id=' . $order->id;
 
-        return redirect($redirectUrl)->with('success_phone', $order->customer_phone);
+        return redirect($redirectUrl)->with('order_confirmed', true)->with('order_id', $order->id);
     }
 }
