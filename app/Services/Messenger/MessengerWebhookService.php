@@ -92,6 +92,15 @@ class MessengerWebhookService{
                         if($carouselIds){
                             if(!empty($reply))$this->responseService->sendMessengerMessage($senderId,$reply,$client->fb_page_token);
                             $this->responseService->sendMessengerCarousel($senderId,$carouselIds,$client->fb_page_token);
+                            
+                            // Send quick replies after carousel
+                            if (empty($quickReplies)) {
+                                $quickReplies = [
+                                    ['content_type' => 'text', 'title' => 'অর্ডার করতে চাই', 'payload' => 'অর্ডার করতে চাই'],
+                                    ['content_type' => 'text', 'title' => 'আরো দেখান', 'payload' => 'আরো দেখান']
+                                ];
+                            }
+                            $this->responseService->sendMessengerMessage($senderId, "পছন্দ হলে জানাতে পারেন 👇", $client->fb_page_token, null, $quickReplies);
                         }else{
                             if(empty($outgoingImages)){$this->responseService->sendMessengerMessage($senderId,$reply,$client->fb_page_token,null,$quickReplies);
                             }else{

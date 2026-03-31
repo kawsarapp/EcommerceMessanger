@@ -76,8 +76,15 @@ class VariantStep implements OrderStepInterface
             $session->update(['customer_info' => $customerInfo]);
 
             $missingStr = implode(' এবং ', $missing);
+            
+            $availableStr = [];
+            if ($hasColors && empty($finalVariant['color'])) $availableStr = array_merge($availableStr, $dbColors);
+            if ($hasSizes && empty($finalVariant['size'])) $availableStr = array_merge($availableStr, $dbSizes);
+            
+            $qrTag = !empty($availableStr) ? " \n[QUICK_REPLIES: " . implode(',', $availableStr) . "]" : "";
+
             return [
-                'instruction' => "কাস্টমার ভেরিয়েশন দিয়েছে কিন্তু এখনও {$missingStr} বাকি আছে। বিনয়ের সাথে তাকে {$missingStr} জানাতে বলো।",
+                'instruction' => "কাস্টমার ভেরিয়েশন দিয়েছে কিন্তু এখনও {$missingStr} বাকি আছে। বিনয়ের সাথে তাকে {$missingStr} জানাতে বলো।{$qrTag}",
                 'context' => json_encode([
                     'received' => $finalVariant,
                     'missing' => $missing,
@@ -91,11 +98,20 @@ class VariantStep implements OrderStepInterface
 
         // ❌ ৬. ভুল ইনপুট বা তথ্য না দিলে (Invalid/Missing Input)
         $optionsStr = "";
-        if ($hasColors && empty($finalVariant['color'])) $optionsStr .= "উপলব্ধ কালার: " . implode(', ', $dbColors) . ". ";
-        if ($hasSizes && empty($finalVariant['size'])) $optionsStr .= "উপলব্ধ সাইজ: " . implode(', ', $dbSizes) . ".";
+        $availableStr = [];
+        if ($hasColors && empty($finalVariant['color'])) {
+            $optionsStr .= "উপলব্ধ কালার: " . implode(', ', $dbColors) . ". ";
+            $availableStr = array_merge($availableStr, $dbColors);
+        }
+        if ($hasSizes && empty($finalVariant['size'])) {
+            $optionsStr .= "উপলব্ধ সাইজ: " . implode(', ', $dbSizes) . ".";
+            $availableStr = array_merge($availableStr, $dbSizes);
+        }
+
+        $qrTag = !empty($availableStr) ? " \n[QUICK_REPLIES: " . implode(',', $availableStr) . "]" : "";
 
         return [
-            'instruction' => "কাস্টমার এখনও সঠিক ভেরিয়েশন (কালার বা সাইজ) পছন্দ করেনি। তাকে নিচের অপশনগুলো থেকে বেছে নিতে সাহায্য করো।\n{$optionsStr}",
+            'instruction' => "কাস্টমার এখনও সঠিক ভেরিয়েশন (কালার বা সাইজ) পছন্দ করেনি। তাকে নিচের অপশনগুলো থেকে বেছে নিতে সাহায্য করো।\n{$optionsStr}{$qrTag}",
             'context' => json_encode([
                 'id' => $product->id, 
                 'name' => $product->name, 

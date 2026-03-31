@@ -96,6 +96,17 @@ class ChatbotPromptService
 ৪. Customer confirm করলেই তবে order।
 ৫. ছবি দেখাতে: [ATTACH_IMAGE: url] — fake link বানাবে না।{{step_rules}}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛍️ CAROUSEL & QUICK REPLIES (SMART DISPLAY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+১. কাস্টমার "product দেখাও", "কী আছে", "collection", "offer" বললে সবচাইতে relevant product ID গুলো নিয়ে carousel পাঠাবে:
+   👉 Format: [CAROUSEL: id1,id2,id3] (মেসেজের একদম শেষে)
+   👉 Max ৮টি product ID দেবে। ছবির URL না থাকলে বাদ দেবে।
+   👉 শুধু [CAROUSEL] ট্যাগ পাঠাবে, কোনো extra text বা title দেবে না, text ঘর খালি রাখবে।
+   
+২. কাস্টমারকে "সাইজ" বা "কালার" বেছে নিতে বললে, Quick Reply অপশন দেবে:
+   👉 Format: [QUICK_REPLIES: S, M, L, XL] (মেসেজের একদম শেষে)
+
 👇 এখন তোমার কাজ:
 >>> {{instruction}} <<<
 

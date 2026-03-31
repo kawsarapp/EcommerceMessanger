@@ -110,22 +110,27 @@ class MessengerResponseService
 
         $elements = [];
         foreach ($products as $product) {
-            $elements[] = [
-                'title' => $product->name,
-                'image_url' => $product->thumbnail ? asset('storage/' . $product->thumbnail) : null,
-                'subtitle' => "Price: ৳" . number_format($product->sale_price ?? $product->regular_price),
-                'buttons' => [
-                    [
-                        'type' => 'postback',
-                        'title' => 'অর্ডার করুন',
-                        'payload' => "ORDER_PRODUCT_" . $product->id
-                    ],
-                    [
-                        'type' => 'web_url',
-                        'url' => url('/shop/' . $product->client->slug),
-                        'title' => 'ওয়েবসাইটে দেখুন'
-                    ]
+            $buttons = [
+                [
+                    'type' => 'postback',
+                    'title' => 'অর্ডার করুন',
+                    'payload' => "ORDER_PRODUCT_" . $product->id
                 ]
+            ];
+
+            if ($product->client && !empty($product->client->slug)) {
+                $buttons[] = [
+                    'type' => 'web_url',
+                    'url' => url('/shop/' . $product->client->slug . '/product/' . $product->slug),
+                    'title' => 'ওয়েবসাইটে দেখুন'
+                ];
+            }
+
+            $elements[] = [
+                'title' => mb_substr($product->name, 0, 80),
+                'image_url' => $product->thumbnail ? asset('storage/' . ltrim($product->thumbnail, '/')) : null,
+                'subtitle' => mb_substr("Price: ৳" . number_format($product->sale_price ?? $product->regular_price), 0, 80),
+                'buttons' => $buttons
             ];
         }
 
