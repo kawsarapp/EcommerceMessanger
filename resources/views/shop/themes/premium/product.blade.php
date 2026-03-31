@@ -124,9 +124,20 @@
                         </div>
                         
                         <!-- Submit -->
-                        <button type="submit" class="sm:w-2/3 btn-premium text-white py-5 rounded-2xl font-bold text-lg shadow-lg flex justify-center items-center gap-3">
-                            Buy It Now <i class="fas fa-arrow-right"></i>
-                        </button>
+                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
+                            <button type="button" disabled class="sm:w-2/3 bg-gray-200 text-gray-400 py-5 rounded-2xl font-bold text-lg cursor-not-allowed">
+                                Out of Stock
+                            </button>
+                        @else
+                            @if($client->show_order_button ?? true)
+                            <button type="submit" class="sm:w-2/3 btn-premium text-white py-5 rounded-2xl font-bold text-lg shadow-lg flex justify-center items-center gap-3">
+                                Buy It Now <i class="fas fa-arrow-right"></i>
+                            </button>
+                            @endif
+                            @if($client->show_chat_button ?? true)
+                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                            @endif
+                        @endif
                     </div>
                     
                     <!-- Trust Badges -->

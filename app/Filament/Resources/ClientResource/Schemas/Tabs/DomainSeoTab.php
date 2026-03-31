@@ -77,37 +77,45 @@ class DomainSeoTab
                         ->content(function () {
                             $realServerIp = '198.38.91.154';
                             return new HtmlString('
-                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-gray-800 shadow-sm mt-2">
-                                    <p class="mb-3 font-bold text-blue-800"><i class="fas fa-info-circle"></i> ডোমেইন কানেক্ট করার নিয়ম:</p>
-                                    <p class="mb-4">আপনার ডোমেইন কন্ট্রোল প্যানেলে (যেমন: Cloudflare, Namecheap) গিয়ে DNS Settings থেকে নিচের <strong>A Record</strong> অথবা <strong>CNAME Record</strong> যুক্ত করুন:</p>
+                                <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:10px;padding:20px;margin-top:8px;">
+                                    <p style="font-weight:700;font-size:13px;color:#3b82f6;margin-bottom:10px;">
+                                        <svg style="display:inline;width:16px;height:16px;margin-right:6px;vertical-align:-2px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                                        ডোমেইন কানেক্ট করার নিয়ম:
+                                    </p>
+                                    <p style="font-size:12px;margin-bottom:14px;opacity:0.85;">
+                                        আপনার ডোমেইন কন্ট্রোল প্যানেলে (যেমন: Cloudflare, Namecheap) গিয়ে DNS Settings থেকে নিচের 
+                                        <strong>A Record</strong> অথবা <strong>CNAME Record</strong> যুক্ত করুন:
+                                    </p>
                                     
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full text-left border-collapse bg-white rounded-lg overflow-hidden shadow-sm">
+                                    <div style="overflow-x:auto;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.1);">
+                                        <table style="width:100%;border-collapse:collapse;font-size:12px;">
                                             <thead>
-                                                <tr class="bg-gray-100 text-gray-700">
-                                                    <th class="border-b p-3 font-bold">Type</th>
-                                                    <th class="border-b p-3 font-bold">Name / Host</th>
-                                                    <th class="border-b p-3 font-bold">Value / Target</th>
+                                                <tr style="background:rgba(59,130,246,0.15);">
+                                                    <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:1px solid rgba(0,0,0,0.1);">Type</th>
+                                                    <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:1px solid rgba(0,0,0,0.1);">Name / Host</th>
+                                                    <th style="padding:10px 14px;text-align:left;font-weight:700;border-bottom:1px solid rgba(0,0,0,0.1);">Value / Target</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td class="border-b p-3 font-bold text-blue-600">A Record</td>
-                                                    <td class="border-b p-3">@ (বা আপনার ডোমেইন নাম)</td>
-                                                    <td class="border-b p-3 font-mono font-bold text-green-600">' . $realServerIp . '</td>
+                                                    <td style="padding:10px 14px;font-weight:700;color:#3b82f6;border-bottom:1px solid rgba(0,0,0,0.07);">A Record</td>
+                                                    <td style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,0.07);">@ (বা আপনার ডোমেইন নাম)</td>
+                                                    <td style="padding:10px 14px;font-family:monospace;font-weight:700;color:#22c55e;border-bottom:1px solid rgba(0,0,0,0.07);">' . $realServerIp . '</td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="3" class="text-center text-xs text-gray-400 py-1 bg-gray-50">অথবা (যেকোনো একটি ব্যবহার করুন)</td>
+                                                    <td colspan="3" style="padding:6px 14px;text-align:center;font-size:11px;opacity:0.5;background:rgba(0,0,0,0.03);">অথবা (যেকোনো একটি ব্যবহার করুন)</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="border-b p-3 font-bold text-blue-600">CNAME</td>
-                                                    <td class="border-b p-3">www (বা সাবডোমেইন)</td>
-                                                    <td class="border-b p-3 font-mono font-bold text-green-600">asianhost.net</td>
+                                                    <td style="padding:10px 14px;font-weight:700;color:#3b82f6;">CNAME</td>
+                                                    <td style="padding:10px 14px;">www (বা সাবডোমেইন)</td>
+                                                    <td style="padding:10px 14px;font-family:monospace;font-weight:700;color:#22c55e;">asianhost.net</td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <p class="mt-4 text-xs text-red-500 font-bold">* Cloudflare ব্যবহার করলে প্রথমে "Proxy Status" বন্ধ (DNS Only) করে Verify করুন।</p>
+                                    <p style="margin-top:12px;font-size:11px;color:#ef4444;font-weight:700;">
+                                        ⚠️ Cloudflare ব্যবহার করলে প্রথমে &quot;Proxy Status&quot; বন্ধ (DNS Only) করে Verify করুন।
+                                    </p>
                                 </div>
                             ');
                         })

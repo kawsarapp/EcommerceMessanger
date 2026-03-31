@@ -68,7 +68,14 @@
                 $heroText = $client->widgets['hero_banner']['text'] ?? '4 WAYS\nTO SAVE\nON EVERY\nCART!';
                 $heroTextFormatted = nl2br(e($heroText));
                 $heroLink = $client->widgets['hero_banner']['link'] ?? '#';
-                $heroBg = $client->banner ? asset('storage/'.$client->banner) : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80';
+                $heroButtonText = $client->widgets['hero_banner']['button_text'] ?? 'EXPLORE NOW';
+                // Priority: 1) Hero widget specific image → 2) Shop general banner → 3) Fallback
+                $heroWidgetImg = $client->widgets['hero_banner']['image'] ?? null;
+                $heroBg = $heroWidgetImg
+                    ? asset('storage/' . $heroWidgetImg)
+                    : ($client->banner
+                        ? asset('storage/' . $client->banner)
+                        : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80');
             @endphp
             
             @if($heroActive)
@@ -97,7 +104,7 @@
                         <h2 class="text-3xl xl:text-5xl font-black uppercase leading-tight mb-2">
                             {!! $heroTextFormatted !!}
                         </h2>
-                        <button class="bg-white text-swred font-black px-6 py-2 rounded-full uppercase text-sm mt-4 hover:bg-gray-100 transition shadow">EXPLORE NOW</button>
+                        <button class="bg-white text-swred font-black px-6 py-2 rounded-full uppercase text-sm mt-4 hover:bg-gray-100 transition shadow">{{ $heroButtonText }}</button>
                     </div>
                 </div>
             </a>

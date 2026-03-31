@@ -112,9 +112,14 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <button type="button" disabled class="flex-1 h-16 bg-slate-300 text-slate-500 rounded-full font-heading text-xl cursor-not-allowed border-4 border-white shadow-sm">Sniff... Out of Stock</button>
                         @else
+                            @if($client->show_order_button ?? true)
                             <button type="submit" class="flex-1 h-16 bg-primary text-white rounded-full font-heading text-xl transition-all shadow-float hover:-translate-y-1 hover:bg-pink-600 border-4 border-white flex items-center justify-center gap-3">
                                 Add To Cart Yay! <i class="fas fa-shopping-cart text-funyellow"></i>
                             </button>
+                            @endif
+                            @if($client->show_chat_button ?? true)
+                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                            @endif
                         @endif
                     </div>
                 </form>

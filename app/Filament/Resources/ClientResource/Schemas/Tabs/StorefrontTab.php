@@ -275,10 +275,33 @@ class StorefrontTab
                     Section::make('Hero Banner Widget')
                         ->schema([
                             Toggle::make('widgets.hero_banner.active')->label('Enable Hero Banner')->default(true)->columnSpanFull()->onColor('success'),
-                            TextInput::make('widgets.hero_banner.text')->label('Banner Overlay Text')->placeholder('Welcome to our shop!'),
-                            TextInput::make('widgets.hero_banner.link')->label('Banner Link')->url(),
+                            TextInput::make('widgets.hero_banner.text')
+                                ->label('Banner Overlay Text')
+                                ->placeholder('BANNER OVERLAY TEXT')
+                                ->helperText('ব্যানারের ডান পাশে বড় হরফে যে text দেখাবে।'),
+                            TextInput::make('widgets.hero_banner.button_text')
+                                ->label('Button Text')
+                                ->placeholder('EXPLORE NOW')
+                                ->helperText('ব্যানারের নিচের button এর text।'),
+                            TextInput::make('widgets.hero_banner.link')->label('Banner/Button Link')->url(),
                             ColorPicker::make('widgets.hero_banner.color')->label('Text/Accent Color'),
-                        ])->columns(3)->collapsible(),
+                            FileUpload::make('widgets.hero_banner.image')
+                                ->label('Hero Banner Background Image')
+                                ->image()
+                                ->directory('shops/hero-banners')
+                                ->maxSize(8192)
+                                ->columnSpanFull()
+                                ->helperText('📐 Recommended: 1600×600px. এই image টি hero banner এর background এ দেখাবে। না দিলে shop এর general banner ব্যবহার হবে।')
+                                ->saveUploadedFileUsing(function ($file) {
+                                    try {
+                                        return (new \App\Services\ImageOptimizer())->optimize($file, 'shops/hero-banners', 'hero_banner');
+                                    } catch (\Exception $e) {
+                                        $filename = \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+                                        $file->storeAs('shops/hero-banners', $filename, 'public');
+                                        return 'shops/hero-banners/' . $filename;
+                                    }
+                                }),
+                        ])->columns(2)->collapsible(),
 
                     Section::make('Search Bar Widget')
                         ->schema([
@@ -314,6 +337,49 @@ class StorefrontTab
                             Toggle::make('widgets.floating_chat.active')->label('Enable Floating Chat')->default(true)->columnSpanFull()->onColor('success'),
                             TextInput::make('widgets.floating_chat.link')->label('Chat Link')->url(),
                             ColorPicker::make('widgets.floating_chat.color')->label('Chat Icon Color')->default('#25D366'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('🏅 Trust Bar (Daraz Theme)')
+                        ->description('Homepage এর trust strip এর text গুলো customize করুন।')
+                        ->schema([
+                            Toggle::make('widgets.trust_bar.active')
+                                ->label('Enable Trust Bar')
+                                ->default(true)
+                                ->columnSpanFull()
+                                ->onColor('success'),
+                            Repeater::make('widgets.trust_bar.items')
+                                ->label('Trust Items')
+                                ->schema([
+                                    TextInput::make('icon')->label('Font Awesome Icon Class')->placeholder('fas fa-check-circle'),
+                                    TextInput::make('text')->label('Text')->placeholder('১০০% অরিজিনাল পণ্য'),
+                                ])
+                                ->columns(2)
+                                ->defaultItems(0)
+                                ->addActionLabel('Add Trust Item')
+                                ->columnSpanFull()
+                                ->helperText('খালি রাখলে default 4টি trust item দেখাবে।'),
+                        ])->columns(1)->collapsible(),
+
+                    Section::make('🛍️ Products Section (Daraz Theme)')
+                        ->description('Homepage এ product grid এর title customize করুন।')
+                        ->schema([
+                            TextInput::make('widgets.products_section.title')
+                                ->label('Section Title')
+                                ->placeholder('সকল পণ্য')
+                                ->helperText('Homepage এ product grid এর উপরে যে title দেখাবে।'),
+                        ])->columns(1)->collapsible(),
+
+                    Section::make('🔗 Footer Customization (Daraz Theme)')
+                        ->description('Footer এ description text ও contact section heading customize করুন।')
+                        ->schema([
+                            Textarea::make('widgets.footer.description')
+                                ->label('Footer Description Text')
+                                ->rows(2)
+                                ->placeholder('১০০% আসল পণ্য। সারা দেশে ডেলিভারি। ২৪/৭ কাস্টমার সাপোর্ট।')
+                                ->columnSpanFull(),
+                            TextInput::make('widgets.footer.contact_title')
+                                ->label('Contact Section Heading')
+                                ->placeholder('যোগাযোগ'),
                         ])->columns(2)->collapsible(),
                 ]),
         ];

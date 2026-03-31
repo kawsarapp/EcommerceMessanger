@@ -98,11 +98,22 @@
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="md:col-span-2">
                 <h3 class="font-black text-2xl text-primary mb-4 uppercase">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-sm leading-relaxed max-w-md">১০০% আসল পণ্য। সারা দেশে ডেলিভারি। ২৪/৭ কাস্টমার সাপোর্ট। সহজ রিটার্ন ও রিফান্ড।</p>
+                <p class="text-gray-500 text-sm leading-relaxed max-w-md">
+                    {{ $client->widgets['footer']['description'] ?? ($client->footer_text ?? '১০০% আসল পণ্য। সারা দেশে ডেলিভারি। ২৪/৭ কাস্টমার সাপোর্ট। সহজ রিটার্ন ও রিফান্ড।') }}
+                </p>
                 
                 <div class="flex gap-4 mt-6">
                     @if($client->fb_page_id)
-                        <a href="https://facebook.com/{{$client->fb_page_id}}" class="w-10 h-10 rounded-full bg-gray-100 flex flex-col items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://facebook.com/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex flex-col items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+                    @endif
+                    @if($client->instagram_url)
+                        <a href="{{$client->instagram_url}}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex flex-col items-center justify-center text-gray-600 hover:bg-pink-500 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                    @endif
+                    @if($client->youtube_url ?? false)
+                        <a href="{{$client->youtube_url}}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex flex-col items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                    @endif
+                    @if($client->tiktok_url ?? false)
+                        <a href="{{$client->tiktok_url}}" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex flex-col items-center justify-center text-gray-600 hover:bg-gray-900 hover:text-white transition"><i class="fab fa-tiktok"></i></a>
                     @endif
                 </div>
             </div>
@@ -123,10 +134,13 @@
             </div>
 
             <div>
-                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">যোগাযোগ</h4>
+                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">
+                    {{ $client->widgets['footer']['contact_title'] ?? 'যোগাযোগ' }}
+                </h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-primary"></i> {{$client->phone}}</p> @endif
                     @if($client->email) <p><i class="fas fa-envelope mr-2 text-primary"></i> {{$client->email}}</p> @endif
+                    @if($client->address) <p><i class="fas fa-map-marker-alt mr-2 text-primary"></i> {{$client->address}}</p> @endif
                 </div>
             </div>
         </div>

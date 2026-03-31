@@ -83,7 +83,12 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                         <button type="button" disabled class="flex-1 h-14 w-full bg-surface border border-white/5 text-gray-600 text-[10px] tracking-[0.3em] font-semibold uppercase cursor-not-allowed text-center">Currently Unavailable</button>
                     @else
+                        @if($client->show_order_button ?? true)
                         <button type="submit" class="flex-1 h-14 w-full bg-white text-black hover:bg-gray-200 text-[10px] tracking-[0.3em] font-semibold uppercase transition duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)]">Acquire This Piece</button>
+                        @endif
+                        @if($client->show_chat_button ?? true)
+                            @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                        @endif
                     @endif
                 </div>
             </form>

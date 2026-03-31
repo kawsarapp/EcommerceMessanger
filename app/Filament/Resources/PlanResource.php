@@ -524,6 +524,37 @@ class PlanResource extends Resource
                     ->color('primary')
                     ->sortable(),
 
+                TextColumn::make('features_display')
+                    ->label('Key Features')
+                    ->getStateUsing(function (Plan $record) {
+                        $feats = [];
+                        if ($record->allow_ai)                    $feats[] = '🤖 AI Bot';
+                        if ($record->allow_whatsapp)              $feats[] = '💬 WhatsApp';
+                        if ($record->allow_telegram)              $feats[] = '✈️ Telegram';
+                        if ($record->allow_facebook_messenger)    $feats[] = '📘 Facebook';
+                        if ($record->allow_marketing_broadcast)   $feats[] = '📢 Broadcast';
+                        if ($record->allow_abandoned_cart)        $feats[] = '🛒 Cart Recovery';
+                        if ($record->allow_custom_domain)         $feats[] = '🌐 Custom Domain';
+                        if ($record->allow_coupon)                $feats[] = '🎟️ Coupon';
+                        if ($record->allow_review)                $feats[] = '⭐ Reviews';
+                        if ($record->allow_analytics)             $feats[] = '📊 Analytics';
+                        if ($record->allow_flash_sale)            $feats[] = '⚡ Flash Sale';
+                        if ($record->allow_loyalty)               $feats[] = '🏆 Loyalty';
+                        if ($record->allow_referral)              $feats[] = '🎁 Referral';
+                        if ($record->allow_return_refund)         $feats[] = '📦 Return';
+                        if ($record->allow_webhook)               $feats[] = '🔗 Webhook';
+                        if ($record->allow_payment_gateway)       $feats[] = '💳 Payments';
+                        if ($record->allow_delivery_integration)  $feats[] = '🚚 Delivery';
+                        if ($record->remove_branding)             $feats[] = '✨ No Branding';
+                        if ($record->priority_support)            $feats[] = '🎯 Priority Support';
+                        if ($record->allow_premium_themes)        $feats[] = '🎨 Premium Themes';
+                        if ($record->allow_own_api_key)           $feats[] = '🔑 Own API Key';
+                        return implode(' · ', array_slice($feats, 0, 8)) . (count($feats) > 8 ? ' +' . (count($feats) - 8) . ' more' : '');
+                    })
+                    ->wrap()
+                    ->color('gray')
+                    ->size('sm'),
+
                 ToggleColumn::make('is_active')
                     ->label('Active')
                     ->onColor('success')

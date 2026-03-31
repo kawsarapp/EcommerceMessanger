@@ -24,11 +24,15 @@ class ShopProductService
             });
         }
 
-        // ক্যাটাগরি ফিল্টার — শুধু এই shop এর ক্যাটাগরি slug দিয়ে ফিল্টার
+        // ক্যাটাগরি ফিল্টার — global অথবা এই shop এর private category slug দিয়ে ফিল্টার
         if ($request->filled('category') && $request->category !== 'all') {
             $query->whereHas('category', function ($q) use ($request, $clientId) {
                 $q->where('slug', $request->category)
-                  ->where('client_id', $clientId); // 🔒 SECURITY: category must belong to this shop
+                  ->where(function ($q2) use ($clientId) {
+                      // Global category (super admin তৈরি) অথবা এই shop এর নিজের private category
+                      $q2->where('is_global', true)
+                         ->orWhere('client_id', $clientId);
+                  });
             });
         }
 
@@ -56,11 +60,15 @@ class ShopProductService
     }
 
     /**
-     * সাইডবার ক্যাটাগরি — শুধুমাত্র এই শপের ক্যাটাগরি দেখাবে
+     * সাইডবার ক্যাটাগরি — global categories + এই shop এর নিজের private categories
      */
     public function getSidebarCategories($clientId)
     {
-        return Category::where('client_id', $clientId) // 🔒 SECURITY: only this shop's categories
+        return Category::where(function ($q) use ($clientId) {
+                // Global categories (সব seller এর জন্য) অথবা এই shop এর নিজের private categories
+                $q->where('is_global', true)
+                  ->orWhere('client_id', $clientId);
+            })
             ->where('is_visible', true)
             ->withCount(['products' => function ($q) use ($clientId) {
                 $q->where('client_id', $clientId)->where('stock_status', 'in_stock');

@@ -35,17 +35,31 @@ class CategoryResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        // Seller নিজের private categories তৈরি করতে পারবে
+        return $user->client && $user->client->hasActivePlan();
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        // Seller শুধু তার নিজের (private, non-global) categories edit করতে পারবে
+        if ($record->is_global) return false;
+        return $user->client && $record->client_id === $user->client->id;
     }
 
     public static function canDelete(Model $record): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        // Seller শুধু তার নিজের private categories delete করতে পারবে
+        if ($record->is_global) return false;
+        return $user->client && $record->client_id === $user->client->id;
     }
 
     // ── Query Isolation ────────────────────────────────────
@@ -78,6 +92,7 @@ class CategoryResource extends Resource
     {
         $user = auth()->user();
         $isSuperAdmin = $user?->isSuperAdmin();
+        $clientId = $user?->client?->id;
 
         return $form->schema([
             Forms\Components\Section::make('Category Details')
@@ -107,6 +122,16 @@ class CategoryResource extends Resource
                         ->nullable()
                         ->columnSpanFull()
                         ->hidden(fn (\Filament\Forms\Get $get) => $isSuperAdmin && $get('is_global')),
+
+                    // Seller এর জন্য: client_id ও is_global auto-set হবে, hidden রাখা হবে
+                    Forms\Components\Hidden::make('client_id')
+                        ->visible(!$isSuperAdmin)
+                        ->default($clientId),
+
+                    Forms\Components\Hidden::make('is_global')
+                        ->visible(!$isSuperAdmin)
+                        ->default(false),
+
                 ])->columns(2),
 
             Forms\Components\Section::make('Category Banner & Settings')

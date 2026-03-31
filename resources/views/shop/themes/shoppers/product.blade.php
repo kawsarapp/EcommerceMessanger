@@ -160,8 +160,12 @@
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                             <button type="button" disabled class="sh-btn-red h-8 px-6 opacity-50 cursor-not-allowed">OUT OF STOCK</button>
                         @else
-                            <button type="submit" class="sh-btn-red h-8 px-8 hover:bg-red-700">ADD TO CART</button>
-                            <button type="submit" formaction="{{$baseUrl.'/checkout/'.$product->slug}}" class="sh-btn-dark h-8 w-10"><i class="fas fa-envelope text-sm"></i></button>
+                            @if($client->show_order_button ?? true)
+                                <button type="submit" class="sh-btn-red h-8 px-8 hover:bg-red-700">ADD TO CART</button>
+                            @endif
+                            @if($client->show_chat_button ?? true)
+                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                            @endif
                         @endif
                     </div>
                 </form>
@@ -261,6 +265,7 @@
         </div>
 
         {{-- RELATED PRODUCTS --}}
+        @if($client->show_related_products ?? true)
         <div class="mb-12">
             <div class="flex justify-between items-center mb-0 bg-white border border-gray-200 border-b-0 px-4 py-3">
                 <h3 class="text-xs text-gray-600 font-medium">RELATED PRODUCTS</h3>
@@ -271,13 +276,13 @@
             </div>
             
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 border border-gray-200 border-r-0 border-b-0">
-                @php $related = App\Models\Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
+                @php $related = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
                 @foreach($related as $p)
                 <div class="border-r border-b border-gray-200 p-4 relative group bg-white">
                     @if($p->sale_price)<span class="absolute top-4 left-4 bg-shred text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-4">
-                        <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                     </a>
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">
@@ -292,6 +297,7 @@
                 @endforeach
             </div>
         </div>
+        @endif
 
     </div>
 </div>

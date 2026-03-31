@@ -198,8 +198,13 @@
                         <button type="button" x-show="stockStatus == 'out_of_stock'" disabled class="w-full bg-gray-200 text-gray-500 py-3.5 rounded font-bold uppercase tracking-wider cursor-not-allowed text-sm">Out of Stock</button>
                         
                         <div x-show="stockStatus == 'in_stock'" class="flex flex-col sm:flex-row gap-3 w-full" style="display: none;">
-                            <button type="button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-lg font-bold text-sm transition shadow-sm flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Add to Order</button>
-                            <button type="submit" class="flex-1 bg-bddeep hover:bg-[#111827] text-white py-3.5 rounded-lg font-bold text-sm transition shadow border border-transparent hover:border-white/10 flex items-center justify-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> Buy Now</button>
+                            @if($client->show_order_button ?? true)
+                                <button type="button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-lg font-bold text-sm transition shadow-sm flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Add to Order</button>
+                                <button type="submit" class="flex-1 bg-bddeep hover:bg-[#111827] text-white py-3.5 rounded-lg font-bold text-sm transition shadow border border-transparent hover:border-white/10 flex items-center justify-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> Buy Now</button>
+                            @endif
+                            @if($client->show_chat_button ?? true)
+                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                            @endif
                         </div>
                     </div>
                 </form>
@@ -277,14 +282,15 @@
         </div>
 
         {{-- You Might Also Like --}}
+        @if($client->show_related_products ?? true)
         <div class="mb-12 border-t border-gray-200 pt-10">
             <h3 class="text-xl font-extrabold text-dark mb-6">You might also like</h3>
             <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                @php $related = App\Models\Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
+                @php $related = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
                 @foreach($related as $p)
                 <div class="border border-gray-100 rounded-lg p-3 hover:border-bdblue hover:shadow-md transition group bg-white relative">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
-                        <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                     </a>
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">
                         <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>
@@ -294,6 +300,7 @@
                 @endforeach
             </div>
         </div>
+        @endif
 
     </div>
 </div>

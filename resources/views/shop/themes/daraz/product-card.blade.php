@@ -19,9 +19,13 @@
 
     {{-- Image --}}
     <div class="aspect-square bg-gray-50 relative p-3 flex items-center justify-center overflow-hidden">
-        <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" alt="{{ $p->name }}" class="p-img max-w-full max-h-full object-contain z-10">
-        <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <span class="bg-primary text-white text-[10px] font-bold px-4 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">বিস্তারিত</span>
+        <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" alt="{{ $p->name }}"
+             class="p-img max-w-full max-h-full object-contain z-10 transition-transform duration-500 ease-out group-hover:scale-110">
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <span class="bg-white text-primary text-[10px] font-bold px-4 py-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.641 0-8.573-3.007-9.964-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                বিস্তারিত
+            </span>
         </div>
     </div>
 

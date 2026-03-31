@@ -75,6 +75,15 @@ class ClientTableSchema
     {
         return [
             Tables\Actions\EditAction::make(),
+
+            // Super Admin Only: quick link to Permissions tab
+            Tables\Actions\Action::make('permissions')
+                ->label('🔑 Permissions')
+                ->icon('heroicon-o-key')
+                ->color('warning')
+                ->url(fn (Client $record) => \App\Filament\Resources\ClientResource::getUrl('admin-permissions', ['record' => $record->id]))
+                ->visible(fn () => auth()->user()?->isSuperAdmin()),
+
             Tables\Actions\Action::make('Visit Shop')
                 ->icon('heroicon-o-arrow-top-right-on-square')
                 ->color('gray')

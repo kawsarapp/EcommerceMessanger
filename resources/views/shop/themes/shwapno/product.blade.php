@@ -129,9 +129,14 @@
                 @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                     <button type="button" disabled class="w-[80%] max-w-[200px] sw-btn-pill py-3 text-sm bg-gray-300 text-gray-500 cursor-not-allowed">OUT OF STOCK</button>
                 @else
+                    @if($client->show_order_button ?? true)
                     <button type="submit" class="w-[80%] max-w-[200px] sw-btn-pill sw-btn-red py-3 text-sm hover:shadow-lg">
                         <i class="fas fa-plus mr-2 text-white/80"></i> Add to Bag
                     </button>
+                    @endif
+                    @if($client->show_chat_button ?? true)
+                        @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
+                    @endif
                 @endif
             </form>
 
@@ -222,30 +227,31 @@
     </div>
 
     {{-- SIMILAR PRODUCTS SECTION --}}
+    @if($client->show_related_products ?? true)
     <div class="mb-16">
         <h3 class="sw-section-title">SIMILAR PRODUCTS</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
-            @php $similar = App\Models\Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(6)->get(); @endphp
+            @php $similar = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(6)->get(); @endphp
             @forelse($similar as $p)
                 <div class="sw-card group/card">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-32 mb-2 mt-4">
                         <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
-                        <span class="text-[9px] italic text-gray-400 mb-1">Delivery 1-2 hours</span>
                         <a href="{{$baseUrl.'/product/'.$p->slug}}" class="w-full">
                             <h4 class="text-[11px] font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-1 hover:text-swred transition">{{$p->name}}</h4>
                         </a>
                         <div class="flex items-center justify-center gap-1.5 mb-2 h-6">
                             @if($p->sale_price)<del class="text-[9px] text-gray-400 font-medium">৳{{number_format($p->regular_price, 0)}}</del>@endif
                             <span class="font-bold text-swred text-xs">৳{{number_format($p->sale_price ?? $p->regular_price, 0)}}</span>
-                            <span class="text-[9px] text-gray-500 ml-0.5">Per Piece</span>
                         </div>
+                        @if($client->show_order_button ?? true)
                         <form action="{{$baseUrl.'/checkout/'.$p->slug}}" method="GET" class="w-full mt-2">
                             <button class="w-full sw-btn-pill sw-btn-red py-1.5 text-[10px] w-full hover:shadow-md">
                                 <i class="fas fa-plus mr-1 text-[8px]"></i> Add to Bag
                             </button>
                         </form>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -253,6 +259,7 @@
             @endforelse
         </div>
     </div>
+    @endif
     
     {{-- RELATED PRODUCTS SECTION --}}
     <div class="mb-16">

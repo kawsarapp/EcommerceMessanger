@@ -14,16 +14,28 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 @endif
 
 {{-- Trust Bar --}}
+@if($client->widgets['trust_bar']['active'] ?? true)
 <section class="bg-white border-b border-gray-100 py-3 hidden md:block">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-center gap-8 text-sm text-gray-600">
-            <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i> ১০০% অরিজিনাল পণ্য</span>
-            <span class="flex items-center gap-2"><i class="fas fa-shipping-fast text-primary"></i> সারাদেশে ডেলিভারি</span>
-            <span class="flex items-center gap-2"><i class="fas fa-headset text-blue-500"></i> ২৪/৭ সাপোর্ট</span>
-            <span class="flex items-center gap-2"><i class="fas fa-undo-alt text-purple-500"></i> সহজ রিটার্ন</span>
+            @php $trustItems = $client->widgets['trust_bar']['items'] ?? null; @endphp
+            @if($trustItems)
+                @foreach($trustItems as $item)
+                    <span class="flex items-center gap-2">
+                        <i class="{{ $item['icon'] ?? 'fas fa-check-circle' }} text-primary"></i>
+                        {{ $item['text'] ?? '' }}
+                    </span>
+                @endforeach
+            @else
+                <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i> ১০০% অরিজিনাল পণ্য</span>
+                <span class="flex items-center gap-2"><i class="fas fa-shipping-fast text-primary"></i> সারাদেশে ডেলিভারি</span>
+                <span class="flex items-center gap-2"><i class="fas fa-headset text-blue-500"></i> ২৪/৭ সাপোর্ট</span>
+                <span class="flex items-center gap-2"><i class="fas fa-undo-alt text-purple-500"></i> সহজ রিটার্ন</span>
+            @endif
         </div>
     </div>
 </section>
+@endif
 
 {{-- Category Filter --}}
 @if($client->widget('category_filter'))
@@ -38,9 +50,9 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
         <div>
             <h2 class="text-xl md:text-2xl font-bold text-dark">
                 @if(request('category') && request('category') !== 'all')
-                    {{ $categories->where('slug', request('category'))->first()?->name ?? 'পণ্য সমূহ' }}
+                    {{ $categories->where('slug', request('category'))->first()?->name ?? ($client->widgets['products_section']['title'] ?? 'পণ্য সমূহ') }}
                 @else
-                    সকল পণ্য
+                    {{ $client->widgets['products_section']['title'] ?? 'সকল পণ্য' }}
                 @endif
             </h2>
             <p class="text-sm text-gray-500">{{ $products->total() }}টি পণ্য পাওয়া গেছে</p>

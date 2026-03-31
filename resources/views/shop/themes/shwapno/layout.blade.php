@@ -143,7 +143,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Category Hamburger Toggle --}}
                 <div class="w-64 border-r border-gray-100 flex items-center gap-3 py-3 cursor-pointer group">
                     <i class="fas fa-bars text-gray-500 group-hover:text-swred transition"></i>
-                    <span class="text-xs font-black text-gray-800 uppercase tracking-tight group-hover:text-swred transition">SHOP BY CATEGORY</span>
+                    <span class="text-xs font-black text-gray-800 uppercase tracking-tight group-hover:text-swred transition">
+                        {{ $client->widgets['category_filter']['text'] ?? 'SHOP BY CATEGORY' }}
+                    </span>
                 </div>
 
                 <div class="flex items-center gap-1 xl:gap-3">

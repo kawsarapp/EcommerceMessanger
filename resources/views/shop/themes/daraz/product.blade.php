@@ -123,8 +123,12 @@
                             @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                                 <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 py-3 rounded font-bold uppercase cursor-not-allowed">স্টক আউট</button>
                             @else
-                                <button type="submit" class="flex-1 bg-[#2ABBE8] hover:bg-[#1d9fc9] text-white py-3 rounded text-sm font-bold transition shadow-sm">এখনই কিনুন</button>
-                                <button type="button" class="flex-1 bg-primary hover:bg-[#d04000] text-white py-3 rounded text-sm font-bold transition shadow-sm"><i class="fas fa-shopping-cart mr-2"></i>কার্টে রাখুন</button>
+                                @if($client->show_order_button ?? true)
+                                    <button type="submit" class="flex-1 bg-[#2ABBE8] hover:bg-[#1d9fc9] text-white py-3 rounded text-sm font-bold transition shadow-sm">এখনই কিনুন</button>
+                                @endif
+                                @if($client->show_chat_button ?? true)
+                                    @include('shop.themes.daraz.chat-button', ['client' => $client, 'product' => $product])
+                                @endif
                             @endif
                         </div>
                     </form>
@@ -162,6 +166,7 @@
                         
                         <div class="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wider">রিটার্ন ও ওয়ারেন্টি</div>
 
+                        @if($client->show_return_warranty ?? true)
                         <div class="flex gap-3 mb-4">
                             <i class="fas fa-undo text-gray-400 mt-0.5"></i>
                             <div class="text-sm text-gray-700">{{$product->return_policy ?? '7 Days Returns'}}</div>
@@ -170,6 +175,7 @@
                             <i class="fas fa-shield-alt text-gray-400 mt-0.5"></i>
                             <div class="text-sm text-gray-700">{{$product->warranty ?? 'Warranty not available'}}</div>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -192,10 +198,11 @@
             </div>
             
             {{-- Right Sidebar Recommendations --}}
+            @if($client->show_related_products ?? true)
             <div class="lg:col-span-1 border border-gray-200 rounded-xl bg-white p-4 hidden lg:block">
                 <h3 class="font-bold text-gray-900 mb-4 text-sm uppercase">আপনার পছন্দ হতে পারে</h3>
                 <div class="flex flex-col gap-4">
-                    @php $related = App\Models\Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(4)->get(); @endphp
+                    @php $related = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(4)->get(); @endphp
                     @foreach($related as $r)
                     <a href="{{$baseUrl.'/product/'.$r->slug}}" class="flex gap-3 group">
                         <img src="{{asset('storage/'.$r->thumbnail)}}" class="w-16 h-16 object-cover rounded border border-gray-100">
@@ -207,6 +214,7 @@
                     @endforeach
                 </div>
             </div>
+            @endif
         </div>
 
     </div>
