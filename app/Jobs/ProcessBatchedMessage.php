@@ -92,7 +92,42 @@ class ProcessBatchedMessage implements ShouldQueue
             $outgoingImages = array_map('trim', $m[1]);
             $aiReply = preg_replace('/\[ATTACH_IMAGE:\s*https?:\/\/[^\]]+\]/i', '', $aiReply);
         }
-        $aiReply = trim(preg_replace('/\[(IMAGE|CAROUSEL|QUICK_REPLIES):[^\]]+\]/i', '', $aiReply));
+        // [QUICK_REPLIES] conversion to text menu
+        if (preg_match('/\[QUICK_REPLIES:\s*([^\]]+)\]/i', $aiReply, $matches)) {
+            $options = explode(',', $matches[1]);
+            $menu = "\n\n(অর্ডার করতে পছন্দটি টাইপ করুন)\n";
+            foreach ($options as $opt) {
+                $cleanOpt = trim(str_replace(['"', "'"], '', $opt));
+                if (!empty($cleanOpt)) {
+                    $menu .= "▪️ {$cleanOpt}\n";
+                }
+            }
+            $aiReply = str_replace($matches[0], $menu, $aiReply);
+        }
+
+        // [CAROUSEL] conversion to text menu + images
+        if (preg_match('/\[CAROUSEL:\s*([\d,\s]+)\]/i', $aiReply, $matches)) {
+            $carouselIds = explode(',', $matches[1]);
+            $products = \App\Models\Product::whereIn('id', $carouselIds)->get();
+            $aiReply = str_replace($matches[0], '', $aiReply); // remove tag
+            
+            if ($products->isNotEmpty()) {
+                $aiReply .= "\n🛍️ আমাদের কালেকশন:\n\n";
+                foreach ($products as $idx => $p) {
+                    $num = $idx + 1;
+                    $price = $p->sale_price > 0 ? $p->sale_price : $p->regular_price;
+                    $aiReply .= "👉 *{$num}. {$p->name}*\n";
+                    $aiReply .= "দাম: ৳{$price}\n\n";
+                    
+                    if (!empty($p->thumbnail)) {
+                        $outgoingImages[] = asset('storage/' . ltrim($p->thumbnail, '/'));
+                    }
+                }
+                $aiReply .= "(কোনোটি পছন্দ হলে তার নাম লিখে জানান)\n";
+            }
+        }
+        
+        $aiReply = trim($aiReply);
 
         $apiUrl = config('services.whatsapp.api_url') . '/api/send-message';
 
