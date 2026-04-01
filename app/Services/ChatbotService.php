@@ -70,10 +70,10 @@ class ChatbotService
             if ($this->isVoiceUrl($imageUrl)) {
                 $voiceText = $this->media->convertVoiceToText($imageUrl);
                 if ($voiceText) {
-                    $userMessage = $voiceText . " [Voice Message]";
+                    $userMessage = $userMessage . "👉 Customer says (Voice): " . $voiceText;
                     Log::info("🎤 Voice transcribed for customer {$senderId}: " . substr($voiceText, 0, 80));
                 } else {
-                    $userMessage = "[SYSTEM: Customer sent a voice message but transcription failed. Politely ask them to type their message instead.]";
+                    $userMessage = $userMessage . "\n[SYSTEM: Customer sent a voice message but transcription failed. Politely ask them to type their message instead.]";
                 }
                 $imageUrl = null;
 

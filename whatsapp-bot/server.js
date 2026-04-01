@@ -141,12 +141,27 @@ function initializeWhatsAppClient(instance_id, res = null) {
 
         console.log(`[WA] New message from ${cleanNumber} (${senderName}): "${messageBody.substring(0, 60)}"`);
 
+        let quotedText = null;
+        if (msg.hasQuotedMsg) {
+            try {
+                const quotedMsg = await msg.getQuotedMessage();
+                if (quotedMsg.hasMedia) {
+                    quotedText = '[Replied to an image/media]';
+                } else if (quotedMsg.body) {
+                    quotedText = quotedMsg.body;
+                }
+            } catch (err) {
+                console.log('[WA] Error reading quoted message:', err.message);
+            }
+        }
+
         sendWebhookToLaravel('receive', {
             instance_id,
             from: cleanNumber,
             body: messageBody,
             sender_name: senderName,
-            attachment: attachmentBase64
+            attachment: attachmentBase64,
+            quoted_message: quotedText
         });
     });
 

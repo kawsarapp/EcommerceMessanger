@@ -28,6 +28,13 @@ class WhatsAppWebhookController extends Controller{
         Log::info("WA Payload Dump: " . json_encode($request->all(), JSON_UNESCAPED_UNICODE));
 
         $instanceId=$request->instance_id;$senderPhone=$request->from;$messageBody=$request->body;$senderName=$request->sender_name??'Customer';$attachmentBase64=$request->attachment; 
+        
+        $quotedContext = "";
+        if (!empty($request->quoted_message)) {
+            $quotedContext = "[Customer replied to previous message: \"{$request->quoted_message}\"]\n";
+            $messageBody = "{$quotedContext}👉 Customer says: {$messageBody}";
+        }
+
         $client=Client::where('wa_instance_id',$instanceId)->where('is_whatsapp_active',true)->first();
         if(!$client) return response()->json(['success'=>false,'message'=>'Bot is offline']);
         Log::info("📨 INCOMING WhatsApp | Shop: {$client->shop_name} | From: {$senderPhone} ({$senderName}) | Msg: " . substr($messageBody, 0, 100));
@@ -44,9 +51,10 @@ class WhatsAppWebhookController extends Controller{
                     elseif($isAudioAttachment) $extension='ogg';
                     $fileName='wa_'.time().'_'.uniqid().'.'.$extension;$filePath='chat_attachments/'.$fileName;
                     Storage::disk('public')->put($filePath,base64_decode($base64Data));$attachmentUrl=asset('storage/'.$filePath);
-                    // 🎤 Audio হলে messageBody খালি রাখো — ChatbotService voice transcription করবে
+                    // 🎤 Audio হলে messageBody খালি রাখো (বা শধু quotedContext রাখো) — ChatbotService voice transcription করবে
                     if($isAudioAttachment){
-                        $messageBody=''; // Intentionally empty so isVoiceUrl() can handle it
+                        $messageBody = $quotedContext; // Intentionally empty the Customer says part so isVoiceUrl() can handle it
+
                         Log::info("🎤 WA Audio Received | Shop: {$client->shop_name} | From: {$senderPhone} | URL: {$attachmentUrl}");
                     } elseif(empty($messageBody)||str_starts_with($messageBody,'[Received a')){
                         $messageBody="[User sent an attachment]";
