@@ -19,17 +19,20 @@ async function sendWebhookToLaravel(endpoint, data) {
     try {
         // On VPS, set LARAVEL_INTERNAL_URL=http://127.0.0.1:80 in .env
         // to avoid HTTPS SSL loopback issues when calling own domain
-        const myDomain = process.env.LARAVEL_INTERNAL_URL
-            || process.env.APP_URL
-            || 'http://127.0.0.1:8000';
+        const appUrl = process.env.APP_URL || 'http://127.0.0.1:8000';
+        const myDomain = process.env.LARAVEL_INTERNAL_URL || appUrl;
         const secretKey = process.env.WA_WEBHOOK_SECRET || 'super-secret-key';
+        
+        let hostHeader = 'localhost';
+        try { hostHeader = new URL(appUrl).hostname; } catch(e) {}
 
-        console.log(`[Webhook] Sending [${endpoint}] to: ${myDomain}`);
+        console.log(`[Webhook] Sending [${endpoint}] to: ${myDomain} (Host: ${hostHeader})`);
         const response = await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${secretKey}`
+                'Authorization': `Bearer ${secretKey}`,
+                'Host': hostHeader
             },
             body: JSON.stringify(data)
         });
