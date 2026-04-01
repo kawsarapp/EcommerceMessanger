@@ -1,5 +1,5 @@
 // Read config from the main Laravel .env in the parent directory
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env'), override: true });
 const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
@@ -17,10 +17,9 @@ const sessionReadyPromises = {};
 // Send webhook back to Laravel
 async function sendWebhookToLaravel(endpoint, data) {
     try {
-        // On VPS, set LARAVEL_INTERNAL_URL=http://127.0.0.1:80 in .env
-        // to avoid HTTPS SSL loopback issues when calling own domain
+        // Send via APP_URL directly. TLS loops are mitigated by rejectUnauthorized=false
         const appUrl = process.env.APP_URL || 'http://127.0.0.1:8000';
-        const myDomain = process.env.LARAVEL_INTERNAL_URL || appUrl;
+        const myDomain = appUrl;
         const secretKey = process.env.WA_WEBHOOK_SECRET || 'super-secret-key';
         
         let hostHeader = 'localhost';
