@@ -105,10 +105,10 @@ class ChatbotService
                 }
             }
 
-            $promptContext = "[সিস্টেম নোট: কাস্টমার ছবি পাঠিয়েছে।"
+            $promptContext = "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে।"
                 . ($visionTags ? " Vision scan: '{$visionTags}'." : "")
-                . ($skuContext  ? " {$skuContext}" : " Inventory থেকে এই ছবির মতো product খুঁজো।")
-                . " ⚠️ শুধু Inventory-তে থাকা real tথ্য দেবে।] ";
+                . ($skuContext  ? " {$skuContext}" : " 🚨 IMPORTANT INSTRUCTION: তুমি নিজেই ছবি থেকে যেকোনো টেক্সট, প্রোডাক্ট কোড, SKU বা মডেল নম্বর (যদি ছবির গায়ে লেখা থাকে) পড়ে নাও এবং Inventory ডাটার সাথে মিলিয়ে প্রোডাক্টটি খুঁজে বের করো। যদি কোনো প্রোডাক্টের সাথে মিলে যায়, তাহলে সরাসরি সেই প্রোডাক্টের দাম ও স্টক কনফার্ম করে দাও। কাস্টমারকে নতুন করে নাম বা SKU জিজ্ঞেস করবে না!")
+                . " ⚠️ শুধু Inventory-তে থাকা তথ্যের সাথেই মেলাবে।] ";
 
             $userMessage = empty(trim($userMessage))
                 ? $promptContext . "এই ছবির product স্টকে আছে?"

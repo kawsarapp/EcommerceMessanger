@@ -15,7 +15,17 @@ class MediaService
         if (empty($imageUrl)) return null;
 
         try {
-            $content = @file_get_contents($imageUrl);
+            $ch = curl_init($imageUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+            ]);
+            $content = curl_exec($ch);
+            curl_close($ch);
+
             if ($content === false || strlen($content) === 0) return null;
 
             $ext  = strtolower(pathinfo(parse_url($imageUrl, PHP_URL_PATH), PATHINFO_EXTENSION));

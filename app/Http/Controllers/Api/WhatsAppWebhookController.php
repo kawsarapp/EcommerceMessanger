@@ -23,6 +23,10 @@ class WhatsAppWebhookController extends Controller{
         if ($request->header('Authorization') !== 'Bearer ' . env('WA_WEBHOOK_SECRET', 'super-secret-key')) {
             return response()->json(['success' => false, 'error' => 'Unauthorized Access'], 401);
         }
+        
+        // 🚨 Temporary Payload Dump for Debugging Quoted Messages
+        Log::info("WA Payload Dump: " . json_encode($request->all(), JSON_UNESCAPED_UNICODE));
+
         $instanceId=$request->instance_id;$senderPhone=$request->from;$messageBody=$request->body;$senderName=$request->sender_name??'Customer';$attachmentBase64=$request->attachment; 
         $client=Client::where('wa_instance_id',$instanceId)->where('is_whatsapp_active',true)->first();
         if(!$client) return response()->json(['success'=>false,'message'=>'Bot is offline']);
@@ -31,7 +35,7 @@ class WhatsAppWebhookController extends Controller{
         $isAudioAttachment=false;
         if($attachmentBase64){
             try{
-                if(preg_match('/^data:([^;]+);base64,(.+)$/',$attachmentBase64,$matches)){
+                if(preg_match('/^data:(.*?);base64,(.+)$/is',$attachmentBase64,$matches)){
                     $mimeType=$matches[1];$base64Data=$matches[2];
                     $isAudioAttachment=str_contains($mimeType,'audio');
                     $extension='file';
