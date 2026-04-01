@@ -26,18 +26,38 @@ async function sendWebhookToLaravel(endpoint, data) {
         let hostHeader = 'localhost';
         try { hostHeader = new URL(appUrl).hostname; } catch(e) {}
 
-        console.log(`[Webhook] Sending [${endpoint}] to: ${myDomain} (Host: ${hostHeader})`);
-        const response = await fetch(`${myDomain}/api/v1/whatsapp/${endpoint}`, {
+        const http = require('http');
+        const https = require('https');
+        
+        const isHttps = myDomain.startsWith('https');
+        const targetUrl = `${myDomain}/api/v1/whatsapp/${endpoint}`;
+        
+        const options = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${secretKey}`,
                 'Host': hostHeader
-            },
-            body: JSON.stringify(data)
+            }
+        };
+
+        // Bypass SSL errors for local or self-signed VPS loopbacks
+        if (isHttps) options.rejectUnauthorized = false;
+
+        const req = (isHttps ? https : http).request(targetUrl, options, (res) => {
+            let resData = '';
+            res.on('data', chunk => { resData += chunk; });
+            res.on('end', () => {
+                console.log(`[Webhook] [${endpoint}] -> ${res.statusCode}: ${resData.substring(0, 120)}`);
+            });
         });
-        const text = await response.text();
-        console.log(`[Webhook] [${endpoint}] -> ${response.status}: ${text.substring(0, 120)}`);
+
+        req.on('error', (error) => {
+            console.error(`[Webhook] Error [${endpoint}]:`, error.message);
+        });
+
+        req.write(JSON.stringify(data));
+        req.end();
     } catch (error) {
         console.error(`[Webhook] Error [${endpoint}]:`, error.message);
     }
