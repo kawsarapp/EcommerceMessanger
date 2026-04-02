@@ -273,14 +273,29 @@
 
                     {{-- Submit --}}
                     <div class="mt-8 mb-4">
+                        @if($client->show_terms_checkbox ?? false)
+                        <div class="mb-4 bg-blue-50/50 border border-blue-100 rounded-md p-3">
+                            <label class="flex items-start gap-2 cursor-pointer">
+                                <input type="checkbox" required class="mt-0.5 w-4 h-4 text-bdblue bg-white border-gray-300 rounded focus:ring-bdblue">
+                                <span class="text-xs text-gray-700 font-medium leading-tight">
+                                    I have read and agree to the <a href="#" class="text-bdblue hover:underline font-bold">Terms and Conditions</a>, 
+                                    <a href="#" class="text-bdblue hover:underline font-bold">Privacy Policy</a>, and 
+                                    <a href="#" class="text-bdblue hover:underline font-bold">Return Policy</a>.
+                                </span>
+                            </label>
+                        </div>
+                        @endif
+
                         <button type="submit" class="w-full bg-[#111827] hover:bg-[#1f2937] text-white rounded-md py-3.5 font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
                             <i class="fas fa-wallet text-gray-300"></i> Place Order
                         </button>
                     </div>
                     
+                    @if(!($client->show_terms_checkbox ?? false))
                     <div class="text-center">
                         <span class="text-[10px] text-gray-400">By placing your order, you agree to our <a href="#" class="underline">terms and conditions</a></span>
                     </div>
+                    @endif
 
                 </form>
             </div>

@@ -91,6 +91,12 @@
                     </div>
                     @endforeach
                 </div>
+                
+                @if($product->video_url)
+                <a href="{{$product->video_url}}" target="_blank" class="mt-4 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-bdblue border border-blue-200 font-bold py-2.5 rounded-lg transition text-xs shadow-sm w-full">
+                    <i class="fab fa-youtube text-red-500 text-base"></i> Watch Product Video
+                </a>
+                @endif
             </div>
 
             {{-- Right Side: Info & Add to Cart --}}
@@ -98,8 +104,10 @@
                 {{-- Meta Info --}}
                 <div class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                     <span class="text-bdblue">{{$product->category->name ?? 'Category'}}</span> 
+                    @if($product->brand)
                     <span class="text-gray-300">by</span> 
-                    <a href="#" class="text-blue-500 hover:underline">BrandName</a>
+                    <span class="text-bdblue bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{{$product->brand}}</span>
+                    @endif
                 </div>
 
                 {{-- Title --}}
@@ -259,9 +267,15 @@
                 <div x-show="tab === 'specifications'" class="animate-fade-in hidden">
                     <div class="max-w-xl bg-gray-50 rounded-lg border border-gray-200 p-6">
                         <div class="grid grid-cols-2 gap-y-4 text-sm">
-                            <div class="font-bold text-dark">Brand</div><div class="text-right"><a href="#" class="text-bdblue hover:underline">Generic</a></div>
+                            <div class="font-bold text-dark">Brand</div><div class="text-right">{{$product->brand ?? 'Generic'}}</div>
                             <div class="font-bold text-dark border-t border-gray-200 pt-4">SKU</div><div class="text-right border-t border-gray-200 pt-4">{{$product->id}}{{$product->client_id*87}}</div>
+                            @if($product->material)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Material</div><div class="text-right border-t border-gray-200 pt-4">{{$product->material}}</div>
+                            @endif
                             <div class="font-bold text-dark border-t border-gray-200 pt-4">Warranty</div><div class="text-right border-t border-gray-200 pt-4">{{$product->warranty ?? 'N/A'}}</div>
+                            @if($client->show_return_warranty ?? true)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Return Policy</div><div class="text-right border-t border-gray-200 pt-4">{{$product->return_policy ?? '7 Days Easy Return'}}</div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -52,6 +52,9 @@ $primary='#1a3673';
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue">
     
+    {{-- Flash Sale Bar --}}
+    @include('shop.partials.flash-sale-bar', ['client' => $client])
+
     {{-- Top Bar (Black) --}}
     <div class="bg-gray-900 text-gray-300 text-[11px] py-1.5 hidden md:block">
         <div class="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
