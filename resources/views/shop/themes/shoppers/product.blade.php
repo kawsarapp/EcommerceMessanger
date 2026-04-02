@@ -40,8 +40,25 @@
     qty: 1, 
     color: '', 
     size: '',
-    tab: 'description'
-}">
+    tab: 'description',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) {
+                this.currentPrice = parseInt(matched.price);
+            } else {
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     
     {{-- Breadcrumb --}}
     <div class="sh-breadcrumb flex items-center gap-2">
@@ -82,10 +99,21 @@
                     @endforeach
                 </div>
                 @endif
+
+                @if($product->video_url)
+                <a href="{{$product->video_url}}" target="_blank" class="w-full mt-4 bg-red-50 hover:bg-red-100 text-shred font-bold text-xs py-2.5 rounded border border-red-200 flex items-center justify-center transition">
+                    <i class="fab fa-youtube text-lg mr-2"></i> WATCH PRODUCT VIDEO
+                </a>
+                @endif
             </div>
 
             {{-- Product Info (Middle) --}}
             <div class="md:col-span-7 lg:col-span-5 flex flex-col">
+                @if($product->brand)
+                <div class="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1 flex items-center gap-1.5">
+                    <i class="fas fa-tag"></i> {{$product->brand}}
+                </div>
+                @endif
                 <h1 class="text-[22px] text-gray-800 font-medium leading-tight mb-3">{{$product->name}}</h1>
                 
                 {{-- Review Stars --}}
@@ -98,7 +126,7 @@
 
                 {{-- Price Block --}}
                 <div class="flex items-end gap-3 mb-2">
-                    <span class="sh-price">TK {{number_format($product->sale_price ?? $product->regular_price, 2)}}</span>
+                    <span class="sh-price" x-text="'TK ' + new Intl.NumberFormat('en-IN').format(currentPrice)">TK {{number_format($product->sale_price ?? $product->regular_price, 2)}}</span>
                     @if($product->sale_price)
                         <del class="text-gray-500 font-medium text-sm mb-1">TK {{number_format($product->regular_price, 2)}}</del>
                     @endif
@@ -240,8 +268,37 @@
                     </div>
                 </div>
                 
-                <div x-show="tab === 'information'" class="animate-fade-in hidden flex items-center justify-center p-12 text-gray-400">
-                    <div>No additional information provided.</div>
+                <div x-show="tab === 'information'" class="animate-fade-in hidden">
+                    @if($product->material || ($client->show_return_warranty ?? true))
+                        <div class="border border-gray-100 p-6 rounded bg-gray-50 max-w-2xl">
+                            <h3 class="font-bold text-lg text-gray-800 mb-4 pb-2 border-b border-gray-200">Additional Information</h3>
+                            <div class="space-y-4 text-sm">
+                                @if($product->material)
+                                <div class="grid grid-cols-3">
+                                    <div class="text-gray-500 font-medium">Material</div>
+                                    <div class="col-span-2 text-gray-800 font-bold">{{$product->material}}</div>
+                                </div>
+                                <div class="border-b border-gray-200 w-full"></div>
+                                @endif
+
+                                @if($client->show_return_warranty ?? true)
+                                <div class="grid grid-cols-3">
+                                    <div class="text-gray-500 font-medium">Warranty</div>
+                                    <div class="col-span-2 text-gray-800 font-bold">{{$product->warranty ?? 'N/A'}}</div>
+                                </div>
+                                <div class="border-b border-gray-200 w-full"></div>
+                                <div class="grid grid-cols-3">
+                                    <div class="text-gray-500 font-medium">Return Policy</div>
+                                    <div class="col-span-2 text-gray-800 font-bold">{{$product->return_policy ?? '7 Days Easy Return'}}</div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex items-center justify-center p-12 text-gray-400">
+                            No additional information provided.
+                        </div>
+                    @endif
                 </div>
                 
                 <div x-show="tab === 'reviews'" class="animate-fade-in hidden">

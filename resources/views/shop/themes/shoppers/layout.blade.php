@@ -63,6 +63,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 </head>
 <body class="antialiased flex flex-col min-h-screen font-sans selection:bg-shred/20 selection:text-shred">
     
+    {{-- Flash Sale Bar --}}
+    @include('shop.partials.flash-sale-bar', ['client' => $client])
+
     {{-- Top Bar (Dark Blue) --}}
     <div class="bg-shdark text-gray-300 text-[11px] py-2 hidden md:block border-b border-gray-700">
         <div class="max-w-[1240px] mx-auto px-4 flex justify-between items-center">

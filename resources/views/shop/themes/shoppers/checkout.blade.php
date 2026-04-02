@@ -225,6 +225,17 @@
                             <span class="text-2xl font-black text-shred tracking-tight leading-none">TK <span x-text="total.toLocaleString()"></span></span>
                         </div>
 
+                        @if($client->show_terms_checkbox ?? false)
+                        <div class="mb-5">
+                            <label class="flex items-start gap-3 cursor-pointer group">
+                                <input type="checkbox" required class="mt-1 w-4 h-4 text-shred bg-white border-gray-300 rounded focus:ring-shred focus:ring-2">
+                                <span class="text-[11px] text-gray-600 font-medium group-hover:text-gray-800 transition">
+                                    I have read and agree to the <a href="#" class="text-shred hover:underline font-bold">Terms and Conditions</a> and <a href="#" class="text-shred hover:underline font-bold">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+                        @endif
+
                         <button type="submit" class="w-full bg-shred hover:bg-[#d63d42] text-white font-bold py-4 text-sm uppercase tracking-wider transition rounded-sm shadow-md flex items-center justify-center gap-2">
                             <i class="fas fa-lock"></i> PLACE ORDER
                         </button>
