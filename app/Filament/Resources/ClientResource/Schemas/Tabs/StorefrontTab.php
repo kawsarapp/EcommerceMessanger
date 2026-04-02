@@ -75,6 +75,7 @@ class StorefrontTab
                         'athletic'    => '⚡ Athletic (High Energy & Performance)',
                         'daraz'       => '🛍️ Daraz Classic (Marketplace Look)',
                         'pikabo'      => '📱 Pikabo (Pickaboo Style)',
+                        'vegist'      => '🌿 Vegist (Organic & Supermarket)',
                     ])
                     ->default('default')
                     ->searchable()

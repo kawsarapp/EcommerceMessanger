@@ -69,7 +69,16 @@ class ShopProductService
                 $q->where('is_global', true)
                   ->orWhere('client_id', $clientId);
             })
+            ->whereNull('parent_id')
             ->where('is_visible', true)
+            ->with(['children' => function($q) use ($clientId) {
+                $q->where('is_visible', true)
+                  ->where(function ($sq) use ($clientId) {
+                      $sq->where('is_global', true)->orWhere('client_id', $clientId);
+                  })
+                  ->orderBy('sort_order', 'asc')
+                  ->orderBy('name');
+            }])
             ->withCount(['products' => function ($q) use ($clientId) {
                 $q->where('client_id', $clientId)->where('stock_status', 'in_stock');
             }])

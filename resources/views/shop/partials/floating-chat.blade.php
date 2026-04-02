@@ -14,7 +14,7 @@
 @endphp
 
 @if($hasWhatsApp || $hasMessenger)
-<div x-data="{ open: false }" class="fixed bottom-6 right-6 z-[9999]" x-cloak>
+<div x-data="{ open: false }" class="fixed bottom-[85px] md:bottom-6 right-6 z-[9999]" x-cloak>
     {{-- Toggle Button --}}
     <button @click="open = !open" 
         class="w-14 h-14 rounded-full bg-emerald-500 text-white shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center relative">

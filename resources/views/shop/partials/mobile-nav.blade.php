@@ -23,7 +23,8 @@
         <i class="fas fa-home"></i>Home
     </a>
 
-    <a href="{{$baseUrl}}?category=all" title="Categories" class="{{ request('category') ? 'active' : '' }}">
+    {{-- Category Modal Trigger --}}
+    <a href="#" title="Categories" @click.prevent="$dispatch('toggle-mobile-categories')" class="{{ request('category') ? 'active' : '' }}">
         <i class="fas fa-th-large"></i>Categories
     </a>
     
@@ -69,4 +70,83 @@
             placeholder="Search products..." autocomplete="off">
         <button type="submit"><i class="fas fa-search text-sm"></i></button>
     </form>
+</div>
+
+{{-- Mobile Categories Modal (Slide Up) --}}
+@php
+    $navCats = isset($categories) && !empty($categories) ? $categories : app(\App\Services\Shop\ShopProductService::class)->getSidebarCategories($client->id);
+@endphp
+<div x-data="{ open: false }" 
+     x-on:toggle-mobile-categories.window="open = !open"
+     x-cloak>
+     
+    {{-- Backdrop --}}
+    <div x-show="open" 
+         x-transition.opacity 
+         @click="open = false"
+         class="fixed inset-0 bg-black/50 z-[9990] md:hidden"></div>
+
+    {{-- Slide Up Drawer --}}
+    <div x-show="open" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="translate-y-full"
+         x-transition:enter-end="translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-y-0"
+         x-transition:leave-end="translate-y-full"
+         class="fixed bottom-0 left-0 w-full bg-white z-[9995] rounded-t-2xl shadow-2xl flex flex-col md:hidden"
+         style="max-height: 80vh; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));">
+        
+        {{-- Header --}}
+        <div class="flex justify-between items-center p-4 border-b border-gray-100 shrink-0">
+            <h3 class="text-lg font-bold text-slate-800">Shop by Category</h3>
+            <button @click="open = false" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        {{-- Categories List --}}
+        <div class="overflow-y-auto hide-scroll flex-1 p-4">
+            <a href="{{$baseUrl}}?category=all" class="block w-full text-left py-3 px-4 mb-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg transition">
+                <i class="fas fa-th-large mr-2"></i> All Products
+            </a>
+            
+            <div class="space-y-2 mt-4">
+                @foreach($navCats as $c)
+                    <div x-data="{ expanded: false }" class="border border-gray-100 rounded-lg overflow-hidden bg-white shadow-sm">
+                        
+                        <div class="flex items-center justify-between p-1">
+                            <a href="{{$baseUrl}}?category={{$c->slug}}" class="flex-1 px-3 py-2 flex items-center gap-3 text-sm font-semibold text-slate-700 hover:text-indigo-600">
+                                @if($c->image)
+                                    <img src="{{asset('storage/'.$c->image)}}" class="w-6 h-6 rounded-md object-cover bg-gray-50">
+                                @else
+                                    <div class="w-6 h-6 rounded-md bg-gray-50 text-indigo-500 flex items-center justify-center"><i class="fas fa-box"></i></div>
+                                @endif
+                                <span>{{ $c->name }}</span>
+                            </a>
+                            
+                            @if($c->children->count() > 0)
+                                <button @click="expanded = !expanded" class="w-10 h-10 flex items-center justify-center text-gray-400 border-l border-gray-100">
+                                    <i class="fas fa-chevron-down transition-transform duration-300" :class="expanded ? 'rotate-180' : ''"></i>
+                                </button>
+                            @endif
+                        </div>
+
+                        {{-- Sub categories --}}
+                        @if($c->children->count() > 0)
+                            <div x-show="expanded" x-collapse x-cloak>
+                                <div class="bg-gray-50 px-2 py-2 border-t border-gray-100">
+                                    @foreach($c->children as $sub)
+                                        <a href="{{$baseUrl}}?category={{$sub->slug}}" class="block px-4 py-2 text-sm text-gray-600 hover:bg-white hover:text-indigo-600 rounded mb-1 transition">
+                                            <i class="fas fa-long-arrow-alt-right text-gray-400 mr-2 text-xs"></i> {{ $sub->name }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </div>

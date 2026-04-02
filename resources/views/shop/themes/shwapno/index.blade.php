@@ -39,10 +39,22 @@
             
             @if(isset($categories) && count($categories)>0)
                 @foreach($categories->take(11) as $c)
-                <a href="{{$baseUrl}}?category={{$c->slug}}" class="sw-sidebar-item group">
-                    <span class="flex items-center gap-3"><i class="fas {{$icons[$loop->index % 11]}} text-gray-400 text-sm group-hover:text-swred w-5 text-center"></i> {{$c->name}}</span> 
-                    <i class="fas fa-chevron-right text-[10px] text-gray-300"></i>
-                </a>
+                <div class="relative group" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <a href="{{$baseUrl}}?category={{$c->slug}}" class="sw-sidebar-item group">
+                        <span class="flex items-center gap-3"><i class="fas {{$icons[$loop->index % 11]}} text-gray-400 text-sm group-hover:text-swred w-5 text-center"></i> {{$c->name}}</span> 
+                        @if($c->children->count() > 0)
+                            <i class="fas fa-chevron-right text-[10px] text-gray-300 group-hover:text-swred transition"></i>
+                        @endif
+                    </a>
+                    
+                    @if($c->children->count() > 0)
+                    <div x-show="open" x-transition.opacity.duration.200ms class="absolute top-0 left-[256px] w-[200px] bg-white border border-gray-100 shadow-xl z-50 rounded-sm overflow-hidden py-1 mb-1 hidden group-hover:block" x-cloak>
+                        @foreach($c->children as $sub)
+                            <a href="{{$baseUrl}}?category={{$sub->slug}}" class="block px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:text-swred hover:bg-red-50 transition border-b border-gray-50 last:border-0">{{ $sub->name }}</a>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
                 @endforeach
             @else
                 <a href="#" class="sw-sidebar-item group"><span class="flex items-center gap-3"><i class="fas fa-hamburger text-gray-400 text-sm group-hover:text-swred w-5 text-center"></i> Food</span> <i class="fas fa-chevron-right text-[10px] text-gray-300"></i></a>

@@ -165,7 +165,7 @@ class MyBackup extends Page
     {
         $orders = DB::table('orders')
             ->where('client_id', $clientId)
-            ->select('id', 'customer_name', 'customer_phone', 'customer_address', 'total_price', 'status', 'payment_method', 'created_at')
+            ->select('id', 'customer_name', 'customer_phone', 'shipping_address', 'total_amount', 'order_status', 'payment_method', 'created_at')
             ->orderByDesc('created_at')
             ->get();
 
@@ -175,9 +175,9 @@ class MyBackup extends Page
                 $o->id,
                 '"' . str_replace('"', '""', $o->customer_name ?? '') . '"',
                 '"' . ($o->customer_phone ?? '') . '"',
-                '"' . str_replace('"', '""', $o->customer_address ?? '') . '"',
-                $o->total_price ?? 0,
-                $o->status ?? '',
+                '"' . str_replace('"', '""', $o->shipping_address ?? '') . '"',
+                $o->total_amount ?? 0,
+                $o->order_status ?? '',
                 $o->payment_method ?? '',
                 $o->created_at ?? '',
             ]);

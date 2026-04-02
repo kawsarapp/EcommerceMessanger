@@ -114,6 +114,14 @@ class CategoryResource extends Resource
                         ->live()
                         ->default(true),
 
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Parent Category (Sub-category তৈরি করতে)')
+                        ->relationship('parent', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->helperText('খালি রাখলে এটি একটি Main Category হিসেবে তৈরি হবে।'),
+
                     Forms\Components\Select::make('client_id')
                         ->label('Shop / Client (for private category)')
                         ->relationship('client', 'shop_name')
@@ -183,6 +191,13 @@ class CategoryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
+
+                Tables\Columns\TextColumn::make('parent.name')
+                    ->label('Parent')
+                    ->badge()
+                    ->color('info')
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('slug')
                     ->color('gray')

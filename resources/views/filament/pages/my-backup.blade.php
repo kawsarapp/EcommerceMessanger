@@ -5,7 +5,7 @@
             $orderCount   = $client ? \App\Models\Order::where('client_id', $client->id)->count() : 0;
             $productCount = $client ? \App\Models\Product::where('client_id', $client->id)->count() : 0;
             $catCount     = $client ? \App\Models\Category::where(fn($q) => $q->where('is_global',true)->orWhere('client_id',$client->id))->count() : 0;
-            $totalRevenue = $client ? \App\Models\Order::where('client_id', $client->id)->where('status', '!=', 'cancelled')->sum('total_price') : 0;
+            $totalRevenue = $client ? \App\Models\Order::where('client_id', $client->id)->where('order_status', '!=', 'cancelled')->sum('total_amount') : 0;
         @endphp
 
         {{-- Hero Card --}}

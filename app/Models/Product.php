@@ -22,7 +22,6 @@ class Product extends Model
         'category_id', // ✅ Correct Foreign Key
         'name',
         'slug',
-        'sub_category',
         'brand',
         'has_variants',
         'tags',
@@ -177,6 +176,11 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function subCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'sub_category_id');
     }
 
     public function variants(): HasMany

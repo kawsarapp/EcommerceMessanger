@@ -115,15 +115,24 @@ class ProductFormSchema
                                     // -----------------------------
 
                                     Select::make('category_id')
-                                        ->label('Category')
-                                        ->relationship('category', 'name')
+                                        ->label('Main Category')
+                                        ->relationship('category', 'name', modifyQueryUsing: fn ($query) => $query->whereNull('parent_id'))
                                         ->searchable()
                                         ->preload()
+                                        ->live()
                                         ->createOptionForm([
                                             TextInput::make('name')->required(),
                                             TextInput::make('slug')->required(),
                                         ])
                                         ->required(),
+
+                                    Select::make('sub_category_id')
+                                        ->label('Sub Category (Optional)')
+                                        ->options(fn (\Filament\Forms\Get $get) => \App\Models\Category::where('parent_id', $get('category_id'))->pluck('name', 'id'))
+                                        ->searchable()
+                                        ->preload()
+                                        ->nullable()
+                                        ->disabled(fn (\Filament\Forms\Get $get) => empty($get('category_id'))),
 
                                     TextInput::make('sale_price')
                                         ->label('Sale Price')
