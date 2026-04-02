@@ -74,6 +74,7 @@ class StorefrontTab
                         'shoppers'    => '💄 Shoppers (Cosmetics/Retail Style)',
                         'athletic'    => '⚡ Athletic (High Energy & Performance)',
                         'daraz'       => '🛍️ Daraz Classic (Marketplace Look)',
+                        'pikabo'      => '📱 Pikabo (Pickaboo Style)',
                     ])
                     ->default('default')
                     ->searchable()

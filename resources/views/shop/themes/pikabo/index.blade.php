@@ -1,0 +1,310 @@
+@extends('shop.themes.pikabo.layout')
+@section('title', $client->shop_name . ' | Online Shopping')
+
+@section('content')
+
+@php 
+    $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
+    $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
+@endphp
+
+<style>
+    /* Custom CSS for Pikabo */
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .hero-banner {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+        background-color: #f1f5f9;
+        aspect-ratio: 21/9;
+        background-size: cover;
+        background-position: center;
+        background-image: url('https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?auto=format&fit=crop&w=1600&q=80');
+    }
+
+    .category-card {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow 0.2s;
+    }
+    .category-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .category-badge {
+        background-color: #0084d6;
+        color: white;
+        text-align: center;
+        padding: 6px 4px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: auto;
+    }
+    .category-img-container {
+        padding: 16px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8fafc, #eff6ff);
+    }
+
+    .product-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        position: relative;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .product-card:hover { border-color: #0084d6; box-shadow: 0 4px 12px rgba(0,132,214,0.1); }
+    .product-card-img {
+        aspect-ratio: 1;
+        object-fit: contain;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    .super-offer-badge {
+        position: absolute;
+        top: 0;
+        right: 12px;
+        background: #ff0000;
+        color: white;
+        font-weight: 900;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+    .super-offer-logo {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        width: 80%;
+    }
+</style>
+
+<div class="max-w-[1400px] mx-auto px-4 mt-6">
+
+    @if(!request('category') || request('category') == 'all')
+    {{-- Hero Area --}}
+    @php
+        $heroImg = $client->widgets['hero_banner']['image'] ?? null;
+        $heroBg = $heroImg ? asset('storage/' . $heroImg) : ($client->banner ? asset('storage/' . $client->banner) : 'https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?auto=format&fit=crop&w=1600&q=80');
+    @endphp
+    <div class="hero-banner relative group cursor-pointer" style="background-image: url('{{ $heroBg }}');">
+        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
+        @if(!$heroImg && !$client->banner)
+        <div class="absolute bottom-8 right-8 bg-white/90 backdrop-blur px-6 py-3 rounded-lg shadow-lg">
+            <span class="text-bdblue font-bold text-xl block leading-tight">Starting From</span>
+            <span class="text-red-500 font-extrabold text-4xl block">TK. 36,990</span>
+        </div>
+        @endif
+    </div>
+
+    {{-- Official Warranty Banner --}}
+    <div class="bg-white border border-gray-200 rounded-lg py-4 px-6 flex items-center justify-between mb-10 overflow-x-auto gap-4 hide-scroll">
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-undo text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">3 Days Easy Return</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-shield-alt text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">100% Authentic Parts</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-truck text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">Fast Delivery</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-credit-card text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">Easy EMI Facility</span></div>
+    </div>
+
+    {{-- Categories / Upgrade Your Home & Kitchen Today! --}}
+    <div class="mb-12">
+        <div class="section-title">
+            <span>Upgrade Your Home & Kitchen Today!</span>
+            <a href="{{$baseUrl}}?category=all" class="bg-gray-100 hover:bg-gray-200 text-dark text-xs font-semibold px-4 py-1.5 rounded transition">View All</a>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            @php
+                $catStyles = [
+                    ['bg' => 'bg-blue-400'],
+                    ['bg' => 'bg-green-400'],
+                    ['bg' => 'bg-yellow-400'],
+                    ['bg' => 'bg-emerald-100'],
+                    ['bg' => 'bg-indigo-400'],
+                    ['bg' => 'bg-pink-400']
+                ];
+            @endphp
+            @if(isset($categories) && count($categories) > 0)
+                @foreach($categories->take(6) as $index => $c)
+                @php $style = $catStyles[$index % count($catStyles)] @endphp
+                <a href="{{$baseUrl}}?category={{$c->slug}}" class="category-card">
+                    <div class="category-img-container {{$style['bg']}} bg-opacity-20">
+                        @if($c->image)
+                            <img src="{{asset('storage/'.$c->image)}}" class="w-full h-24 object-contain mix-blend-multiply" alt="{{$c->name}}">
+                        @else
+                            <i class="fas fa-box text-4xl text-gray-400"></i>
+                        @endif
+                    </div>
+                    <div class="p-2 text-center text-[10px] text-gray-500 font-medium border-t border-gray-100">Official Warranty | Fast Delivery</div>
+                    <div class="category-badge">{{$c->name}}</div>
+                </a>
+                @endforeach
+            @else
+                {{-- Fallback --}}
+                @for($i=1; $i<=6; $i++)
+                <div class="category-card">
+                    <div class="category-img-container bg-blue-50"><i class="fas fa-tv text-4xl text-bdblue/20"></i></div>
+                    <div class="p-2 text-center text-[10px] text-gray-500">Official Warranty</div>
+                    <div class="category-badge">Electronics</div>
+                </div>
+                @endfor
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- Flash Sale Row --}}
+    @php
+        $flashActive = $client->widgets['flash_sale']['active'] ?? true;
+        $flashText = $client->widgets['flash_sale']['text'] ?? 'FLASH SALE';
+    @endphp
+    @if($flashActive && count($products) > 0)
+    <div class="mb-12 border border-red-500 rounded-lg overflow-hidden">
+        <div class="bg-red-500 flex justify-between items-center px-4 py-3">
+            <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
+                <h2 class="text-xl font-bold text-white uppercase italic tracking-wider">{{ $flashText }}</h2>
+                <div class="flex gap-1.5 text-white/90">
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">04</div><span class="text-xl font-bold">:</span>
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">45</div><span class="text-xl font-bold">:</span>
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">30</div>
+                </div>
+            </div>
+            <a href="#" class="text-white text-sm font-semibold hover:underline">View All<i class="fas fa-chevron-right text-[10px] ml-1"></i></a>
+        </div>
+        <div class="bg-red-50 p-4" x-data="{ scrollLeft() { $refs.flock.scrollBy({left: -200, behavior: 'smooth'}); }, scrollRight() { $refs.flock.scrollBy({left: 200, behavior: 'smooth'}); } }">
+            <div class="relative group">
+                <button type="button" @click="scrollLeft()" class="absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-bdblue z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-left"></i></button>
+                <button type="button" @click="scrollRight()" class="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-bdblue z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-right"></i></button>
+                
+                <div x-ref="flock" class="flex gap-4 overflow-x-auto hide-scroll pb-2">
+                    @foreach($products->take(10) as $p)
+                    <a href="{{$baseUrl}}/product/{{$p->slug}}" class="min-w-[160px] md:min-w-[180px] product-card shrink-0">
+                        <span class="absolute top-0 right-12 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-b-md shadow-sm z-10">-{{ $p->sale_price ? round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) : 0 }}%</span>
+                        <div class="p-2 flex justify-center mb-2"><img src="{{asset('storage/'.$p->thumbnail)}}" class="h-28 object-contain group-hover:scale-105 transition" loading="lazy"></div>
+                        <div class="mt-auto">
+                            <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug mb-1">{{$p->name}}</h4>
+                            <div class="text-red-600 font-extrabold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</div>
+                            @if($p->sale_price)<del class="text-[10px] text-gray-400 font-medium">৳{{number_format($p->regular_price)}}</del>@endif
+                            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden"><div class="bg-red-500 h-1.5 w-3/4"></div></div>
+                            <div class="text-[9px] text-gray-500 mt-1">{{rand(10,50)}} Sold</div>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Best Deals on Official Appliances --}}
+    <div class="mb-12 flex gap-6">
+        
+        {{-- Sidebar (Filter replica visually) --}}
+        @if(!request('category') || request('category') == 'all')
+        <div class="w-64 hidden lg:block shrink-0">
+            <h3 class="font-normal text-lg mb-4">Filter</h3>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Price</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Brand</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Display Size (Inches)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">RAM(GB)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Processor</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">5G</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+        </div>
+        @endif
+
+        {{-- Product Grid --}}
+        <div class="flex-1">
+            <div class="section-title mb-4">
+                <div class="flex flex-col">
+                    <span class="text-lg font-bold">Best Deals on Official Appliances!</span>
+                    <span class="text-xs font-normal text-gray-500 mt-1">{{ count($products) }} Items in Best Deals</span>
+                </div>
+                <div class="hidden sm:flex items-center text-sm">
+                    <span class="text-gray-500 mr-2">Sort By:</span>
+                    <select class="border border-gray-200 rounded px-3 py-1 bg-white focus:outline-none focus:border-bdblue text-xs">
+                        <option>Default</option>
+                        <option>Price Low to High</option>
+                        <option>Price High to Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                @forelse($products as $p)
+                <a href="{{$baseUrl}}/product/{{$p->slug}}" class="product-card group">
+                    @if($p->sale_price)
+                        @php $discount = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
+                        <div class="super-offer-badge">-{{$discount}}%</div>
+                    @endif
+                    
+                    <div class="relative pt-8 pb-4 flex justify-center">
+                        {{-- Super Offer Graphics Replica --}}
+                        @if($p->sale_price)
+                            <img src="https://i.ibb.co/hZXZZkZ/superoffer.png" onerror="this.style.display='none'" class="absolute -top-4 w-32 left-1/2 -translate-x-1/2 z-10" alt="Super Offer">
+                            <div class="absolute top-[80px] left-1/2 -translate-x-1/2 bg-yellow-400 px-3 py-1 font-extrabold text-[#111] text-xs z-20 w-[80%] text-center shadow-sm">Special Price TK. {{number_format($p->sale_price)}}</div>
+                        @else
+                            <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-400 px-3 py-1 font-extrabold text-[#111] text-xs z-20 w-[80%] text-center shadow-sm">TK. {{number_format($p->regular_price)}}</div>
+                        @endif
+
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="product-card-img mt-12 group-hover:scale-105 transition" loading="lazy">
+                        
+                        <img src="https://i.ibb.co/jMzq6Hk/officialwarranty.png" onerror="this.style.display='none'" class="absolute bottom-0 left-0 w-16 z-20" alt="Official Warranty">
+                    </div>
+
+                    <div class="mt-auto pt-2 border-t border-gray-100">
+                        <h4 class="text-[12px] text-gray-800 line-clamp-2 h-9 mb-1">{{$p->name}}</h4>
+                        <div class="flex items-center gap-2">
+                            <span class="text-bdblue font-bold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
+                            @if($p->sale_price)<del class="text-[10px] text-gray-400">৳{{number_format($p->regular_price)}}</del>@endif
+                        </div>
+                        <div class="flex items-center text-yellow-400 text-xs mt-1 gap-0.5">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                            <span class="text-gray-400 text-[10px] ml-1">(5)</span>
+                        </div>
+                    </div>
+                </a>
+                @empty
+                    <div class="col-span-full py-20 text-center border text-gray-400 text-sm">No products found.</div>
+                @endforelse
+            </div>
+
+            {{-- Pagination --}}
+            @if($products->hasPages())
+            <div class="mt-10">
+                <style>
+                    .pg nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+                    .pg nav a, .pg nav span { min-width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: 500; font-size: 13px; background: white; border: 1px solid #e2e8f0; color: #475569;}
+                    .pg nav a:hover { border-color: #0084d6; color: #0084d6; }
+                    .pg nav span[aria-current="page"] { background: #0084d6; color: white !important; border-color: #0084d6; }
+                </style>
+                <div class="pg">{{ $products->links('pagination::tailwind') }}</div>
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+@endsection

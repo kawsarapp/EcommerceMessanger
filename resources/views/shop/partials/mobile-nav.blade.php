@@ -19,31 +19,40 @@
 </style>
 
 <div class="mob-nav" x-data>
-    <a href="{{$baseUrl}}" title="Home">
+    <a href="{{$baseUrl}}" title="Home" class="{{ !request('category') && request()->route()->getName() !== 'shop.checkout' ? 'active' : '' }}">
         <i class="fas fa-home"></i>Home
     </a>
 
-    {{-- Search toggle --}}
-    <a href="#" title="Search" @click.prevent="$dispatch('mob-search-open')">
-        <i class="fas fa-search"></i>Search
+    <a href="{{$baseUrl}}?category=all" title="Categories" class="{{ request('category') ? 'active' : '' }}">
+        <i class="fas fa-th-large"></i>Categories
+    </a>
+    
+    @php $mobCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+    <a href="{{$clean??false ? $baseUrl.'/checkout' : route('shop.checkout', $client->slug)}}" title="Cart" class="relative {{ request()->route()->getName() === 'shop.checkout' || request()->is('*/checkout') ? 'active' : '' }}">
+        <i class="fas fa-shopping-cart"></i>Cart
+        @if($mobCartCount > 0)
+            <span class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">{{ $mobCartCount }}</span>
+        @endif
     </a>
 
     {{-- Track Order --}}
-    <a href="{{$clean??false ? $baseUrl.'/track-order' : route('shop.track', $client->slug)}}" title="Track">
+    <a href="{{$clean??false ? $baseUrl.'/track' : route('shop.track', $client->slug)}}" title="Track">
         <i class="fas fa-truck-fast"></i>Track
     </a>
 
-    {{-- Messenger --}}
+    {{-- Messenger / Call --}}
     @if($client->fb_page_id)
     <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" title="Chat">
         <i class="fab fa-facebook-messenger"></i>Chat
     </a>
-    @else
-    @if($client->phone)
+    @elseif($client->phone)
     <a href="tel:{{$client->phone}}" title="Call">
         <i class="fas fa-phone-alt"></i>Call
     </a>
-    @endif
+    @else
+    <a href="#" title="Search" @click.prevent="$dispatch('mob-search-open')">
+        <i class="fas fa-search"></i>Search
+    </a>
     @endif
 </div>
 

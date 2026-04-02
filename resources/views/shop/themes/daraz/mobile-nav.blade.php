@@ -14,13 +14,32 @@ main,footer{padding-bottom:calc(75px + env(safe-area-inset-bottom,0px))!importan
 </style>
 
 <nav class="mob-nav" x-data>
-    <a href="{{ $baseUrl }}" title="হোম"><i class="fas fa-home"></i><span>হোম</span></a>
-    <a href="#" title="সার্চ" @click.prevent="$dispatch('mob-search')"><i class="fas fa-search"></i><span>সার্চ</span></a>
-    <a href="{{ $clean ?? false ? $baseUrl.'/track' : route('shop.track',$client->slug) }}" title="ট্র্যাক"><i class="fas fa-truck-fast"></i><span>ট্র্যাক</span></a>
+    <a href="{{ $baseUrl }}" title="হোম" class="{{ !request('category') && request()->route()->getName() !== 'shop.checkout' ? 'active' : '' }}">
+        <i class="fas fa-home"></i><span>হোম</span>
+    </a>
+
+    <a href="{{$baseUrl}}?category=all" title="ক্যাটাগরি" class="{{ request('category') ? 'active' : '' }}">
+        <i class="fas fa-th-large"></i><span>ক্যাটাগরি</span>
+    </a>
+    
+    @php $mobCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+    <a href="{{$clean??false ? $baseUrl.'/checkout' : route('shop.checkout', $client->slug)}}" title="কার্ট" class="relative {{ request()->route()->getName() === 'shop.checkout' || request()->is('*/checkout') ? 'active' : '' }}">
+        <i class="fas fa-shopping-cart"></i><span>কার্ট</span>
+        @if($mobCartCount > 0)
+            <span class="absolute top-0 right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-2 -translate-y-1">{{ $mobCartCount }}</span>
+        @endif
+    </a>
+
+    <a href="{{ $clean ?? false ? $baseUrl.'/track' : route('shop.track',$client->slug) }}" title="ট্র্যাক">
+        <i class="fas fa-truck-fast"></i><span>ট্র্যাক</span>
+    </a>
+
     @if($client->fb_page_id ?? false)
         <a href="https://m.me/{{ $client->fb_page_id }}" target="_blank" title="চ্যাট"><i class="fab fa-facebook-messenger"></i><span>চ্যাট</span></a>
     @elseif($client->phone ?? false)
         <a href="tel:{{ $client->phone }}" title="কল"><i class="fas fa-phone-alt"></i><span>কল</span></a>
+    @else
+        <a href="#" title="সার্চ" @click.prevent="$dispatch('mob-search')"><i class="fas fa-search"></i><span>সার্চ</span></a>
     @endif
 </nav>
 
