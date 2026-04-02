@@ -325,7 +325,7 @@
             <button type="button" @click="scrollLeft()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-sm"></i></button>
             
             <div x-ref="slider" class="flex overflow-x-auto gap-3 lg:gap-4 hide-scroll pb-2 snap-x">
-            @forelse($products->skip(5)->take(5) as $p)
+            @foreach($products->skip(5)->take(5) as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[220px] snap-start shrink-0">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
@@ -355,7 +355,7 @@
                         </form>
                     </div>
                 </div>
-            @endforelse
+            @endforeach
             </div>
             <button type="button" @click="scrollRight()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-sm"></i></button>
         </div>
