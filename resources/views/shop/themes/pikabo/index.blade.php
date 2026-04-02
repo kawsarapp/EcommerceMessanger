@@ -121,18 +121,20 @@
         @endif
     </div>
 
-    {{-- Official Warranty Banner --}}
+    {{-- Official Warranty Banner / Trust Badges --}}
+    @if($client->widgets['trust_badges']['active'] ?? true)
     <div class="bg-white border border-gray-200 rounded-lg py-4 px-6 flex items-center justify-between mb-10 overflow-x-auto gap-4 hide-scroll">
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-undo text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">3 Days Easy Return</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-shield-alt text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">100% Authentic Parts</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-truck text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">Fast Delivery</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-credit-card text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">Easy EMI Facility</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-undo text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_1'] ?? 'Easy Returns' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-shield-alt text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_2'] ?? '100% Authentic' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-truck text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_3'] ?? 'Fast Delivery' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-credit-card text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_4'] ?? 'Secure Payment' }}</span></div>
     </div>
+    @endif
 
-    {{-- Categories / Upgrade Your Home & Kitchen Today! --}}
+    {{-- Categories --}}
     <div class="mb-12">
         <div class="section-title">
-            <span>Upgrade Your Home & Kitchen Today!</span>
+            <span>{{ $client->widgets['categories']['title'] ?? 'Shop By Categories' }}</span>
             <a href="{{$baseUrl}}?category=all" class="bg-gray-100 hover:bg-gray-200 text-dark text-xs font-semibold px-4 py-1.5 rounded transition">View All</a>
         </div>
         
@@ -158,7 +160,7 @@
                             <i class="fas fa-box text-4xl text-gray-400"></i>
                         @endif
                     </div>
-                    <div class="p-2 text-center text-[10px] text-gray-500 font-medium border-t border-gray-100">Official Warranty | Fast Delivery</div>
+                    <div class="p-2 text-center text-[10px] text-gray-500 font-medium border-t border-gray-100">{{ $c->products_count ?? 0 }} Products</div>
                     <div class="category-badge">{{$c->name}}</div>
                 </a>
                 @endforeach
@@ -178,21 +180,50 @@
 
     {{-- Flash Sale Row --}}
     @php
-        $flashActive = $client->widgets['flash_sale']['active'] ?? true;
+        $activeFlashSale = \App\Models\FlashSale::where('client_id', $client->id)
+            ->where('is_active', true)
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
+            ->orderBy('ends_at', 'asc')
+            ->with(['items.product' => function($q){
+                $q->where('status', 'published');
+            }])
+            ->first();
+            
+        $flashProducts = $activeFlashSale ? $activeFlashSale->items->pluck('product')->filter() : collect();
         $flashText = $client->widgets['flash_sale']['text'] ?? 'FLASH SALE';
+        $flashCountdown = $activeFlashSale ? max(0, (int) now()->diffInSeconds($activeFlashSale->ends_at, false)) : 0;
     @endphp
-    @if($flashActive && count($products) > 0)
+    
+    @if($activeFlashSale && count($flashProducts) > 0)
     <div class="mb-12 border border-red-500 rounded-lg overflow-hidden">
         <div class="bg-red-500 flex justify-between items-center px-4 py-3">
             <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
                 <h2 class="text-xl font-bold text-white uppercase italic tracking-wider">{{ $flashText }}</h2>
-                <div class="flex gap-1.5 text-white/90">
-                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">04</div><span class="text-xl font-bold">:</span>
-                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">45</div><span class="text-xl font-bold">:</span>
-                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold">30</div>
+                <div class="flex gap-1.5 text-white/90" x-data="{
+                    time: {{ $flashCountdown }},
+                    h: '00', m: '00', s: '00',
+                    init() {
+                        if(this.time <= 0) return;
+                        setInterval(() => {
+                            if(this.time > 0) {
+                                this.time--;
+                                this.h = String(Math.floor(this.time / 3600)).padStart(2, '0');
+                                this.m = String(Math.floor((this.time % 3600) / 60)).padStart(2, '0');
+                                this.s = String(this.time % 60).padStart(2, '0');
+                            }
+                        }, 1000);
+                        this.h = String(Math.floor(this.time / 3600)).padStart(2, '0');
+                        this.m = String(Math.floor((this.time % 3600) / 60)).padStart(2, '0');
+                        this.s = String(this.time % 60).padStart(2, '0');
+                    }
+                }">
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold" x-text="h">00</div><span class="text-xl font-bold">:</span>
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold" x-text="m">00</div><span class="text-xl font-bold">:</span>
+                    <div class="bg-black/20 px-2 py-1 rounded text-lg font-bold" x-text="s">00</div>
                 </div>
             </div>
-            <a href="#" class="text-white text-sm font-semibold hover:underline">View All<i class="fas fa-chevron-right text-[10px] ml-1"></i></a>
+            <a href="{{$baseUrl}}?category=all" class="text-white text-sm font-semibold hover:underline">View All<i class="fas fa-chevron-right text-[10px] ml-1"></i></a>
         </div>
         <div class="bg-red-50 p-4" x-data="{ scrollLeft() { $refs.flock.scrollBy({left: -200, behavior: 'smooth'}); }, scrollRight() { $refs.flock.scrollBy({left: 200, behavior: 'smooth'}); } }">
             <div class="relative group">
@@ -200,16 +231,16 @@
                 <button type="button" @click="scrollRight()" class="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-bdblue z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-right"></i></button>
                 
                 <div x-ref="flock" class="flex gap-4 overflow-x-auto hide-scroll pb-2">
-                    @foreach($products->take(10) as $p)
+                    @foreach($flashProducts->take(10) as $p)
                     <a href="{{$baseUrl}}/product/{{$p->slug}}" class="min-w-[160px] md:min-w-[180px] product-card shrink-0">
-                        <span class="absolute top-0 right-12 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-b-md shadow-sm z-10">-{{ $p->sale_price ? round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) : 0 }}%</span>
+                        @if($p->sale_price)<span class="absolute top-0 right-12 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-b-md shadow-sm z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                         <div class="p-2 flex justify-center mb-2"><img src="{{asset('storage/'.$p->thumbnail)}}" class="h-28 object-contain group-hover:scale-105 transition" loading="lazy"></div>
                         <div class="mt-auto">
                             <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug mb-1">{{$p->name}}</h4>
                             <div class="text-red-600 font-extrabold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</div>
                             @if($p->sale_price)<del class="text-[10px] text-gray-400 font-medium">৳{{number_format($p->regular_price)}}</del>@endif
-                            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden"><div class="bg-red-500 h-1.5 w-3/4"></div></div>
-                            <div class="text-[9px] text-gray-500 mt-1">{{rand(10,50)}} Sold</div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden"><div class="bg-red-500 h-1.5" style="width: {{ rand(60, 95) }}%"></div></div>
+                            <div class="text-[9px] text-gray-500 mt-1">Limited Stock</div>
                         </div>
                     </a>
                     @endforeach
@@ -254,24 +285,14 @@
 
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 @forelse($products as $p)
-                <a href="{{$baseUrl}}/product/{{$p->slug}}" class="product-card group">
+                <a href="{{$baseUrl}}/product/{{$p->slug}}" class="product-card group relative">
                     @if($p->sale_price)
                         @php $discount = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
-                        <div class="super-offer-badge">-{{$discount}}%</div>
+                        <div class="absolute top-0 right-0 bg-red-600 text-white font-extrabold text-[10px] px-2 py-1 rounded-bl-lg shadow-sm z-10">-{{$discount}}% OFF</div>
                     @endif
                     
-                    <div class="relative pt-8 pb-4 flex justify-center">
-                        {{-- Super Offer Graphics Replica --}}
-                        @if($p->sale_price)
-                            <img src="https://i.ibb.co/hZXZZkZ/superoffer.png" onerror="this.style.display='none'" class="absolute -top-4 w-32 left-1/2 -translate-x-1/2 z-10" alt="Super Offer">
-                            <div class="absolute top-[80px] left-1/2 -translate-x-1/2 bg-yellow-400 px-3 py-1 font-extrabold text-[#111] text-xs z-20 w-[80%] text-center shadow-sm">Special Price TK. {{number_format($p->sale_price)}}</div>
-                        @else
-                            <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-400 px-3 py-1 font-extrabold text-[#111] text-xs z-20 w-[80%] text-center shadow-sm">TK. {{number_format($p->regular_price)}}</div>
-                        @endif
-
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="product-card-img mt-12 group-hover:scale-105 transition" loading="lazy">
-                        
-                        <img src="https://i.ibb.co/jMzq6Hk/officialwarranty.png" onerror="this.style.display='none'" class="absolute bottom-0 left-0 w-16 z-20" alt="Official Warranty">
+                    <div class="relative pt-4 pb-4 flex justify-center">
+                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="product-card-img group-hover:scale-105 transition" loading="lazy" alt="{{$p->name}}">
                     </div>
 
                     <div class="mt-auto pt-2 border-t border-gray-100">
@@ -280,10 +301,21 @@
                             <span class="text-bdblue font-bold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
                             @if($p->sale_price)<del class="text-[10px] text-gray-400">৳{{number_format($p->regular_price)}}</del>@endif
                         </div>
+                        
+                        @php 
+                            $rating = $p->average_rating ?? 0; 
+                            $reviewsCount = $p->reviews_count ?? 0;
+                        @endphp
+                        @if($reviewsCount > 0)
                         <div class="flex items-center text-yellow-400 text-xs mt-1 gap-0.5">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                            <span class="text-gray-400 text-[10px] ml-1">(5)</span>
+                            @for($i=1; $i<=5; $i++)
+                                <i class="fas fa-star {{ $i <= $rating ? 'text-yellow-400' : 'text-gray-200' }}"></i>
+                            @endfor
+                            <span class="text-gray-400 text-[10px] ml-1">({{ $reviewsCount }})</span>
                         </div>
+                        @else
+                        <div class="flex items-center text-xs mt-1 h-4"></div>
+                        @endif
                     </div>
                 </a>
                 @empty

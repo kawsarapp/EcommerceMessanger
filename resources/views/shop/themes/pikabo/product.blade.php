@@ -134,13 +134,10 @@
                 {{-- Main Image Area --}}
                 <div class="flex-1 border border-gray-100 rounded p-4 relative flex justify-center items-center min-h-[400px]">
                     @if($product->sale_price)
-                        <img src="https://i.ibb.co/hZXZZkZ/superoffer.png" class="super-offer-large" onerror="this.style.display='none'">
-                        <div class="special-price-tag">Special Price TK. {{number_format($product->sale_price)}}</div>
+                        <div class="absolute top-4 left-4 bg-red-600 text-white font-extrabold px-3 py-1.5 rounded-lg shadow-sm z-10">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF</div>
                     @endif
                     
-                    <img :src="mainImg" class="max-w-full max-h-[400px] object-contain transition-opacity duration-300 mt-20 z-0">
-                    
-                    <img src="https://i.ibb.co/jMzq6Hk/officialwarranty.png" class="warranty-logo" onerror="this.style.display='none'">
+                    <img :src="mainImg" class="max-w-full max-h-[400px] object-contain transition-opacity duration-300 z-0" alt="{{$product->name}}">
                     
                     <button class="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition"><i class="fas fa-heart text-2xl"></i></button>
                     
@@ -196,9 +193,11 @@
                 </div>
 
                 {{-- Promotional Banner Placeholder --}}
+                @if($client->banner)
                 <div class="mb-6 rounded overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=800&q=80" class="w-full h-20 object-cover" alt="Offers">
+                    <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-20 object-cover" alt="{{$client->shop_name}} Offers">
                 </div>
+                @endif
 
                 <form id="checkout-form" action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-4 border-b border-gray-100 pb-6 mb-4">
                     

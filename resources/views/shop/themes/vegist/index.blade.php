@@ -3,6 +3,10 @@
 @section('title', $client->shop_name . ' - ' . ($client->tagline ?? 'Organic & Supermarket Store'))
 
 @section('content')
+@php 
+    $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
+    $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
+@endphp
 
 {{-- Info Strip --}}
 <div class="border-b border-gray-100 py-6 hidden md:block">

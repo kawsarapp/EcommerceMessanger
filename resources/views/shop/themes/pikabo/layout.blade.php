@@ -56,23 +56,29 @@ $primary='#0084d6';
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
     {{-- Top Bar (Black) --}}
+    @if(($client->widgets['top_bar']['active'] ?? true) && $client->topbar_text)
     <div class="bg-gray-900 text-gray-300 text-[11px] py-1.5 hidden md:block">
         <div class="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fas fa-heart text-red-500"></i>
-                <span class="font-medium">{{ $client->topbar_text ?? 'Assalamu Walaikum' }}</span>
+                <span class="font-medium">{{ $client->topbar_text }}</span>
             </div>
+            
+            @if($client->announcement_text)
             <div class="flex items-center gap-2 text-warning font-semibold text-yellow-400">
                 <i class="fas fa-exclamation-triangle"></i>
-                <span>This is a Beta Version - Some items may not be in stock</span>
+                <span>{!! strip_tags($client->announcement_text) !!}</span>
             </div>
+            @endif
+            
             <div class="flex items-center gap-4">
-                @if($client->facebook_url)<a href="{{$client->facebook_url}}" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
-                @if($client->instagram_url)<a href="{{$client->instagram_url}}" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
-                <a href="#" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                @if($client->facebook_url)<a href="{{$client->facebook_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
+                @if($client->instagram_url)<a href="{{$client->instagram_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
+                @if($client->youtube_url)<a href="{{$client->youtube_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>@endif
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Main Header (Blue) --}}
     <header class="bg-bdblue sticky sm:relative top-0 z-50">
@@ -98,16 +104,17 @@ $primary='#0084d6';
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50 ml-auto">
-                    <a href="#" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-bdblue transition px-6 py-1.5 rounded-md text-sm font-medium">
-                        Login
+                    <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-bdblue transition px-6 py-1.5 rounded-md text-sm font-medium">
+                        Track Order
                     </a>
                     
                     {{-- Mini Cart Icon --}}
-                    <div class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
+                    @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
                         <i class="fas fa-shopping-cart text-lg"></i>
                         <span class="text-sm">Cart</span>
-                        <span class="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">0</span>
-                    </div>
+                        <span class="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">{{ $cartCount }}</span>
+                    </a>
                 </div>
                 
             </div>
@@ -139,7 +146,23 @@ $primary='#0084d6';
                     <ul class="text-sm text-gray-600">
                         @if(isset($categories))
                             @foreach($categories->take(12) as $c)
-                            <li><a href="{{$baseUrl}}?category={{$c->slug}}" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition flex items-center justify-between"><span class="line-clamp-1">{{$c->name}}</span> <i class="fas fa-chevron-right text-[10px] text-gray-300"></i></a></li>
+                            <li class="relative group/sub">
+                                <a href="{{$baseUrl}}?category={{$c->slug}}" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition flex items-center justify-between">
+                                    <span class="line-clamp-1">{{$c->name}}</span> 
+                                    @if($c->children->count() > 0)
+                                        <i class="fas fa-chevron-right text-[10px] text-gray-400"></i>
+                                    @endif
+                                </a>
+                                @if($c->children->count() > 0)
+                                <div class="absolute top-0 left-full w-48 bg-white shadow-xl border border-gray-100 rounded z-[60] py-2 hidden group-hover/sub:block">
+                                    <ul class="text-xs text-gray-600">
+                                        @foreach($c->children as $sub)
+                                        <li><a href="{{$baseUrl}}?category={{$sub->slug}}" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition">{{$sub->name}}</a></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                @endif
+                            </li>
                             @endforeach
                         @endif
                         <li><a href="{{$baseUrl}}?category=all" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition flex items-center justify-between"><span>All Products</span></a></li>
