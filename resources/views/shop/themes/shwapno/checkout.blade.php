@@ -188,10 +188,35 @@
                     <div x-show="couponApplied" class="flex justify-between text-red-500"><span class="font-bold">Discount</span> <span class="font-bold">- ৳<span x-text="couponDiscount.toLocaleString()"></span></span></div>
                 </div>
                 
-                <div class="flex justify-between items-center bg-gray-50 p-4 rounded mb-8 border border-gray-100">
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded mb-6 border border-gray-100">
                     <span class="text-sm font-bold text-gray-800 uppercase">Total Payable</span>
                     <span class="text-2xl font-black text-swred">৳<span x-text="total.toLocaleString()"></span></span>
                 </div>
+
+                @if(!empty($client->show_terms_checkbox))
+                <div class="mb-6 p-4 bg-red-50/50 border border-red-100 rounded">
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" name="terms" required class="mt-0.5 min-w-[16px] w-4 h-4 text-swred bg-white border-gray-300 rounded focus:ring-swred accent-swred cursor-pointer">
+                        <div>
+                            <span class="text-xs font-bold text-gray-800 block">
+                                I have read and agree to the 
+                                @if(!empty($client->terms_conditions_url))
+                                    <a href="{{ $client->terms_conditions_url }}" target="_blank" class="text-blue-600 hover:underline">Terms & Conditions</a>
+                                @else
+                                    Terms & Conditions
+                                @endif
+                                <span class="text-swred ml-1">*</span>
+                            </span>
+                            @if(!empty($client->terms_conditions_text))
+                            <div class="text-[10px] text-gray-500 font-medium leading-relaxed mt-1.5 flex gap-1.5">
+                                <i class="fas fa-info-circle mt-0.5 text-blue-400"></i>
+                                <span>{{ $client->terms_conditions_text }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    </label>
+                </div>
+                @endif
 
                 <div class="text-center">
                     <button type="submit" class="w-full sw-btn-pill sw-btn-red py-4 text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition duration-300">

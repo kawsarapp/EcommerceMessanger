@@ -111,8 +111,13 @@
             @endif
             
             {{-- Quick Product Tiles --}}
-            <div class="flex gap-4 overflow-x-auto pb-4 hide-scroll relative items-center group">
-                <button class="w-6 h-6 bg-swyellow rounded-sm hidden lg:flex items-center justify-center absolute left-0 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-xs"></i></button>
+            <div x-data="{
+                scrollLeft() { $refs.slider.scrollBy({ left: -200, behavior: 'smooth' }); },
+                scrollRight() { $refs.slider.scrollBy({ left: 200, behavior: 'smooth' }); }
+            }" class="relative group mb-4">
+                <button type="button" @click="scrollLeft()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-xs"></i></button>
+                
+                <div x-ref="slider" class="flex gap-4 overflow-x-auto pb-4 hide-scroll relative items-center snap-x">
                 
                 @php 
                     $clientId = $client->id;
@@ -153,7 +158,8 @@
                     @endforeach
                 @endif
                 
-                <button class="w-6 h-6 bg-swyellow rounded-sm hidden lg:flex items-center justify-center absolute right-0 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-xs"></i></button>
+                </div>
+                <button type="button" @click="scrollRight()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-xs"></i></button>
             </div>
         </div>
     </div>
@@ -209,11 +215,15 @@
     <div class="mb-16">
         <h3 class="sw-section-title">{{ $flashText }}</h3>
         
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 relative group">
-            <button class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 shadow"><i class="fas fa-chevron-left text-sm"></i></button>
+        <div x-data="{
+                scrollLeft() { $refs.slider.scrollBy({ left: -250, behavior: 'smooth' }); },
+                scrollRight() { $refs.slider.scrollBy({ left: 250, behavior: 'smooth' }); }
+            }" class="relative group">
+            <button type="button" @click="scrollLeft()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-sm"></i></button>
             
+            <div x-ref="slider" class="flex overflow-x-auto gap-3 lg:gap-4 hide-scroll pb-2 snap-x">
             @forelse($products->take(5) as $p)
-                <div class="sw-card group/card" style="--badge-color: {{ $flashColor }}">
+                <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[220px] snap-start shrink-0" style="--badge-color: {{ $flashColor }}">
                     {{-- Discount Square Badge --}}
                     @if($p->sale_price)<span class="absolute top-0 left-0 text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm" style="background-color: var(--badge-color);"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
@@ -246,8 +256,9 @@
             @empty
                 <div class="col-span-full py-16 text-center text-gray-400">No products available.</div>
             @endforelse
+            </div>
             
-            <button class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 shadow"><i class="fas fa-chevron-right text-sm"></i></button>
+            <button type="button" @click="scrollRight()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-sm"></i></button>
         </div>
     </div>
     @endif
@@ -255,11 +266,49 @@
     {{-- PROMO BANNER (Full width) --}}
     @if($client->homepage_banner_active && $client->homepage_banner_image)
     <div class="mb-16">
-        <a href="{{ $client->homepage_banner_link ?? '#' }}" class="block w-full rounded overflow-hidden shadow-sm hover:opacity-95 transition relative">
-            <img src="{{ asset('storage/'.$client->homepage_banner_image) }}" class="w-full h-32 md:h-48 object-cover object-center" loading="lazy">
-            <div class="absolute inset-0 bg-blue-900/40 mix-blend-multiply"></div>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-white text-4xl md:text-6xl font-black italic tracking-tighter drop-shadow-md px-4 text-center">{!! nl2br(e($client->homepage_banner_title)) !!}</span>
+        <a href="{{ $client->homepage_banner_link ?? '#' }}" class="block w-full rounded overflow-hidden shadow-sm hover:opacity-95 transition relative h-auto min-h-[160px] md:min-h-[220px]">
+            <img src="{{ asset('storage/'.$client->homepage_banner_image) }}" class="absolute inset-0 w-full h-full object-cover object-center" loading="lazy">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-blue-900/20 mix-blend-multiply"></div>
+            <div class="relative z-10 p-6 md:p-12 flex flex-col items-start justify-center h-full max-w-3xl">
+                @if(!empty($client->homepage_banner_title))
+                    <h2 class="text-white text-3xl md:text-5xl font-black italic tracking-tighter drop-shadow-md mb-2">{!! nl2br(e($client->homepage_banner_title)) !!}</h2>
+                @endif
+                
+                @if(!empty($client->homepage_banner_subtitle))
+                    <p class="text-blue-100 text-sm md:text-base font-medium drop-shadow mb-6 max-w-2xl">{{ $client->homepage_banner_subtitle }}</p>
+                @endif
+
+                @if(!empty($client->homepage_banner_timer) && \Carbon\Carbon::parse($client->homepage_banner_timer)->isFuture())
+                <div x-data="{
+                        end: new Date('{{ \Carbon\Carbon::parse($client->homepage_banner_timer)->toIso8601String() }}').getTime(),
+                        now: new Date().getTime(),
+                        distance: 0,
+                        get days() { return Math.floor(this.distance / (1000 * 60 * 60 * 24)); },
+                        get hours() { return Math.floor((this.distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); },
+                        get minutes() { return Math.floor((this.distance % (1000 * 60 * 60)) / (1000 * 60)); },
+                        get seconds() { return Math.floor((this.distance % (1000 * 60)) / 1000); }
+                    }"
+                    x-init="setInterval(() => { distance = end - new Date().getTime() }, 1000)"
+                    class="flex gap-3 text-center">
+                    
+                    <div class="bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded px-3 py-2 min-w-[60px]">
+                        <span class="block text-xl md:text-2xl font-black leading-none" x-text="days < 0 ? 0 : days">0</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-100">Days</span>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded px-3 py-2 min-w-[60px]">
+                        <span class="block text-xl md:text-2xl font-black leading-none" x-text="hours < 0 ? 0 : hours">0</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-100">Hours</span>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded px-3 py-2 min-w-[60px]">
+                        <span class="block text-xl md:text-2xl font-black leading-none" x-text="minutes < 0 ? 0 : minutes">0</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-100">Mins</span>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded px-3 py-2 min-w-[60px]">
+                        <span class="block text-xl md:text-2xl font-black leading-none" x-text="seconds < 0 ? 0 : seconds">0</span>
+                        <span class="text-[10px] uppercase font-bold text-blue-100">Secs</span>
+                    </div>
+                </div>
+                @endif
             </div>
         </a>
     </div>
@@ -269,9 +318,15 @@
     <div class="mb-20">
         <h3 class="sw-section-title">EVERYDAY ESSENTIALS 🔥</h3>
         
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 relative group">
+        <div x-data="{
+                scrollLeft() { $refs.slider.scrollBy({ left: -250, behavior: 'smooth' }); },
+                scrollRight() { $refs.slider.scrollBy({ left: 250, behavior: 'smooth' }); }
+            }" class="relative group">
+            <button type="button" @click="scrollLeft()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-left text-sm"></i></button>
+            
+            <div x-ref="slider" class="flex overflow-x-auto gap-3 lg:gap-4 hide-scroll pb-2 snap-x">
             @forelse($products->skip(5)->take(5) as $p)
-                <div class="sw-card group/card">
+                <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[220px] snap-start shrink-0">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-2 mt-4">
@@ -300,8 +355,9 @@
                         </form>
                     </div>
                 </div>
-            @empty
             @endforelse
+            </div>
+            <button type="button" @click="scrollRight()" class="w-8 h-8 bg-swyellow rounded-full hidden lg:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition shadow"><i class="fas fa-chevron-right text-sm"></i></button>
         </div>
         
         {{-- Pagination --}}

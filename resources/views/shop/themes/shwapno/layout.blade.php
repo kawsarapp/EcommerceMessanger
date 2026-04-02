@@ -64,6 +64,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 </head>
 <body class="antialiased flex flex-col min-h-screen font-sans selection:bg-swred/20 selection:text-swred">
     
+    @if(!empty($client->announcement_text))
+    <div class="bg-swdark text-swyellow text-center py-1.5 px-4 text-[11px] md:text-xs font-bold w-full uppercase tracking-wider relative z-50 flex items-center justify-center gap-2 shadow-sm">
+        <i class="fas fa-bullhorn shrink-0 text-white/50"></i>
+        <span>{{ $client->announcement_text }}</span>
+    </div>
+    @endif
+
     {{-- Main Top Header (Red) --}}
     <header class="bg-swred sticky sm:relative top-0 z-50 shadow-sm border-b border-red-700">
         <div class="max-w-[1340px] mx-auto px-4 lg:px-6">
@@ -281,7 +288,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             {{-- Copyright Area --}}
             <div class="py-6 flex flex-col items-center justify-center">
                 <i class="fas fa-shopping-basket text-gray-200 text-3xl mb-2 opacity-30"></i>
-                <p class="text-[10px] text-gray-400 font-medium tracking-wide">© {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+                <p class="text-[10px] text-gray-400 font-medium tracking-wide text-center">
+                    {!! $client->footer_text ? nl2br(e($client->footer_text)) : '© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.' !!}
+                </p>
+                @if(!empty($client->footer_links) && is_array($client->footer_links))
+                <div class="flex gap-4 mt-3 flex-wrap justify-center">
+                    @foreach($client->footer_links as $link)
+                    <a href="{{ $link['url'] ?? '#' }}" class="text-[10px] text-gray-400 hover:text-swred transition">{{ $link['title'] ?? '' }}</a>
+                    @endforeach
+                </div>
+                @endif
             </div>
             
         </div>
@@ -289,5 +305,43 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
     @include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+    
+    @if($client->popup_active)
+    @php
+        $showPopup = true;
+        if (!empty($client->popup_expires_at) && \Carbon\Carbon::now()->greaterThan(\Carbon\Carbon::parse($client->popup_expires_at))) { $showPopup = false; }
+        if (!empty($client->popup_pages)) {
+            $pages = is_array($client->popup_pages) ? $client->popup_pages : (json_decode($client->popup_pages, true) ?? []);
+            if (!empty($pages)) {
+                $currentRoute = request()->route()->getName();
+                $isHome = str_contains($currentRoute, 'show') && !str_contains($currentRoute, 'product') && !str_contains($currentRoute, 'checkout');
+                $isProduct = str_contains($currentRoute, 'product');
+                $isCheckout = str_contains($currentRoute, 'checkout');
+                if (($isHome && !in_array('home', $pages)) || ($isProduct && !in_array('product', $pages)) || ($isCheckout && !in_array('checkout', $pages))) { $showPopup = false; }
+            }
+        }
+    @endphp
+    @if($showPopup)
+    <div x-data="{ open: false }" x-init="setTimeout(() => { open = true }, {{ ($client->popup_delay ?? 3) * 1000 }})" x-cloak x-show="open" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div @click.outside="open = false" x-show="open" x-transition.enter="transition ease-out duration-300" x-transition.enter-start="opacity-0 scale-90" x-transition.enter-end="opacity-100 scale-100" class="bg-white rounded shadow-2xl max-w-md w-full overflow-hidden relative">
+            <button @click="open = false" class="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition z-10 shadow">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+            @if($client->popup_link)<a href="{{ $client->popup_link }}" class="block">@endif
+            @if($client->popup_image)
+                <img src="{{ asset('storage/'.$client->popup_image) }}" class="w-full h-auto max-h-[350px] object-cover">
+            @endif
+            @if($client->popup_title || $client->popup_description)
+                <div class="p-6 text-center">
+                    @if($client->popup_title)<h2 class="text-xl font-black text-gray-800 mb-2">{{ $client->popup_title }}</h2>@endif
+                    @if($client->popup_description)<p class="text-sm text-gray-600 mb-4">{{ $client->popup_description }}</p>@endif
+                    @if($client->popup_link)<span class="inline-block bg-swred text-white px-6 py-2 rounded-full font-bold text-xs uppercase shadow hover:bg-red-700 transition">Explore Now</span>@endif
+                </div>
+            @endif
+            @if($client->popup_link)</a>@endif
+        </div>
+    </div>
+    @endif
+    @endif
 </body>
 </html>

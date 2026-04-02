@@ -5,7 +5,7 @@
 @if($client->show_chat_button ?? true)
 <div x-data="{ chatOpen: false }" class="relative">
     <button type="button" @click="chatOpen = !chatOpen" 
-        class="h-14 px-6 bg-emerald-500 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-600 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+        class="{{ $btnClass ?? 'h-14 px-6 bg-emerald-500 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-600 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 flex items-center justify-center gap-2' }}">
         <i class="fas fa-comments text-base"></i> Chat
     </button>
 

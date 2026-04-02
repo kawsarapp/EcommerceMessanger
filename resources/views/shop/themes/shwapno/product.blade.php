@@ -32,8 +32,25 @@
     mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
     qty: 1, 
     color: '', 
-    size: '' 
-}">
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) {
+                this.currentPrice = parseInt(matched.price);
+            } else {
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     
     {{-- Breadcrumb --}}
     <div class="sw-breadcrumb">
@@ -73,14 +90,25 @@
                 @endforeach
             </div>
             @endif
+
+            @if($product->video_url)
+            <div class="mt-4 w-full px-4 mb-2">
+                <a href="{{ $product->video_url }}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 bg-red-50 text-swred border border-red-200 rounded text-sm font-bold hover:bg-swred hover:text-white transition">
+                    <i class="fab fa-youtube text-lg"></i> Watch Product Video
+                </a>
+            </div>
+            @endif
         </div>
 
         {{-- Product Center Info --}}
         <div class="lg:col-span-4 flex flex-col mt-2">
+            @if($product->brand)
+                <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-0.5">{{ $product->brand }}</span>
+            @endif
             <h1 class="text-[17px] text-gray-800 font-bold leading-snug mb-3">{{$product->name}}</h1>
             
             <div class="flex items-center gap-2 mb-6">
-                <span class="text-3xl font-black text-swred">৳{{number_format($product->sale_price ?? $product->regular_price, 0)}}</span>
+                <span class="text-3xl font-black text-swred" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price, 0)}}</span>
                 @if($product->sale_price)
                     <del class="text-[15px] text-gray-400 font-medium ml-1">৳{{number_format($product->regular_price, 0)}}</del>
                 @endif
@@ -126,19 +154,29 @@
                     </div>
                 </div>
 
-                @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                    <button type="button" disabled class="w-[80%] max-w-[200px] sw-btn-pill py-3 text-sm bg-gray-300 text-gray-500 cursor-not-allowed">OUT OF STOCK</button>
-                @else
-                    @if($client->show_order_button ?? true)
-                    <button type="submit" class="w-[80%] max-w-[200px] sw-btn-pill sw-btn-red py-3 text-sm hover:shadow-lg">
-                        <i class="fas fa-plus mr-2 text-white/80"></i> Add to Bag
-                    </button>
+                <div class="flex flex-wrap gap-3 mt-4 items-center">
+                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
+                        <button type="button" disabled class="w-[80%] max-w-[200px] sw-btn-pill py-3 text-sm bg-gray-300 text-gray-500 cursor-not-allowed">OUT OF STOCK</button>
+                    @else
+                        @if($client->show_order_button ?? true)
+                        <button type="submit" class="flex-1 min-w-[200px] sw-btn-pill sw-btn-red py-3 text-sm hover:shadow-lg">
+                            <i class="fas fa-plus mr-2 text-white/80"></i> Add to Bag
+                        </button>
+                        @endif
+                        @if($client->show_chat_button ?? true)
+                            <div class="flex-1 min-w-[120px]">
+                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product, 'btnClass' => 'w-full h-full min-h-[44px] bg-swbg text-swdark border border-gray-200 rounded-full font-bold text-sm hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-2 px-4'])
+                            </div>
+                        @endif
                     @endif
-                    @if($client->show_chat_button ?? true)
-                        @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                    @endif
-                @endif
+                </div>
             </form>
+
+            @if($product->material)
+            <div class="mt-6">
+                <p class="text-[12px] text-gray-600"><strong>Material:</strong> {{$product->material}}</p>
+            </div>
+            @endif
 
             {{-- Description Details --}}
             <div class="mt-8 pt-6 border-t border-gray-100">
@@ -155,10 +193,12 @@
                 <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
                     <span class="text-[11px] font-bold text-gray-700">SKU: <span class="font-normal">{{$product->id}}{{$product->client_id*137}}</span></span>
                     
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                        <span class="text-[11px] font-bold text-red-500 flex items-center gap-1"><i class="fas fa-times-circle"></i> Out of stock</span>
-                    @else
-                        <span class="text-[11px] font-bold text-green-600 flex items-center gap-1"><i class="fas fa-check-circle"></i> In-stock</span>
+                    @if($client->show_stock ?? true)
+                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
+                            <span class="text-[11px] font-bold text-red-500 flex items-center gap-1"><i class="fas fa-times-circle"></i> Out of stock</span>
+                        @else
+                            <span class="text-[11px] font-bold text-green-600 flex items-center gap-1"><i class="fas fa-check-circle"></i> In-stock</span>
+                        @endif
                     @endif
                 </div>
 
@@ -174,6 +214,21 @@
                         <a href="#" class="text-green-500 hover:opacity-80 transition"><i class="fab fa-whatsapp bg-green-50 p-1.5 rounded-full"></i></a>
                     </div>
                 </div>
+
+                @if(($client->show_return_warranty ?? true) && ($product->warranty || $product->return_policy))
+                <div class="bg-gray-50 border border-gray-100 rounded p-3 mb-5">
+                    @if($product->warranty)
+                    <div class="flex gap-2 text-[11px] text-gray-600 mb-2 font-medium">
+                         <i class="fas fa-shield-alt text-green-500 mt-0.5"></i> <span><strong class="text-gray-800">Warranty:</strong> {{ $product->warranty }}</span>
+                    </div>
+                    @endif
+                    @if($product->return_policy)
+                    <div class="flex gap-2 text-[11px] text-gray-600 font-medium">
+                         <i class="fas fa-undo-alt text-blue-500 mt-0.5"></i> <span><strong class="text-gray-800">Return Policy:</strong> {{ $product->return_policy }}</span>
+                    </div>
+                    @endif
+                </div>
+                @endif
 
                 <div class="text-[11px] text-gray-600 mb-2 font-medium flex gap-2">
                     <i class="fas fa-truck text-gray-400 mt-1"></i> <span><strong class="text-gray-800">Delivery:</strong> 1-2 hours</span>

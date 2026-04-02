@@ -35,12 +35,22 @@ class AddressStep implements OrderStepInterface
             $customerInfo['name'] = $explicitName;
             $cleanMessage = trim(str_ireplace(["Name:", "Nam:", "Naam:", "আমার নাম", "My name is", $explicitName], '', $cleanMessage));
         } 
-        // B. 🔥 Smart Fallback: যদি ফোন নম্বর আগে থেকেই থাকে, কিন্তু নাম না থাকে, 
-        // এবং মেসেজটি খুব ছোট হয় (ঠিকানা নয়), তবে এটিই নাম হওয়ার সম্ভাবনা বেশি।
-        elseif (!empty($customerInfo['phone']) && empty($customerInfo['name']) && !$this->isValidAddress($cleanMessage) && mb_strlen($cleanMessage) > 2 && mb_strlen($cleanMessage) < 20) {
-            // নাম হিসেবে সেভ করা হচ্ছে
-            $customerInfo['name'] = $cleanMessage;
-            $cleanMessage = ""; // নাম নিয়ে নিলাম, তাই ক্লিয়ার করে দিলাম
+        // B. 🔥 Smart Fallback: মেসেজটি খুব ছোট এবং কোনো কিওয়ার্ড বা নম্বর না থাকলে তা নাম হিসেবে ধরে নেয়া
+        elseif (empty($customerInfo['name']) && !$this->isValidAddress($cleanMessage) && !$phone) {
+            $invalidNameWords = ['ki', 'ace', 'ase', 'ache', 'na', 'nai', 'nibo', 'order', 'korbo', 'koto', 'dam', 'price', 'pic', 'chobi', 'daw', 'din', 'taka', 'tk', 'hello', 'hi', 'ok', 'yes', 'ji', 'hm', 'hmm', 'thik', 'kobe', 'pabo', 'shirt', 'pant'];
+            $isInvalidName = false;
+            $lowerCheck = mb_strtolower($cleanMessage);
+            foreach ($invalidNameWords as $w) {
+                // Check if word exists as standalone word
+                if ($lowerCheck === $w || str_starts_with($lowerCheck, $w . ' ') || str_ends_with($lowerCheck, ' ' . $w) || str_contains($lowerCheck, ' ' . $w . ' ')) {
+                    $isInvalidName = true;
+                    break;
+                }
+            }
+            if (!$isInvalidName && mb_strlen($cleanMessage) > 2 && mb_strlen($cleanMessage) < 25 && !preg_match('/[0-9]/', $cleanMessage)) {
+                $customerInfo['name'] = $cleanMessage;
+                $cleanMessage = "";
+            }
         }
 
         // =========================
