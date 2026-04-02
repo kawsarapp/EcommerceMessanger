@@ -3,6 +3,10 @@
 @section('title', $product->name . ' - ' . $client->shop_name)
 
 @section('content')
+@php 
+    $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
+    $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
+@endphp
 
 {{-- Breadcrumb --}}
 <div class="bg-[#fcfdfa] py-6 mb-8 border-b border-gray-100">
