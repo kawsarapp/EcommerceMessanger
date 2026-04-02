@@ -125,6 +125,45 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
                     <p x-show="error" x-text="error" class="text-red-500 text-xs font-bold mt-2"></p>
                 </div>
 
+                {{-- Payment Methods --}}
+                <div class="bg-white rounded-2xl p-5 md:p-6">
+                    <h3 class="font-bold text-dark mb-4 flex items-center gap-3">
+                        <span class="w-8 h-8 hero-gradient text-white text-sm font-bold rounded-full flex items-center justify-center">৩</span>
+                        পেমেন্ট মেথড
+                    </h3>
+                    <div class="space-y-3">
+                        @if($client->cod_active ?? true)
+                        <label class="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-primary transition">
+                            <input type="radio" name="payment_method" value="cod" class="text-primary focus:ring-primary h-4 w-4" checked>
+                            <div>
+                                <span class="font-bold text-dark block text-sm">ক্যাশ অন ডেলিভারি (COD)</span>
+                                <span class="text-xs text-gray-500">পণ্য হাতে পেয়ে পেমেন্ট করুন</span>
+                            </div>
+                        </label>
+                        @endif
+                        
+                        @if($client->full_payment_active || ($client->partial_payment_active ?? false))
+                        <label class="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-primary transition">
+                            <input type="radio" name="payment_method" value="online" class="text-primary focus:ring-primary h-4 w-4" {{ !($client->cod_active ?? true) ? 'checked' : '' }}>
+                            <div>
+                                <span class="font-bold text-dark block text-sm">অনলাইন পেমেন্ট (bKash/Card/Nagad)</span>
+                                <span class="text-xs text-gray-500">নিরাপদ অনলাইন পেমেন্ট করুন</span>
+                            </div>
+                        </label>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Terms and Conditions --}}
+                @if($client->show_terms_checkbox)
+                <div class="bg-white rounded-2xl p-5 md:p-6 flex items-start gap-3">
+                    <input type="checkbox" name="terms" id="terms" class="mt-1 text-primary focus:ring-primary rounded h-4 w-4 border-gray-300" required>
+                    <label for="terms" class="text-sm text-gray-600">
+                        আমি এই ওয়েবসাইটের <a href="{{ $client->terms_conditions_url ?? '#' }}" class="text-primary hover:underline font-medium" target="_blank">{{ $client->terms_conditions_text ?? 'শর্তাবলী' }}</a> পড়েছি এবং সম্মত আছি।
+                    </label>
+                </div>
+                @endif
+
                 {{-- Submit --}}
                 <button type="submit" class="btn-primary w-full py-4 text-white rounded-xl font-bold text-base uppercase flex items-center justify-center gap-2 transition">
                     <i class="fas fa-lock"></i> অর্ডার কনফার্ম করুন

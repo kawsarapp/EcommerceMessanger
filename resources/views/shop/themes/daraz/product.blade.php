@@ -6,7 +6,29 @@
     $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-gray-100 py-6" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<div class="bg-gray-100 py-6" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) {
+                this.currentPrice = parseInt(matched.price);
+            } else {
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     <div class="max-w-7xl mx-auto px-4 md:px-6">
         
         {{-- Breadcrumb --}}
@@ -46,10 +68,21 @@
                              class="w-16 h-16 object-cover border-2 rounded cursor-pointer hover:border-primary transition p-1" loading="lazy">
                         @endforeach
                     </div>
+
+                    @if($product->video_url)
+                    <a href="{{$product->video_url}}" target="_blank" class="w-full mt-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 py-2.5 rounded flex items-center justify-center font-bold text-sm transition">
+                        <i class="fab fa-youtube text-lg mr-2"></i> ভিডিও দেখুন (Watch Video)
+                    </a>
+                    @endif
                 </div>
 
                 {{-- Middle: Info (5 cols) --}}
                 <div class="md:col-span-7 lg:col-span-5 flex flex-col">
+                    @if($product->brand)
+                    <div class="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1 flex items-center gap-1.5">
+                        <i class="fas fa-tag"></i> {{$product->brand}}
+                    </div>
+                    @endif
                     <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-2 leading-snug">{{$product->name}}</h1>
                     
                     {{-- Ratings & Brand --}}
@@ -70,7 +103,7 @@
 
                     {{-- Pricing (Daraz orange style) --}}
                     <div class="mb-6">
-                        <span class="text-3xl font-black text-primary block">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                        <span class="text-3xl font-black text-primary block" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                         @if($product->sale_price)
                         <div class="flex items-center gap-2 mt-1">
                             <del class="text-gray-400 text-sm">৳{{number_format($product->regular_price)}}</del>
@@ -119,7 +152,13 @@
                             </div>
                         </div>
 
-                        <div class="flex gap-3 pt-6">
+                        @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
+                            <div class="text-xs font-bold text-green-600 mb-1 mt-4"><i class="fas fa-check-circle mr-1"></i> ইন স্টক (In Stock)</div>
+                        @else
+                            <div class="mb-1 mt-4"></div>
+                        @endif
+
+                        <div class="flex gap-3 pt-2">
                             @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                                 <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 py-3 rounded font-bold uppercase cursor-not-allowed">স্টক আউট</button>
                             @else
@@ -188,6 +227,11 @@
                 {{-- Description --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">বিস্তারিত বিবরন</h2>
+                    @if($product->material)
+                    <div class="mb-4 text-sm text-gray-600 bg-gray-50 border border-gray-100 p-3 rounded flex gap-2">
+                        <strong class="text-gray-800">ম্যাটেরিয়াল (Material):</strong> {{$product->material}}
+                    </div>
+                    @endif
                     <div class="prose max-w-none text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
                         {!! clean($product->description ?? $product->long_description) !!}
                     </div>

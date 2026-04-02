@@ -13,6 +13,9 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 </section>
 @endif
 
+{{-- Flash Sale Bar --}}
+@include('shop.themes.daraz.flash-sale-bar', ['client' => $client])
+
 {{-- Trust Bar --}}
 @if($client->widgets['trust_bar']['active'] ?? true)
 <section class="bg-white border-b border-gray-100 py-3 hidden md:block">

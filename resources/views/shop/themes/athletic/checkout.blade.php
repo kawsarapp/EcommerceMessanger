@@ -123,6 +123,51 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 <input type="hidden" name="coupon_code" :value="couponApplied ? coupon : ''">
                 <input type="hidden" name="coupon_discount" :value="discount">
 
+                <!-- Phase 4: Financial Routing -->
+                <div class="relative pt-6">
+                    <div class="absolute top-0 -left-6 text-9xl font-display font-bold text-gray-100 -z-10 select-none hidden md:block">04</div>
+                    <h3 class="font-display font-bold text-4xl uppercase tracking-widest text-dark mb-8 border-b-8 border-dark pb-2 inline-block">4. FINANCIAL ROUTING</h3>
+                    
+                    <div class="grid grid-cols-1 gap-4 font-display">
+                        @if($client->cod_active ?? true)
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="payment_method" value="cod" class="peer hidden" checked>
+                            <div class="bg-gray-50 border-4 border-dark p-6 peer-checked:bg-dark peer-checked:text-white transition -skew-x-[4deg] shadow-[6px_6px_0_111] hover:translate-y-1 hover:shadow-none flex items-center gap-4">
+                                <i class="fas fa-money-bill-wave text-4xl group-hover:text-primary peer-checked:text-primary transition-colors skew-x-[4deg]"></i>
+                                <div class="skew-x-[4deg]">
+                                    <span class="block text-2xl font-bold uppercase tracking-widest">CASH ON DELIVERY (COD)</span>
+                                    <span class="block text-sm font-sans font-bold text-gray-500 peer-checked:text-gray-300">PHYSICAL CURRENCY EXCHANGE ON ARRIVAL</span>
+                                </div>
+                            </div>
+                        </label>
+                        @endif
+
+                        @if($client->full_payment_active || ($client->partial_payment_active ?? false))
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="payment_method" value="online" class="peer hidden" {{ !($client->cod_active ?? true) ? 'checked' : '' }}>
+                            <div class="bg-gray-50 border-4 border-dark p-6 peer-checked:bg-dark peer-checked:text-white transition -skew-x-[4deg] shadow-[6px_6px_0_111] hover:translate-y-1 hover:shadow-none flex items-center gap-4">
+                                <i class="fas fa-credit-card text-4xl group-hover:text-primary peer-checked:text-primary transition-colors skew-x-[4deg]"></i>
+                                <div class="skew-x-[4deg]">
+                                    <span class="block text-2xl font-bold uppercase tracking-widest">SECURE DIGITAL TRANSFER</span>
+                                    <span class="block text-sm font-sans font-bold text-gray-500 peer-checked:text-gray-300">BKASH / CARDS / NAGAD PAYMENTS</span>
+                                </div>
+                            </div>
+                        </label>
+                        @endif
+                    </div>
+                </div>
+
+                @if($client->show_terms_checkbox)
+                <div class="bg-primary/10 border-l-8 border-primary p-6 mt-8 -skew-x-[4deg]">
+                    <label class="flex items-start gap-4 cursor-pointer group skew-x-[4deg]">
+                        <input type="checkbox" name="terms" required class="mt-1 w-6 h-6 border-4 border-dark text-primary focus:ring-0 rounded-none bg-white shrink-0 shadow-[2px_2px_0_111]">
+                        <span class="font-sans font-bold tracking-wide text-dark text-sm md:text-base cursor-pointer">
+                            I ACKNOWLEDGE AND ACCEPT THE <a href="{{ $client->terms_conditions_url ?? '#' }}" class="text-primary hover:text-dark uppercase underline decoration-2 underline-offset-4 transition-colors" target="_blank">{{ $client->terms_conditions_text ?? 'OPERATION PROTOCOLS' }}</a>
+                        </span>
+                    </label>
+                </div>
+                @endif
+
                 <!-- EXECUTE BTN -->
                 <div class="pt-8">
                     <button type="submit" class="w-full btn-speed text-center py-6 shadow-[12px_12px_0_#e11d48] hover:shadow-[4px_4px_0_#e11d48] hover:translate-x-2 hover:translate-y-2 border-4 border-dark">

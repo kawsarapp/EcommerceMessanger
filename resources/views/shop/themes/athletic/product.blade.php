@@ -6,7 +6,30 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-16" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '', show: false }" x-init="setTimeout(() => show = true, 50)">
+<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-16" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '', 
+    show: false,
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) {
+                this.currentPrice = parseInt(matched.price);
+            } else {
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="setTimeout(() => show = true, 50); $watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     
     <!-- Aggressive Breadcrumb -->
     <div class="mb-10 flex gap-4 uppercase font-display font-bold text-2xl tracking-widest text-dark overflow-x-auto hide-scroll border-b-4 border-dark pb-3">
@@ -43,6 +66,12 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 </div>
                 @endforeach
             </div>
+
+            @if($product->video_url)
+            <a href="{{$product->video_url}}" target="_blank" class="w-full mt-4 btn-speed bg-red-600 text-white font-display font-bold text-2xl uppercase tracking-widest text-center py-4 border-4 border-dark shadow-[6px_6px_0px_#111]">
+                <span><i class="fab fa-youtube mr-3"></i> WATCH INTEL FEED</span>
+            </a>
+            @endif
         </div>
         
         <!-- Right Column: Combat Specs (5/12) -->
@@ -50,6 +79,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             
             <!-- Massive Headers -->
             <div class="mb-10">
+                @if($product->brand)
+                <div class="font-display font-bold text-2xl text-primary tracking-widest uppercase mb-2 skew-x-[4deg]">
+                    <i class="fas fa-tag"></i> {{$product->brand}}
+                </div>
+                @endif
                 <h1 class="text-6xl md:text-8xl lg:text-[7rem] font-display font-bold uppercase tracking-tighter leading-[0.85] text-dark mix-blend-multiply relative z-10">{{$product->name}}</h1>
                 
                 <div class="w-1/2 h-4 bg-primary -mt-6 relative z-0 -skew-x-[20deg] opacity-70"></div>
@@ -68,7 +102,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             <div class="flex flex-col bg-gray-100 border-l-[12px] border-dark px-8 py-6 mb-12 relative overflow-hidden">
                 <div class="absolute inset-0 bg-primary opacity-5 transform skew-x-[45deg] scale-150"></div>
                 <div class="flex items-end gap-6 relative z-10">
-                    <span class="font-display font-bold text-6xl tracking-tighter leading-none text-dark">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                    <span class="font-display font-bold text-6xl tracking-tighter leading-none text-dark" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                     @if($product->sale_price)
                         <del class="font-display font-bold text-3xl text-primary opacity-60 decoration-[4px] underline-offset-4 decoration-dark leading-none">৳{{number_format($product->regular_price)}}</del>
                     @endif
@@ -110,6 +144,12 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 </div>
                 @endif
 
+                @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
+                    <div class="font-display font-bold text-2xl text-green-600 uppercase tracking-widest -skew-x-[4deg] bg-green-50 border-4 border-green-600 px-6 py-3 w-fit shadow-[4px_4px_0_#16a34a]">
+                        <span class="skew-x-[4deg]"><i class="fas fa-check-square mr-2"></i> IN STOCK // DEPLOYMENT READY</span>
+                    </div>
+                @endif
+
                 <!-- Execute Command -->
                 <div class="flex flex-col xl:flex-row gap-6 pt-4">
                     <div class="flex border-4 border-dark h-20 w-full xl:w-1/3 shrink-0 bg-white -skew-x-[6deg]">
@@ -146,14 +186,51 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 {!! clean($product->description ?? $product->short_description) !!}
             </div>
 
-            @if($product->key_features)
+            @if($product->key_features || $product->material || ($client->show_return_warranty ?? true))
             <div class="bg-dark text-white p-8 md:p-12 -skew-x-[4deg] shadow-[12px_12px_0px_#e11d48]">
                 <h3 class="font-display text-4xl mb-6 uppercase tracking-widest border-b-2 border-primary pb-4 inline-block skew-x-[4deg]">TECH SPECS</h3>
-                <ul class="space-y-3 font-sans font-bold skew-x-[4deg]">
-                    @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
-                        <li class="flex items-start"><i class="fas fa-square text-primary mt-1.5 mr-4 text-xs"></i> {{$feature}}</li>
-                    @endforeach
-                </ul>
+                
+                <div class="grid md:grid-cols-2 gap-8 skew-x-[4deg]">
+                    <div>
+                        @if($product->key_features)
+                        <ul class="space-y-3 font-sans font-bold text-sm">
+                            @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
+                                <li class="flex items-start"><i class="fas fa-square text-primary mt-1.5 mr-4 text-xs"></i> {{$feature}}</li>
+                            @endforeach
+                        </ul>
+                        @endif
+                    </div>
+                    
+                    <div class="space-y-4 font-sans font-bold text-sm bg-black/30 p-6 border-l-4 border-primary">
+                        @if($product->material)
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-cube text-primary w-5"></i>
+                            <div>
+                                <div class="text-xs text-gray-400 uppercase tracking-wider">CHASSIS MATERIAL</div>
+                                <div>{{$product->material}}</div>
+                            </div>
+                        </div>
+                        @endif
+
+                        @if($client->show_return_warranty ?? true)
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-shield-alt text-primary w-5"></i>
+                            <div>
+                                <div class="text-xs text-gray-400 uppercase tracking-wider">DEFENSE WARRANTY</div>
+                                <div>{{$product->warranty ?? 'NO WARRANTY OVERRIDE'}}</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-undo-alt text-primary w-5"></i>
+                            <div>
+                                <div class="text-xs text-gray-400 uppercase tracking-wider">RETURN PROTOCOL</div>
+                                <div>{{$product->return_policy ?? '7 DAYS RETURN COMPLIANCE'}}</div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
             </div>
             @endif
 
