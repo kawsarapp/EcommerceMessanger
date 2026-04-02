@@ -88,11 +88,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         @endif
                     </a>
                     
+                    @if($client->widgets['location_picker']['active'] ?? true)
                     <button class="hidden lg:flex items-center gap-2 border border-red-400 bg-red-600/30 hover:bg-red-600/50 transition px-3 py-1.5 rounded-sm text-white text-[11px] h-9">
                         <i class="fas fa-truck text-lg"></i>
-                        <span class="font-medium whitespace-nowrap">Select your delivery location</span>
+                        <span class="font-medium whitespace-nowrap">{{ $client->widgets['location_picker']['text'] ?? 'Select your delivery location' }}</span>
                         <i class="fas fa-chevron-down text-[10px] ml-1"></i>
                     </button>
+                    @endif
 
                     {{-- Mobile Cart Icon --}}
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
@@ -126,7 +128,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Right User Actions (Desktop) --}}
                 <div class="hidden md:flex items-center gap-4 shrink-0">
+                    @if($client->widgets['language_switcher']['active'] ?? false)
                     <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-4 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">বাংলা</a>
+                    @endif
                     
                     <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
                         <i class="far fa-user text-sm"></i> Track Order
@@ -170,8 +174,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
             {{-- Right Help Links --}}
             <div class="flex items-center gap-6">
-                <a href="#" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="fas fa-store text-gray-400"></i> Our outlets</a>
+                @if($client->widgets['top_help_links'] ?? true)
+                <a href="#" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="fas fa-store text-gray-400"></i> {{ $client->widgets['outlets_text'] ?? 'Our outlets' }}</a>
+                @if($client->phone)
+                <a href="tel:{{ $client->phone }}" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="fas fa-phone-alt text-gray-400"></i> {{ $client->phone }}</a>
+                @else
                 <a href="#" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="far fa-question-circle text-gray-400"></i> Help line</a>
+                @endif
+                @endif
             </div>
             
         </div>
@@ -275,11 +285,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                     <h4 class="footer-heading">Follow Us</h4>
                     <div class="flex gap-2">
-                        @if($client->facebook_url)<a href="{{$client->facebook_url}}" class="w-7 h-7 bg-[#3b5998] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-facebook-f text-xs"></i></a>@else
-                        <a href="#" class="w-7 h-7 bg-[#3b5998] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-facebook-f text-xs"></i></a>
-                        @endif
-                        <a href="#" class="w-7 h-7 bg-[#ff0000] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-youtube text-xs"></i></a>
-                        @if($client->instagram_url)<a href="{{$client->instagram_url}}" class="w-7 h-7 bg-[#c32aa3] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-instagram text-xs"></i></a>@endif
+                        @if($client->social_facebook ?? $client->facebook_url)<a href="{{$client->social_facebook ?? $client->facebook_url}}" target="_blank" class="w-7 h-7 bg-[#3b5998] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-facebook-f text-xs"></i></a>@endif
+                        @if($client->social_youtube ?? $client->youtube_url)<a href="{{$client->social_youtube ?? $client->youtube_url}}" target="_blank" class="w-7 h-7 bg-[#ff0000] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-youtube text-xs"></i></a>@endif
+                        @if($client->social_instagram ?? $client->instagram_url)<a href="{{$client->social_instagram ?? $client->instagram_url}}" target="_blank" class="w-7 h-7 bg-[#c32aa3] text-white flex items-center justify-center rounded-sm hover:opacity-80 transition"><i class="fab fa-instagram text-xs"></i></a>@endif
                     </div>
                 </div>
 
