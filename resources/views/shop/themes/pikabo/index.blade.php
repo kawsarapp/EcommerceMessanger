@@ -185,12 +185,16 @@
             ->where('starts_at', '<=', now())
             ->where('ends_at', '>=', now())
             ->orderBy('ends_at', 'asc')
-            ->with(['items.product' => function($q){
-                $q->where('status', 'published');
-            }])
             ->first();
             
-        $flashProducts = $activeFlashSale ? $activeFlashSale->items->pluck('product')->filter() : collect();
+        $flashProducts = collect([]);
+        if ($activeFlashSale) {
+            $pIds = is_array($activeFlashSale->product_ids) ? $activeFlashSale->product_ids : (json_decode($activeFlashSale->product_ids, true) ?? []);
+            if (!empty($pIds)) {
+                $flashProducts = \App\Models\Product::whereIn('id', $pIds)->where('stock_status', 'in_stock')->take(10)->get();
+            }
+        }
+        
         $flashText = $client->widgets['flash_sale']['text'] ?? 'FLASH SALE';
         $flashCountdown = $activeFlashSale ? max(0, (int) now()->diffInSeconds($activeFlashSale->ends_at, false)) : 0;
     @endphp

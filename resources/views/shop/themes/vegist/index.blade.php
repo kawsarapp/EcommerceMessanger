@@ -124,9 +124,6 @@
         ->where('starts_at', '<=', now())
         ->where('ends_at', '>=', now())
         ->orderBy('ends_at', 'asc')
-        ->with(['items.product' => function($q){
-            $q->where('status', 'published');
-        }])
         ->first();
 
     $flashActive = $client->widgets['flash_sale']['active'] ?? true;
@@ -137,10 +134,13 @@
 
     if ($activeFlashSale) {
         $isRealFlashSale = true;
-        // Overwrite title from flash sale record if desired, or keep widget title
         $flashTitle = $activeFlashSale->title ?? 'Flash Sale';
         $flashCountdownStr = \Carbon\Carbon::parse($activeFlashSale->ends_at)->toIso8601String();
-        $flashProducts = $activeFlashSale->items->pluck('product')->filter()->take(8);
+        
+        $pIds = is_array($activeFlashSale->product_ids) ? $activeFlashSale->product_ids : (json_decode($activeFlashSale->product_ids, true) ?? []);
+        if (!empty($pIds)) {
+            $flashProducts = \App\Models\Product::whereIn('id', $pIds)->where('stock_status', 'in_stock')->take(8)->get();
+        }
     } 
     
     if($flashProducts->isEmpty() && isset($products)) {
