@@ -318,7 +318,7 @@
                         fd.append('price', this.currentPrice);
                     }
                     
-                    let res = await fetch("{{route('shop.cart.add', $client->slug)}}", {
+                    let res = await fetch("{{ $baseUrl.'/cart/add' }}", {
                         method: 'POST',
                         body: fd
                     });
