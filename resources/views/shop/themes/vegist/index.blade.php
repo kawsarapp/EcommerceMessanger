@@ -124,6 +124,9 @@
         ->where('starts_at', '<=', now())
         ->where('ends_at', '>=', now())
         ->orderBy('ends_at', 'asc')
+        ->with(['items.product' => function($q){
+            $q->where('status', 'published');
+        }])
         ->first();
 
     $flashActive = $client->widgets['flash_sale']['active'] ?? true;
@@ -137,15 +140,11 @@
         // Overwrite title from flash sale record if desired, or keep widget title
         $flashTitle = $activeFlashSale->title ?? 'Flash Sale';
         $flashCountdownStr = \Carbon\Carbon::parse($activeFlashSale->ends_at)->toIso8601String();
-        $pIds = is_array($activeFlashSale->product_ids) ? $activeFlashSale->product_ids : (json_decode($activeFlashSale->product_ids, true) ?? []);
-        
-        if (!empty($pIds)) {
-            $flashProducts = \App\Models\Product::whereIn('id', $pIds)->where('status', 'active')->take(8)->get();
-        } else {
-            $flashProducts = $products ? collect($products)->take(8) : collect([]);
-        }
-    } else {
-        $flashProducts = $products ? collect($products)->take(8) : collect([]);
+        $flashProducts = $activeFlashSale->items->pluck('product')->filter()->take(8);
+    } 
+    
+    if($flashProducts->isEmpty() && isset($products)) {
+        $flashProducts = collect($products->items())->take(8);
     }
 @endphp
 
@@ -191,9 +190,9 @@
         <div class="flex items-center gap-4 bg-white hover:bg-[#fcfdfa] p-4 rounded border border-transparent hover:border-gray-100 transition group relative">
             
             {{-- Discount Tag --}}
-            @if($p->compare_price > $p->price && $p->compare_price > 0)
+            @if($p->sale_price)
             <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 shadow">
-                HOT
+                -{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%
             </div>
             @elseif($isRealFlashSale)
             <div class="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 shadow">
@@ -214,9 +213,9 @@
                 
                 {{-- Price --}}
                 <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[14px] font-bold text-dark">৳{{number_format($p->price)}}</span>
-                    @if($p->compare_price > $p->price && $p->compare_price > 0)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->compare_price)}}</span>
+                    <span class="text-[14px] font-bold text-dark">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
+                    @if($p->sale_price)
+                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->regular_price)}}</span>
                     @endif
                 </div>
 
@@ -275,8 +274,9 @@
             <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-6 overflow-hidden mb-4 mix-blend-multiply border border-transparent group-hover:border-gray-100 transition">
                 
                 {{-- Percentage Badge --}}
-                @if($p->compare_price > $p->price && $p->compare_price > 0)
-                @php $percent = round((($p->compare_price - $p->price) / $p->compare_price) * 100); @endphp
+                {{-- Percentage Badge --}}
+                @if($p->sale_price)
+                @php $percent = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
                 <div class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 z-10 shadow-sm">
                     -{{$percent}}%
                 </div>
@@ -304,9 +304,9 @@
                     {{$p->name}}
                 </a>
                 <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-[15px] font-bold text-dark">৳{{number_format($p->price)}}</span>
-                    @if($p->compare_price > $p->price && $p->compare_price > 0)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->compare_price)}}</span>
+                    <span class="text-[15px] font-bold text-dark">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
+                    @if($p->sale_price)
+                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->regular_price)}}</span>
                     @endif
                 </div>
                 <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5">

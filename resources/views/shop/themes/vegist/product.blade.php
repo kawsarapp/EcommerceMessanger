@@ -18,19 +18,19 @@
         
         {{-- Left: Galleries --}}
         <div class="lg:col-span-4">
-            <div class="bg-gray-50 flex items-center justify-center p-8 mb-4 border border-gray-100 mix-blend-multiply overflow-hidden rounded relative max-h-[500px]">
-                <img :src="activeImage" class="w-full h-auto object-contain transition duration-300">
-                
-                @if($product->compare_price > $product->price && $product->compare_price > 0)
-                @php $percent = round((($product->compare_price - $product->price) / $product->compare_price) * 100); @endphp
-                <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 z-10 rounded-sm shadow-sm">
+            <div class="relative bg-gray-50 flex items-center justify-center p-6 border border-gray-100 mix-blend-multiply md:max-h-[500px] overflow-hidden">
+                @if($product->sale_price)
+                @php $percent = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
+                <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 z-10 shadow-sm">
                     -{{$percent}}%
                 </div>
                 @endif
+                
+                <img :src="activeImage" class="max-w-full max-h-full object-contain transition-opacity duration-300">
             </div>
 
             @if($product->images && count($images = is_string($product->images) ? json_decode($product->images, true) : $product->images) > 0)
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid grid-cols-4 gap-3 mt-4">
                 @if($product->thumbnail)
                 <div @click="activeImage = '{{asset('storage/'.$product->thumbnail)}}'" class="border cursor-pointer p-2 bg-gray-50 mix-blend-multiply rounded" :class="activeImage === '{{asset('storage/'.$product->thumbnail)}}' ? 'border-primary' : 'border-gray-100 hover:border-gray-300'">
                     <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-auto object-contain">
@@ -71,10 +71,11 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 mb-6">
-                <span class="text-2xl font-bold text-dark" x-text="'৳' + currentPrice"></span>
-                @if($product->compare_price > $product->price && $product->compare_price > 0)
-                <span class="text-base text-gray-400 line-through">৳{{number_format($product->compare_price)}}</span>
+            {{-- Pricing --}}
+            <div class="flex items-end gap-3 mb-6">
+                <h2 class="text-3xl font-black text-dark">৳<span x-text="displayPrice"></span></h2>
+                @if($product->sale_price)
+                <span class="text-base text-gray-400 line-through">৳{{number_format($product->regular_price)}}</span>
                 @endif
             </div>
 
@@ -233,8 +234,9 @@
             <div class="bg-white group">
                 <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-6 overflow-hidden mb-4 mix-blend-multiply border border-transparent group-hover:border-gray-100 transition">
                     
-                    @if($rp->compare_price > $rp->price && $rp->compare_price > 0)
-                    @php $percent = round((($rp->compare_price - $rp->price) / $rp->compare_price) * 100); @endphp
+                    {{-- Percentage Badge --}}
+                    @if($rp->sale_price)
+                    @php $percent = round((($rp->regular_price - $rp->sale_price) / $rp->regular_price) * 100); @endphp
                     <div class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 z-10 shadow-sm">
                         -{{$percent}}%
                     </div>
@@ -261,9 +263,9 @@
                         {{$rp->name}}
                     </a>
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="text-[15px] font-bold text-dark">৳{{number_format($rp->price)}}</span>
-                        @if($rp->compare_price > $rp->price && $rp->compare_price > 0)
-                        <span class="text-[12px] text-gray-400 line-through">৳{{number_format($rp->compare_price)}}</span>
+                        <span class="text-[15px] font-bold text-dark">৳{{number_format($rp->sale_price ?? $rp->regular_price)}}</span>
+                        @if($rp->sale_price)
+                        <span class="text-[12px] text-gray-400 line-through">৳{{number_format($rp->regular_price)}}</span>
                         @endif
                     </div>
                     <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5">
