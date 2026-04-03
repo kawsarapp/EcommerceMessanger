@@ -23,7 +23,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             theme:{
                 extend:{
                     colors:{
-                        primary:'{{$client->primary_color ?? "#e11d48"}}', // Default crimson red
+                        primary:'{{$client->primary_color ?? "#e11d48"}}',
                         dark: '#111111'
                     },
                     fontFamily:{
@@ -36,12 +36,22 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </script>
     <style>
         :root {
-            --tw-color-primary: {{$client->primary_color ?? "#e11d48"}};
-            --mob-primary: {{$client->primary_color ?? "#e11d48"}};
+            --color-primary: {{$client->primary_color ?? "#e11d48"}};
         }
         [x-cloak]{display:none!important} 
         .hide-scroll::-webkit-scrollbar{display:none}
         
+        /* Dynamic primary shadow utilities */
+        .shadow-primary-xs  { box-shadow: 2px 2px 0px var(--color-primary); }
+        .shadow-primary-sm  { box-shadow: 4px 4px 0px var(--color-primary); }
+        .shadow-primary-md  { box-shadow: 6px 6px 0px var(--color-primary); }
+        .shadow-primary-lg  { box-shadow: 8px 8px 0px var(--color-primary); }
+        .shadow-primary-xl  { box-shadow: 12px 12px 0px var(--color-primary); }
+        .shadow-dark-sm     { box-shadow: 4px 4px 0px #111111; }
+        .shadow-dark-md     { box-shadow: 6px 6px 0px #111111; }
+        .shadow-dark-lg     { box-shadow: 8px 8px 0px #111111; }
+        .shadow-dark-xl     { box-shadow: 12px 12px 0px #111111; }
+
         /* Athletic brutally sharp and skewed components */
         .btn-speed { 
             position: relative;
@@ -54,13 +64,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
         .btn-speed span {
             display: inline-block;
-            transform: skewX(8deg); /* Unskew text */
+            transform: skewX(8deg);
             font-family: 'Oswald', sans-serif;
             text-transform: uppercase;
             font-weight: 700;
         }
         .btn-speed:hover {
-            background: var(--tw-color-primary);
+            background: var(--color-primary);
         }
         .btn-speed::before {
             content: '';
@@ -75,7 +85,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             left: 150%;
         }
 
-        /* Diagonal brutal borders */
+        /* Diagonal brutal card borders */
         .card-brutal {
             border: 3px solid #111111;
             transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
@@ -85,18 +95,23 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             content:''; position: absolute;
             top: 6px; left: 6px;
             width: 100%; height: 100%;
-            background: var(--tw-color-primary);
+            background: var(--color-primary);
             z-index: -1;
             transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .card-brutal:hover {
             transform: translate(3px, 3px);
-            border-color: var(--tw-color-primary);
+            border-color: var(--color-primary);
         }
         .card-brutal:hover::after {
             top: 0; left: 0;
             background: #111111;
         }
+        
+        /* Primary border color */
+        .border-primary-dynamic { border-color: var(--color-primary); }
+        .text-primary-dynamic   { color: var(--color-primary); }
+        .bg-primary-dynamic     { background-color: var(--color-primary); }
 
         @media(max-width:767px){
             .shop-name-text{font-size:1.5rem!important;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -108,7 +123,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     {{-- Flash Sale / Global Highlight Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
-    {{-- Strict Announcement Strip --}}
+    {{-- Dynamic Announcement Strip --}}
     @if($client->announcement_text)
     <div class="bg-primary text-white text-center py-2 text-sm font-display tracking-widest uppercase shadow-sm">
         {!! $client->announcement_text !!}
@@ -121,15 +136,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             {{-- Branding --}}
             <a href="{{$baseUrl}}" class="flex items-center gap-4 shrink-0 transition-transform active:scale-95">
                 @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-14 object-contain">
+                    <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-14 object-contain" alt="{{$client->shop_name}}">
                 @endif
                 <span class="shop-name-text text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-dark">{{$client->shop_name}}</span>
             </a>
 
             {{-- Right Nav --}}
             <div class="hidden md:flex gap-8 items-center h-full">
-                <a href="{{$baseUrl}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">GEAR</a>
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">TRACK</a>
+                <a href="{{$baseUrl}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">SHOP</a>
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">TRACK ORDER</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-blue-600 transition-colors border-b-4 border-transparent hover:border-blue-600">SUPPORT</a>
                 @endif
@@ -145,36 +160,64 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[100rem] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             <div>
                 <h3 class="font-display font-bold text-4xl uppercase tracking-wider mb-4">{{$client->shop_name}}</h3>
-                <p class="text-gray-400 text-sm font-sans font-semibold leading-relaxed max-w-sm">BUILT FOR PERFORMANCE. DESIGNED FOR SPEED. GEAR UP AND PUSH YOUR LIMITS TO THE MAXIMUM.</p>
+                <p class="text-gray-400 text-sm font-sans font-semibold leading-relaxed max-w-sm">
+                    {{$client->description ?? ($client->tagline ?? 'আমাদের দোকানে স্বাগতম। সেরা পণ্য, সেরা দামে।')}}
+                </p>
             </div>
             
             <div>
-                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">HEADQUARTERS</h4>
+                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">QUICK LINKS</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
-                    <a href="{{$baseUrl}}" class="hover:text-white transition-colors uppercase w-fit">Browse Gear</a>
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition-colors uppercase w-fit">Locate Package</a>
+                    <a href="{{$baseUrl}}" class="hover:text-white transition-colors uppercase w-fit">সব পণ্য দেখুন</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition-colors uppercase w-fit">অর্ডার ট্র্যাক করুন</a>
                 </div>
             </div>
 
             <div>
                 <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">POLICIES</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
-                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">Delivery Protocol</a>
-                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">Refunds</a>
-                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">Terms</a>
+                    @if($client->delivery_policy_url ?? false)
+                    <a href="{{$client->delivery_policy_url}}" class="hover:text-white transition-colors uppercase w-fit">ডেলিভারি নীতি</a>
+                    @else
+                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">ডেলিভারি নীতি</a>
+                    @endif
+                    @if($client->return_policy_url ?? false)
+                    <a href="{{$client->return_policy_url}}" class="hover:text-white transition-colors uppercase w-fit">রিটার্ন নীতি</a>
+                    @else
+                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">রিটার্ন নীতি</a>
+                    @endif
+                    @if($client->terms_conditions_url ?? false)
+                    <a href="{{$client->terms_conditions_url}}" class="hover:text-white transition-colors uppercase w-fit">Terms & Conditions</a>
+                    @endif
                 </div>
             </div>
 
             <div>
-                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">COMMUNICATIONS</h4>
+                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">CONTACT US</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
-                    @if($client->phone) <p class="uppercase"><i class="fas fa-bolt text-primary mr-2"></i> {{$client->phone}}</p> @endif
-                    @if($client->email) <p class="uppercase"><i class="fas fa-paper-plane text-primary mr-2"></i> {{$client->email}}</p> @endif
+                    @if($client->phone) 
+                    <a href="tel:{{$client->phone}}" class="uppercase hover:text-white transition-colors">
+                        <i class="fas fa-phone text-primary mr-2"></i> {{$client->phone}}
+                    </a> 
+                    @endif
+                    @if($client->email) 
+                    <a href="mailto:{{$client->email}}" class="uppercase hover:text-white transition-colors">
+                        <i class="fas fa-envelope text-primary mr-2"></i> {{$client->email}}
+                    </a> 
+                    @endif
+                    @if($client->address ?? false)
+                    <p class="uppercase"><i class="fas fa-map-marker-alt text-primary mr-2"></i> {{$client->address}}</p>
+                    @endif
+                    @if($client->fb_page_id)
+                    <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="uppercase hover:text-white transition-colors">
+                        <i class="fab fa-facebook-messenger text-primary mr-2"></i> Messenger-এ কথা বলুন
+                    </a>
+                    @endif
                 </div>
             </div>
         </div>
         <div class="max-w-[100rem] mx-auto px-6 mt-16 flex flex-col md:flex-row justify-between items-center text-xs font-display text-gray-500 uppercase tracking-[0.2em]">
-            <p>&copy; {{date('Y')}} {{$client->shop_name}}. POWERED BY VELOCITY.</p>
+            <p>&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
         </div>
     </footer>
 
