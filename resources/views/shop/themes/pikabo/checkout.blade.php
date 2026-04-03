@@ -39,12 +39,12 @@
     applyCoupon() {
         if(!this.couponCode) { this.couponError = 'Please enter a coupon code'; return; }
         this.couponError = '';
-        fetch('{{ $baseUrl }}/api/validate-coupon', {
+        fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
             body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
         }).then(r => r.json()).then(d => {
-            if(d.valid) { this.couponDiscount = d.discount; this.couponApplied = true; }
+            if(d.success) { this.couponDiscount = d.discount; this.couponApplied = true; }
             else { this.couponError = d.message || 'Invalid coupon code'; }
         }).catch(err => { this.couponError = 'Error verifying coupon'; });
     }
