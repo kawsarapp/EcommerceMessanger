@@ -7,6 +7,7 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\FacebookConnectController;
 use App\Http\Controllers\ClientSettingsController;
+use App\Http\Controllers\PaymentController;
 use App\Models\Plan;
 use App\Models\Order;
 
@@ -177,4 +178,26 @@ Route::middleware(['auth'])->prefix('admin-backup')->group(function () {
         abort_unless(auth()->user()?->isSuperAdmin(), 403);
         return app(\App\Filament\Pages\BackupManager::class)->downloadClientBackup($clientId);
     })->name('filament.admin.pages.backup-manager.client');
+});
+
+// ==========================================
+// 💳 PAYMENT GATEWAY ROUTES
+// ==========================================
+Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->prefix('payment')->group(function () {
+
+    // 📲 bKash Reference Confirmation (AJAX)
+    Route::post('/bkash/personal/confirm',  [PaymentController::class, 'confirmBkashPersonal'])->name('payment.bkash.personal.confirm');
+    Route::post('/bkash/merchant/confirm',  [PaymentController::class, 'confirmBkashMerchant'])->name('payment.bkash.merchant.confirm');
+
+    // 💳 SSL Commerz
+    Route::get('/sslcommerz/{orderId}/init',    [PaymentController::class, 'initiateSslCommerz'])->name('payment.sslcommerz.init');
+    Route::post('/sslcommerz/{orderId}/success', [PaymentController::class, 'sslcommerzSuccess'])->name('payment.sslcommerz.success');
+    Route::post('/sslcommerz/{orderId}/fail',    [PaymentController::class, 'sslcommerzFail'])->name('payment.sslcommerz.fail');
+    Route::post('/sslcommerz/{orderId}/cancel',  [PaymentController::class, 'sslcommerzCancel'])->name('payment.sslcommerz.cancel');
+
+    // 🌙 Surjopay
+    Route::get('/surjopay/{orderId}/init',    [PaymentController::class, 'initiateSurjopay'])->name('payment.surjopay.init');
+    Route::get('/surjopay/{orderId}/success', [PaymentController::class, 'surjopaySuccess'])->name('payment.surjopay.success');
+    Route::get('/surjopay/{orderId}/fail',    [PaymentController::class, 'surjopayFail'])->name('payment.surjopay.fail');
+    Route::get('/surjopay/{orderId}/cancel',  [PaymentController::class, 'surjopayCancel'])->name('payment.surjopay.cancel');
 });

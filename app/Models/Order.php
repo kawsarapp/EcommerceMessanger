@@ -19,12 +19,13 @@ class Order extends Model
 
     // ✅ Casts for better data handling
     protected $casts = [
-        'total_amount' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'total_amount'    => 'decimal:2',
+        'subtotal'        => 'decimal:2',
         'shipping_charge' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'advance_amount'  => 'decimal:2',
+        'created_at'      => 'datetime',
+        'updated_at'      => 'datetime',
     ];
 
     // ==========================================

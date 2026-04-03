@@ -265,33 +265,58 @@ class OrderFormSchema
                                         ->extraInputAttributes(['class' => 'font-bold text-primary']),
                                 ]),
 
-                            Section::make('Status & Payment')
+                            Section::make('Payment & Status')
                                 ->schema([
                                     Select::make('order_status')
                                         ->label('Order Status')
                                         ->options([
-                                            'pending' => 'Pending',
+                                            'pending'    => 'Pending',
                                             'processing' => 'Processing',
-                                            'shipped' => 'Shipped',
-                                            'delivered' => 'Delivered',
-                                            'cancelled' => 'Cancelled',
-                                            'returned' => 'Returned',
+                                            'shipped'    => 'Shipped',
+                                            'delivered'  => 'Delivered',
+                                            'cancelled'  => 'Cancelled',
+                                            'returned'   => 'Returned',
                                         ])
                                         ->required()
                                         ->native(false),
 
-                                    Select::make('payment_method')
+                                    \Filament\Forms\Components\Select::make('payment_method')
+                                        ->label('Payment Method')
                                         ->options([
-                                            'cod' => 'Cash on Delivery',
-                                            'bkash' => 'bKash',
-                                            'nagad' => 'Nagad',
-                                        ])->required(),
+                                            'cod'            => 'Cash on Delivery',
+                                            'bkash_merchant' => 'bKash Merchant',
+                                            'bkash_personal' => 'bKash Personal',
+                                            'sslcommerz'     => 'SSL Commerz',
+                                            'surjopay'       => 'Surjopay',
+                                            'partial'        => 'Partial Payment',
+                                            'full'           => 'Full Pre-Payment',
+                                            'bkash'          => 'bKash (Legacy)',
+                                            'nagad'          => 'Nagad',
+                                        ])
+                                        ->required()
+                                        ->native(false),
 
-                                    Select::make('payment_status')
+                                    \Filament\Forms\Components\Select::make('payment_status')
+                                        ->label('Payment Status')
                                         ->options([
                                             'pending' => 'Pending',
-                                            'paid' => 'Paid',
-                                        ])->required(),
+                                            'paid'    => 'Paid',
+                                            'partial' => 'Partial (Advance)',
+                                            'failed'  => 'Failed',
+                                        ])
+                                        ->required()
+                                        ->native(false),
+
+                                    \Filament\Forms\Components\TextInput::make('payment_reference')
+                                        ->label('Transaction ID / Reference')
+                                        ->placeholder('bKash TrxID, SSL TxnID...')
+                                        ->helperText('Payment gateway Transaction ID.'),
+
+                                    \Filament\Forms\Components\TextInput::make('advance_amount')
+                                        ->label('Advance Amount (BDT)')
+                                        ->numeric()
+                                        ->prefix('BDT')
+                                        ->default(0),
                                 ]),
 
                             Section::make('Notes')

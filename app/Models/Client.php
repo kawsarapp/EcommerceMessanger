@@ -54,6 +54,7 @@ class Client extends Model
         'seller_settings'              => 'array',
         'require_pre_chat_form'        => 'boolean',
         'tracking_settings'            => 'array',
+        'payment_gateways'             => 'array',
     ];
 
     /**
@@ -309,6 +310,79 @@ class Client extends Model
     {
         $settings = $this->seller_settings ?? [];
         return (bool) ($settings["{$feature}_enabled"] ?? true);
+    }
+
+    // ==========================================
+    // PAYMENT GATEWAY HELPERS
+    // ==========================================
+
+    /**
+     * কোনো payment gateway active আছে কিনা চেক করো
+     * Usage: $client->isPaymentGatewayActive('bkash_merchant')
+     */
+    public function isPaymentGatewayActive(string $gateway): bool
+    {
+        $gateways = $this->payment_gateways ?? [];
+        return (bool) ($gateways[$gateway]['active'] ?? false);
+    }
+
+    /**
+     * Payment gateway এর config আনো
+     * Usage: $client->getPaymentGatewayConfig('sslcommerz')
+     */
+    public function getPaymentGatewayConfig(string $gateway): array
+    {
+        $gateways = $this->payment_gateways ?? [];
+        return $gateways[$gateway] ?? [];
+    }
+
+    /**
+     * Shop এ কোন কোন active payment methods আছে — checkout এ use হবে
+     */
+    public function getActivePaymentMethods(): array
+    {
+        $methods  = [];
+        $gateways = $this->payment_gateways ?? [];
+
+        // COD — default on unless explicitly disabled
+        if ($this->cod_active ?? true) {
+            $methods["cod"] = "Cash on Delivery";
+        }
+
+        // Partial / Full pre-payment
+        if ($this->partial_payment_active ?? false) {
+            $methods["partial"] = "Partial Advance Payment";
+        }
+        if ($this->full_payment_active ?? false) {
+            $methods["full"] = "Full Pre-Payment";
+        }
+
+        // bKash Merchant
+        if (!empty($gateways["bkash_merchant"]["active"]) && !empty($gateways["bkash_merchant"]["number"])) {
+            $methods["bkash_merchant"] = "bKash Merchant";
+        }
+
+        // bKash Personal
+        if (!empty($gateways["bkash_personal"]["active"]) && !empty($gateways["bkash_personal"]["number"])) {
+            $methods["bkash_personal"] = "bKash Personal";
+        }
+
+        // SSL Commerz — needs store_id
+        if (!empty($gateways["sslcommerz"]["active"]) && !empty($gateways["sslcommerz"]["store_id"])) {
+            $methods["sslcommerz"] = "Online Payment (SSL Commerz)";
+        }
+
+        // Surjopay — needs username (NOT merchant_id)
+        if (!empty($gateways["surjopay"]["active"]) && !empty($gateways["surjopay"]["username"])) {
+            $methods["surjopay"] = "Surjopay";
+        }
+
+        // Safety: always have at least COD
+        if (empty($methods)) {
+            $methods["cod"] = "Cash on Delivery";
+        }
+
+        return $methods;
     }
 
     /**

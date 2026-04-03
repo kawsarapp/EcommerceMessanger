@@ -79,10 +79,29 @@ class OrderTableSchema
                 ->label('Payment')
                 ->badge()
                 ->color(fn (string $state): string => match ($state) {
-                    'paid' => 'success',
+                    'paid'    => 'success',
                     'pending' => 'warning',
-                    default => 'gray',
-                }),
+                    'partial' => 'info',
+                    'failed'  => 'danger',
+                    default   => 'gray',
+                })
+                ->formatStateUsing(fn (string $state) => match ($state) {
+                    'paid'    => '✅ Paid',
+                    'pending' => '⏳ Pending',
+                    'partial' => '💸 Partial',
+                    'failed'  => '❌ Failed',
+                    default   => ucfirst($state),
+                })
+                ->description(fn (Order $record): string =>
+                    match ($record->payment_method) {
+                        'bkash_merchant' => '📲 bKash Merchant',
+                        'bkash_personal' => '📱 bKash Personal',
+                        'sslcommerz'     => '💳 SSL Commerz',
+                        'surjopay'       => '🌙 Surjopay',
+                        'partial'        => '💸 Advance: ৳' . ($record->advance_amount ?? 0),
+                        default          => '🚚 Cash on Delivery',
+                    }
+                ),
 
             TextColumn::make('admin_note')
                 ->label('Note')
@@ -105,13 +124,34 @@ class OrderTableSchema
     {
         return [
             Tables\Filters\SelectFilter::make('order_status')
-                ->label('Filter Status')
+                ->label('Order Status')
                 ->options([
-                    'pending' => 'Pending',
+                    'pending'    => 'Pending',
                     'processing' => 'Processing',
-                    'shipped' => 'Shipped',
-                    'delivered' => 'Delivered',
-                    'cancelled' => 'Cancelled',
+                    'shipped'    => 'Shipped',
+                    'delivered'  => 'Delivered',
+                    'cancelled'  => 'Cancelled',
+                ]),
+
+            Tables\Filters\SelectFilter::make('payment_status')
+                ->label('Payment Status')
+                ->options([
+                    'pending' => '⏳ Pending',
+                    'paid'    => '✅ Paid',
+                    'partial' => '💸 Partial (Advance)',
+                    'failed'  => '❌ Failed',
+                ]),
+
+            Tables\Filters\SelectFilter::make('payment_method')
+                ->label('Payment Method')
+                ->options([
+                    'cod'            => '🚚 Cash on Delivery',
+                    'bkash_merchant' => '📲 bKash Merchant',
+                    'bkash_personal' => '📱 bKash Personal',
+                    'sslcommerz'     => '💳 SSL Commerz',
+                    'surjopay'       => '🌙 Surjopay',
+                    'partial'        => '💸 Partial Payment',
+                    'full'           => '✅ Full Pre-Payment',
                 ]),
         ];
     }

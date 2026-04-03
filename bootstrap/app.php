@@ -23,7 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'telegram/webhook',
             'webhook/*',
-            'shop-api/*'
+            'shop-api/*',
+            'payment/sslcommerz/*/success',
+            'payment/sslcommerz/*/fail',
+            'payment/sslcommerz/*/cancel',
+            'payment/bkash/*/confirm',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
