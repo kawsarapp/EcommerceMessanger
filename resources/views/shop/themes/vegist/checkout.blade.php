@@ -17,10 +17,11 @@
 <div class="bg-gray-50/50 min-h-screen pb-16" x-data="{
     shippingMethods: @json($shippingMethods ?? []),
     shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
-    area: 'inside', // 'inside', 'outside'
+    area: 'inside',
     paymentMethod: 'cod',
-    qty: {{ request('qty', 1) }},
-    price: {{ $product->sale_price ?? $product->regular_price }},
+    qty: {{ max(1, (int)request('qty', 1)) }},
+    price: {{ (float)($product->sale_price ?? $product->regular_price ?? 0) }},
+    notes: '',
     
     get delivery() {
         if (this.shippingMethods && this.shippingMethods.length > 0) {
@@ -37,69 +38,60 @@
     
     applyCoupon() {
         if(!this.couponCode) { this.couponError = 'Enter a coupon code'; return; }
-        fetch('{{ $baseUrl }}/api/validate-coupon', {
+        this.couponError = '';
+        @php
+            $couponUrl = $clean
+                ? 'https://'.$clean.'/apply-coupon'
+                : route('shop.apply-coupon.sub', $client->slug);
+        @endphp
+        fetch('{{ $couponUrl }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-            body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
+            body: JSON.stringify({code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal})
         }).then(r => r.json()).then(d => {
-            if(d.valid) { this.couponDiscount = d.discount; this.couponApplied = true; this.couponError = ''; }
-            else { this.couponError = d.message || 'Invalid coupon'; }
-        });
+            if(d.success) { this.couponDiscount = d.discount; this.couponApplied = true; this.couponError = ''; }
+            else { this.couponError = d.message || 'Invalid coupon'; this.couponApplied = false; }
+        }).catch(() => { this.couponError = 'Network error. Try again.'; });
     }
 }">
 
     <div class="max-w-[1200px] mx-auto px-4 xl:px-8 pt-8">
-        <form action="{{ $baseUrl.'/checkout/process' }}" method="POST" class="grid grid-cols-1 md:grid-cols-12 md:gap-12 lg:gap-16">
+        @php
+            $formAction = $clean
+                ? 'https://'.$clean.'/checkout/process'
+                : route('shop.checkout.process', $client->slug);
+        @endphp
+        <form action="{{ $formAction }}" method="POST" class="grid grid-cols-1 md:grid-cols-12 md:gap-12 lg:gap-16">
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
             <input type="hidden" name="qty" :value="qty">
+            <input type="hidden" name="payment_method" :value="paymentMethod">
             <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
             <input type="hidden" name="area" :value="area">
             <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
-            <input type="hidden" name="coupon_discount" :value="couponDiscount">
+            <input type="hidden" name="notes" :value="notes">
+            @if(request('variant'))
+            <input type="hidden" name="attributes" value="{{ request('variant') }}">
+            @endif
 
             {{-- Checkout Left Column --}}
             <div class="md:col-span-7">
                 
                 {{-- Contact --}}
-                <div class="mb-10">
-                    <h2 class="vg-section-title">
-                        Contact
-                        <a href="#" class="text-xs text-primary font-medium hover:underline">Log in</a>
-                    </h2>
-                    <input type="text" name="customer_phone" required placeholder="Email or mobile phone number" class="vg-input mb-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" class="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2">
-                        <span class="text-[12px] text-gray-500 font-medium">Email me with news and offers</span>
-                    </label>
+                <div class="mb-8">
+                    <h2 class="vg-section-title">Contact Information</h2>
+                    <div class="space-y-3">
+                        <input type="text" name="customer_name" required placeholder="Your full name *" class="vg-input">
+                        <input type="text" name="customer_phone" required placeholder="Phone number (01XXXXXXXXX) *" class="vg-input">
+                    </div>
                 </div>
 
                 {{-- Delivery --}}
-                <div class="mb-10">
-                    <h2 class="vg-section-title">Delivery</h2>
-                    
-                    <div class="space-y-4">
-                        <select class="vg-input w-full bg-white appearance-none">
-                            <option>Bangladesh</option>
-                        </select>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="text" placeholder="First name (optional)" class="vg-input">
-                            <input type="text" name="customer_name" required placeholder="Last name" class="vg-input">
-                        </div>
-                        
-                        <textarea name="shipping_address" required rows="2" placeholder="Address" class="vg-input resize-none"></textarea>
-                        <input type="text" placeholder="Apartment, suite, etc. (optional)" class="vg-input">
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="text" placeholder="Postal code" class="vg-input">
-                            <input type="text" placeholder="City" class="vg-input">
-                        </div>
-
-                        <label class="flex items-center gap-2 cursor-pointer mt-2">
-                            <input type="checkbox" class="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2">
-                            <span class="text-[12px] text-gray-500 font-medium">Save this information for next time</span>
-                        </label>
+                <div class="mb-8">
+                    <h2 class="vg-section-title">Delivery Address</h2>
+                    <div class="space-y-3">
+                        <textarea name="shipping_address" required rows="3" placeholder="Full delivery address (District, Thana, Village / Area) *" class="vg-input resize-none"></textarea>
+                        <textarea name="notes" x-model="notes" rows="2" placeholder="Order notes (optional)" class="vg-input resize-none"></textarea>
                     </div>
                 </div>
 
@@ -187,19 +179,24 @@
                 
                 <div class="md:pl-8 md:pt-4 sticky top-6 z-10">
                     
-                    {{-- Product Preview --}}
                     <div class="flex items-center gap-4 mb-6">
                         <div class="relative w-16 h-16 border border-gray-200 bg-white rounded-lg flex items-center justify-center p-1 shrink-0">
+                            @if($product->thumbnail)
                             <img src="{{ asset('storage/'.$product->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply">
+                            @else
+                            <i class="fas fa-box text-gray-300 text-2xl"></i>
+                            @endif
                             <span class="absolute -top-2 -right-2 bg-gray-500/90 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold" x-text="qty"></span>
                         </div>
                         <div class="flex-[1]">
                             <h4 class="text-[13px] font-medium text-gray-700 line-clamp-2 leading-tight">{{ $product->name }}</h4>
-                            @if(request('color') || request('size'))
+                            @if(request('variant'))
+                                <div class="text-[10px] text-primary mt-0.5 font-medium">{{ request('variant') }}</div>
+                            @elseif(request('color') || request('size'))
                                 <div class="text-[10px] text-gray-400 mt-0.5 uppercase">{{ request('color') }} {{ request('size') }}</div>
                             @endif
                         </div>
-                        <div class="text-[13px] font-medium text-gray-600 shrink-0">
+                        <div class="text-[13px] font-semibold text-dark shrink-0">
                             ৳<span x-text="(qty * price).toLocaleString()"></span>
                         </div>
                     </div>
