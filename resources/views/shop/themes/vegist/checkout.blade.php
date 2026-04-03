@@ -14,53 +14,68 @@
     .vg-section-title { font-size: 18px; font-weight: 600; color: #222; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
 </style>
 
+@php
+    // Pre-compute all URLs before x-data (Blade doesn't process @php inside HTML attributes)
+    $couponUrl  = $clean ? 'https://'.$clean.'/apply-coupon' : route('shop.apply-coupon.sub', $client->slug);
+    $formAction = $clean ? 'https://'.$clean.'/checkout/process' : route('shop.checkout.process', $client->slug);
+    $chargeInside  = (float)($client->delivery_charge_inside  ?? 50);
+    $chargeOutside = (float)($client->delivery_charge_outside ?? 100);
+    $defaultShipId = (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null';
+    $productPrice  = (float)($product->sale_price ?? $product->regular_price ?? 0);
+    $initQty       = max(1, (int)request('qty', 1));
+@endphp
+
 <div class="bg-gray-50/50 min-h-screen pb-16" x-data="{
     shippingMethods: @json($shippingMethods ?? []),
-    shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
+    shippingMethodId: {{ $defaultShipId }},
     area: 'inside',
     paymentMethod: 'cod',
-    qty: {{ max(1, (int)request('qty', 1)) }},
-    price: {{ (float)($product->sale_price ?? $product->regular_price ?? 0) }},
+    qty: {{ $initQty }},
+    price: {{ $productPrice }},
     notes: '',
-    
+
     get delivery() {
         if (this.shippingMethods && this.shippingMethods.length > 0) {
             let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
             return sm ? parseFloat(sm.cost) : 0;
-        } else {
-            return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
         }
+        return this.area === 'inside' ? {{ $chargeInside }} : {{ $chargeOutside }};
     },
     get subtotal() { return this.qty * this.price; },
-    
+
     couponCode: '', couponDiscount: 0, couponApplied: false, couponError: '',
     get total() { return this.subtotal + this.delivery - this.couponDiscount; },
-    
-    applyCoupon() {
-        if(!this.couponCode) { this.couponError = 'Enter a coupon code'; return; }
+
+    async applyCoupon() {
+        if (!this.couponCode) { this.couponError = 'Enter a coupon code'; return; }
         this.couponError = '';
-        @php
-            $couponUrl = $clean
-                ? 'https://'.$clean.'/apply-coupon'
-                : route('shop.apply-coupon.sub', $client->slug);
-        @endphp
-        fetch('{{ $couponUrl }}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-            body: JSON.stringify({code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal})
-        }).then(r => r.json()).then(d => {
-            if(d.success) { this.couponDiscount = d.discount; this.couponApplied = true; this.couponError = ''; }
-            else { this.couponError = d.message || 'Invalid coupon'; this.couponApplied = false; }
-        }).catch(() => { this.couponError = 'Network error. Try again.'; });
+        try {
+            const res = await fetch('{{ $couponUrl }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal })
+            });
+            const d = await res.json();
+            if (d.success) {
+                this.couponDiscount = d.discount;
+                this.couponApplied  = true;
+                this.couponError    = '';
+            } else {
+                this.couponError    = d.message || 'Invalid coupon';
+                this.couponApplied  = false;
+                this.couponDiscount = 0;
+            }
+        } catch(e) {
+            this.couponError = 'Network error. Try again.';
+        }
     }
 }">
 
     <div class="max-w-[1200px] mx-auto px-4 xl:px-8 pt-8">
-        @php
-            $formAction = $clean
-                ? 'https://'.$clean.'/checkout/process'
-                : route('shop.checkout.process', $client->slug);
-        @endphp
         <form action="{{ $formAction }}" method="POST" class="grid grid-cols-1 md:grid-cols-12 md:gap-12 lg:gap-16">
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
