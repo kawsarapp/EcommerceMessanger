@@ -5,13 +5,15 @@
 @php
     $clean   = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain ?? '', '/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
-    $cartUrl      = $clean ? $baseUrl.'/cart'                   : route('shop.cart',              $client->slug);
-    $addUrl       = $clean ? $baseUrl.'/cart/add'               : route('shop.cart.add',           $client->slug);
-    $removeUrl    = $clean ? $baseUrl.'/cart/remove'            : route('shop.cart.remove',        $client->slug);
-    $updateUrl    = $clean ? $baseUrl.'/cart/update'            : route('shop.cart.update',        $client->slug);
-    $checkoutUrl  = $clean ? $baseUrl.'/cart/checkout'          : route('shop.cart.checkout',      $client->slug);
+    $cartUrl      = $clean ? $baseUrl.'/cart'              : route('shop.cart',             $client->slug);
+    $addUrl       = $clean ? $baseUrl.'/cart/add'          : route('shop.cart.add',          $client->slug);
+    $removeUrl    = $clean ? $baseUrl.'/cart/remove'       : route('shop.cart.remove',       $client->slug);
+    $updateUrl    = $clean ? $baseUrl.'/cart/update'       : route('shop.cart.update',       $client->slug);
+    $clearUrl     = $clean ? $baseUrl.'/cart/clear'        : route('shop.cart.clear',        $client->slug);
+    $checkoutUrl  = $clean ? $baseUrl.'/cart/checkout'     : route('shop.cart.checkout',     $client->slug);
 
-    $subtotal = array_sum(array_map(fn($i) => $i['price'] * $i['qty'], $cart));
+    $subtotal  = array_sum(array_map(fn($i) => $i['price'] * $i['qty'], $cart));
+    $cartItems = array_values($cart); // pre-encode for safe JS injection
 @endphp
 
 <div class="max-w-[1200px] mx-auto px-4 xl:px-8 py-10 pb-28 md:pb-12"
@@ -162,11 +164,11 @@
 <script>
 function cartApp() {
     return {
-        items: @json(array_values($cart)),
+        items: {!! \Illuminate\Support\Js::from($cartItems) !!},
         csrfToken: '{{ csrf_token() }}',
         removeUrl: '{{ $removeUrl }}',
         updateUrl: '{{ $updateUrl }}',
-        clearUrl: '{{ $clean ? $baseUrl."/cart/clear" : route("shop.cart.clear", $client->slug) }}',
+        clearUrl: '{{ $clearUrl }}',
 
         get cartCount() { return this.items.length; },
         get subtotal() { return this.items.reduce((sum, i) => sum + (i.price * i.qty), 0); },
