@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotPromptService
 {
-    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start', $sessionProductContext = null, $senderId = null)
+    public function generateDynamicSystemPrompt($client, $instruction, $prodCtx, $ordCtx, $invData, $time, $userName, $knowledgeBase, $deliveryInfo, $currentStep = 'start', $sessionProductContext = null, $senderId = null, $platform = 'messenger')
     {
         Log::info("🤖 Generating AI Prompt | Shop ID: {$client->id} | Step: {$currentStep}");
 
@@ -101,13 +101,26 @@ class ChatbotPromptService
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🛍️ CAROUSEL & QUICK REPLIES (SMART DISPLAY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-১. কাস্টমার "product দেখাও", "কী আছে", "collection", "offer" বললে সবচাইতে relevant product ID গুলো নিয়ে carousel পাঠাবে:
-   👉 Format: [CAROUSEL: id1,id2,id3] (মেসেজের একদম শেষে)
-   👉 Max ৮টি product ID দেবে। ছবির URL না থাকলে বাদ দেবে।
-   👉 শুধু [CAROUSEL] ট্যাগ পাঠাবে, কোনো extra text বা title দেবে না, text ঘর খালি রাখবে।
-   
-২. কাস্টমারকে "সাইজ" বা "কালার" বেছে নিতে বললে, Quick Reply অপশন দেবে:
-   👉 Format: [QUICK_REPLIES: S, M, L, XL] (মেসেজের একদম শেষে)
+📌 PLATFORM RULES (এই নিয়ম কঠোরভাবে মানতে হবে):
+
+▶ Facebook Messenger / Instagram (platform: messenger / instagram):
+  ১. কাস্টমার "product দেখাও", "কী আছে", "collection", "offer" বললে:
+     👉 Format: [CAROUSEL: id1,id2,id3] (মেসেজের একদম শেষে)
+     👉 Max ৮টি product ID দেবে।
+     👉 শুধু [CAROUSEL] ট্যাগ পাঠাবে, text খালি রাখবে।
+     
+  ২. Size/Color বেছে নিতে:
+     👉 Format: [QUICK_REPLIES: S, M, L, XL]
+
+▶ WhatsApp / Telegram (platform: whatsapp / telegram):
+  ❌ [CAROUSEL] tag কখনো ব্যবহার করবে না — এই platform-গুলো carousel support করে না।
+  ✅ পরিবর্তে numbered list দেবে:
+     🛍️ আমাদের কালেকশন:
+     1️⃣ পণ্যের নাম — দাম: ৳XXX
+     2️⃣ পণ্যের নাম — দাম: ৳XXX
+     (পছন্দের নম্বর লিখে জানান)
+  ✅ Quick replies-এর বদলে text options দেবে: "*1. Red* | *2. Blue* | *3. Green*"
+
 
 👇 এখন তোমার কাজ:
 >>> {{instruction}} <<<
@@ -115,6 +128,7 @@ class ChatbotPromptService
 তথ্য:
 - কাস্টমার: {{customer_name}}
 - সময়: {{time}}
+- Platform: {{platform}}
 - Delivery: {{delivery_info}}
 - অর্ডার ইতিহাস: {{order_history}}
 
@@ -141,6 +155,7 @@ EOT;
             '{{inventory}}'        => $invData,
             '{{time}}'             => $time,
             '{{customer_name}}'    => $userName,
+            '{{platform}}'         => strtoupper($platform),
             '{{last_order}}'       => $recentOrderInfo,
             '{{step_rules}}'       => $stepSpecificRules,
             '{{current_step}}'     => strtoupper(str_replace('_', ' ', $currentStep)),

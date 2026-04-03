@@ -67,6 +67,10 @@ return [
         'api_key' => env('DEEPSEEK_API_KEY'),
     ],
 
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+    ],
+
     'whatsapp' => [
         'api_url' => env('WHATSAPP_API_URL', 'http://127.0.0.1:3001'),
     ],

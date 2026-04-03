@@ -57,4 +57,28 @@ class TelegramApiService
             'text' => $text
         ]);
     }
+
+    /**
+     * Get file path from Telegram (for voice/photo download)
+     */
+    public function getFile($token, $fileId): array
+    {
+        $response = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getFile", [
+            'file_id' => $fileId,
+        ]);
+        return $response->json() ?? [];
+    }
+
+    /**
+     * Send a photo to a Telegram chat
+     */
+    public function sendPhoto($token, $chatId, $photoUrl, $caption = '')
+    {
+        Http::timeout(15)->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+            'chat_id'    => $chatId,
+            'photo'      => $photoUrl,
+            'caption'    => $caption,
+            'parse_mode' => 'Markdown',
+        ]);
+    }
 }

@@ -286,7 +286,7 @@ class ChatbotService
                 $instruction .= $featureContext;
             }
 
-            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext, $senderId);
+            $systemPrompt = $this->promptService->generateDynamicSystemPrompt($client, $instruction, $contextData, $orderHistory, $inventoryData, now()->format('l, h:i A'), $session->customer_info['name'] ?? 'Customer', $client->knowledge_base ?? "সাধারণ ই-কমার্স পলিসি ফলো করো।", "Inside Dhaka: {$client->delivery_charge_inside} Tk, Outside: {$client->delivery_charge_outside} Tk", $stepName, $sessionProductContext, $senderId, $platform);
 
             $messages = [['role' => 'system', 'content' => $systemPrompt]];
             $history = $session->customer_info['history'] ?? [];

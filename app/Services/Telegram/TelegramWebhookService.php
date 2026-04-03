@@ -27,6 +27,97 @@ class TelegramWebhookService
             return;
         }
 
+        // ── Voice/Audio message ────────────────────────────────────────────
+        if (isset($data['message']['voice']) || isset($data['message']['audio'])) {
+            $incomingChatId = (string) $data['message']['chat']['id'];
+            $adminChatId    = (string) $client->telegram_chat_id;
+
+            // Only handle customer voice (not admin's own voice)
+            if ($incomingChatId !== $adminChatId && $client->is_telegram_active) {
+                $fileId      = $data['message']['voice']['file_id']
+                            ?? $data['message']['audio']['file_id']
+                            ?? null;
+                $voiceText   = null;
+
+                if ($fileId) {
+                    try {
+                        // Get file path from Telegram
+                        $fileInfo = app(\App\Services\Telegram\TelegramApiService::class)
+                            ->getFile($token, $fileId);
+                        $filePath = $fileInfo['result']['file_path'] ?? null;
+
+                        if ($filePath) {
+                            $audioUrl = "https://api.telegram.org/file/bot{$token}/{$filePath}";
+                            $voiceText = app(\App\Services\MediaService::class)
+                                ->convertVoiceToText($audioUrl);
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("Telegram voice error: " . $e->getMessage());
+                    }
+                }
+
+                $messageText = $voiceText
+                    ? "👉 Customer says (Voice): {$voiceText}"
+                    : "[SYSTEM: Customer sent a voice message but transcription failed. Politely ask them to type their message instead.]";
+
+                $aiResponse = $this->chatbot->handleMessage($client, $incomingChatId, $messageText, null, 'telegram');
+                if ($aiResponse) {
+                    app(\App\Services\NotificationService::class)
+                        ->sendTelegramCustomerReply($token, $incomingChatId, $aiResponse);
+                    Conversation::create([
+                        'client_id'    => $client->id,
+                        'sender_id'    => $incomingChatId,
+                        'platform'     => 'telegram',
+                        'user_message' => $voiceText ?? '[voice]',
+                        'bot_response' => $aiResponse,
+                        'status'       => 'success',
+                    ]);
+                }
+            }
+            return;
+        }
+
+        // ── Photo message ──────────────────────────────────────────────────
+        if (isset($data['message']['photo'])) {
+            $incomingChatId = (string) $data['message']['chat']['id'];
+            $adminChatId    = (string) $client->telegram_chat_id;
+
+            if ($incomingChatId !== $adminChatId && $client->is_telegram_active) {
+                // Get largest photo
+                $photos  = $data['message']['photo'];
+                $fileId  = end($photos)['file_id'];
+                $caption = $data['message']['caption'] ?? '';
+                $imgUrl  = null;
+
+                try {
+                    $fileInfo = app(\App\Services\Telegram\TelegramApiService::class)
+                        ->getFile($token, $fileId);
+                    $filePath = $fileInfo['result']['file_path'] ?? null;
+                    if ($filePath) {
+                        $imgUrl = "https://api.telegram.org/file/bot{$token}/{$filePath}";
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Telegram photo error: " . $e->getMessage());
+                }
+
+                $text = $caption ?: '[Customer sent an image]';
+                $aiResponse = $this->chatbot->handleMessage($client, $incomingChatId, $text, $imgUrl, 'telegram');
+                if ($aiResponse) {
+                    app(\App\Services\NotificationService::class)
+                        ->sendTelegramCustomerReply($token, $incomingChatId, $aiResponse);
+                    Conversation::create([
+                        'client_id'    => $client->id,
+                        'sender_id'    => $incomingChatId,
+                        'platform'     => 'telegram',
+                        'user_message' => $text,
+                        'bot_response' => $aiResponse,
+                        'status'       => 'success',
+                    ]);
+                }
+            }
+            return;
+        }
+
         // ৩. টেক্সট মেসেজ ও মেনু হ্যান্ডলিং
         if (isset($data['message']['text'])) {
             $incomingChatId = (string) $data['message']['chat']['id'];

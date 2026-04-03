@@ -279,7 +279,7 @@ class InstagramWebhookController extends Controller
         }
 
         // Send via Graph API
-        $url  = "https://graph.facebook.com/v19.0/me/messages?access_token={$client->fb_page_token}";
+        $url  = "https://graph.facebook.com/v22.0/me/messages?access_token={$client->fb_page_token}";
         $body = json_encode([
             'recipient'      => ['id' => $recipientId],
             'message'        => ['text' => $message],
@@ -310,7 +310,7 @@ class InstagramWebhookController extends Controller
     {
         if (empty($client->fb_page_token) || empty($imageUrl)) return;
 
-        $url  = "https://graph.facebook.com/v19.0/me/messages?access_token={$client->fb_page_token}";
+        $url  = "https://graph.facebook.com/v22.0/me/messages?access_token={$client->fb_page_token}";
         $body = json_encode([
             'recipient'      => ['id' => $recipientId],
             'message'        => [
