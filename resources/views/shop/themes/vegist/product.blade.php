@@ -47,51 +47,73 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
         {{-- ─── Left: Image Gallery ─── --}}
-        <div class="lg:col-span-4" x-data="{ zoomPos: '50% 50%', showZoom: false }">
+        <div class="lg:col-span-4" x-data="{
+            zoomPos: '50% 50%',
+            showZoom: false,
+            showLightbox: false,
+            lightboxImg: ''
+        }">
 
             {{-- Main Image --}}
-            <div class="relative bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden cursor-crosshair"
+            <div class="relative bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden"
                  style="aspect-ratio:1/1;"
-                 @mousemove="zoomPos=(($event.offsetX/$el.offsetWidth)*100)+'% '+(($event.offsetY/$el.offsetHeight)*100)+'%'"
+                 @mousemove="if(window.innerWidth > 768){ zoomPos=(($event.offsetX/$el.offsetWidth)*100)+'% '+(($event.offsetY/$el.offsetHeight)*100)+'%' }"
                  @mouseenter="showZoom = window.innerWidth > 768"
-                 @mouseleave="showZoom = false">
+                 @mouseleave="showZoom = false"
+                 @click="showLightbox = true; lightboxImg = activeImage">
 
                 @if($pct > 0)
                 <div class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-20 shadow">-{{$pct}}%</div>
                 @endif
 
-                {{-- Normal image --}}
+                {{-- Normal image (desktop hides on zoom) --}}
                 <img :src="activeImage" alt="{{$product->name}}"
-                     class="w-full h-full object-contain p-6 transition-opacity duration-200"
-                     :class="showZoom?'opacity-0':'opacity-100'">
+                     class="w-full h-full object-contain p-6 transition-opacity duration-200 cursor-zoom-in"
+                     :class="showZoom ? 'opacity-0' : 'opacity-100'">
 
-                {{-- Zoom overlay --}}
+                {{-- Desktop Zoom Overlay --}}
                 <div x-show="showZoom"
-                     class="absolute inset-0 pointer-events-none bg-no-repeat z-10"
-                     :style="'background-image:url(\''+activeImage+'\'); background-position:'+zoomPos+'; background-size:260%;'">
+                     class="absolute inset-0 pointer-events-none bg-no-repeat z-10 hidden md:block"
+                     :style="'background-image:url(\'' + activeImage + '\'); background-position:' + zoomPos + '; background-size:260%;'">
                 </div>
 
-                {{-- Zoom hint --}}
-                <div class="absolute bottom-3 right-3 bg-white/80 text-gray-500 text-[10px] px-2 py-1 rounded-full hidden lg:flex items-center gap-1">
+                {{-- Mobile tap hint --}}
+                <div class="absolute bottom-3 right-3 bg-black/30 text-white text-[9px] px-2 py-1 rounded-full flex items-center gap-1 md:hidden">
+                    <i class="fas fa-expand text-[9px]"></i> Tap to enlarge
+                </div>
+                {{-- Desktop zoom hint --}}
+                <div class="absolute bottom-3 right-3 bg-white/80 text-gray-500 text-[10px] px-2 py-1 rounded-full hidden md:flex items-center gap-1">
                     <i class="fas fa-search text-[10px]"></i> Hover to zoom
                 </div>
             </div>
 
+            {{-- Lightbox Modal (Mobile & Desktop) --}}
+            <div x-show="showLightbox" x-cloak
+                 class="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4"
+                 @click.self="showLightbox = false"
+                 @keydown.escape.window="showLightbox = false">
+                <button @click="showLightbox = false"
+                        class="absolute top-4 right-4 text-white text-2xl w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/40 transition z-10">
+                    <i class="fas fa-times"></i>
+                </button>
+                <img :src="lightboxImg" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+            </div>
+
             {{-- Thumbnails --}}
             @if($product->thumbnail || count($productGallery) > 0)
-            <div class="grid grid-cols-5 gap-2 mt-3">
+            <div class="flex gap-2 mt-3 overflow-x-auto hide-scroll pb-1">
                 @if($product->thumbnail)
-                <div @click="activeImage='{{asset('storage/'.$product->thumbnail)}}'"
-                     class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition"
+                <div @click="activeImage='{{asset('storage/'.$product->thumbnail)}}'; lightboxImg=activeImage"
+                     class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition shrink-0 w-16 h-16"
                      :class="activeImage==='{{asset('storage/'.$product->thumbnail)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
-                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full aspect-square object-contain">
+                    <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
                 </div>
                 @endif
                 @foreach($productGallery as $img)
-                <div @click="activeImage='{{asset('storage/'.$img)}}'"
-                     class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition"
+                <div @click="activeImage='{{asset('storage/'.$img)}}'; lightboxImg=activeImage"
+                     class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition shrink-0 w-16 h-16"
                      :class="activeImage==='{{asset('storage/'.$img)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
-                    <img src="{{asset('storage/'.$img)}}" class="w-full aspect-square object-contain">
+                    <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain">
                 </div>
                 @endforeach
             </div>
@@ -334,15 +356,22 @@
             @endif
             <button @click="tab='reviews'"
                     :class="tab==='reviews'?'border-b-2 border-primary text-primary font-bold':'text-gray-500 hover:text-primary'"
-                    class="px-5 py-4 text-sm uppercase whitespace-nowrap transition bg-transparent shrink-0">Reviews ({{$product->reviews_count ?? 0}})</button>
+                    class="px-5 py-4 text-sm uppercase whitespace-nowrap transition bg-transparent shrink-0">Reviews ({{$totalReviews}})</button>
         </div>
 
         <div class="py-8 px-1 text-sm text-gray-600 leading-relaxed min-h-[200px]">
             <div x-show="tab==='description'" x-cloak>
-                @if($product->description)
-                    <div class="text-sm text-gray-600 leading-relaxed">{!! nl2br(e($product->description)) !!}</div>
-                @elseif($product->long_description)
-                    <div class="text-sm text-gray-600 leading-relaxed">{!! nl2br(e($product->long_description)) !!}</div>
+                @php
+                    // Safe description rendering — strip dangerous tags but allow <br>
+                    $descHtml = '';
+                    if ($product->description) {
+                        $descHtml = nl2br(strip_tags(trim($product->description), '<b><strong><em><ul><ol><li><br><p><h2><h3><h4>'));
+                    } elseif ($product->long_description) {
+                        $descHtml = nl2br(strip_tags(trim($product->long_description), '<b><strong><em><ul><ol><li><br><p><h2><h3><h4>'));
+                    }
+                @endphp
+                @if($descHtml)
+                    <div class="text-sm text-gray-600 leading-[1.9] space-y-2">{!! $descHtml !!}</div>
                 @else
                     <p class="text-gray-400 italic">No description available for this product.</p>
                 @endif
@@ -526,24 +555,21 @@
 
 </div>{{-- end container --}}
 
-{{-- === STICKY MOBILE CTA BAR === --}}
-<div class="fixed bottom-[56px] left-0 right-0 z-40 md:hidden px-4 pb-2" x-data x-show="true">
-    <div class="bg-white/95 backdrop-blur rounded-2xl shadow-2xl border border-gray-100 p-3 flex gap-3">
+{{-- === STICKY MOBILE CTA BAR (Buy Now only) === --}}
+<div class="fixed bottom-[56px] left-0 right-0 z-40 md:hidden px-4 pb-2">
+    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3 flex gap-3">
         @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
             @if($client->phone)
-            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name) }}"
+            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name.' - '.$baseUrl.'/product/'.$product->slug) }}"
                target="_blank"
-               class="flex-1 bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm">
-                <i class="fab fa-whatsapp text-lg"></i> WhatsApp Order
+               class="flex-1 bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
+                <i class="fab fa-whatsapp text-xl"></i> Order via WhatsApp
             </a>
             @endif
         @else
-            <button type="button" onclick="document.querySelector('[\\@click=\\'addToCart\\']')?.click(); window.scrollTo({top:0,behavior:'smooth'})"
-                    class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow">
-                <i class="fas fa-cart-plus"></i> Add to Cart
-            </button>
-            <a href="{{$checkoutUrl}}"
-               class="flex-1 btn-dark h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow">
+            <a href="{{ $checkoutUrl }}"
+               class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md"
+               id="mob-buy-now-btn">
                 <i class="fas fa-bolt"></i> Buy Now
             </a>
         @endif
