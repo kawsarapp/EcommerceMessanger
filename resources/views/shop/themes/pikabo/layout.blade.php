@@ -40,7 +40,7 @@ $primary='#0084d6';
         }
     </script>
     <style>
-        :root { --tw-color-primary: {{$client->primary_color ?? "#ffaa00"}}; --mob-primary: #0084d6; }
+        :root { --tw-color-primary: {{$client->primary_color ?? "#0084d6"}}; --mob-primary: {{$client->primary_color ?? "#0084d6"}}; }
         [x-cloak]{display:none!important}
         body { background-color: #f8f9fa; }
         .hide-scroll::-webkit-scrollbar{display:none}
@@ -193,9 +193,8 @@ $primary='#0084d6';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - Your Premier Shopping Destination in Bangladesh</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-6">{{$client->shop_name}} is Bangladesh's leading destination for premium electronics, cutting-edge gadgets, fashion, and lifestyle products. We specialize in providing high-quality products including smartphones, laptops, gaming accessories, home appliances, and our comprehensive range of daily essentials.</p>
-                <p class="text-gray-500 text-sm leading-relaxed mb-8">Whether you're looking for the latest technology or eco-friendly alternatives, {{$client->shop_name}} offers fast delivery, genuine products, and exceptional customer service across all districts of Bangladesh.</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - {{ $client->tagline ?? 'আপনার বিশ্বস্ত অনলাইন শপিং গন্তব্য' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' — দ্রুত ডেলিভারি, আসল পণ্য, এবং সারাদেশে সেরা কাস্টমার সার্ভিস।') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -290,8 +289,7 @@ $primary='#0084d6';
                 {{-- Bottom Bar --}}
                 <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-[11px] text-gray-400">
-                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. All rights reserved.<br>
-                        Developed with <i class="fas fa-heart text-red-500 mx-1"></i> by SmartB
+                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. সর্বস্বত্ব সংরক্ষিত।
                     </div>
                     
                     <div class="flex items-center gap-3">
@@ -307,6 +305,7 @@ $primary='#0084d6';
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

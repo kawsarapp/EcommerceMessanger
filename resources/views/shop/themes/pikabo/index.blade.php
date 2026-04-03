@@ -46,7 +46,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .category-badge {
-        background-color: #0084d6;
+        background-color: var(--tw-color-primary);
         color: white;
         text-align: center;
         padding: 6px 4px;
@@ -74,7 +74,7 @@
         display: flex;
         flex-direction: column;
     }
-    .product-card:hover { border-color: #0084d6; box-shadow: 0 4px 12px rgba(0,132,214,0.1); }
+    .product-card:hover { border-color: var(--tw-color-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .product-card-img {
         aspect-ratio: 1;
         object-fit: contain;
@@ -274,7 +274,7 @@
         <div class="flex-1">
             <div class="section-title mb-4">
                 <div class="flex flex-col">
-                    <span class="text-lg font-bold">Best Deals on Official Appliances!</span>
+                    <span class="text-lg font-bold">{{ $client->widgets['products']['title'] ?? 'সেরা পণ্য সমূহ' }}</span>
                     <span class="text-xs font-normal text-gray-500 mt-1">{{ count($products) }} Items in Best Deals</span>
                 </div>
                 <div class="hidden sm:flex items-center text-sm">
@@ -333,8 +333,8 @@
                 <style>
                     .pg nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
                     .pg nav a, .pg nav span { min-width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: 500; font-size: 13px; background: white; border: 1px solid #e2e8f0; color: #475569;}
-                    .pg nav a:hover { border-color: #0084d6; color: #0084d6; }
-                    .pg nav span[aria-current="page"] { background: #0084d6; color: white !important; border-color: #0084d6; }
+                    .pg nav a:hover { border-color: var(--tw-color-primary); color: var(--tw-color-primary); }
+                    .pg nav span[aria-current="page"] { background: var(--tw-color-primary); color: white !important; border-color: var(--tw-color-primary); }
                 </style>
                 <div class="pg">{{ $products->links('pagination::tailwind') }}</div>
             </div>

@@ -9,23 +9,23 @@
 
 <style>
     .prod-btn-outline {
-        border: 1px solid #0084d6;
-        color: #0084d6;
+        border: 1px solid var(--tw-color-primary);
+        color: var(--tw-color-primary);
         background: transparent;
         font-weight: 600;
         transition: all 0.2s;
     }
     .prod-btn-outline:hover {
-        background: #f0f8ff;
+        background: rgba(0,0,0,0.04);
     }
     .prod-btn-solid {
-        background: #0b2545;
+        background: var(--tw-color-primary);
         color: white;
         font-weight: 600;
         transition: all 0.2s;
     }
     .prod-btn-solid:hover {
-        background: #1a3673;
+        opacity: 0.85;
     }
     
     .super-offer-large {
