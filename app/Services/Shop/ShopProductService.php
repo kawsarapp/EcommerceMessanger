@@ -92,12 +92,27 @@ class ShopProductService
      */
     public function getProductBySlug($clientId, $productSlug)
     {
-        return Product::where('client_id', $clientId) // 🔒 SECURITY: product must belong to this shop
+        $product = Product::where('client_id', $clientId)
             ->where('slug', $productSlug)
-            ->with(['category', 'client', 'reviews' => function($q) {
-                $q->where('is_visible', true)->latest();
-            }])
+            ->with([
+                'category',
+                'client',
+                'reviews' => function($q) {
+                    $q->where('is_visible', true)->latest()->take(20);
+                }
+            ])
             ->first();
+
+        if ($product) {
+            // Compute avg_rating and total_reviews dynamically from loaded reviews
+            $visibleReviews = $product->reviews;
+            if ($visibleReviews->count() > 0) {
+                $product->avg_rating    = round($visibleReviews->avg('rating'), 1);
+                $product->total_reviews = $visibleReviews->count();
+            }
+        }
+
+        return $product;
     }
 
     /**

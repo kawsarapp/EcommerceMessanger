@@ -4,11 +4,28 @@
 
 @section('content')
 @php 
-    $clean    = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
-    $baseUrl  = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
-    $cartUrl  = $clean ? $baseUrl.'/cart/add' : route('shop.cart.add', $client->slug);
+    $clean       = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
+    $baseUrl     = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
+    $cartUrl     = $clean ? $baseUrl.'/cart/add' : route('shop.cart.add', $client->slug);
     $checkoutUrl = $clean ? $baseUrl.'/checkout' : route('shop.checkout', $client->slug);
-    $initPrice = (float)($product->sale_price ?? $product->regular_price ?? 0);
+    $initPrice   = (float)($product->sale_price ?? $product->regular_price ?? 0);
+    $inStock     = ($product->stock_status ?? 'in_stock') === 'in_stock';
+    $stockQty    = (int)($product->stock_quantity ?? 0);
+    // Normalize gallery field
+    $productGallery = [];
+    if ($product->gallery) {
+        $productGallery = is_string($product->gallery) ? (json_decode($product->gallery, true) ?? []) : (array)$product->gallery;
+    }
+    // Normalize variants from sizes/colors
+    $productSizes  = is_array($product->sizes) ? $product->sizes : (json_decode($product->sizes ?? '[]', true) ?? []);
+    $productColors = is_array($product->colors) ? $product->colors : (json_decode($product->colors ?? '[]', true) ?? []);
+    $avgRating     = (float)($product->avg_rating ?? 5);
+    $totalReviews  = (int)($product->total_reviews ?? 0);
+    // Discount %
+    $pct = 0;
+    if ($product->sale_price && $product->regular_price > 0) {
+        $pct = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100);
+    }
 @endphp
 
 {{-- Breadcrumb --}}
@@ -39,8 +56,7 @@
                  @mouseenter="showZoom = window.innerWidth > 768"
                  @mouseleave="showZoom = false">
 
-                @if($product->sale_price && $product->regular_price > 0)
-                @php $pct = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
+                @if($pct > 0)
                 <div class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-20 shadow">-{{$pct}}%</div>
                 @endif
 
@@ -62,13 +78,7 @@
             </div>
 
             {{-- Thumbnails --}}
-            @php
-                $images = [];
-                if($product->images) {
-                    $images = is_string($product->images) ? (json_decode($product->images, true) ?? []) : (array)$product->images;
-                }
-            @endphp
-            @if($product->thumbnail || count($images) > 0)
+            @if($product->thumbnail || count($productGallery) > 0)
             <div class="grid grid-cols-5 gap-2 mt-3">
                 @if($product->thumbnail)
                 <div @click="activeImage='{{asset('storage/'.$product->thumbnail)}}'"
@@ -77,7 +87,7 @@
                     <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full aspect-square object-contain">
                 </div>
                 @endif
-                @foreach($images as $img)
+                @foreach($productGallery as $img)
                 <div @click="activeImage='{{asset('storage/'.$img)}}'"
                      class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition"
                      :class="activeImage==='{{asset('storage/'.$img)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
@@ -97,18 +107,17 @@
             {{-- Ratings & Availability --}}
             <div class="flex flex-wrap items-center gap-4 mb-4 pb-4 border-b border-gray-100">
                 <div class="flex items-center gap-1">
-                    @php $rating = (float)($product->average_rating ?? 5); @endphp
                     @for($i=1;$i<=5;$i++)
-                        @if($i<=$rating)<i class="fas fa-star text-[#ffb522] text-xs"></i>
-                        @elseif($i-0.5<=$rating)<i class="fas fa-star-half-alt text-[#ffb522] text-xs"></i>
+                        @if($i<=$avgRating)<i class="fas fa-star text-[#ffb522] text-xs"></i>
+                        @elseif($i-0.5<=$avgRating)<i class="fas fa-star-half-alt text-[#ffb522] text-xs"></i>
                         @else<i class="far fa-star text-gray-300 text-xs"></i>
                         @endif
                     @endfor
-                    <span class="text-gray-400 text-xs ml-1">({{$product->reviews_count ?? 0}})</span>
+                    <span class="text-gray-400 text-xs ml-1">({{$totalReviews}} Reviews)</span>
                 </div>
                 <div class="text-[12px]">
-                    @if(($product->stock ?? 0) > 0)
-                        <span class="text-green-600 font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>In Stock</span>
+                    @if($inStock)
+                        <span class="text-green-600 font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>In Stock @if($stockQty > 0)<span class="text-gray-400">({{$stockQty}} left)</span>@endif</span>
                     @else
                         <span class="text-red-500 font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>Out of Stock</span>
                     @endif
@@ -121,9 +130,9 @@
             {{-- Price --}}
             <div class="flex items-baseline gap-3 mb-5">
                 <span class="text-3xl font-black text-dark">৳<span x-text="Number(currentPrice).toLocaleString('en-BD')"></span></span>
-                @if($product->sale_price && $product->regular_price > 0)
+                @if($pct > 0)
                 <span class="text-lg text-gray-400 line-through">৳{{number_format((float)$product->regular_price)}}</span>
-                <span class="text-xs bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded font-semibold">Save {{$pct ?? 0}}%</span>
+                <span class="text-xs bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded font-semibold">Save {{$pct}}%</span>
                 @endif
             </div>
 
@@ -134,28 +143,49 @@
             </p>
             @endif
 
-            {{-- Variants --}}
-            @if(isset($product->attributes) && is_array($product->attributes) && count($product->attributes) > 0)
-            <div class="mb-6">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-sm font-bold text-dark">Variant:</span>
+            {{-- Size Variants --}}
+            @if(count($productSizes) > 0)
+            <div class="mb-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-sm font-bold text-dark">Size:</span>
                     <span class="text-sm text-primary font-semibold" x-text="selectedVariantName"></span>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    @foreach($product->attributes as $attr)
-                        @if(!empty($attr['name']) && !empty($attr['price']))
-                        <label class="cursor-pointer">
-                            <input type="radio" name="variant" value="{{$attr['price']}}" data-name="{{$attr['name']}}"
-                                   class="peer sr-only"
-                                   @change="updateVariant($event)"
-                                   @if($loop->first) checked x-init="$nextTick(()=>{ updateVariant({target:$el}) })" @endif>
-                            <div class="px-4 py-2 border-2 rounded-lg text-[13px] font-medium text-gray-600
-                                        peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/5
-                                        hover:border-gray-300 transition select-none">
-                                {{$attr['name']}} — ৳{{number_format((float)$attr['price'])}}
-                            </div>
-                        </label>
-                        @endif
+                    @foreach($productSizes as $size)
+                    @php $sizeName = is_array($size) ? ($size['name'] ?? $size['value'] ?? $size) : $size;
+                         $sizePrice = is_array($size) ? (float)($size['price'] ?? $initPrice) : $initPrice;
+                    @endphp
+                    <label class="cursor-pointer">
+                        <input type="radio" name="variant" value="{{$sizePrice}}" data-name="{{$sizeName}}"
+                               class="peer sr-only"
+                               @change="updateVariant($event)"
+                               @if($loop->first) checked x-init="$nextTick(()=>{ updateVariant({target:$el}) })" @endif>
+                        <div class="px-4 py-2 border-2 rounded-lg text-[13px] font-medium text-gray-600
+                                    peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/5
+                                    hover:border-gray-300 transition select-none">
+                            {{$sizeName}}
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Color Variants --}}
+            @if(count($productColors) > 0)
+            <div class="mb-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-sm font-bold text-dark">Color:</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($productColors as $color)
+                    @php $colorName = is_array($color) ? ($color['name'] ?? $color['value'] ?? $color) : $color;
+                         $colorHex  = is_array($color) ? ($color['hex'] ?? $color['code'] ?? null) : null;
+                    @endphp
+                    <button type="button" title="{{$colorName}}"
+                            class="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-primary transition"
+                            style="background-color: {{ $colorHex ?? $colorName }}">
+                    </button>
                     @endforeach
                 </div>
             </div>
@@ -189,7 +219,7 @@
                 @else
                     {{-- Add to Cart --}}
                     <button type="button" @click="addToCart"
-                            :disabled="isLoading || added || {{($product->stock ?? 0) <= 0 ? 'true' : 'false'}}"
+                            :disabled="isLoading || added || {{ !$inStock ? 'true' : 'false' }}"
                             class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
                         <span x-show="!isLoading && !added" class="flex items-center gap-2">
                             <i class="fas fa-shopping-cart"></i> Add to Cart
@@ -204,7 +234,7 @@
 
                     {{-- Buy Now --}}
                     <button type="button" @click="buyNow"
-                            :disabled="isLoading || {{($product->stock ?? 0) <= 0 ? 'true' : 'false'}}"
+                            :disabled="isLoading || {{ !$inStock ? 'true' : 'false' }}"
                             class="flex-1 btn-dark h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:bg-primary disabled:opacity-60 disabled:cursor-not-allowed">
                         <span x-show="!isLoading" class="flex items-center gap-2"><i class="fas fa-bolt"></i> Buy Now</span>
                         <span x-show="isLoading" class="flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Please wait...</span>
@@ -310,12 +340,26 @@
         <div class="py-8 px-1 text-sm text-gray-600 leading-relaxed min-h-[200px]">
             <div x-show="tab==='description'" x-cloak>
                 @if($product->description)
-                    <div class="prose prose-sm max-w-none">{!! nl2br(e($product->description)) !!}</div>
+                    <div class="text-sm text-gray-600 leading-relaxed">{!! nl2br(e($product->description)) !!}</div>
+                @elseif($product->long_description)
+                    <div class="text-sm text-gray-600 leading-relaxed">{!! nl2br(e($product->long_description)) !!}</div>
                 @else
                     <p class="text-gray-400 italic">No description available for this product.</p>
                 @endif
 
-                @if(isset($client->widgets['product_detail_bullets']) && count($client->widgets['product_detail_bullets']))
+                {{-- Key Features from product model --}}
+                @if($product->key_features && count((array)$product->key_features) > 0)
+                <div class="mt-6 bg-gray-50 rounded-xl p-5">
+                    <h4 class="text-dark font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-list-ul text-primary"></i> Key Features</h4>
+                    <ul class="space-y-2">
+                        @foreach((array)$product->key_features as $feature)
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fas fa-check text-primary text-xs mt-1 shrink-0"></i> {{ $feature }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @elseif(isset($client->widgets['product_detail_bullets']) && count($client->widgets['product_detail_bullets']))
                 <div class="mt-6 bg-gray-50 rounded-xl p-5">
                     <h4 class="text-dark font-bold text-sm mb-3 flex items-center gap-2"><i class="fas fa-list-ul text-primary"></i> Key Features</h4>
                     <ul class="space-y-2">
@@ -325,6 +369,24 @@
                         </li>
                         @endforeach
                     </ul>
+                </div>
+                @endif
+
+                {{-- Warranty / return policy --}}
+                @if($product->warranty || $product->return_policy)
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @if($product->warranty)
+                    <div class="bg-green-50 border border-green-100 rounded-lg p-3 flex items-start gap-2">
+                        <i class="fas fa-shield-alt text-green-500 mt-0.5"></i>
+                        <div><span class="font-semibold text-dark text-xs">Warranty:</span><p class="text-xs text-gray-600 mt-0.5">{{$product->warranty}}</p></div>
+                    </div>
+                    @endif
+                    @if($product->return_policy)
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+                        <i class="fas fa-undo text-blue-500 mt-0.5"></i>
+                        <div><span class="font-semibold text-dark text-xs">Return Policy:</span><p class="text-xs text-gray-600 mt-0.5">{{$product->return_policy}}</p></div>
+                    </div>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -338,7 +400,67 @@
             </div>
 
             <div x-show="tab==='reviews'" x-cloak>
-                @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                @if($product->reviews && $product->reviews->count() > 0)
+                <div class="space-y-5">
+                    @foreach($product->reviews as $review)
+                    <div class="border border-gray-100 rounded-xl p-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                                {{ strtoupper(substr($review->customer_name ?? 'C', 0, 1)) }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-dark">{{ $review->customer_name ?? 'Customer' }}</p>
+                                <div class="flex text-[#ffb522] text-xs gap-0.5 mt-0.5">
+                                    @for($s=1;$s<=5;$s++)
+                                        @if($s<=$review->rating)<i class="fas fa-star"></i>
+                                        @else<i class="far fa-star text-gray-300"></i>
+                                        @endif
+                                    @endfor
+                                </div>
+                            </div>
+                            <span class="ml-auto text-xs text-gray-400">{{ $review->created_at->diffForHumans() }}</span>
+                        </div>
+                        @if($review->comment)
+                        <p class="text-sm text-gray-600 leading-relaxed border-l-2 border-gray-100 pl-3 mt-2">{{ $review->comment }}</p>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Summary Rating Block --}}
+                <div class="mt-6 bg-gray-50 rounded-xl p-5 flex items-center gap-6">
+                    <div class="text-center">
+                        <div class="text-4xl font-black text-dark">{{ number_format($avgRating, 1) }}</div>
+                        <div class="flex text-[#ffb522] text-sm justify-center gap-0.5 mt-1">
+                            @for($s=1;$s<=5;$s++)
+                                @if($s<=$avgRating)<i class="fas fa-star"></i>
+                                @elseif($s-0.5<=$avgRating)<i class="fas fa-star-half-alt"></i>
+                                @else<i class="far fa-star text-gray-300"></i>
+                                @endif
+                            @endfor
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">{{ $totalReviews }} reviews</p>
+                    </div>
+                    <div class="flex-1">
+                        @for($s=5;$s>=1;$s--)
+                        @php $sCount = $product->reviews->where('rating', $s)->count(); $sWidth = $totalReviews>0 ? round(($sCount/$totalReviews)*100) : 0; @endphp
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs text-gray-500 w-4">{{$s}}</span>
+                            <i class="fas fa-star text-[#ffb522] text-xs"></i>
+                            <div class="flex-1 bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-[#ffb522] h-1.5 rounded-full" style="width:{{$sWidth}}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-400 w-5">{{$sCount}}</span>
+                        </div>
+                        @endfor
+                    </div>
+                </div>
+                @else
+                    <p class="text-gray-400 italic text-sm text-center py-8">
+                        <i class="far fa-comment-dots text-3xl text-gray-200 block mb-3"></i>
+                        No reviews yet. Be the first to review this product!
+                    </p>
+                @endif
             </div>
         </div>
     </div>
@@ -353,10 +475,10 @@
 
         <div class="flex md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
             @foreach($relatedProducts->take(5) as $rp)
+            @php $rpPct = ($rp->sale_price && $rp->regular_price > 0) ? round((($rp->regular_price - $rp->sale_price) / $rp->regular_price) * 100) : 0; @endphp
             <div class="bg-white group rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition duration-300 shrink-0 w-[55vw] sm:w-[40vw] md:w-auto snap-start">
                 <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-5 overflow-hidden mix-blend-multiply">
-                    @if($rp->sale_price && $rp->regular_price > 0)
-                    @php $rpPct = round((($rp->regular_price - $rp->sale_price) / $rp->regular_price) * 100); @endphp
+                    @if($rpPct > 0)
                     <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">-{{$rpPct}}%</div>
                     @endif
 
@@ -382,12 +504,12 @@
                     </a>
                     <div class="flex items-center gap-2">
                         <span class="text-sm font-bold text-dark">৳{{number_format((float)($rp->sale_price ?? $rp->regular_price ?? 0))}}</span>
-                        @if($rp->sale_price && $rp->regular_price > 0)
+                        @if($rpPct > 0)
                         <span class="text-xs text-gray-400 line-through">৳{{number_format((float)$rp->regular_price)}}</span>
                         @endif
                     </div>
                     <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5 mt-1">
-                        @php $rpRating = (float)($rp->average_rating ?? 5); @endphp
+                        @php $rpRating = (float)($rp->avg_rating ?? 5); @endphp
                         @for($i=1;$i<=5;$i++)
                             @if($i<=$rpRating)<i class="fas fa-star"></i>
                             @elseif($i-0.5<=$rpRating)<i class="fas fa-star-half-alt"></i>

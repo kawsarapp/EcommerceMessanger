@@ -223,22 +223,22 @@
                 
                 {{-- Price --}}
                 <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[14px] font-bold text-dark">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
-                    @if($p->sale_price)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->regular_price)}}</span>
+                    <span class="text-[14px] font-bold text-dark">৳{{number_format((float)($p->sale_price ?? $p->regular_price ?? 0))}}</span>
+                    @if($p->sale_price && $p->regular_price > 0)
+                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format((float)$p->regular_price)}}</span>
                     @endif
                 </div>
 
                 {{-- Stars --}}
                 <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5 mt-1">
-                    @php $rating = $p->average_rating ?? 5; @endphp
+                    @php $pRating = (float)($p->avg_rating ?? 5); @endphp
                     @for($i=1; $i<=5; $i++)
-                        @if($i <= $rating) <i class="fas fa-star"></i>
-                        @elseif($i - 0.5 <= $rating) <i class="fas fa-star-half-alt"></i>
+                        @if($i <= $pRating) <i class="fas fa-star"></i>
+                        @elseif($i - 0.5 <= $pRating) <i class="fas fa-star-half-alt"></i>
                         @else <i class="far fa-star text-gray-300"></i>
                         @endif
                     @endfor
-                    <span class="text-gray-400 ml-1">({{ $p->reviews_count ?? 0 }} reviews)</span>
+                    <span class="text-gray-400 ml-1">({{ $p->total_reviews ?? 0 }})</span>
                 </div>
             </div>
         </div>
@@ -313,20 +313,20 @@
                     {{$p->name}}
                 </a>
                 <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-[15px] font-bold text-dark">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
-                    @if($p->sale_price)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format($p->regular_price)}}</span>
+                    <span class="text-[15px] font-bold text-dark">৳{{number_format((float)($p->sale_price ?? $p->regular_price ?? 0))}}</span>
+                    @if($p->sale_price && $p->regular_price > 0)
+                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format((float)$p->regular_price)}}</span>
                     @endif
                 </div>
                 <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5">
-                    @php $rating = $p->average_rating ?? 5; @endphp
+                    @php $pRating = (float)($p->avg_rating ?? 5); @endphp
                     @for($i=1; $i<=5; $i++)
-                        @if($i <= $rating) <i class="fas fa-star"></i>
-                        @elseif($i - 0.5 <= $rating) <i class="fas fa-star-half-alt"></i>
+                        @if($i <= $pRating) <i class="fas fa-star"></i>
+                        @elseif($i - 0.5 <= $pRating) <i class="fas fa-star-half-alt"></i>
                         @else <i class="far fa-star text-gray-300"></i>
                         @endif
                     @endfor
-                    <span class="text-gray-400 ml-1">({{ $p->reviews_count ?? 0 }} reviews)</span>
+                    <span class="text-gray-400 ml-1">({{ $p->total_reviews ?? 0 }})</span>
                 </div>
             </div>
         </div>
