@@ -9,38 +9,43 @@
 @endphp
 
 {{-- Info Strip --}}
+@php
+    $featureActive = $client->widgets['feature_strip']['active'] ?? true;
+@endphp
+@if($featureActive)
 <div class="border-b border-gray-100 py-6 hidden md:block">
     <div class="max-w-[1400px] mx-auto px-4 xl:px-8 grid grid-cols-4 divide-x divide-gray-100 text-center">
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center justify-center gap-3 hover:-translate-y-1 transition duration-300">
             <i class="fas fa-truck text-2xl text-primary opacity-80"></i>
             <div>
-                <h4 class="text-sm font-bold text-dark">Free shipping</h4>
-                <span class="text-[11px] text-gray-500">Free delivery over $100</span>
+                <h4 class="text-sm font-bold text-dark">{{ $client->widgets['feature_strip']['items'][0]['title'] ?? 'Free shipping' }}</h4>
+                <span class="text-[11px] text-gray-500">{{ $client->widgets['feature_strip']['items'][0]['subtitle'] ?? 'Free delivery over $100' }}</span>
             </div>
         </div>
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center justify-center gap-3 hover:-translate-y-1 transition duration-300">
             <i class="fas fa-gift text-2xl text-primary opacity-80"></i>
             <div>
-                <h4 class="text-sm font-bold text-dark">Gift voucher</h4>
-                <span class="text-[11px] text-gray-500">Extra 20% off</span>
+                <h4 class="text-sm font-bold text-dark">{{ $client->widgets['feature_strip']['items'][1]['title'] ?? 'Gift voucher' }}</h4>
+                <span class="text-[11px] text-gray-500">{{ $client->widgets['feature_strip']['items'][1]['subtitle'] ?? 'Extra 20% off' }}</span>
             </div>
         </div>
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center justify-center gap-3 hover:-translate-y-1 transition duration-300">
             <i class="fas fa-money-bill-wave text-2xl text-primary opacity-80"></i>
             <div>
-                <h4 class="text-sm font-bold text-dark">Money back</h4>
-                <span class="text-[11px] text-gray-500">100% money back</span>
+                <h4 class="text-sm font-bold text-dark">{{ $client->widgets['feature_strip']['items'][2]['title'] ?? 'Money back' }}</h4>
+                <span class="text-[11px] text-gray-500">{{ $client->widgets['feature_strip']['items'][2]['subtitle'] ?? '100% money back' }}</span>
             </div>
         </div>
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center justify-center gap-3 hover:-translate-y-1 transition duration-300">
             <i class="fas fa-shield-alt text-2xl text-primary opacity-80"></i>
             <div>
-                <h4 class="text-sm font-bold text-dark">Safe payment</h4>
-                <span class="text-[11px] text-gray-500">Secure checkout</span>
+                <h4 class="text-sm font-bold text-dark">{{ $client->widgets['feature_strip']['items'][3]['title'] ?? 'Safe payment' }}</h4>
+                <span class="text-[11px] text-gray-500">{{ $client->widgets['feature_strip']['items'][3]['subtitle'] ?? 'Secure checkout' }}</span>
             </div>
         </div>
     </div>
 </div>
+@endif
 
 {{-- Hero Section --}}
 @php
@@ -58,13 +63,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {{-- Left Minor Banner (Static Design representation) --}}
-        <div class="bg-lightgreen rounded-lg overflow-hidden relative group hidden lg:flex flex-col items-center justify-between p-8 text-center min-h-[400px]">
+        <div class="bg-lightgreen rounded-lg overflow-hidden relative group hidden lg:flex flex-col items-center justify-between p-8 text-center min-h-[400px] hover:shadow-lg transition duration-300">
             <div>
-                <h2 class="text-2xl font-black text-dark tracking-tight mb-4">Vegetable<br>supermarket</h2>
-                <a href="{{$heroLink}}" class="btn-primary inline-block">Shop now</a>
+                <h2 class="text-2xl font-black text-dark tracking-tight mb-4">{!! $client->widgets['hero_banner']['left_title'] ?? 'Fresh<br>supermarket' !!}</h2>
+                <a href="{{ $client->widgets['hero_banner']['left_link'] ?? $heroLink }}" class="btn-primary inline-block">{{ $client->widgets['hero_banner']['left_btn'] ?? 'Shop now' }}</a>
             </div>
-            <!-- We assume client has uploaded a banner, if not we fallback to a CSS colored box -->
-            <div class="mt-8 flex-1 w-full bg-[url('https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=400&auto=format&fit=crop')] bg-cover bg-center rounded-lg shadow-sm"></div>
+            @if(isset($client->widgets['hero_banner']['left_image']) && $client->widgets['hero_banner']['left_image'])
+            <div class="mt-8 flex-1 w-full bg-cover bg-center rounded-lg shadow-sm" style="background-image: url('{{ asset('storage/'.$client->widgets['hero_banner']['left_image']) }}');"></div>
+            @else
+            <div class="mt-8 flex-1 w-full flex items-center justify-center bg-green-100 rounded-lg shadow-sm text-green-300">
+                <i class="fas fa-seedling text-6xl"></i>
+            </div>
+            @endif
         </div>
 
         {{-- Main Hero Banner --}}
@@ -180,7 +190,7 @@
             @endif
         </div>
         <div class="hidden md:flex gap-6 text-[13px] font-medium text-gray-500">
-            <a href="#" class="text-primary border-b-2 border-primary pb-4 -mb-[18px]">All Products</a>
+            <a href="{{$clean?$baseUrl.'/?category=all':route('shop.show', ['shop' => $client->slug, 'category' => 'all'])}}" class="text-primary border-b-2 border-primary pb-4 -mb-[18px]">All Products</a>
         </div>
     </div>
 
@@ -239,22 +249,22 @@
 @endif
 
 {{-- Twin Banner Break --}}
-@if($client->homepage_banner_active)
+@if($client->homepage_banner_active ?? true)
 <div class="max-w-[1400px] mx-auto px-4 xl:px-8 py-8">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-[#fcf5ef] rounded p-12 flex flex-col items-start justify-center min-h-[300px] relative overflow-hidden group">
-            <span class="text-primary font-medium text-[11px] uppercase tracking-widest mb-2 z-10">Fresh farm fruit</span>
+        <div class="bg-[#fcf5ef] rounded p-12 flex flex-col items-start justify-center min-h-[300px] relative overflow-hidden group hover:shadow-lg transition duration-300">
+            <span class="text-primary font-medium text-[11px] uppercase tracking-widest mb-2 z-10">{{ $client->widgets['twin_banner']['left_subtitle'] ?? 'Fresh farm fruit' }}</span>
             <h3 class="text-2xl md:text-3xl font-black text-dark mb-6 leading-tight max-w-[200px] z-10">{{ $client->homepage_banner_title ?? 'Fresh organic fruithouse' }}</h3>
-            <a href="{{ $client->homepage_banner_link ?? '#' }}" class="btn-primary z-10">Shop now</a>
+            <a href="{{ $client->homepage_banner_link ?? $baseUrl.'?category=all' }}" class="btn-primary z-10">Shop now</a>
             
             @if($client->homepage_banner_image)
             <img src="{{asset('storage/'.$client->homepage_banner_image)}}" class="absolute right-0 bottom-0 h-[90%] object-contain group-hover:scale-105 transition duration-500 origin-bottom-right">
             @endif
         </div>
-        <div class="bg-[#f0f5e5] rounded p-12 flex flex-col items-start justify-center min-h-[300px] relative overflow-hidden group">
-            <span class="text-green-600 font-medium text-[11px] uppercase tracking-widest mb-2 z-10">Fresh farm vegetables</span>
-            <h3 class="text-2xl md:text-3xl font-black text-dark mb-6 leading-tight max-w-[200px] z-10">Organic farmfood</h3>
-            <a href="#" class="btn-primary z-10 !bg-green-500 hover:!bg-green-600">Shop now</a>
+        <div class="bg-[#f0f5e5] rounded p-12 flex flex-col items-start justify-center min-h-[300px] relative overflow-hidden group hover:shadow-lg transition duration-300">
+            <span class="text-green-600 font-medium text-[11px] uppercase tracking-widest mb-2 z-10">{{ $client->widgets['twin_banner']['right_subtitle'] ?? 'Fresh farm vegetables' }}</span>
+            <h3 class="text-2xl md:text-3xl font-black text-dark mb-6 leading-tight max-w-[200px] z-10">{{ $client->widgets['twin_banner']['right_title'] ?? 'Organic farmfood' }}</h3>
+            <a href="{{ $client->widgets['twin_banner']['right_link'] ?? $baseUrl.'?category=all' }}" class="btn-primary z-10 !bg-green-500 hover:!bg-green-600">Shop now</a>
         </div>
     </div>
 </div>
@@ -263,7 +273,7 @@
 {{-- Trending Products Grid --}}
 <div class="max-w-[1400px] mx-auto px-4 xl:px-8 py-16">
     <div class="text-center mb-10">
-        <h2 class="text-2xl font-bold text-dark">Trending products</h2>
+        <h2 class="text-2xl font-bold text-dark">{{ $client->widgets['trending_title']['text'] ?? 'Trending products' }}</h2>
         <div class="w-16 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
     </div>
 

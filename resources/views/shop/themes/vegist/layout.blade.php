@@ -75,7 +75,7 @@
             <div class="flex items-center gap-6">
                 <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="hover:text-white transition">My order</a>
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition">Track order</a>
-                <a href="#" class="hover:text-white transition">Contact us</a>
+                <a href="{{ $client->email ? 'mailto:'.$client->email : '#' }}" class="hover:text-white transition">Contact us</a>
                 @if($client->widgets['language_switcher']['active'] ?? false)
                 <span class="pl-6 border-l border-gray-700 cursor-pointer hover:text-white"><i class="fas fa-globe mr-1"></i> BD</span>
                 @endif
@@ -114,27 +114,28 @@
                         </a>
                         @endforeach
                     @else
-                        <a href="{{$baseUrl}}" class="vg-nav-link {!! request()->is('/') ? '!text-primary' : '' !!}">Home <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
-                        <a href="{{$baseUrl}}?category=all" class="vg-nav-link {!! request()->is('*category=all*') ? '!text-primary' : '' !!}">Shop <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
+                        <a href="{{$baseUrl}}" class="vg-nav-link {!! request()->is('/') ? '!text-primary' : '' !!}">Home</a>
+                        <a href="{{$baseUrl}}?category=all" class="vg-nav-link {!! request()->is('*category=all*') ? '!text-primary' : '' !!}">Shop</a>
                         @if(isset($categories) && $categories->count() > 0)
                             @foreach($categories->take(2) as $cat)
                             <a href="{{$baseUrl}}?category={{$cat->slug}}" class="vg-nav-link">{{$cat->name}}</a>
                             @endforeach
                         @else
-                            <a href="#" class="vg-nav-link">Collection <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
+                            <a href="{{$baseUrl}}?category=all" class="vg-nav-link">Collection</a>
                         @endif
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="vg-nav-link relative">স্া ট্র্যাক</a>
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="vg-nav-link relative">Track Order</a>
                     @endif
                 </nav>
 
                 {{-- Right Icons --}}
                 <div class="flex items-center gap-5 xl:gap-7 shrink-0 text-dark">
                     <button class="hover:text-primary transition text-lg" onclick="document.getElementById('mobile-search').classList.toggle('hidden')"><i class="fas fa-search"></i></button>
-                    <a href="#" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
-                    <a href="#" class="hover:text-primary transition text-lg relative hidden md:block">
+                    <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
+                    @php $wishlistCount = session()->has('wishlist') ? count(session()->get('wishlist')) : 0; @endphp
+                    <div class="hover:text-primary transition text-lg relative hidden md:block cursor-pointer">
                         <i class="far fa-heart"></i>
-                        <span class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
-                    </a>
+                        <span class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $wishlistCount }}</span>
+                    </div>
                     
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
                     <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="hover:text-primary transition text-lg relative group">
@@ -209,10 +210,9 @@
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">About {{$client->slug}}</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">FAQ's</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Contact us</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">News</a>
+                        <a href="{{$baseUrl}}?category=all" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">About {{$client->shop_name}}</a>
+                        <a href="{{ $client->email ? 'mailto:'.$client->email : '#' }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Contact us</a>
+                        <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My Account</a>
                     @endif
                 </div>
             </div>
@@ -226,11 +226,8 @@
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Payment policy</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Privacy policy</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Return policy</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Shipping policy</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Terms & conditions</a>
+                        <a href="{{$clean?$baseUrl.'/page/privacy':route('shop.page', ['shop' => $client->slug, 'slug' => 'privacy'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Privacy policy</a>
+                        <a href="{{$clean?$baseUrl.'/page/terms':route('shop.page', ['shop' => $client->slug, 'slug' => 'terms'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Terms & conditions</a>
                     @endif
                 </div>
             </div>
@@ -244,10 +241,9 @@
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My account</a>
+                        <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My account</a>
                         <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My cart</a>
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Order history</a>
-                        <a href="#" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My wishlist</a>
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Track order</a>
                     @endif
                 </div>
             </div>

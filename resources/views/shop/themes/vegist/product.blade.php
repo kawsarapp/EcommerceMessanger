@@ -23,7 +23,7 @@
         {{-- Left: Galleries --}}
         <div class="lg:col-span-4">
             <div class="relative bg-gray-50 flex items-center justify-center p-6 border border-gray-100 mix-blend-multiply md:max-h-[500px] overflow-hidden">
-                @if($product->sale_price)
+                @if($product->sale_price && $product->regular_price > 0)
                 @php $percent = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
                 <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 z-10 shadow-sm">
                     -{{$percent}}%
@@ -63,7 +63,7 @@
                         @else <i class="far fa-star text-gray-300"></i>
                         @endif
                     @endfor
-                    <span class="text-gray-500 ml-1 text-xs">({{ $product->reviews_count ?? 1 }} review)</span>
+                    <span class="text-gray-500 ml-1 text-xs">({{ $product->reviews_count ?? 0 }} review)</span>
                 </div>
                 <div class="text-[12px] text-gray-500">
                     <span class="font-bold text-dark mr-1">Availability:</span>
@@ -77,7 +77,7 @@
 
             {{-- Pricing --}}
             <div class="flex items-end gap-3 mb-6">
-                <h2 class="text-3xl font-black text-dark">৳<span x-text="displayPrice"></span></h2>
+                <h2 class="text-3xl font-black text-dark">৳<span x-text="currentPrice"></span></h2>
                 @if($product->sale_price)
                 <span class="text-base text-gray-400 line-through">৳{{number_format($product->regular_price)}}</span>
                 @endif
@@ -147,15 +147,15 @@
             <div class="border-t border-gray-100 pt-6 text-[12px] text-gray-500 flex flex-col gap-2">
                 <p><strong class="text-dark">SKU:</strong> {{$product->sku ?? 'N/A'}}</p>
                 @if($product->category)
-                <p><strong class="text-dark">Category:</strong> <a href="#" class="hover:text-primary transition">{{$product->category->name}}</a></p>
+                <p><strong class="text-dark">Category:</strong> <a href="{{$clean?$baseUrl.'/?category='.$product->category->slug:route('shop.show', ['shop' => $client->slug, 'category' => $product->category->slug])}}" class="hover:text-primary transition">{{$product->category->name}}</a></p>
                 @endif
                 <div class="flex items-center gap-3 mt-1">
                     <strong class="text-dark">Share:</strong>
                     <div class="flex items-center gap-2">
-                        <a href="#" class="text-gray-400 hover:text-blue-600 transition"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-blue-400 transition"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-red-600 transition"><i class="fab fa-pinterest-p"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-[#25D366] transition"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->fullUrl()) }}" target="_blank" class="text-gray-400 hover:text-blue-600 transition hover:scale-110"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://twitter.com/intent/tweet?text={{ urlencode($product->name) }}&url={{ urlencode(request()->fullUrl()) }}" target="_blank" class="text-gray-400 hover:text-blue-400 transition hover:scale-110"><i class="fab fa-twitter"></i></a>
+                        <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(request()->fullUrl()) }}&description={{ urlencode($product->name) }}" target="_blank" class="text-gray-400 hover:text-red-600 transition hover:scale-110"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="https://wa.me/?text={{ urlencode($product->name . ' - ' . request()->fullUrl()) }}" target="_blank" class="text-gray-400 hover:text-[#25D366] transition hover:scale-110"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
             </div>
@@ -169,25 +169,28 @@
 
         {{-- Right Column: Information Cards --}}
         <div class="lg:col-span-3">
+            @php $infoCardsActive = $client->widgets['info_cards']['active'] ?? true; @endphp
+            @if($infoCardsActive)
             <div class="bg-gray-50 flex flex-col gap-4">
-                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
-                    <i class="fas fa-truck text-3xl text-primary opacity-60 mb-3"></i>
-                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">Delivery info</h4>
-                    <p class="text-[11px] text-gray-500 leading-relaxed">From then, delivery is generally within 2-10 days, depending on your location.</p>
+                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center hover:shadow-md transition duration-300">
+                    <i class="{{ $client->widgets['info_cards']['items'][0]['icon'] ?? 'fas fa-truck' }} text-3xl text-primary opacity-60 mb-3 group-hover:scale-110 transition"></i>
+                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">{{ $client->widgets['info_cards']['items'][0]['title'] ?? 'Delivery info' }}</h4>
+                    <p class="text-[11px] text-gray-500 leading-relaxed">{{ $client->widgets['info_cards']['items'][0]['description'] ?? 'Delivery is generally within 2-10 days, depending on your location.' }}</p>
                 </div>
                 
-                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
-                    <i class="fas fa-dollar-sign text-3xl text-primary opacity-60 mb-3"></i>
-                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">30 days returns</h4>
-                    <p class="text-[11px] text-gray-500 leading-relaxed">Not the right fit? No worries. We'll arrange pick up and a full refund within 7 days including the delivery fee.</p>
+                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center hover:shadow-md transition duration-300">
+                    <i class="{{ $client->widgets['info_cards']['items'][1]['icon'] ?? 'fas fa-dollar-sign' }} text-3xl text-primary opacity-60 mb-3 group-hover:scale-110 transition"></i>
+                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">{{ $client->widgets['info_cards']['items'][1]['title'] ?? '30 days returns' }}</h4>
+                    <p class="text-[11px] text-gray-500 leading-relaxed">{{ $client->widgets['info_cards']['items'][1]['description'] ?? 'Not the right fit? No worries. We\'ll arrange pick up and a full refund.' }}</p>
                 </div>
                 
-                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
-                    <i class="fas fa-award text-3xl text-primary opacity-60 mb-3"></i>
-                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">10 year warranty</h4>
-                    <p class="text-[11px] text-gray-500 leading-relaxed">Quality comes first and our products are designed to last.</p>
+                <div class="bg-white border border-gray-100 p-6 flex flex-col items-center text-center hover:shadow-md transition duration-300">
+                    <i class="{{ $client->widgets['info_cards']['items'][2]['icon'] ?? 'fas fa-award' }} text-3xl text-primary opacity-60 mb-3 group-hover:scale-110 transition"></i>
+                    <h4 class="text-sm font-bold text-dark mb-2 uppercase">{{ $client->widgets['info_cards']['items'][2]['title'] ?? 'Quality guarantee' }}</h4>
+                    <p class="text-[11px] text-gray-500 leading-relaxed">{{ $client->widgets['info_cards']['items'][2]['description'] ?? 'Quality comes first and our products are designed to last.' }}</p>
                 </div>
             </div>
+            @endif
         </div>
 
     </form>
@@ -208,16 +211,21 @@
                     <p class="mb-4">No detailed description available for this product.</p>
                 @endif
                 
-                {{-- Example structural mock derived from screenshot --}}
+                @if(isset($client->widgets['product_detail_bullets']) && count($client->widgets['product_detail_bullets']))
                 <h4 class="text-dark font-bold text-base mt-8 mb-4">More Detail</h4>
                 <ul class="list-disc pl-5 space-y-2 mb-8">
-                    <li>Lorem ipsum is simply dummy text of the printing and typesetting industry</li>
-                    <li>Lorem ipsum has been the industry's standard dummy text</li>
-                    <li>Type here your detail one by one</li>
+                    @foreach($client->widgets['product_detail_bullets'] as $bullet)
+                    <li>{{ $bullet }}</li>
+                    @endforeach
                 </ul>
+                @endif
             </div>
             <div x-show="tab === 'additional'" x-cloak>
-                <p>Additional specifications and dimensions would be displayed here.</p>
+                @if($product->additional_information)
+                    {!! nl2br(e($product->additional_information)) !!}
+                @else
+                    <p>No additional specifications or dimensions provided.</p>
+                @endif
             </div>
             <div x-show="tab === 'reviews'" x-cloak>
                 @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
@@ -239,7 +247,7 @@
                 <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-6 overflow-hidden mb-4 mix-blend-multiply border border-transparent group-hover:border-gray-100 transition">
                     
                     {{-- Percentage Badge --}}
-                    @if($rp->sale_price)
+                    @if($rp->sale_price && $rp->regular_price > 0)
                     @php $percent = round((($rp->regular_price - $rp->sale_price) / $rp->regular_price) * 100); @endphp
                     <div class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 z-10 shadow-sm">
                         -{{$percent}}%
@@ -294,8 +302,8 @@
     function productData() {
         return {
             qty: 1,
-            basePrice: {{ $product->price }},
-            currentPrice: {{ $product->price }},
+            basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+            currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
             selectedVariantName: '',
             activeImage: '{{ $product->thumbnail ? asset("storage/".$product->thumbnail) : "" }}',
             isLoading: false,
