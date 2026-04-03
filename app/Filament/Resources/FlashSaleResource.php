@@ -36,6 +36,7 @@ class FlashSaleResource extends Resource
                     ->label('Shop / Client')
                     ->relationship('client', 'shop_name')
                     ->searchable()->preload()->required()
+                    ->live()
                     ->visible(fn() => auth()->user()?->isSuperAdmin()),
 
                 Forms\Components\TextInput::make('title')->label('শিরোনাম')->required()->maxLength(100),
@@ -56,6 +57,34 @@ class FlashSaleResource extends Resource
                 Forms\Components\FileUpload::make('banner_image')->label('ব্যানার ছবি (Optional)')->image()->directory('flash-sales'),
                 Forms\Components\Toggle::make('is_active')->label('সক্রিয়')->default(true),
             ]),
+
+            Forms\Components\Section::make('🛍️ Flash Sale Products')
+                ->description('কোন কোন পণ্য এই Flash Sale-এ থাকবে তা সিলেক্ট করুন।')
+                ->schema([
+                    Forms\Components\Select::make('product_ids')
+                        ->label('পণ্য সিলেক্ট করুন (একাধিক)')
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->options(function (Forms\Get $get) {
+                            $user = auth()->user();
+                            $query = \App\Models\Product::query()->where('stock_status', 'in_stock');
+                            
+                            if ($user?->isSuperAdmin()) {
+                                $clientId = $get('client_id');
+                                if ($clientId) {
+                                    $query->where('client_id', $clientId);
+                                }
+                            } else {
+                                $clientId = \App\Models\Client::where('user_id', auth()->id())->value('id');
+                                $query->where('client_id', $clientId);
+                            }
+                            
+                            return $query->pluck('name', 'id');
+                        })
+                        ->helperText('শুধুমাত্র স্টকে আছে এমন পণ্য দেখাচ্ছে। একাধিক পণ্য সিলেক্ট করুন।')
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
@@ -73,6 +102,11 @@ class FlashSaleResource extends Resource
                 Tables\Columns\TextColumn::make('discount_type')->label('ধরন')
                     ->formatStateUsing(fn($state) => $state === 'percent' ? 'শতকরা' : 'নির্দিষ্ট'),
                 Tables\Columns\TextColumn::make('discount_percent')->label('ছাড়')->suffix('%')->sortable(),
+                Tables\Columns\TextColumn::make('product_ids')
+                    ->label('পণ্য সংখ্যা')
+                    ->formatStateUsing(fn($state) => is_array($state) ? count($state) . ' টি পণ্য' : (is_string($state) ? count(json_decode($state, true) ?? []) . ' টি পণ্য' : '0 টি পণ্য'))
+                    ->badge()
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('starts_at')->label('শুরু')->since()->tooltip(fn($record) => $record->starts_at->format('d M y, h:i A'))->sortable(),
                 Tables\Columns\TextColumn::make('ends_at')->label('শেষ')->since()->tooltip(fn($record) => $record->ends_at->format('d M y, h:i A'))->sortable(),
                 Tables\Columns\ToggleColumn::make('is_active')->label('সক্রিয়'),

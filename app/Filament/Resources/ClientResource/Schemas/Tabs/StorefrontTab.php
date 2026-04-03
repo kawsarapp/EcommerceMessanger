@@ -92,6 +92,43 @@ class StorefrontTab
                     ->placeholder('🎉 Eid Sale is Live! Get 10% Off.')
                     ->helperText('Shows at the top of your shop header.')
                     ->columnSpanFull(),
+
+                TextInput::make('topbar_text')
+                    ->label('Topbar Text (Left Side)')
+                    ->placeholder('স্বাগতম! সব পণ্যে ফ্রি শিপিং সুবিধা।')
+                    ->helperText('BDPro, Vegist, Shoppers থিমে topbar-এ বাম পাশে দেখাবে।')
+                    ->columnSpanFull(),
+            ])->columns(2),
+
+            Section::make('Shop Info & Social Links')->schema([
+                Textarea::make('description')
+                    ->label('Shop Description')
+                    ->placeholder('আপনার শপের সম্পর্কে সংক্ষিপ্ত বিবরণ লিখুন...')
+                    ->helperText('Footer, SEO meta description এবং SEO section-এ দেখাবে।')
+                    ->rows(3)
+                    ->columnSpanFull(),
+
+                TextInput::make('tagline')
+                    ->label('Shop Tagline')
+                    ->placeholder('দ্রুত ডেলিভারি, আসল পণ্য, সেরা দাম।')
+                    ->helperText('Footer copyright section-এ দেখাবে।'),
+
+                TextInput::make('youtube_url')
+                    ->label('YouTube URL')
+                    ->url()
+                    ->placeholder('https://youtube.com/@yourshop')
+                    ->helperText('Footer ও social icons-এ দেখাবে।'),
+
+                TextInput::make('tiktok_url')
+                    ->label('TikTok URL')
+                    ->url()
+                    ->placeholder('https://tiktok.com/@yourshop')
+                    ->helperText('Daraz ও অন্যান্য থিমে দেখাবে।'),
+
+                TextInput::make('widgets.office_hours.text')
+                    ->label('Office Hours / Contact Hours')
+                    ->placeholder('Everyday 10AM - 9PM')
+                    ->helperText('BDPro, Shoppers থিমে contact section-এ দেখাবে।'),
             ])->columns(2),
 
             Section::make('🎯 Homepage Offer Banner')
