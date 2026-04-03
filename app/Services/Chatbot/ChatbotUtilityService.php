@@ -158,12 +158,11 @@ class ChatbotUtilityService
                     'anthropic-version' => '2023-06-01',
                     'content-type' => 'application/json'
                 ])->timeout(40)->post('https://api.anthropic.com/v1/messages', [
-                ])->timeout(40)->post('https://api.anthropic.com/v1/messages', [
-                    'model' => str_replace('-full', '', $selectedModel), // fallbacks if any modifier is used
-                    'system' => $systemPrompt,
-                    'messages' => $claudeMessages,
-                    'max_tokens' => 800,
-                    'temperature' => 0.1
+                    'model'       => str_replace('-full', '', $selectedModel),
+                    'system'      => $systemPrompt,
+                    'messages'    => $claudeMessages,
+                    'max_tokens'  => 800,
+                    'temperature' => 0.1,
                 ]);
 
                 if ($response->successful() && isset($response->json()['content'][0]['text'])) {
