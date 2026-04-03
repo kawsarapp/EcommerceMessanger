@@ -66,7 +66,7 @@
                     {{-- Product Info --}}
                     <div class="md:col-span-6 flex items-center gap-4">
                         <div class="w-18 h-18 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center p-2 shrink-0" style="width:72px;height:72px;">
-                            <img :src="item.thumbnail ? '/storage/' + item.thumbnail : ''" class="w-full h-full object-contain" @error="$el.src='/images/placeholder.png'">
+                            <img :src="item.thumbnail ? '/storage/' + item.thumbnail : ''" class="w-full h-full object-contain" x-on:error="$el.src='/images/placeholder.png'">
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-sm font-semibold text-dark line-clamp-2 leading-tight" x-text="item.name"></h4>
