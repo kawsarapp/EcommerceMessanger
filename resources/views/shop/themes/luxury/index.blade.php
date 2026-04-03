@@ -49,7 +49,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <!-- Dark Imagry -->
                 <div class="aspect-square bg-surface mb-8 relative overflow-hidden transition-all duration-700">
                     <div class="absolute inset-0 bg-dark/10 group-hover:bg-transparent z-10 transition duration-500"></div>
-                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-[2s] ease-out mix-blend-lighten z-0">
+                    <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-[2s] ease-out mix-blend-lighten z-0">
                     
                     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
                         <div class="absolute inset-0 flex items-center justify-center z-20 bg-dark/70 backdrop-blur-sm">

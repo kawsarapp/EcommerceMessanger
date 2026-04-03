@@ -73,7 +73,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
                     <!-- Subtle backdrop circle -->
                     <div class="absolute w-2/3 h-2/3 bg-primary/5 rounded-full z-0 group-hover:scale-110 transition-transform duration-500"></div>
-                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
+                    <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
                 </div>
                 
                 <!-- Info Section -->

@@ -70,7 +70,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         </div>
                     @endif
                     
-                    <img src="{{asset('storage/'.\->thumbnail)}}" loading="lazy" class="w-full h-full object-cover mix-blend-multiply group-hover:scale-125 transition duration-[1.5s] ease-in-out">
+                    <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="w-full h-full object-cover mix-blend-multiply group-hover:scale-125 transition duration-[1.5s] ease-in-out">
                 </div>
                 
                 <!-- Aggressive Info Block -->

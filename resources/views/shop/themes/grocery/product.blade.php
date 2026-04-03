@@ -72,7 +72,6 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <span class="text-orange-500"><i class="fas fa-undo text-[8px] mr-1"></i> {{ $product->return_policy }}</span>
                         @endif
                             @endif
-                        @endif
                     </div>
 
                     <h1 class="text-3xl lg:text-4xl font-black text-slate-800 leading-tight mb-4 tracking-tight">{{$product->name}}</h1>
