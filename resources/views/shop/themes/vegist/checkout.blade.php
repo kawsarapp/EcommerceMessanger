@@ -25,55 +25,61 @@
     $initQty       = max(1, (int)request('qty', 1));
 @endphp
 
-<div class="bg-gray-50/50 min-h-screen pb-16" x-data="{
-    shippingMethods: @json($shippingMethods ?? []),
-    shippingMethodId: {{ $defaultShipId }},
-    area: 'inside',
-    paymentMethod: 'cod',
-    qty: {{ $initQty }},
-    price: {{ $productPrice }},
-    notes: '',
+<div class="bg-gray-50/50 min-h-screen pb-16" x-data="checkoutApp()">
 
-    get delivery() {
-        if (this.shippingMethods && this.shippingMethods.length > 0) {
-            let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
-            return sm ? parseFloat(sm.cost) : 0;
-        }
-        return this.area === 'inside' ? {{ $chargeInside }} : {{ $chargeOutside }};
-    },
-    get subtotal() { return this.qty * this.price; },
+<script>
+function checkoutApp() {
+    return {
+        shippingMethods: {!! json_encode($shippingMethods ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
+        shippingMethodId: {{ $defaultShipId }},
+        area: 'inside',
+        paymentMethod: 'cod',
+        qty: {{ $initQty }},
+        price: {{ $productPrice }},
+        notes: '',
 
-    couponCode: '', couponDiscount: 0, couponApplied: false, couponError: '',
-    get total() { return this.subtotal + this.delivery - this.couponDiscount; },
-
-    async applyCoupon() {
-        if (!this.couponCode) { this.couponError = 'Enter a coupon code'; return; }
-        this.couponError = '';
-        try {
-            const res = await fetch('{{ $couponUrl }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal })
-            });
-            const d = await res.json();
-            if (d.success) {
-                this.couponDiscount = d.discount;
-                this.couponApplied  = true;
-                this.couponError    = '';
-            } else {
-                this.couponError    = d.message || 'Invalid coupon';
-                this.couponApplied  = false;
-                this.couponDiscount = 0;
+        get delivery() {
+            if (this.shippingMethods && this.shippingMethods.length > 0) {
+                let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
+                return sm ? parseFloat(sm.cost) : 0;
             }
-        } catch(e) {
-            this.couponError = 'Network error. Try again.';
+            return this.area === 'inside' ? {{ $chargeInside }} : {{ $chargeOutside }};
+        },
+        get subtotal() { return this.qty * this.price; },
+
+        couponCode: '', couponDiscount: 0, couponApplied: false, couponError: '',
+        get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+
+        async applyCoupon() {
+            if (!this.couponCode) { this.couponError = 'Enter a coupon code'; return; }
+            this.couponError = '';
+            try {
+                const res = await fetch('{{ $couponUrl }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal })
+                });
+                const d = await res.json();
+                if (d.success) {
+                    this.couponDiscount = d.discount;
+                    this.couponApplied  = true;
+                    this.couponError    = '';
+                } else {
+                    this.couponError    = d.message || 'Invalid coupon';
+                    this.couponApplied  = false;
+                    this.couponDiscount = 0;
+                }
+            } catch(e) {
+                this.couponError = 'Network error. Try again.';
+            }
         }
-    }
-}">
+    };
+}
+</script>
 
     <div class="max-w-[1200px] mx-auto px-4 xl:px-8 pt-8">
         <form action="{{ $formAction }}" method="POST" class="grid grid-cols-1 md:grid-cols-12 md:gap-12 lg:gap-16">

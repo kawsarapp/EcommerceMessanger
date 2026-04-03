@@ -7,52 +7,57 @@
     $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-white py-4" x-data="{ 
-    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
-    qty: 1, 
-    color: '', 
-    size: '',
-    tab: 'description',
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: @json($product->has_variants ? $product->variants : []),
-    
-    get currentVariant() {
-        if (!this.hasVariants) return null;
-        let c = this.color ? this.color.trim() : null;
-        let s = this.size ? this.size.trim() : null;
+<div class="bg-white py-4" x-data="productApp()">
+<script>
+function productApp() {
+    return {
+        mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+        qty: 1, 
+        color: '', 
+        size: '',
+        tab: 'description',
+        hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+        variants: {!! json_encode($product->has_variants ? $product->variants : [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
         
-        return this.variants.find(v => {
-            let matchesColor = c ? (v.color && v.color.trim() === c) : true;
-            let matchesSize = s ? (v.size && v.size.trim() === s) : true;
-            return matchesColor && matchesSize;
-        });
-    },
-    
-    get displayPrice() {
-        if (this.currentVariant && this.currentVariant.price > 0) {
-            return parseFloat(this.currentVariant.price).toLocaleString();
-        }
-        return '{{ number_format($product->sale_price ?? $product->regular_price) }}';
-    },
-
-    get stockStatus() {
-        if (this.hasVariants) {
-            if (!this.color && !this.size) return '{{ $product->stock_status }}';
-            if (this.currentVariant) {
-                return this.currentVariant.stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+        get currentVariant() {
+            if (!this.hasVariants) return null;
+            let c = this.color ? this.color.trim() : null;
+            let s = this.size ? this.size.trim() : null;
+            
+            return this.variants.find(v => {
+                let matchesColor = c ? (v.color && v.color.trim() === c) : true;
+                let matchesSize = s ? (v.size && v.size.trim() === s) : true;
+                return matchesColor && matchesSize;
+            });
+        },
+        
+        get displayPrice() {
+            if (this.currentVariant && this.currentVariant.price > 0) {
+                return parseFloat(this.currentVariant.price).toLocaleString();
             }
-            return 'out_of_stock';
-        }
-        return '{{ $product->stock_status }}';
-    },
+            return '{{ number_format($product->sale_price ?? $product->regular_price) }}';
+        },
 
-    get availableStock() {
-        if (this.hasVariants) {
-            return this.currentVariant ? this.currentVariant.stock_quantity : 0;
+        get stockStatus() {
+            if (this.hasVariants) {
+                if (!this.color && !this.size) return '{{ $product->stock_status }}';
+                if (this.currentVariant) {
+                    return this.currentVariant.stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
+                }
+                return 'out_of_stock';
+            }
+            return '{{ $product->stock_status }}';
+        },
+
+        get availableStock() {
+            if (this.hasVariants) {
+                return this.currentVariant ? this.currentVariant.stock_quantity : 0;
+            }
+            return {{ $product->stock_quantity ?? 0 }};
         }
-        return {{ $product->stock_quantity ?? 0 }};
-    }
-}">
+    };
+}
+</script>
     <div class="max-w-[1400px] mx-auto px-4">
         
         {{-- Breadcrumb --}}

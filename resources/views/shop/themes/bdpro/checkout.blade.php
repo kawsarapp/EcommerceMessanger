@@ -7,48 +7,53 @@
     $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-[#f8f9fa] py-8" x-data="{
-    shippingMethods: @json($shippingMethods ?? []),
-    shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
-    area: 'inside', // 'office', 'inside', 'outside'
-    paymentMethod: 'cod', // COD for simplicity here representing 'Pay in 30 min'
-    paymentType: 'full', // 'full', 'partial'
-    qty: {{ request('qty', 1) }},
-    price: {{ $product->sale_price ?? $product->regular_price }},
-    
-    // Variables for calculations
-    get delivery() {
-        if (this.shippingMethods && this.shippingMethods.length > 0) {
-            let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
-            return sm ? parseFloat(sm.cost) : 0;
-        } else {
-            if(this.area === 'office') return 0;
-            return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+<div class="bg-[#f8f9fa] py-8" x-data="checkoutApp()">
+<script>
+function checkoutApp() {
+    return {
+        shippingMethods: {!! json_encode($shippingMethods ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
+        shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
+        area: 'inside', // 'office', 'inside', 'outside'
+        paymentMethod: 'cod', // COD for simplicity here representing 'Pay in 30 min'
+        paymentType: 'full', // 'full', 'partial'
+        qty: {{ request('qty', 1) }},
+        price: {{ $product->sale_price ?? $product->regular_price }},
+        
+        // Variables for calculations
+        get delivery() {
+            if (this.shippingMethods && this.shippingMethods.length > 0) {
+                let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
+                return sm ? parseFloat(sm.cost) : 0;
+            } else {
+                if(this.area === 'office') return 0;
+                return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+            }
+        },
+        get subtotal() { return this.qty * this.price; },
+        
+        // Coupon logic
+        couponCode: '',
+        couponDiscount: 0,
+        couponApplied: false,
+        couponError: '',
+        
+        get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+        
+        applyCoupon() {
+            if(!this.couponCode) { this.couponError = 'Please enter a coupon code'; return; }
+            this.couponError = '';
+            fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
+            }).then(r => r.json()).then(d => {
+                if(d.success) { this.couponDiscount = d.discount; this.couponApplied = true; }
+                else { this.couponError = d.message || 'Invalid coupon code'; }
+            }).catch(err => { this.couponError = 'Error verifying coupon'; });
         }
-    },
-    get subtotal() { return this.qty * this.price; },
-    
-    // Coupon logic
-    couponCode: '',
-    couponDiscount: 0,
-    couponApplied: false,
-    couponError: '',
-    
-    get total() { return this.subtotal + this.delivery - this.couponDiscount; },
-    
-    applyCoupon() {
-        if(!this.couponCode) { this.couponError = 'Please enter a coupon code'; return; }
-        this.couponError = '';
-        fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-            body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})
-        }).then(r => r.json()).then(d => {
-            if(d.success) { this.couponDiscount = d.discount; this.couponApplied = true; }
-            else { this.couponError = d.message || 'Invalid coupon code'; }
-        }).catch(err => { this.couponError = 'Error verifying coupon'; });
-    }
-}">
+    };
+}
+</script>
 
     <div class="max-w-[1280px] mx-auto px-4">
         

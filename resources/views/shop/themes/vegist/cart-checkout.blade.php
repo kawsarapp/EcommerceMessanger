@@ -24,41 +24,47 @@
     .vg-section-title { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 18px; }
 </style>
 
-<div class="bg-gray-50/50 min-h-screen pb-20" x-data="{
-    area: 'inside',
-    paymentMethod: 'cod',
-    shippingMethods: @json($shippingMethods ?? []),
-    shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
-    subtotal: {{ $subtotal }},
-    notes: '',
-    couponCode: '', couponDiscount: 0, couponApplied: false, couponMsg: '', couponOk: false,
+<div class="bg-gray-50/50 min-h-screen pb-20" x-data="checkoutApp()">
 
-    get delivery() {
-        if (this.shippingMethods && this.shippingMethods.length > 0) {
-            let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
-            return sm ? parseFloat(sm.cost) : 0;
-        }
-        return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
-    },
-    get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+<script>
+function checkoutApp() {
+    return {
+        area: 'inside',
+        paymentMethod: 'cod',
+        shippingMethods: {!! json_encode($shippingMethods ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
+        shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
+        subtotal: {{ $subtotal }},
+        notes: '',
+        couponCode: '', couponDiscount: 0, couponApplied: false, couponMsg: '', couponOk: false,
 
-    async applyCoupon() {
-        if (!this.couponCode) return;
-        this.couponMsg = ''; this.couponOk = false;
-        const res = await fetch('{{ $couponUrl }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal })
-        });
-        const d = await res.json();
-        if (d.success) {
-            this.couponDiscount = d.discount; this.couponApplied = true;
-            this.couponMsg = d.message; this.couponOk = true;
-        } else {
-            this.couponMsg = d.message || 'Invalid coupon'; this.couponApplied = false; this.couponDiscount = 0;
+        get delivery() {
+            if (this.shippingMethods && this.shippingMethods.length > 0) {
+                let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
+                return sm ? parseFloat(sm.cost) : 0;
+            }
+            return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
+        },
+        get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+
+        async applyCoupon() {
+            if (!this.couponCode) return;
+            this.couponMsg = ''; this.couponOk = false;
+            const res = await fetch('{{ $couponUrl }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ code: this.couponCode, client_id: {{ $client->id }}, subtotal: this.subtotal })
+            });
+            const d = await res.json();
+            if (d.success) {
+                this.couponDiscount = d.discount; this.couponApplied = true;
+                this.couponMsg = d.message; this.couponOk = true;
+            } else {
+                this.couponMsg = d.message || 'Invalid coupon'; this.couponApplied = false; this.couponDiscount = 0;
+            }
         }
-    }
-}">
+    };
+}
+</script>
 
 <div class="max-w-[1200px] mx-auto px-4 xl:px-8 pt-8">
 
