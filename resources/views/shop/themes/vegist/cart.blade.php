@@ -161,20 +161,28 @@
     </div>
 </div>
 
+{{-- Cart data injected via raw PHP to bypass Blade compilation issues --}}
+<script>
+window.__vegistCart = <?php echo json_encode($cartItems, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
+window.__vegistRemoveUrl  = <?php echo json_encode($removeUrl); ?>;
+window.__vegistUpdateUrl  = <?php echo json_encode($updateUrl); ?>;
+window.__vegistClearUrl   = <?php echo json_encode($clearUrl); ?>;
+window.__vegistCsrf       = <?php echo json_encode(csrf_token()); ?>;
+</script>
+
 <script>
 function cartApp() {
     return {
-        items: {!! \Illuminate\Support\Js::from($cartItems) !!},
-        csrfToken: '{{ csrf_token() }}',
-        removeUrl: '{{ $removeUrl }}',
-        updateUrl: '{{ $updateUrl }}',
-        clearUrl: '{{ $clearUrl }}',
+        items: window.__vegistCart || [],
+        csrfToken: window.__vegistCsrf,
+        removeUrl: window.__vegistRemoveUrl,
+        updateUrl: window.__vegistUpdateUrl,
+        clearUrl:  window.__vegistClearUrl,
 
         get cartCount() { return this.items.length; },
-        get subtotal() { return this.items.reduce((sum, i) => sum + (i.price * i.qty), 0); },
+        get subtotal()  { return this.items.reduce((sum, i) => sum + (i.price * i.qty), 0); },
 
         init() {
-            // Update header badge
             this.updateBadge();
         },
 
@@ -201,7 +209,6 @@ function cartApp() {
             if (newQty < 1) return;
             const item = this.items.find(i => i.key === key);
             if (!item) return;
-
             item.qty = newQty;
 
             const fd = new FormData();
