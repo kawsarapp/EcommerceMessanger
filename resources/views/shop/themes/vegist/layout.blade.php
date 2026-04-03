@@ -12,6 +12,9 @@
     <meta name="description" content="{{ $client->meta_description ?? $client->shop_name . ' - Organic Food Store' }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Alpine Plugins MUST load before Alpine core --}}
+    <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

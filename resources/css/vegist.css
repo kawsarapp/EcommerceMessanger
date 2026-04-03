@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Custom Component Classes ── */
+@layer components {
+    .btn-primary {
+        @apply bg-primary text-white px-6 py-2.5 font-semibold text-sm transition-all duration-200 hover:brightness-90 hover:-translate-y-px;
+    }
+    .btn-dark {
+        @apply bg-dark text-white px-6 py-2.5 font-semibold text-sm transition-all duration-200;
+    }
+    .btn-dark:hover {
+        background-color: var(--color-primary);
+    }
+    .vg-nav-link {
+        @apply text-[13px] font-medium text-dark uppercase transition-colors duration-200 inline-flex items-center gap-1;
+    }
+    .vg-nav-link:hover {
+        color: var(--color-primary);
+    }
+    .vg-heading {
+        @apply text-dark font-semibold;
+    }
+    .hide-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .hide-scroll::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* ── CSS Custom Properties for Dynamic Theming ── */
+:root {
+    --color-primary: #f6a52a;
+}

@@ -4,17 +4,20 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "build:css": "node node_modules/.bin/tailwind --input resources/css/vegist.css --output public/css/vegist.css --minify",
+        "watch:css": "node node_modules/.bin/tailwind --input resources/css/vegist.css --output public/css/vegist.css --watch"
     },
     "devDependencies": {
+        "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/postcss": "^4.1.18",
         "@tailwindcss/vite": "^4.0.0",
-        "autoprefixer": "^10.4.24",
+        "autoprefixer": "^10.4.27",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
-        "postcss": "^8.5.6",
-        "tailwindcss": "^4.1.18",
+        "postcss": "^8.5.8",
+        "tailwindcss": "^3.4.19",
         "vite": "^7.0.7"
     },
     "name": "ecommercemessanger",
@@ -104,5 +107,13 @@
     },
     "keywords": [],
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kawsarapp/EcommerceMessanger.git"
+    },
+    "bugs": {
+        "url": "https://github.com/kawsarapp/EcommerceMessanger/issues"
+    },
+    "homepage": "https://github.com/kawsarapp/EcommerceMessanger#readme"
 }
