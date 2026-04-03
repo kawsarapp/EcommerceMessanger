@@ -60,16 +60,18 @@ $primary='#1a3673';
         <div class="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fas fa-heart text-red-500"></i>
-                <span class="font-medium">Assalamu Walaikum</span>
+                <span class="font-medium">{{ $client->topbar_text ?? ('স্বাগতম ' . $client->shop_name . '-এ') }}</span>
             </div>
+            @if($client->announcement_text)
             <div class="flex items-center gap-2 text-warning font-semibold text-yellow-400">
                 <i class="fas fa-exclamation-triangle"></i>
-                <span>This is a Beta Version - Some items may not be in stock</span>
+                <span>{!! strip_tags($client->announcement_text) !!}</span>
             </div>
+            @endif
             <div class="flex items-center gap-4">
-                @if($client->facebook_url)<a href="{{$client->facebook_url}}" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
-                @if($client->instagram_url)<a href="{{$client->instagram_url}}" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
-                <a href="#" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                @if($client->facebook_url)<a href="{{$client->facebook_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
+                @if($client->instagram_url)<a href="{{$client->instagram_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
+                @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>@endif
             </div>
         </div>
     </div>
@@ -180,9 +182,8 @@ $primary='#1a3673';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - Your Premier Shopping Destination in Bangladesh</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-6">{{$client->shop_name}} is Bangladesh's leading destination for premium electronics, cutting-edge gadgets, fashion, and lifestyle products. We specialize in providing high-quality products including smartphones, laptops, gaming accessories, home appliances, and our comprehensive range of daily essentials.</p>
-                <p class="text-gray-500 text-sm leading-relaxed mb-8">Whether you're looking for the latest technology or eco-friendly alternatives, {{$client->shop_name}} offers fast delivery, genuine products, and exceptional customer service across all districts of Bangladesh.</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} — {{ $client->tagline ?? 'আপনার বিশ্বস্ত অনলাইন শপিং গন্তব্য' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' — দ্রুত ডেলিভারি, আসল পণ্য, এবং সারাদেশে সেরা কাস্টমার সার্ভিস।') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -211,13 +212,13 @@ $primary='#1a3673';
                         <div class="space-y-3 mb-6">
                             @if($client->phone)<a href="tel:{{$client->phone}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-phone-alt text-primary min-w-[20px]"></i> {{$client->phone}}</a>@endif
                             @if($client->email)<a href="mailto:{{$client->email}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-envelope text-primary min-w-[20px]"></i> {{$client->email}}</a>@endif
-                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> 10:00 AM - 11:00 PM</div>
+                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> {{ $client->widgets['office_hours']['text'] ?? '\u09B8ন্ধ্যা \u09EE\u09EA\u09F7\u09EA\u09EE' }}</div>
                         </div>
 
                         <div class="flex gap-3 mt-4">
-                            @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-facebook-f"></i></a>@endif
-                            @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-instagram"></i></a>@endif
-                            <a href="#" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-youtube"></i></a>
+                            @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-facebook-f"></i></a>@endif
+                            @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-instagram"></i></a>@endif
+                            @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-youtube"></i></a>@endif
                         </div>
                     </div>
 
@@ -277,8 +278,7 @@ $primary='#1a3673';
                 {{-- Bottom Bar --}}
                 <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-[11px] text-gray-400">
-                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. All rights reserved.<br>
-                        Developed with <i class="fas fa-heart text-red-500 mx-1"></i> by SmartB
+                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. সর্বস্বত্ব সংরক্ষিত।
                     </div>
                     
                     <div class="flex items-center gap-3">
@@ -294,6 +294,7 @@ $primary='#1a3673';
     </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
+    @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
