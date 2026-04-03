@@ -293,7 +293,7 @@ class PlanResource extends Resource
                             ->helperText('Facebook Messenger & Auto Reply'),
                     ]),
 
-                    // 🛒 NEW: Sales & Growth Features
+                    // 🛒 Sales & Growth Features
                     \Filament\Forms\Components\Fieldset::make('🛒 Sales & Growth Features')
                         ->schema([
                             Grid::make()->columns(3)->schema([
@@ -334,6 +334,108 @@ class PlanResource extends Resource
                                     ->onColor('info')
                                     ->default(false)
                                     ->helperText('Per-client API rate limit control'),
+                            ]),
+                        ])->columnSpanFull(),
+
+                    // 📡 Channel Access
+                    \Filament\Forms\Components\Fieldset::make('📡 Channel & Marketing Access')
+                        ->schema([
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_instagram')
+                                    ->label('📸 Instagram DM Bot')
+                                    ->onColor('danger')
+                                    ->default(false)
+                                    ->helperText('Instagram DM auto-reply ও order flow'),
+
+                                Toggle::make('allow_sms_notification')
+                                    ->label('📱 SMS Notifications')
+                                    ->onColor('success')
+                                    ->default(false)
+                                    ->helperText('Order confirm/shipping SMS customer-কে পাঠাবে'),
+
+                                Toggle::make('allow_email_marketing')
+                                    ->label('📧 Email Marketing')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('Email newsletter ও campaign blast পাঠাতে পারবে'),
+                            ]),
+                        ])->columnSpanFull(),
+
+                    // 🏆 Premium Store Add-ons
+                    \Filament\Forms\Components\Fieldset::make('🏆 Premium Store Add-ons')
+                        ->schema([
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_popup_banner')
+                                    ->label('🎯 Popup Offer Banner')
+                                    ->onColor('warning')
+                                    ->default(true)
+                                    ->helperText('শপে popup offer banner দেখাতে পারবে'),
+
+                                Toggle::make('allow_bulk_import')
+                                    ->label('📊 Bulk Product Import')
+                                    ->onColor('success')
+                                    ->default(false)
+                                    ->helperText('CSV/Excel থেকে bulk product import করতে পারবে'),
+
+                                Toggle::make('allow_product_video')
+                                    ->label('🎬 Product Video Embed')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('YouTube/video embed in product details page'),
+                            ]),
+
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_advanced_seo')
+                                    ->label('🔍 Advanced SEO Tools')
+                                    ->onColor('success')
+                                    ->default(false)
+                                    ->helperText('Schema markup, sitemap, Open Graph tags'),
+
+                                Toggle::make('allow_multi_currency')
+                                    ->label('💱 Multi-Currency Display')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('USD/EUR/BDT multi-currency price দেখাবে'),
+
+                                Toggle::make('allow_pos_mode')
+                                    ->label('🏪 POS Mode')
+                                    ->onColor('warning')
+                                    ->default(false)
+                                    ->helperText('Point of Sale offline counter management'),
+                            ]),
+
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_custom_checkout')
+                                    ->label('🧾 Custom Checkout Fields')
+                                    ->onColor('success')
+                                    ->default(true)
+                                    ->helperText('Custom fields ও form builder at checkout'),
+
+                                Toggle::make('allow_subscription_product')
+                                    ->label('🔄 Subscription Products')
+                                    ->onColor('primary')
+                                    ->default(false)
+                                    ->helperText('Recurring subscription/membership products'),
+
+                                Toggle::make('allow_live_chat_support')
+                                    ->label('💬 Live Chat Support')
+                                    ->onColor('success')
+                                    ->default(false)
+                                    ->helperText('Real-time live chat within admin dashboard'),
+                            ]),
+
+                            Grid::make()->columns(3)->schema([
+                                Toggle::make('allow_store_locator')
+                                    ->label('📍 Store Locator Map')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('Physical store location map widget on storefront'),
+
+                                Toggle::make('allow_product_comparison')
+                                    ->label('⚖️ Product Comparison')
+                                    ->onColor('info')
+                                    ->default(false)
+                                    ->helperText('Side-by-side product comparison tool'),
                             ]),
                         ])->columnSpanFull(),
                 ])->columns(1),
@@ -532,24 +634,32 @@ class PlanResource extends Resource
                         if ($record->allow_whatsapp)              $feats[] = '💬 WhatsApp';
                         if ($record->allow_telegram)              $feats[] = '✈️ Telegram';
                         if ($record->allow_facebook_messenger)    $feats[] = '📘 Facebook';
+                        if ($record->allow_instagram ?? false)    $feats[] = '📸 Instagram';
                         if ($record->allow_marketing_broadcast)   $feats[] = '📢 Broadcast';
+                        if ($record->allow_email_marketing ?? false) $feats[] = '📧 Email Mktg';
+                        if ($record->allow_sms_notification ?? false) $feats[] = '📱 SMS';
                         if ($record->allow_abandoned_cart)        $feats[] = '🛒 Cart Recovery';
-                        if ($record->allow_custom_domain)         $feats[] = '🌐 Custom Domain';
+                        if ($record->allow_flash_sale ?? false)   $feats[] = '⚡ Flash Sale';
+                        if ($record->allow_loyalty ?? false)      $feats[] = '🏆 Loyalty';
+                        if ($record->allow_referral ?? false)     $feats[] = '🎁 Referral';
                         if ($record->allow_coupon)                $feats[] = '🎟️ Coupon';
                         if ($record->allow_review)                $feats[] = '⭐ Reviews';
                         if ($record->allow_analytics)             $feats[] = '📊 Analytics';
-                        if ($record->allow_flash_sale)            $feats[] = '⚡ Flash Sale';
-                        if ($record->allow_loyalty)               $feats[] = '🏆 Loyalty';
-                        if ($record->allow_referral)              $feats[] = '🎁 Referral';
-                        if ($record->allow_return_refund)         $feats[] = '📦 Return';
-                        if ($record->allow_webhook)               $feats[] = '🔗 Webhook';
+                        if ($record->allow_custom_domain)         $feats[] = '🌐 Custom Domain';
                         if ($record->allow_payment_gateway)       $feats[] = '💳 Payments';
                         if ($record->allow_delivery_integration)  $feats[] = '🚚 Delivery';
-                        if ($record->remove_branding)             $feats[] = '✨ No Branding';
-                        if ($record->priority_support)            $feats[] = '🎯 Priority Support';
-                        if ($record->allow_premium_themes)        $feats[] = '🎨 Premium Themes';
-                        if ($record->allow_own_api_key)           $feats[] = '🔑 Own API Key';
-                        return implode(' · ', array_slice($feats, 0, 8)) . (count($feats) > 8 ? ' +' . (count($feats) - 8) . ' more' : '');
+                        if ($record->allow_bulk_import ?? false)  $feats[] = '📊 Bulk Import';
+                        if ($record->allow_product_video ?? false) $feats[] = '🎬 Video';
+                        if ($record->allow_advanced_seo ?? false) $feats[] = '🔍 SEO';
+                        if ($record->allow_pos_mode ?? false)      $feats[] = '🏪 POS';
+                        if ($record->allow_subscription_product ?? false) $feats[] = '🔄 Subscription';
+                        if ($record->allow_return_refund ?? false) $feats[] = '📦 Return';
+                        if ($record->allow_webhook ?? false)       $feats[] = '🔗 Webhook';
+                        if ($record->remove_branding)              $feats[] = '✨ No Branding';
+                        if ($record->priority_support)             $feats[] = '🎯 Priority Support';
+                        if ($record->allow_premium_themes)         $feats[] = '🎨 Premium Themes';
+                        if ($record->allow_own_api_key)            $feats[] = '🔑 Own API Key';
+                        return implode(' · ', array_slice($feats, 0, 9)) . (count($feats) > 9 ? ' +' . (count($feats) - 9) . ' more' : '');
                     })
                     ->wrap()
                     ->color('gray')

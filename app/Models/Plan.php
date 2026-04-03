@@ -50,6 +50,31 @@ class Plan extends Model
         'allow_ai',
         'allowed_ai_models',
         'allow_own_api_key',
+        // ─── Sales & Growth Features
+        'allow_flash_sale',
+        'allow_loyalty',
+        'allow_referral',
+        'allow_return_refund',
+        'allow_webhook',
+        'allow_api_rate_limit',
+
+        // ─── New Premium & Channel Features
+        'allow_instagram',
+        'allow_sms_notification',
+        'allow_popup_banner',
+        'allow_multi_currency',
+        'allow_product_video',
+        'allow_bulk_import',
+        'allow_custom_checkout',
+        'allow_pos_mode',
+        'allow_live_chat_support',
+        'allow_email_marketing',
+        'allow_advanced_seo',
+        'allow_subscription_product',
+        'allow_store_locator',
+        'allow_product_comparison',
+
+        // ─── Hidden Menus Control
         'hidden_menus',
     ];
 
@@ -78,6 +103,28 @@ class Plan extends Model
         'allow_own_api_key'         => 'boolean',
         'price'                     => 'decimal:2',
         'yearly_price'              => 'decimal:2',
+        // Sales & Growth
+        'allow_flash_sale'          => 'boolean',
+        'allow_loyalty'             => 'boolean',
+        'allow_referral'            => 'boolean',
+        'allow_return_refund'       => 'boolean',
+        'allow_webhook'             => 'boolean',
+        'allow_api_rate_limit'      => 'boolean',
+        // Premium Features
+        'allow_instagram'           => 'boolean',
+        'allow_sms_notification'    => 'boolean',
+        'allow_popup_banner'        => 'boolean',
+        'allow_multi_currency'      => 'boolean',
+        'allow_product_video'       => 'boolean',
+        'allow_bulk_import'         => 'boolean',
+        'allow_custom_checkout'     => 'boolean',
+        'allow_pos_mode'            => 'boolean',
+        'allow_live_chat_support'   => 'boolean',
+        'allow_email_marketing'     => 'boolean',
+        'allow_advanced_seo'        => 'boolean',
+        'allow_subscription_product'=> 'boolean',
+        'allow_store_locator'       => 'boolean',
+        'allow_product_comparison'  => 'boolean',
     ];
 
     // ─── Relationships ──────────────────────────────────────────
