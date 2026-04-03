@@ -6,8 +6,10 @@
 @php 
     $clean       = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
     $baseUrl     = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
-    $cartUrl     = $clean ? $baseUrl.'/cart/add' : route('shop.cart.add', $client->slug);
-    $checkoutUrl = $clean ? $baseUrl.'/checkout' : route('shop.checkout', $client->slug);
+    // Checkout URL - this app uses direct checkout (no cart system)
+    $checkoutUrl = $clean
+        ? $baseUrl.'/checkout/'.$product->slug
+        : route('shop.checkout', ['slug' => $client->slug, 'productSlug' => $product->slug]);
     $initPrice   = (float)($product->sale_price ?? $product->regular_price ?? 0);
     $inStock     = ($product->stock_status ?? 'in_stock') === 'in_stock';
     $stockQty    = (int)($product->stock_quantity ?? 0);
@@ -239,28 +241,27 @@
                     </a>
                     @endif
                 @else
-                    {{-- Add to Cart --}}
-                    <button type="button" @click="addToCart"
-                            :disabled="isLoading || added || {{ !$inStock ? 'true' : 'false' }}"
-                            class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
-                        <span x-show="!isLoading && !added" class="flex items-center gap-2">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </span>
-                        <span x-show="isLoading" class="flex items-center gap-2">
-                            <i class="fas fa-spinner fa-spin"></i> Adding...
-                        </span>
-                        <span x-show="added" class="flex items-center gap-2" x-cloak>
-                            <i class="fas fa-check-circle"></i> Added to Cart!
-                        </span>
-                    </button>
+                    @if(!$inStock)
+                    {{-- Out of Stock --}}
+                    <div class="flex-1 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm gap-2 cursor-not-allowed">
+                        <i class="fas fa-ban"></i> Out of Stock
+                    </div>
+                    @else
+                    {{-- Go to Checkout (acts as Order Now) --}}
+                    <a href="{{ $checkoutUrl }}" id="checkout-btn"
+                       class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:scale-[1.01]">
+                        <i class="fas fa-shopping-cart"></i> Order Now
+                    </a>
 
-                    {{-- Buy Now --}}
-                    <button type="button" @click="buyNow"
-                            :disabled="isLoading || {{ !$inStock ? 'true' : 'false' }}"
-                            class="flex-1 btn-dark h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:bg-primary disabled:opacity-60 disabled:cursor-not-allowed">
-                        <span x-show="!isLoading" class="flex items-center gap-2"><i class="fas fa-bolt"></i> Buy Now</span>
-                        <span x-show="isLoading" class="flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Please wait...</span>
-                    </button>
+                    {{-- WhatsApp Quick Order (if phone set) --}}
+                    @if($client->phone)
+                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name) }}"
+                       target="_blank"
+                       class="flex-1 bg-[#25d366] hover:bg-[#128c7e] text-white h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition">
+                        <i class="fab fa-whatsapp text-lg"></i> WhatsApp
+                    </a>
+                    @endif
+                    @endif
                 @endif
             </div>
 
@@ -557,20 +558,23 @@
 
 {{-- === STICKY MOBILE CTA BAR (Buy Now only) === --}}
 <div class="fixed bottom-[56px] left-0 right-0 z-40 md:hidden px-4 pb-2">
-    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3 flex gap-3">
+    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3">
         @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
             @if($client->phone)
             <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name.' - '.$baseUrl.'/product/'.$product->slug) }}"
                target="_blank"
-               class="flex-1 bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
+               class="w-full bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
                 <i class="fab fa-whatsapp text-xl"></i> Order via WhatsApp
             </a>
             @endif
+        @elseif(!$inStock)
+            <div class="w-full h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm gap-2">
+                <i class="fas fa-ban"></i> Out of Stock
+            </div>
         @else
             <a href="{{ $checkoutUrl }}"
-               class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md"
-               id="mob-buy-now-btn">
-                <i class="fas fa-bolt"></i> Buy Now
+               class="w-full btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+                <i class="fas fa-bolt"></i> Order Now — ৳{{ number_format($initPrice) }}
             </a>
         @endif
     </div>
@@ -584,8 +588,6 @@
             currentPrice: {{ $initPrice }},
             selectedVariantName: '',
             activeImage: '{{ $product->thumbnail ? asset("storage/".$product->thumbnail) : "" }}',
-            isLoading: false,
-            added: false,
 
             updateVariant(event) {
                 const p = parseFloat(event.target.value);
@@ -593,52 +595,21 @@
                 this.selectedVariantName = event.target.getAttribute('data-name');
             },
 
-            async addToCart() {
-                if (this.isLoading || this.added) return;
-                this.isLoading = true;
-                this.added = false;
-                try {
-                    const fd = new FormData();
-                    fd.append('_token', '{{ csrf_token() }}');
-                    fd.append('product_id', {{ $product->id }});
-                    fd.append('quantity', this.qty);
-                    if (this.selectedVariantName) {
-                        fd.append('attributes', this.selectedVariantName);
-                        fd.append('price', this.currentPrice);
-                    }
-
-                    const res = await fetch('{{ $cartUrl }}', { method: 'POST', body: fd });
-
-                    if (res.ok) {
-                        this.added = true;
-                        // Update header cart counters
-                        document.querySelectorAll('[class*="fa-shopping"] ~ span, [class*="fa-cart"] ~ span').forEach(el => {
-                            let n = parseInt(el.innerText||0);
-                            el.innerText = n + parseInt(this.qty);
-                            el.classList.add('scale-125');
-                            setTimeout(() => el.classList.remove('scale-125'), 400);
-                        });
-                        setTimeout(() => { this.added = false; }, 2500);
-                    } else {
-                        alert('Failed to add to cart. Please try again.');
-                    }
-                } catch(e) {
-                    console.error('Cart error:', e);
-                    alert('Network error, please try again.');
-                } finally {
-                    this.isLoading = false;
+            // This app uses direct checkout — no cart system
+            // "Order Now" / "Buy Now" both navigate to checkout page
+            goToCheckout() {
+                let url = '{{ $checkoutUrl }}';
+                // Append selected variant as query param if chosen
+                if (this.selectedVariantName) {
+                    url += '?variant=' + encodeURIComponent(this.selectedVariantName)
+                         + '&qty=' + this.qty;
+                } else {
+                    url += '?qty=' + this.qty;
                 }
-            },
-
-            async buyNow() {
-                await this.addToCart();
-                if (this.added) {
-                    window.location.href = '{{ $checkoutUrl }}';
-                }
+                window.location.href = url;
             },
 
             toggleWishlist() {
-                // Wishlist logic placeholder
                 console.log('Wishlist toggled for product {{ $product->id }}');
             }
         }
