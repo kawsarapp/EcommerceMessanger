@@ -30,14 +30,15 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             
             // --- [ Branding & UI Customization ] ---
-            ->brandName('AI Commerce Bot') // অ্যাপের নাম
+            ->brandName('Redycart') // 🔥 Brand Name
             ->font('Inter') // মডার্ন ফন্ট
-            ->favicon(asset('favicon.ico')) // আপনার ফ্যাভিকন
+            ->favicon(asset('favicon.ico'))
             ->colors([
                 'primary' => \Filament\Support\Colors\Color::Violet,
             ])
-            ->sidebarCollapsibleOnDesktop() // সাইডবার ছোট-বড় করার সুবিধা
-            ->maxContentWidth('full') // ফুল স্ক্রিন ভিউ
+            ->darkMode(true) // ✅ Dark mode toggle enabled
+            ->sidebarCollapsibleOnDesktop()
+            ->maxContentWidth('full')
             ->globalSearch() // 🔍 Global Search (Ctrl+K)
             ->navigationGroups([
                 '🛒 Sales & Orders',
