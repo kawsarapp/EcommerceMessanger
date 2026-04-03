@@ -21,16 +21,25 @@
     <form @submit.prevent="addToCart" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
         
         {{-- Left: Galleries --}}
-        <div class="lg:col-span-4">
-            <div class="relative bg-gray-50 flex items-center justify-center p-6 border border-gray-100 mix-blend-multiply md:max-h-[500px] overflow-hidden">
+        <div class="lg:col-span-4" x-data="{ zoomPos: '50% 50%', showZoom: false }">
+            <div class="relative bg-gray-50 flex items-center justify-center p-6 border border-gray-100 mix-blend-multiply md:max-h-[500px] overflow-hidden cursor-crosshair group aspect-square md:aspect-auto"
+                 @mousemove="zoomPos = (($event.offsetX / $el.offsetWidth) * 100) + '% ' + (($event.offsetY / $el.offsetHeight) * 100) + '%'"
+                 @mouseenter="showZoom = window.innerWidth > 768"
+                 @mouseleave="showZoom = false">
+                
                 @if($product->sale_price && $product->regular_price > 0)
                 @php $percent = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100); @endphp
-                <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 z-10 shadow-sm">
+                <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 z-20 shadow-sm">
                     -{{$percent}}%
                 </div>
                 @endif
                 
-                <img :src="activeImage" class="max-w-full max-h-full object-contain transition-opacity duration-300">
+                <img :src="activeImage" class="max-w-full max-h-full object-contain transition-opacity duration-300" :class="showZoom ? 'opacity-0' : 'opacity-100'">
+                
+                {{-- Zoom Overlay --}}
+                <div x-show="showZoom" class="absolute inset-0 pointer-events-none bg-no-repeat z-10"
+                     :style="'background-image: url(\'' + activeImage + '\'); background-position: ' + zoomPos + '; background-size: 250%;'">
+                </div>
             </div>
 
             @if($product->images && count($images = is_string($product->images) ? json_decode($product->images, true) : $product->images) > 0)
@@ -126,11 +135,12 @@
                     </a>
                     @endif
                 @else
-                    <button type="submit" class="flex-1 w-full btn-primary h-11 rounded" :disabled="isLoading">
-                        <span x-show="!isLoading">Add to cart</span>
+                    <button type="submit" class="flex-1 w-full btn-primary h-11 rounded relative overflow-hidden group hover:scale-[1.02] transition" :disabled="isLoading || added">
+                        <span x-show="!isLoading && !added" class="flex justify-center items-center gap-2 delay-100"><i class="fas fa-shopping-bag"></i> Add to cart</span>
                         <span x-show="isLoading" class="flex justify-center items-center gap-2"><i class="fas fa-spinner fa-spin"></i> Adding...</span>
+                        <span x-show="added" class="flex justify-center items-center gap-2" x-cloak><i class="fas fa-check"></i> Added!</span>
                     </button>
-                    <button type="button" @click="buyNow" class="flex-1 w-full btn-dark h-11 rounded" :disabled="isLoading">
+                    <button type="button" @click="buyNow" class="flex-1 w-full btn-dark h-11 rounded hover:scale-[1.02] transition" :disabled="isLoading">
                         Buy it now
                     </button>
                 @endif
@@ -307,6 +317,7 @@
             selectedVariantName: '',
             activeImage: '{{ $product->thumbnail ? asset("storage/".$product->thumbnail) : "" }}',
             isLoading: false,
+            added: false,
 
             updateVariant(event) {
                 let p = parseFloat(event.target.value);
@@ -316,6 +327,7 @@
 
             async addToCart() {
                 this.isLoading = true;
+                this.added = false;
                 try {
                     let fd = new FormData();
                     fd.append('_token', '{{csrf_token()}}');
@@ -333,11 +345,23 @@
                     
                     if(res.ok) {
                         let data = await res.json();
-                        // Trigger mobile nav cart update logic if generic
-                        window.location.reload();
+                        this.added = true;
+                        
+                        // Dynamically update cart counters without refreshing the page
+                        document.querySelectorAll('.fa-shopping-bag + span, .fa-shopping-cart + span').forEach(el => {
+                            let current = parseInt(el.innerText || 0);
+                            el.innerText = current + this.qty;
+                            
+                            // Visual Ping
+                            el.classList.add('scale-150');
+                            setTimeout(() => el.classList.remove('scale-150'), 400);
+                        });
+                        
+                        // Reset button text after 2.5 seconds
+                        setTimeout(() => this.added = false, 2500);
                     }
                 } catch(e) {
-                    console.error(e);
+                    console.error('Failed to add to cart:', e);
                 } finally {
                     this.isLoading = false;
                 }

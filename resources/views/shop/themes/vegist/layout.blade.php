@@ -90,7 +90,7 @@
                 
                 {{-- Mobile Menu Toggle --}}
                 <div class="lg:hidden flex items-center">
-                    <button class="text-dark text-2xl"><i class="fas fa-bars"></i></button>
+                    <button class="text-dark text-2xl cursor-pointer" @click="$dispatch('toggle-mobile-categories')"><i class="fas fa-bars"></i></button>
                 </div>
 
                 {{-- Logo --}}

@@ -107,9 +107,9 @@
         <div class="w-16 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
     </div>
     
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+    <div class="flex md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
         @foreach($categories as $category)
-        <a href="{{$clean?$baseUrl.'/?category='.$category->slug:route('shop.show', ['shop' => $client->slug, 'category' => $category->slug])}}" class="group">
+        <a href="{{$clean?$baseUrl.'/?category='.$category->slug:route('shop.show', ['shop' => $client->slug, 'category' => $category->slug])}}" class="group shrink-0 w-[40vw] md:w-auto snap-start">
             <div class="bg-white border border-gray-100 hover:border-primary transition duration-300 p-6 flex flex-col items-center justify-center gap-4 min-h-[140px] shadow-sm hover:shadow-md">
                 @if($category->image)
                     <img src="{{asset('storage/'.$category->image)}}" class="w-16 h-16 object-cover group-hover:scale-110 transition duration-300">
@@ -195,12 +195,12 @@
     </div>
 
     @if($flashProducts && count($flashProducts) > 0)
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
         @foreach($flashProducts as $p)
-        <div class="flex items-center gap-4 bg-white hover:bg-[#fcfdfa] p-4 rounded border border-transparent hover:border-gray-100 transition group relative">
+        <div class="flex items-center gap-4 bg-white hover:bg-[#fcfdfa] p-4 rounded border border-transparent hover:border-gray-100 transition group relative shrink-0 w-[85vw] sm:w-[60vw] md:w-auto snap-start">
             
             {{-- Discount Tag --}}
-            @if($p->sale_price)
+            @if($p->sale_price && $p->regular_price > 0)
             <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 shadow">
                 -{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%
             </div>
@@ -278,14 +278,13 @@
     </div>
 
     @if(isset($products) && count($products) > 0)
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div class="flex md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
         @foreach($products as $p)
-        <div class="bg-white group">
+        <div class="bg-white group shrink-0 w-[45vw] sm:w-[35vw] md:w-auto snap-start">
             <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-6 overflow-hidden mb-4 mix-blend-multiply border border-transparent group-hover:border-gray-100 transition">
                 
                 {{-- Percentage Badge --}}
-                {{-- Percentage Badge --}}
-                @if($p->sale_price)
+                @if($p->sale_price && $p->regular_price > 0)
                 @php $percent = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
                 <div class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 z-10 shadow-sm">
                     -{{$percent}}%
