@@ -148,12 +148,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <a href="{{$baseUrl}}" class="inline-block">
                             <span class="text-3xl font-extrabold tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{{$client->shop_name}}</span>
                         </a>
-                        <p class="text-slate-500 font-medium text-sm leading-relaxed">Providing high-quality products and excellent customer service. Your satisfaction is our priority.</p>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' — দ্রুত ডেলিভারি, আসল পণ্য, এবং সারাদেশে সেরা কাস্টমার সার্ভিস।') }}</p>
                         @include('shop.partials.footer-links', ['client' => $client])
                         <div class="flex gap-4 items-center pt-2">
-                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift cursor-pointer premium-transition shadow-sm"><i class="fab fa-facebook-f"></i></div>
-                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift cursor-pointer premium-transition shadow-sm"><i class="fab fa-instagram"></i></div>
-                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift cursor-pointer premium-transition shadow-sm"><i class="fab fa-twitter"></i></div>
+                            @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift premium-transition shadow-sm"><i class="fab fa-facebook-f"></i></a>@endif
+                            @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift premium-transition shadow-sm"><i class="fab fa-instagram"></i></a>@endif
+                            @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift premium-transition shadow-sm"><i class="fab fa-youtube"></i></a>@endif
                         </div>
                     </div>
                     

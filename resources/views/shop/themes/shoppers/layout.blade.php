@@ -161,26 +161,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     @endforeach
                 @else
                     <a href="{{$baseUrl}}" class="nav-link !text-shred {!! request()->is('/') ? 'border-b-2 border-shred' : '' !!}">HOME</a>
-                    
-                    <a href="{{$baseUrl}}?category=makeup" class="nav-link flex items-center gap-1 group">
-                        <span class="nav-badge badge-hot">Hot</span> MAKEUP SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
-                    </a>
-                    
-                    <a href="{{$baseUrl}}?category=hair-care" class="nav-link flex items-center gap-1 group">
-                        <span class="nav-badge badge-sale">Sale</span> HAIR CARE SHOP <i class="fas fa-chevron-down text-[8px] text-gray-400 group-hover:text-shred hidden lg:inline"></i>
-                    </a>
-
-                    <a href="#" class="nav-link">MENS PRODUCTS</a>
-                    
-                    <a href="#" class="nav-link flex items-center gap-1">
-                        <span class="nav-badge badge-hot">Hot</span> HOT OFFERS!
-                    </a>
-                    
-                    <a href="#" class="nav-link flex items-center gap-1">
-                        <span class="nav-badge badge-hot">Hot</span> COMBO
-                    </a>
-
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="nav-link">CLEARANCE <i class="fas fa-bolt text-yellow-500 ml-1"></i></a>
+                    @if(isset($categories) && $categories->count() > 0)
+                        @foreach($categories->take(4) as $cat)
+                        <a href="{{$baseUrl}}?category={{$cat->slug}}" class="nav-link">{{ mb_strtoupper($cat->name) }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{$baseUrl}}?category=all" class="nav-link">ALL PRODUCTS</a>
+                        <a href="{{$baseUrl}}?category=hot-deals" class="nav-link flex items-center gap-1">
+                            <span class="nav-badge badge-sale">Sale</span> HOT DEALS
+                        </a>
+                    @endif
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="nav-link">TRACK ORDER <i class="fas fa-truck-fast ml-1 text-[10px]"></i></a>
                 @endif
             </div>
             
@@ -233,7 +224,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                             </div>
                             <div class="flex items-start gap-3">
                                 <i class="far fa-clock text-shred mt-0.5 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: Everyday 11AM - 9PM</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: {{ $client->widgets['office_hours']['text'] ?? 'Everyday 11AM - 9PM' }}</span>
                             </div>
                         </div>
 
@@ -308,33 +299,41 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
         </div>
 
-        {{-- Bottom --}}
-        <div class="bg-white py-6 border-b-[6px] border-shred">
-            <div class="max-w-[1240px] mx-auto px-4 flex justify-between items-center gap-4">
-                <div class="flex items-center gap-4">
-                    <span class="text-[13px] font-bold text-dark tracking-tighter">CHECK OUT OUR APP!</span>
-                    <a href="#" class="bg-black text-white hover:bg-gray-800 transition rounded flex items-center gap-2 px-3 py-1.5 h-8">
-                        <i class="fab fa-apple text-xl mb-1"></i>
-                        <span class="flex flex-col"><span class="text-[7px]">Download on the</span><span class="text-[11px] font-bold leading-none">App Store</span></span>
-                    </a>
-                    <a href="#" class="bg-black text-white hover:bg-gray-800 transition rounded flex items-center gap-2 px-3 py-1.5 h-8">
-                        <i class="fab fa-google-play text-[15px]"></i>
-                        <span class="flex flex-col justify-center"><span class="text-[7px]">GET IT ON</span><span class="text-[11px] font-bold leading-none mt-0.5">Google Play</span></span>
-                    </a>
-                </div>
-
-                <div class="flex flex-col items-end">
-                    <div class="flex gap-2 mb-2">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+            {{-- Bottom --}}
+            <div class="bg-white py-6 border-b-[6px] border-shred">
+                <div class="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    @if($client->widgets['app_links']['active'] ?? false)
+                    <div class="flex items-center gap-4">
+                        <span class="text-[13px] font-bold text-dark tracking-tighter">CHECK OUT OUR APP!</span>
+                        @if($client->widgets['app_links']['ios'] ?? false)
+                        <a href="{{ $client->widgets['app_links']['ios'] }}" target="_blank" class="bg-black text-white hover:bg-gray-800 transition rounded flex items-center gap-2 px-3 py-1.5 h-8">
+                            <i class="fab fa-apple text-xl mb-1"></i>
+                            <span class="flex flex-col"><span class="text-[7px]">Download on the</span><span class="text-[11px] font-bold leading-none">App Store</span></span>
+                        </a>
+                        @endif
+                        @if($client->widgets['app_links']['android'] ?? false)
+                        <a href="{{ $client->widgets['app_links']['android'] }}" target="_blank" class="bg-black text-white hover:bg-gray-800 transition rounded flex items-center gap-2 px-3 py-1.5 h-8">
+                            <i class="fab fa-google-play text-[15px]"></i>
+                            <span class="flex flex-col justify-center"><span class="text-[7px]">GET IT ON</span><span class="text-[11px] font-bold leading-none mt-0.5">Google Play</span></span>
+                        </a>
+                        @endif
                     </div>
-                    <div class="text-[9px] text-gray-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</div>
+                    @endif
+
+                    <div class="flex flex-col items-end">
+                        <div class="flex gap-2 mb-2">
+                            @if($client->cod_active)
+                            <span class="text-[10px] font-bold text-gray-600 border border-gray-200 px-2 py-1">COD</span>
+                            @endif
+                            @if($client->partial_payment_active || ($client->full_payment_active ?? false))
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                            @endif
+                        </div>
+                        <div class="text-[9px] text-gray-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
 
     @include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])

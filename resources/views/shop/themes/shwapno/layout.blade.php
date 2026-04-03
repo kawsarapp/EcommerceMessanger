@@ -37,7 +37,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </script>
     <style>
-        :root { --tw-color-primary: {{$client->primary_color ?? "#e31e24"}}; --mob-primary: #e31e24; }
+        :root { --tw-color-primary: {{$client->primary_color ?? "#e31e24"}}; --mob-primary: {{$client->primary_color ?? "#e31e24"}}; }
         [x-cloak]{display:none!important}
         body { background-color: #f7f8f9; color: #333; }
         .hide-scroll::-webkit-scrollbar{display:none}
@@ -219,7 +219,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                             <h3 class="text-white font-black text-lg">{{$client->shop_name}}</h3>
                         @endif
                     </div>
-                    <p class="text-sm font-bold text-gray-800 mb-2">Always Here for You</p>
+                    <p class="text-sm font-bold text-gray-800 mb-2">{{ $client->tagline ?? ('সর্বদা আপনার পাশে — ' . $client->shop_name) }}</p>
                     <p class="text-[11px] text-gray-500 leading-relaxed mb-4">
                         Call Us: {{$client->phone ?? '16469 (8am-10pm, Everyday)'}}<br>
                         Email Us: {{$client->email ?? 'queries@'.$client->slug.'.com'}}<br>

@@ -130,7 +130,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Brand --}}
                 <div class="col-span-2 md:col-span-1">
                     <span class="text-xl font-extrabold block mb-4">{{$client->shop_name}}</span>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-4">বিশ্বস্ত মানের পণ্য, সেরা দামে। সারাদেশে হোম ডেলিভারি।</p>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? 'বিশ্বস্ত মানের পণ্য, সেরা দামে। সারাদেশে হোম ডেলিভারি।') }}</p>
                     <div class="flex gap-3">
                         @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" class="w-9 h-9 rounded-lg bg-white/10 hover:bg-primary flex items-center justify-center transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif
                         @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" class="w-9 h-9 rounded-lg bg-white/10 hover:bg-primary flex items-center justify-center transition"><i class="fab fa-instagram text-sm"></i></a>@endif

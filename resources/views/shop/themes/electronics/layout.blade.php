@@ -110,15 +110,26 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h3 class="font-black text-2xl text-white tracking-tight mb-4 flex items-center gap-2">
                     <i class="fas fa-microchip text-primary"></i> {{$client->shop_name}}
                 </h3>
-                <p class="text-gray-500 text-sm leading-relaxed mb-6 font-medium">Your ultimate hub for next-generation tech, gadgets, and components.</p>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4 font-medium">{{ $client->description ?? ($client->tagline ?? 'Your ultimate hub for next-generation tech, gadgets, and components.') }}</p>
+                @if($client->email)<a href="mailto:{{$client->email}}" class="text-gray-400 hover:text-primary transition text-xs flex items-center gap-2 mb-4"><i class="fas fa-envelope"></i> {{$client->email}}</a>@endif
+                <div class="flex gap-3">
+                    @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif
+                    @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-instagram text-sm"></i></a>@endif
+                    @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-youtube text-sm"></i></a>@endif
+                </div>
             </div>
             
             <div>
                 <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">Categories</h4>
                 <div class="flex flex-col space-y-3 text-sm font-medium text-gray-400">
-                    <a href="?category=all" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> All Hardware</a>
-                    <a href="#" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> New Arrivals</a>
-                    <a href="#" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Best Sellers</a>
+                    @if(isset($categories) && $categories->count() > 0)
+                        @foreach($categories->take(5) as $cat)
+                        <a href="{{$baseUrl}}?category={{$cat->slug}}" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> {{$cat->name}}</a>
+                        @endforeach
+                    @else
+                        <a href="{{$baseUrl}}?category=all" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> All Products</a>
+                        <a href="{{$baseUrl}}?category=new" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> New Arrivals</a>
+                    @endif
                 </div>
             </div>
 
@@ -145,7 +156,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
         
         <div class="max-w-[100rem] mx-auto px-4 md:px-8 mt-16 flex flex-col md:flex-row justify-between items-center border-t border-gray-800 pt-6">
-            <p class="text-xs font-medium text-gray-600 font-mono tracking-wider">&copy; {{date('Y')}} {{$client->shop_name}} <span class="text-primary ml-2">v2.0.4</span></p>
+            <p class="text-xs font-medium text-gray-600 font-mono tracking-wider">&copy; {{date('Y')}} {{$client->shop_name}}</p>
             <div class="flex gap-4 mt-4 md:mt-0 text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 <span>Secure SSL</span> <span class="opacity-50">|</span> <span>Fast Shipping</span>
             </div>

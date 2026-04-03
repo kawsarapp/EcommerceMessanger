@@ -84,7 +84,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[90rem] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             <div>
                 <h3 class="font-black text-2xl uppercase tracking-tighter mb-6">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-sm leading-relaxed max-w-xs font-medium">Modern minimal design curated for the perfect aesthetic shopping experience.</p>
+                <p class="text-gray-500 text-sm leading-relaxed max-w-xs font-medium mb-6">{{ $client->description ?? ($client->tagline ?? 'Modern minimal design curated for the perfect shopping experience.') }}</p>
+                <div class="flex gap-4">
+                    @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-facebook-f"></i></a>@endif
+                    @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-instagram"></i></a>@endif
+                    @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-youtube"></i></a>@endif
+                </div>
             </div>
             
             <div>
@@ -109,12 +114,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-gray-300"></i> {{$client->phone}}</p> @endif
                     @if($client->email) <p><i class="fas fa-envelope mr-2 text-gray-300"></i> {{$client->email}}</p> @endif
+                    @if($client->address) <p><i class="fas fa-map-marker-alt mr-2 text-gray-300"></i> {{$client->address}}</p> @endif
                 </div>
             </div>
         </div>
         <div class="max-w-[90rem] mx-auto px-6 mt-20 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
             <p>&copy; {{date('Y')}} {{$client->shop_name}}.</p>
-            <p class="mt-4 md:mt-0">Crafted with Precision.</p>
+            <p class="mt-4 md:mt-0">{{ $client->tagline ?? 'All Rights Reserved.' }}</p>
         </div>
     </footer>
 

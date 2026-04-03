@@ -54,6 +54,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     {{-- ⚡ Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
+    @if($client->announcement_text)
+    <div class="border-b border-white/10 text-center py-2 text-xs font-medium tracking-[0.2em] uppercase" style="background:var(--tw-color-primary);color:#fff;">
+        {!! strip_tags($client->announcement_text) !!}
+    </div>
+    @endif
+
     <header class="bg-dark/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/5 transition-all">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
             <!-- Left -->
@@ -95,11 +101,19 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             
             <div class="md:col-span-5">
                 <h3 class="font-serif text-3xl mb-6 text-white tracking-widest uppercase">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-xs leading-loose font-light max-w-sm mb-8">Exquisite craftsmanship and timeless elegance. Curating the world's most desired luxury items.</p>
+                <p class="text-gray-500 text-xs leading-loose font-light max-w-sm mb-6">{{ $client->description ?? ($client->tagline ?? 'Exquisite craftsmanship and timeless elegance. Curating the world\'s most desired luxury items.') }}</p>
                 @if($client->phone) 
                 <p class="text-[10px] font-medium tracking-[0.2em] text-gray-400 uppercase mb-2">Concierge</p>
-                <p class="text-white text-sm font-light tracking-widest mb-6">{{$client->phone}}</p> 
+                <p class="text-white text-sm font-light tracking-widest mb-4">{{$client->phone}}</p> 
                 @endif
+                @if($client->email)
+                <p class="text-white text-xs font-light tracking-widest mb-6">{{$client->email}}</p>
+                @endif
+                <div class="flex gap-4">
+                    @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-600 hover:text-primary transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif
+                    @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-600 hover:text-primary transition"><i class="fab fa-instagram text-sm"></i></a>@endif
+                    @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="text-gray-600 hover:text-primary transition"><i class="fab fa-youtube text-sm"></i></a>@endif
+                </div>
             </div>
             
             <div class="md:col-span-3">

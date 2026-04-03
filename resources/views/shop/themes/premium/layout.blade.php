@@ -94,30 +94,31 @@
     </main>
 
     <footer class="bg-white border-t border-gray-200 mt-auto pt-16 pb-8">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
-            <div>
-                <h3 class="font-bold text-2xl text-gray-900 mb-4">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto md:mx-0">
-                    Your premium shopping destination. We provide the best quality products with top-notch customer support.
-                </p>
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <h3 class="text-2xl font-bold tracking-widest uppercase mb-4">{{$client->shop_name}}</h3>
+            <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xl mx-auto">{{ $client->description ?? ($client->tagline ?? 'আপনার প্রিমিয়াম শপিং গন্তব্য। সেরা মানের পণ্য, সেরা দামে।') }}</p>
+
+            <div class="flex justify-center gap-6 mb-6 flex-wrap">
+                @if($client->phone)<a href="tel:{{$client->phone}}" class="text-gray-400 hover:text-primary transition flex items-center gap-2 text-sm"><i class="fas fa-phone"></i> {{$client->phone}}</a>@endif
+                @if($client->email)<a href="mailto:{{$client->email}}" class="text-gray-400 hover:text-primary transition flex items-center gap-2 text-sm"><i class="fas fa-envelope"></i> {{$client->email}}</a>@endif
             </div>
-            <div class="flex flex-col items-center md:items-start space-y-3">
-                <h4 class="font-bold text-gray-900">Quick Links</h4>
-                <a href="{{$baseUrl}}" class="text-gray-500 hover:text-primary text-sm transition">Home</a>
-                <a href="{{$clean ? $baseUrl.'/track' : route('shop.track', $client->slug)}}" class="text-gray-500 hover:text-primary text-sm transition">Track Order</a>
+
+            <div class="flex justify-center gap-5 mb-8">
+                @if($client->fb_page_id)<a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-facebook-messenger"></i></a>@endif
+                @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-facebook-f"></i></a>@endif
+                @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-instagram"></i></a>@endif
+                @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-youtube"></i></a>@endif
             </div>
-            <div class="flex flex-col items-center md:items-end space-y-4">
-                <h4 class="font-bold text-gray-900">Contact Us</h4>
-                @if($client->phone) <p class="text-gray-500 text-sm"><i class="fas fa-phone mr-2"></i> {{$client->phone}}</p> @endif
-                <div class="flex gap-3 mt-2">
-                    @if($client->fb_page_id)
-                        <a href="https://facebook.com/{{$client->fb_page_id}}" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
-                    @endif
-                </div>
+
+            <div class="flex flex-wrap justify-center gap-8 text-xs font-medium tracking-widest text-gray-500 uppercase mb-10">
+                <a href="{{$baseUrl}}" class="hover:text-primary transition">Home</a>
+                <a href="{{$baseUrl}}?category=all" class="hover:text-primary transition">Products</a>
+                <a href="{{$clean ? $baseUrl.'/track' : route('shop.track', $client->slug)}}" class="hover:text-primary transition">Track Order</a>
             </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-gray-100 flex justify-center items-center">
-            <p class="text-xs text-gray-400 font-medium tracking-wide">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+
+            <div class="border-t border-gray-100 pt-6">
+                <p class="text-xs text-gray-400 font-medium tracking-wide">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+            </div>
         </div>
     </footer>
     @include('shop.partials.floating-chat', ['client' => $client])

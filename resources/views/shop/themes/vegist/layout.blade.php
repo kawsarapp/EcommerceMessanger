@@ -49,7 +49,7 @@
         .vg-nav-link:hover { color: var(--tw-color-primary); }
         .vg-heading { color: #222222; font-weight: 600; }
         .btn-primary { background-color: var(--tw-color-primary); color: #fff; padding: 10px 24px; border-radius: 4px; font-weight: 600; font-size: 14px; transition: background 0.3s ease, transform 0.2s; }
-        .btn-primary:hover { background-color: #e59724; transform: translateY(-1px); }
+        .btn-primary:hover { background-color: var(--tw-color-primary); filter: brightness(0.9); transform: translateY(-1px); }
         .btn-dark { background-color: #222222; color: #fff; padding: 10px 24px; border-radius: 4px; font-weight: 600; font-size: 14px; transition: background 0.3s ease; }
         .btn-dark:hover { background-color: var(--tw-color-primary); }
     </style>
@@ -70,7 +70,7 @@
     <div class="bg-[#1f1f1f] text-[#cfcfcf] text-[11px] py-2.5 hidden lg:block">
         <div class="max-w-[1400px] mx-auto px-4 xl:px-8 flex justify-between items-center tracking-wide">
             <div>
-                Free shipping orders from all item
+                {{ $client->topbar_text ?? ('সব পণ্যে ফ্রি শিপিং সুবিধা | সারাদেশে ডেলিভারি') }}
             </div>
             <div class="flex items-center gap-6">
                 <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="hover:text-white transition">My order</a>
@@ -116,11 +116,14 @@
                     @else
                         <a href="{{$baseUrl}}" class="vg-nav-link {!! request()->is('/') ? '!text-primary' : '' !!}">Home <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
                         <a href="{{$baseUrl}}?category=all" class="vg-nav-link {!! request()->is('*category=all*') ? '!text-primary' : '' !!}">Shop <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
-                        <a href="#" class="vg-nav-link">Collection <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
-                        <a href="#" class="vg-nav-link">Blogs</a>
-                        <a href="#" class="vg-nav-link relative">Buy {{$client->slug}}
-                            <span class="absolute -top-3 -right-6 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap">HOT</span>
-                        </a>
+                        @if(isset($categories) && $categories->count() > 0)
+                            @foreach($categories->take(2) as $cat)
+                            <a href="{{$baseUrl}}?category={{$cat->slug}}" class="vg-nav-link">{{$cat->name}}</a>
+                            @endforeach
+                        @else
+                            <a href="#" class="vg-nav-link">Collection <i class="fas fa-angle-down text-[10px] text-gray-400"></i></a>
+                        @endif
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="vg-nav-link relative">স্া ট্র্যাক</a>
                     @endif
                 </nav>
 

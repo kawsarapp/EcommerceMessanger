@@ -56,6 +56,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     {{-- ⚡ Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
+    @if($client->announcement_text)
+    <div class="bg-primary text-white text-center py-2.5 text-xs font-bold tracking-[0.2em] uppercase w-full z-50 relative">
+        {!! $client->announcement_text !!}
+    </div>
+    @endif
+
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 transition-all border-b border-gray-100" x-data="{ scrolled: false }" @scroll.window="scrolled = (window.pageYOffset > 50)" :class="scrolled ? 'py-0 shadow-sm' : 'py-2'">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 h-16 md:h-24 flex justify-between items-center">
             <!-- Left: Track (desktop only) -->
@@ -90,15 +96,22 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <footer class="bg-white border-t border-gray-100 pt-24 pb-12 mt-auto">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 flex flex-col items-center">
             <h3 class="font-heading font-black text-4xl mb-4 text-center">{{$client->shop_name}}</h3>
-            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-12">Redefining elegance. Your ultimate destination for exclusive fashion.</p>
+            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-8">{{ $client->description ?? ($client->tagline ?? 'আপনার পছন্দের ফ্যাশন গন্তব্য। সেরা মানের পোশাক ও আনুষঙ্গিক।') }}</p>
             
-            <div class="flex gap-10 text-xs font-semibold tracking-widest uppercase text-gray-400 mb-16">
+            <div class="flex gap-6 mb-8">
+                @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-400 hover:text-black transition"><i class="fab fa-facebook-f"></i></a>@endif
+                @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-400 hover:text-black transition"><i class="fab fa-instagram"></i></a>@endif
+                @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="text-gray-400 hover:text-black transition"><i class="fab fa-youtube"></i></a>@endif
+            </div>
+
+            <div class="flex flex-wrap gap-8 justify-center text-xs font-semibold tracking-widest uppercase text-gray-400 mb-12">
                 <a href="{{$baseUrl}}" class="hover:text-black transition">Shop</a>
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-black transition">Track Order</a>
+                @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="hover:text-black transition">Facebook</a>@endif
                 <a href="#" class="hover:text-black transition">Terms</a>
             </div>
 
-            <p class="text-[10px] font-medium text-gray-300 uppercase tracking-widest text-center">&copy; {{date('Y')}} {{$client->shop_name}}. Exclusive Collection.</p>
+            <p class="text-[10px] font-medium text-gray-300 uppercase tracking-widest text-center">&copy; {{date('Y')}} {{$client->shop_name}}. {{ $client->tagline ? $client->tagline . '.' : 'All Rights Reserved.' }}</p>
         </div>
     </footer>
 
