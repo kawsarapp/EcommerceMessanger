@@ -10,11 +10,12 @@ use App\Services\Shop\ShopOrderTrackingService;
 use App\Traits\ShopStorefrontTrait;
 use App\Traits\ShopCheckoutTrait;
 use App\Traits\ShopTrackingTrait;
+use App\Traits\ShopCartTrait;
 
 class ShopController extends Controller
 {
     // ৩টি ট্রেইট একসাথে ব্যবহার করা হলো
-    use ShopStorefrontTrait, ShopCheckoutTrait, ShopTrackingTrait;
+    use ShopStorefrontTrait, ShopCheckoutTrait, ShopTrackingTrait, ShopCartTrait;
 
     protected $clientService;
     protected $productService;

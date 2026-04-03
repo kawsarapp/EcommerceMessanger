@@ -137,10 +137,18 @@
                         <span class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $wishlistCount }}</span>
                     </div>
                     
-                    @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="hover:text-primary transition text-lg relative group">
+                    @php
+                        $cartKey   = 'cart_' . $client->id;
+                        $cartItems = session($cartKey, []);
+                        $cartCount = count($cartItems);
+                        $cartUrl   = $clean
+                            ? 'https://'.$clean.'/cart'
+                            : route('shop.cart', $client->slug);
+                    @endphp
+                    <a href="{{ $cartUrl }}" class="hover:text-primary transition text-lg relative group">
                         <i class="fas fa-shopping-bag"></i>
-                        <span class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition">{{ $cartCount }}</span>
+                        <span data-cart-badge
+                              class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition">{{ $cartCount }}</span>
                     </a>
                 </div>
 

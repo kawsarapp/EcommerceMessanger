@@ -6,8 +6,10 @@
 @php 
     $clean       = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
     $baseUrl     = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
-    // Checkout URL - this app uses direct checkout (no cart system)
-    $checkoutUrl = $clean
+    // Cart & Checkout URLs
+    $cartAddUrl   = $clean ? $baseUrl.'/cart/add' : route('shop.cart.add', $client->slug);
+    $cartPageUrl  = $clean ? $baseUrl.'/cart'     : route('shop.cart', $client->slug);
+    $checkoutUrl  = $clean
         ? $baseUrl.'/checkout/'.$product->slug
         : route('shop.checkout', ['slug' => $client->slug, 'productSlug' => $product->slug]);
     $initPrice   = (float)($product->sale_price ?? $product->regular_price ?? 0);
@@ -232,36 +234,39 @@
             {{-- CTA Buttons --}}
             <div class="flex flex-col sm:flex-row gap-3 mb-5">
                 @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
-                    {{-- WhatsApp Only Mode --}}
                     @if($client->phone)
                     <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name.' - '.$baseUrl.'/product/'.$product->slug) }}"
                        target="_blank"
-                       class="flex-1 bg-[#25d366] hover:bg-[#128c7e] text-white h-12 flex justify-center items-center rounded-xl font-bold text-sm gap-2 transition shadow-md hover:shadow-lg">
+                       class="flex-1 bg-[#25d366] hover:bg-[#128c7e] text-white h-12 flex justify-center items-center rounded-xl font-bold text-sm gap-2 transition shadow-md">
                         <i class="fab fa-whatsapp text-xl"></i> Order via WhatsApp
                     </a>
                     @endif
-                @else
-                    @if(!$inStock)
-                    {{-- Out of Stock --}}
+                @elseif(!$inStock)
                     <div class="flex-1 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm gap-2 cursor-not-allowed">
                         <i class="fas fa-ban"></i> Out of Stock
                     </div>
-                    @else
-                    {{-- Go to Checkout (acts as Order Now) --}}
-                    <a href="{{ $checkoutUrl }}" id="checkout-btn"
-                       class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:scale-[1.01]">
-                        <i class="fas fa-shopping-cart"></i> Order Now
-                    </a>
+                @else
+                    {{-- Add to Cart (AJAX) --}}
+                    <button type="button" @click="addToCart()"
+                            :disabled="isLoading"
+                            class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+                        <span x-show="!isLoading && !added" class="flex items-center gap-2">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </span>
+                        <span x-show="isLoading" class="flex items-center gap-2">
+                            <i class="fas fa-spinner fa-spin"></i> Adding...
+                        </span>
+                        <span x-show="added" class="flex items-center gap-2" x-cloak>
+                            <i class="fas fa-check-circle"></i> Added! <a :href="'{{ $cartPageUrl }}'" class="underline ml-1 text-xs">View Cart</a>
+                        </span>
+                    </button>
 
-                    {{-- WhatsApp Quick Order (if phone set) --}}
-                    @if($client->phone)
-                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name) }}"
-                       target="_blank"
-                       class="flex-1 bg-[#25d366] hover:bg-[#128c7e] text-white h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition">
-                        <i class="fab fa-whatsapp text-lg"></i> WhatsApp
-                    </a>
-                    @endif
-                    @endif
+                    {{-- Buy Now (direct checkout) --}}
+                    <button type="button" @click="buyNow()"
+                            :disabled="isLoading"
+                            class="flex-1 btn-dark h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:bg-primary disabled:opacity-60">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
                 @endif
             </div>
 
@@ -556,26 +561,34 @@
 
 </div>{{-- end container --}}
 
-{{-- === STICKY MOBILE CTA BAR (Buy Now only) === --}}
+{{-- === STICKY MOBILE CTA BAR === --}}
 <div class="fixed bottom-[56px] left-0 right-0 z-40 md:hidden px-4 pb-2">
-    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3">
+    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3 flex gap-2">
         @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
             @if($client->phone)
-            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name.' - '.$baseUrl.'/product/'.$product->slug) }}"
+            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name) }}"
                target="_blank"
-               class="w-full bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
-                <i class="fab fa-whatsapp text-xl"></i> Order via WhatsApp
+               class="flex-1 bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
+                <i class="fab fa-whatsapp text-xl"></i> Order on WhatsApp
             </a>
             @endif
         @elseif(!$inStock)
-            <div class="w-full h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm gap-2">
-                <i class="fas fa-ban"></i> Out of Stock
+            <div class="flex-1 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm">
+                <i class="fas fa-ban mr-2"></i> Out of Stock
             </div>
         @else
-            <a href="{{ $checkoutUrl }}"
-               class="w-full btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md">
-                <i class="fas fa-bolt"></i> Order Now — ৳{{ number_format($initPrice) }}
-            </a>
+            {{-- Add to Cart --}}
+            <button type="button" @click="addToCart()"
+                    :disabled="isLoading"
+                    class="flex-1 bg-white border-2 border-primary text-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow transition active:scale-95">
+                <span x-show="!added"><i class="fas fa-shopping-cart"></i></span>
+                <span x-show="added"><i class="fas fa-check"></i></span>
+            </button>
+            {{-- Buy Now --}}
+            <button type="button" @click="buyNow()"
+                    class="flex-[2] btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md">
+                <i class="fas fa-bolt"></i> Buy Now — ৳{{ number_format($initPrice) }}
+            </button>
         @endif
     </div>
 </div>
@@ -588,6 +601,8 @@
             currentPrice: {{ $initPrice }},
             selectedVariantName: '',
             activeImage: '{{ $product->thumbnail ? asset("storage/".$product->thumbnail) : "" }}',
+            isLoading: false,
+            added: false,
 
             updateVariant(event) {
                 const p = parseFloat(event.target.value);
@@ -595,18 +610,48 @@
                 this.selectedVariantName = event.target.getAttribute('data-name');
             },
 
-            // This app uses direct checkout — no cart system
-            // "Order Now" / "Buy Now" both navigate to checkout page
-            goToCheckout() {
-                let url = '{{ $checkoutUrl }}';
-                // Append selected variant as query param if chosen
-                if (this.selectedVariantName) {
-                    url += '?variant=' + encodeURIComponent(this.selectedVariantName)
-                         + '&qty=' + this.qty;
-                } else {
-                    url += '?qty=' + this.qty;
+            async addToCart() {
+                if (this.isLoading) return;
+                this.isLoading = true;
+                this.added = false;
+                try {
+                    const fd = new FormData();
+                    fd.append('_token', '{{ csrf_token() }}');
+                    fd.append('product_id', {{ $product->id }});
+                    fd.append('qty', this.qty);
+                    if (this.selectedVariantName) {
+                        fd.append('variant', this.selectedVariantName);
+                        fd.append('price', this.currentPrice);
+                    }
+
+                    const res  = await fetch('{{ $cartAddUrl }}', { method: 'POST', body: fd });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        this.added = true;
+                        // Update all cart badges in header & bottom nav
+                        document.querySelectorAll('[data-cart-badge]').forEach(el => {
+                            el.textContent = data.cart_count;
+                            el.classList.add('scale-125');
+                            setTimeout(() => el.classList.remove('scale-125'), 400);
+                        });
+                        setTimeout(() => { this.added = false; }, 3000);
+                    } else {
+                        alert(data.message || 'Failed to add to cart.');
+                    }
+                } catch(e) {
+                    alert('Network error, please try again.');
+                } finally {
+                    this.isLoading = false;
                 }
-                window.location.href = url;
+            },
+
+            // Buy Now = Add to cart first, then go to checkout
+            async buyNow() {
+                await this.addToCart();
+                if (this.added) {
+                    window.location.href = '{{ $checkoutUrl }}';
+                }
             },
 
             toggleWishlist() {

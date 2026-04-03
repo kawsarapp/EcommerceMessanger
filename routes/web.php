@@ -81,6 +81,15 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
 
         // Coupon Apply Route (Ajax, Sub-path)
         Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon.sub');
+
+        // 🛒 Cart Routes (Sub-path)
+        Route::post('/cart/add',              [ShopController::class, 'addToCart'])->name('shop.cart.add');
+        Route::get('/cart',                   [ShopController::class, 'viewCart'])->name('shop.cart');
+        Route::post('/cart/remove',           [ShopController::class, 'removeCartItem'])->name('shop.cart.remove');
+        Route::post('/cart/update',           [ShopController::class, 'updateCartItem'])->name('shop.cart.update');
+        Route::post('/cart/clear',            [ShopController::class, 'clearCart'])->name('shop.cart.clear');
+        Route::get('/cart/checkout',          [ShopController::class, 'cartCheckout'])->name('shop.cart.checkout');
+        Route::post('/cart/checkout/process', [ShopController::class, 'processCartCheckout'])->name('shop.cart.checkout.process');
     });
 
     // ==========================================
@@ -100,6 +109,15 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
 
     // Coupon Apply Route (Ajax)
     Route::post('/apply-coupon', [ShopController::class, 'applyCoupon'])->name('shop.apply-coupon');
+
+    // 🛒 Cart Routes (Custom Domain)
+    Route::post('/cart/add',              [ShopController::class, 'addToCart'])->name('shop.cart.add.custom');
+    Route::get('/cart',                   [ShopController::class, 'viewCart'])->name('shop.cart.custom');
+    Route::post('/cart/remove',           [ShopController::class, 'removeCartItem'])->name('shop.cart.remove.custom');
+    Route::post('/cart/update',           [ShopController::class, 'updateCartItem'])->name('shop.cart.update.custom');
+    Route::post('/cart/clear',            [ShopController::class, 'clearCart'])->name('shop.cart.clear.custom');
+    Route::get('/cart/checkout',          [ShopController::class, 'cartCheckout'])->name('shop.cart.checkout.custom');
+    Route::post('/cart/checkout/process', [ShopController::class, 'processCartCheckout'])->name('shop.cart.checkout.process.custom');
     
     // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
     // URL: example.com/terms-condition
