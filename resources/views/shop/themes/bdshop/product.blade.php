@@ -9,7 +9,7 @@ $avgRating = $reviews->avg('rating') ?? 0;
 $totalReviews = $reviews->count();
 @endphp
 
-<main class="max-w-[1280px] mx-auto px-4 py-4 sm:py-8" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[1280px] mx-auto px-4 py-4 sm:py-8"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     {{-- Breadcrumb --}}
     <nav class="mb-4 flex items-center text-xs text-slate-500 font-medium overflow-hidden">
@@ -108,62 +108,7 @@ $totalReviews = $reviews->count();
                     @endif
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-5 flex-1 flex flex-col">
-                    {{-- Color Variation --}}
-                    @if($product->colors)
-                    <div>
-                        <span class="text-xs font-bold text-dark block mb-3 uppercase tracking-wider">কালার: <span class="text-primary normal-case" x-text="color"></span></span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->colors as $c)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                <span class="block px-5 py-2 rounded-full border-2 border-transparent bg-slate-100 text-sm font-bold peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-md peer-checked:-translate-y-1 smooth-transition shadow-sm hover:bg-slate-200">{{$c}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-                    
-                    {{-- Size Variation --}}
-                    @if($product->sizes)
-                    <div>
-                        <span class="text-xs font-bold text-dark block mb-3 uppercase tracking-wider">সাইজ: <span class="text-primary normal-case" x-text="size"></span></span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->sizes as $s)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                <span class="block min-w-12 h-10 px-3 flex items-center justify-center rounded-2xl border-2 border-transparent bg-slate-100 text-sm font-bold peer-checked:bg-slate-800 peer-checked:text-white peer-checked:shadow-md peer-checked:-translate-y-1 smooth-transition shadow-sm hover:bg-slate-200">{{$s}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    {{-- Quantity --}}
-                    <div>
-                        <span class="text-xs font-bold text-dark block mb-3 uppercase tracking-wider">পরিমাণ</span>
-                        <div class="flex items-center border border-slate-200 rounded-lg w-fit">
-                            <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-dark hover:bg-slate-50 transition rounded-l-lg"><i class="fas fa-minus text-xs"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="w-14 text-center bg-transparent border-x border-slate-200 font-bold text-dark p-0 h-10 focus:ring-0 text-base" readonly>
-                            <button type="button" @click="qty++" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-dark hover:bg-slate-50 transition rounded-r-lg"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                    </div>
-
-                    {{-- Action Buttons --}}
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4 mt-auto">
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 py-3.5 bg-slate-100 text-slate-400 rounded-lg font-bold text-sm uppercase cursor-not-allowed">স্টক শেষ</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                            <button type="submit" class="flex-1 py-4 bg-primary text-white rounded-xl font-bold text-base uppercase tracking-wider hover:bg-primary/90 smooth-transition shadow-[0_8px_15px_-3px_rgba(0,0,0,0.1)] hover:-translate-y-1 hover:shadow-[0_12px_20px_-5px_rgba(0,0,0,0.2)] flex items-center justify-center gap-2">
-                                <i class="fas fa-shopping-cart"></i> এখনই কিনুন
-                            </button>
-                            @endif
-                            
-                            @include('shop.partials.chat-button', ['client' => $client])
-                        @endif
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
                 
                 {{-- Delivery Info --}}
                 @if($client->widget('show_trust_badges'))
@@ -231,4 +176,5 @@ $totalReviews = $reviews->count();
         @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
     @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
+@include('shop.partials.product-sticky-bar')
 @endsection

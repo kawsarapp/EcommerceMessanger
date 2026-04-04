@@ -7,7 +7,7 @@
     $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-white py-4" x-data="productApp()">
+<div class="bg-white py-4" >
 <script>
 function productApp() {
     return {
@@ -60,7 +60,7 @@ function productApp() {
 </script>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
-    <div class="max-w-[1400px] mx-auto px-4">
+    <div class="max-w-[1400px] mx-auto px-4" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
         
         {{-- Breadcrumb --}}
         <nav class="flex items-center text-[11px] text-gray-500 mb-6 bg-gray-50 py-2.5 px-4 rounded-sm border border-gray-100/50 w-fit">
@@ -167,62 +167,7 @@ function productApp() {
                     </div>
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-6">
-                    
-                    {{-- Variations --}}
-                    @if($product->colors)
-                    <div>
-                        <span class="text-dark text-sm font-bold block mb-3">Color / Variation</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->colors as $c)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                <span class="px-4 py-2 border border-gray-300 rounded peer-checked:border-bdblue peer-checked:bg-blue-50 peer-checked:text-bdblue peer-checked:ring-1 peer-checked:ring-bdblue font-medium text-sm text-gray-700 bg-white block transition shadow-sm">{{$c}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    @if($product->sizes)
-                    <div>
-                        <span class="text-dark text-sm font-bold block mb-3">Size</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->sizes as $s)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                <span class="min-w-[3rem] text-center px-3 py-2 border border-gray-300 rounded peer-checked:border-bdblue peer-checked:bg-blue-50 peer-checked:text-bdblue peer-checked:ring-1 peer-checked:ring-bdblue font-medium text-sm text-gray-700 bg-white block transition shadow-sm">{{$s}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    {{-- Quantity --}}
-                    <div>
-                        <span class="text-dark text-sm font-bold block mb-3">Quantity</span>
-                        <div class="flex items-center inline-flex border border-gray-300 rounded shadow-sm">
-                            <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-l border-r border-gray-200"><i class="fas fa-minus text-xs"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="w-14 h-10 text-center font-bold text-dark border-none focus:ring-0 p-0 m-0" readonly>
-                            <button type="button" @click="if(qty < availableStock) qty++" class="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-r border-l border-gray-200"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                    </div>
-
-                    {{-- Action Buttons --}}
-                    <div class="gap-3 pt-4">
-                        <button type="button" x-show="stockStatus == 'out_of_stock'" disabled class="w-full bg-gray-200 text-gray-500 py-3.5 rounded font-bold uppercase tracking-wider cursor-not-allowed text-sm">Out of Stock</button>
-                        
-                        <div x-show="stockStatus == 'in_stock'" class="flex flex-col sm:flex-row gap-3 w-full" style="display: none;">
-                            @if($client->show_order_button ?? true)
-                                <button type="button" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-lg font-bold text-sm transition shadow-sm flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Add to Order</button>
-                                <button type="submit" class="flex-1 bg-bddeep hover:bg-[#111827] text-white py-3.5 rounded-lg font-bold text-sm transition shadow border border-transparent hover:border-white/10 flex items-center justify-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> Buy Now</button>
-                            @endif
-                            @if($client->show_chat_button ?? true)
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                            @endif
-                        </div>
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
                 {{-- Shipping Options Box --}}
                 <div class="mt-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
@@ -342,4 +287,5 @@ window.dataLayer.push({
   }
 });
 </script>
+@include('shop.partials.product-sticky-bar')
 @endsection

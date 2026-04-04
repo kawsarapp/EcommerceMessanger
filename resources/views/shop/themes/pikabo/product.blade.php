@@ -61,7 +61,7 @@
     .thumbnail-scroll::-webkit-scrollbar { display: none; }
 </style>
 
-<div class="bg-[#f5f6f8] min-h-screen py-6" x-data="productApp()">
+<div class="bg-[#f5f6f8] min-h-screen py-6" >
 <script>
 function productApp() {
     return {
@@ -110,7 +110,7 @@ function productApp() {
     };
 }
 </script>
-    <div class="max-w-[1400px] mx-auto px-4">
+    <div class="max-w-[1400px] mx-auto px-4" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
         
         <div class="bg-white p-6 rounded shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-8">
             
@@ -206,49 +206,7 @@ function productApp() {
                 </div>
                 @endif
 
-                <form id="checkout-form" action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-4 border-b border-gray-100 pb-6 mb-4">
-                    
-                    {{-- Variations --}}
-                    @if($product->colors)
-                    <div>
-                        <span class="text-xs text-gray-500 block mb-2">Color *</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->colors as $c)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                <span class="px-2 py-1 border border-gray-300 rounded peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue text-xs text-gray-700 bg-white block transition">
-                                    {{$c}}
-                                </span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    @if($product->sizes)
-                    <div class="mt-4">
-                        <span class="text-xs text-gray-500 block mb-2">Storage / Size *</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->sizes as $s)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                <span class="px-3 py-1.5 border border-gray-300 rounded peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue text-xs text-gray-700 bg-white block transition">{{$s}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    {{-- Quantity --}}
-                    <div class="mt-4 flex items-center gap-4">
-                        <span class="text-xs text-gray-500">Quantity:</span>
-                        <div class="flex items-center inline-flex border border-gray-300 rounded">
-                            <button type="button" @click="if(qty>1)qty--" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-l border-r border-gray-200"><i class="fas fa-minus text-[10px]"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="w-10 h-8 text-center text-sm font-medium text-dark border-none focus:ring-0 p-0 m-0" readonly>
-                            <button type="button" @click="if(qty < availableStock) qty++" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 font-bold transition rounded-r border-l border-gray-200"><i class="fas fa-plus text-[10px]"></i></button>
-                        </div>
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
                 {{-- EMI & Warranty Box Info --}}
                 <div class="text-xs text-gray-700 space-y-4">
@@ -377,4 +335,5 @@ window.dataLayer.push({
   }
 });
 </script>
+@include('shop.partials.product-sticky-bar')
 @endsection

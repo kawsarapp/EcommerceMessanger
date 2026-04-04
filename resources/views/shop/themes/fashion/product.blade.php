@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-10 md:py-16" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-10 md:py-16"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <div class="text-center mb-8">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] inline-block border-b border-gray-200 pb-1 mb-6">{{$product->category->name ?? 'Boutique'}}</span>
@@ -47,55 +47,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 @include('shop.partials.stock-alert-badge', ['product' => $product, 'client' => $client])
             </div>
 
-            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-10 flex-1">
-                
-                @if($product->colors)
-                <div>
-                    <span class="text-xs font-semibold tracking-[0.2em] uppercase text-gray-400 block mb-4 text-center lg:text-left">Select Color</span>
-                    <div class="flex gap-4 flex-wrap justify-center lg:justify-start">
-                        @foreach($product->colors as $c)
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                            <span class="block px-6 py-2 border border-black text-sm font-medium tracking-widest text-black peer-checked:bg-black peer-checked:text-white transition-all duration-300 group-hover:bg-gray-50">{{$c}}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                
-                @if($product->sizes)
-                <div>
-                    <span class="text-xs font-semibold tracking-[0.2em] uppercase text-gray-400 block mb-4 text-center lg:text-left">Select Size</span>
-                    <div class="flex gap-4 flex-wrap justify-center lg:justify-start">
-                        @foreach($product->sizes as $s)
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                            <span class="w-12 h-12 flex items-center justify-center rounded-full border border-black text-sm font-medium text-black peer-checked:bg-black peer-checked:text-white transition-all duration-300 group-hover:bg-gray-50">{{$s}}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                <div class="flex flex-col sm:flex-row items-center gap-6 pt-6">
-                    <div class="flex border-b border-gray-300 pb-2 w-32 justify-between">
-                        <button type="button" @click="if(qty>1)qty--" class="text-gray-400 hover:text-black transition px-2"><i class="fas fa-minus text-xs"></i></button>
-                        <input type="number" name="qty" x-model="qty" class="w-10 text-center border-none font-medium text-lg p-0 bg-transparent focus:ring-0" readonly>
-                        <button type="button" @click="qty++" class="text-gray-400 hover:text-black transition px-2"><i class="fas fa-plus text-xs"></i></button>
-                    </div>
-                    
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                        <button type="button" disabled class="w-full bg-gray-100 text-gray-400 py-5 font-semibold text-xs tracking-[0.2em] uppercase cursor-not-allowed text-center">Sold Out</button>
-                    @else
-                        @if($client->show_order_button ?? true)
-                            <button type="submit" class="w-full bg-black text-white hover:bg-gray-900 py-5 font-semibold text-xs tracking-[0.2em] uppercase transition-transform active:scale-95 text-center">Add to Cart</button>
-                            @endif
-
-                            {{-- Chat Button --}}
-                            @include('shop.partials.chat-button', ['client' => $client])
-                    @endif
-                </div>
-            </form>
+            @include('shop.partials.product-variations')
             
             <div class="mt-16 bg-gray-50/50 p-8 border border-gray-100">
                 <h3 class="font-heading font-semibold text-2xl mb-6">Description</h3>
@@ -114,4 +66,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+@include('shop.partials.product-sticky-bar')
 @endsection

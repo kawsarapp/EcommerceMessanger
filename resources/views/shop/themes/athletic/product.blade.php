@@ -6,30 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-16" x-data="{ 
-    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
-    qty: 1, 
-    color: '', 
-    size: '', 
-    show: false,
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
-    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    updatePrice() {
-        if(this.hasVariants) {
-            let matched = this.variants.find(v => 
-                (v.color === this.color || (!v.color && !this.color)) && 
-                (v.size === this.size || (!v.size && !this.size))
-            );
-            if(matched && matched.price) {
-                this.currentPrice = parseInt(matched.price);
-            } else {
-                this.currentPrice = this.basePrice;
-            }
-        }
-    }
-}" x-init="setTimeout(() => show = true, 50); $watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
+<main class="max-w-[100rem] mx-auto px-4 sm:px-8 py-16"   x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <!-- Breadcrumb -->
     <div class="mb-10 flex gap-4 uppercase font-display font-bold text-2xl tracking-widest text-dark overflow-x-auto hide-scroll border-b-4 border-dark pb-3">
@@ -125,85 +102,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             </div>
 
             <!-- Order Form -->
-            <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="border-y-8 border-dark py-12 mb-12 space-y-10">
-                
-                @if($product->colors)
-                <div>
-                    <span class="font-display font-bold text-2xl uppercase tracking-widest block mb-4 border-l-4 border-primary pl-3">রঙ বেছে নিন</span>
-                    <div class="flex gap-4 flex-wrap">
-                        @foreach($product->colors as $c)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                            <span class="btn-speed bg-gray-200 text-dark border-2 border-transparent peer-checked:bg-primary peer-checked:text-white peer-checked:border-dark peer-checked:shadow-primary-md px-8 py-4 transition-all">
-                                <span>{{$c}}</span>
-                            </span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                
-                @if($product->sizes)
-                <div>
-                    <span class="font-display font-bold text-2xl uppercase tracking-widest block mb-4 border-l-4 border-primary pl-3">সাইজ বেছে নিন</span>
-                    <div class="flex gap-4 flex-wrap">
-                        @foreach($product->sizes as $s)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                            <span class="btn-speed bg-gray-200 text-dark border-2 border-transparent peer-checked:bg-primary peer-checked:text-white peer-checked:border-dark peer-checked:shadow-primary-md w-16 h-16 flex items-center justify-center transition-all">
-                                <span>{{$s}}</span>
-                            </span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
-                    <div class="font-display font-bold text-2xl text-green-600 uppercase tracking-widest -skew-x-[4deg] bg-green-50 border-4 border-green-600 px-6 py-3 w-fit shadow-dark-sm">
-                        <span class="skew-x-[4deg]"><i class="fas fa-check-square mr-2"></i> স্টকে আছে — এখনই অর্ডার করুন</span>
-                    </div>
-                @endif
-
-                <!-- Quantity & Order Button -->
-                <div class="flex flex-col xl:flex-row gap-6 pt-4">
-                    <div class="flex border-4 border-dark h-20 w-full xl:w-1/3 shrink-0 bg-white -skew-x-[6deg]">
-                        <button type="button" @click="if(qty>1)qty--" class="flex-1 text-dark hover:bg-gray-100 flex items-center justify-center font-display font-bold text-3xl skew-x-[6deg]"><i class="fas fa-minus text-xl"></i></button>
-                        <input type="number" name="qty" x-model="qty" class="w-16 text-center font-display font-bold text-4xl p-0 focus:ring-0 border-x-4 border-dark skew-x-[6deg]" readonly>
-                        <button type="button" @click="qty++" class="flex-1 text-dark hover:bg-gray-100 flex items-center justify-center font-display font-bold text-3xl skew-x-[6deg]"><i class="fas fa-plus text-xl"></i></button>
-                    </div>
-                    
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                        <button type="button" disabled class="h-20 w-full xl:w-2/3 bg-dark text-white font-display font-bold text-3xl uppercase tracking-widest opacity-50 cursor-not-allowed border-4 border-dark flex justify-center items-center">
-                            <span>স্টক শেষ</span>
-                        </button>
-                    @else
-                        @if($client->show_order_button ?? true)
-                            
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="submit" class="h-20 w-full xl:w-2/3 btn-speed shadow-primary-lg border-4 border-dark flex justify-center items-center">
-                                <span class="font-display font-bold text-3xl uppercase tracking-widest">অর্ডার করুন <i class="fas fa-bolt ml-3"></i></span>
-                            </button>
-                        @endif
-
-                        @if($client->fb_page_id)
-                        <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="h-20 bg-blue-600 text-white font-display font-bold text-3xl uppercase tracking-widest border-4 border-dark -skew-x-[6deg] flex items-center justify-center px-8 shadow-dark-lg hover:bg-blue-700 transition xl:hidden">
-                            <span class="skew-x-[6deg]"><i class="fab fa-facebook-messenger mr-3"></i> Messenger-এ যোগাযোগ</span>
-                        </a>
-                        @endif
-                    @endif
-                </div>
-
-                @if($client->delivery_charge_inside ?? false)
-                <div class="bg-gray-100 py-4 px-6 font-display font-bold text-xl text-dark flex items-center justify-center gap-4 uppercase tracking-widest -skew-x-[4deg]">
-                    <span class="skew-x-[4deg]"><i class="fas fa-truck-fast text-primary mr-2"></i> ঢাকায় ৳{{$client->delivery_charge_inside}} | ঢাকার বাইরে ৳{{$client->delivery_charge_outside ?? 120}}</span>
-                </div>
-                @else
-                <div class="bg-gray-100 py-4 px-6 font-display font-bold text-xl text-dark flex items-center justify-center gap-4 uppercase tracking-widest -skew-x-[4deg]">
-                    <span class="skew-x-[4deg]"><i class="fas fa-truck-fast text-primary mr-2"></i> দ্রুত ডেলিভারি দেওয়া হয়।</span>
-                </div>
-                @endif
-            </form>
+            @include('shop.partials.product-variations')
             
             <!-- Product Description -->
             @if($product->description ?? $product->short_description)
@@ -282,4 +181,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
 @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+@include('shop.partials.product-sticky-bar')
 @endsection

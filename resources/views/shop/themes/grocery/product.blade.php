@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <!-- Friendly Breadcrumb -->
     <div class="mb-6 font-bold text-sm text-slate-400 tracking-wide flex items-center gap-3">
@@ -87,64 +87,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     </div>
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 flex-1 flex flex-col">
-                    
-                    <div class="space-y-6 flex-1">
-                        @if($product->colors)
-                        <div>
-                            <span class="text-sm font-bold text-slate-500 block mb-3">Choice / Type <span class="text-primary ml-1" x-text="color"></span></span>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                    <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                        
-                        @if($product->sizes)
-                        <div>
-                            <span class="text-sm font-bold text-slate-500 block mb-3">Weight / Size <span class="text-primary ml-1" x-text="size"></span></span>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                    <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <!-- Quantity & Action -->
-                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col sm:flex-row gap-4 mt-8">
-                        <!-- Qty Selector -->
-                        <div class="h-14 bg-white rounded-xl flex border border-slate-200 shadow-sm w-full sm:w-40 items-center px-2">
-                            <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary transition font-bold"><i class="fas fa-minus text-sm"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="flex-1 text-center bg-transparent border-none font-black text-xl text-slate-800 p-0 focus:ring-0" readonly>
-                            <button type="button" @click="qty++" class="w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary transition font-bold"><i class="fas fa-plus text-sm"></i></button>
-                        </div>
-                        
-                        <!-- Submit -->
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 h-14 bg-slate-200 text-slate-400 rounded-xl font-black text-lg cursor-not-allowed">Product Unavailable</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                            
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="submit" class="flex-1 h-14 bg-primary text-white pill-btn text-lg flex items-center justify-center gap-3 shadow-md hover:bg-emerald-600 hover:shadow-lg">
-                                Buy Fresh Now <i class="fas fa-shopping-basket"></i>
-                            </button>
-                            @endif
-                            @if($client->show_chat_button ?? true)
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                            @endif
-                        @endif
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
             </div>
         </div>
@@ -189,4 +132,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+@include('shop.partials.product-sticky-bar')
 @endsection

@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-10"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <div class="mb-8 font-bold text-sm text-slate-400 tracking-wide flex items-center justify-center sm:justify-start gap-3 bg-white w-fit px-6 py-3 rounded-full shadow-sm border border-slate-100">
         <a href="{{$baseUrl}}" class="hover:text-primary transition flex items-center gap-1"><i class="fas fa-home"></i> Home</a> 
@@ -65,66 +65,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     </div>
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 flex-1 flex flex-col bg-slate-50 p-6 md:p-8 rounded-[2rem] border-2 border-slate-100 shadow-inner relative">
-                    
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                        <div class="absolute -top-4 -right-4 bg-red-500 text-white font-black text-sm px-6 py-2 rounded-full border-4 border-white shadow-lg transform rotate-6">
-                            All Gone!
-                        </div>
-                    @endif
-
-                    <div class="space-y-8 flex-1 text-center lg:text-left">
-                        @if($product->colors)
-                        <div>
-                            <span class="text-sm font-black text-slate-500 block mb-4 uppercase tracking-widest"><i class="fas fa-palette text-primary mr-1"></i> Pick a Color <span class="text-primary ml-1 capitalize" x-text="color"></span></span>
-                            <div class="flex gap-3 flex-wrap justify-center lg:justify-start">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                    <span class="block px-6 py-3 rounded-full border-4 border-white bg-slate-200 text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white shadow-sm hover:scale-105 active:scale-95 duration-200">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                        
-                        @if($product->sizes)
-                        <div>
-                            <span class="text-sm font-black text-slate-500 block mb-4 uppercase tracking-widest"><i class="fas fa-ruler text-funblue mr-1"></i> Choose Size <span class="text-funblue ml-1 capitalize" x-text="size"></span></span>
-                            <div class="flex gap-3 flex-wrap justify-center lg:justify-start">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                    <span class="block px-6 py-3 rounded-full border-4 border-white bg-slate-200 text-slate-600 font-bold text-sm transition-all peer-checked:bg-funblue peer-checked:border-funblue peer-checked:text-white shadow-sm hover:scale-105 active:scale-95 duration-200">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <!-- Quantity & Action -->
-                    <div class="flex flex-col sm:flex-row gap-4 mt-4 pt-4">
-                        <div class="h-16 bg-white rounded-full flex border-4 border-slate-100 shadow-inner w-full sm:w-48 items-center px-2 justify-between">
-                            <button type="button" @click="if(qty>1)qty--" class="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 bg-slate-100 hover:bg-slate-200 hover:text-primary transition font-bold text-lg"><i class="fas fa-minus"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="flex-1 text-center bg-transparent border-none font-heading text-2xl text-slate-800 p-0 focus:ring-0" readonly>
-                            <button type="button" @click="qty++" class="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 bg-slate-100 hover:bg-slate-200 hover:text-primary transition font-bold text-lg"><i class="fas fa-plus"></i></button>
-                        </div>
-                        
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 h-16 bg-slate-300 text-slate-500 rounded-full font-heading text-xl cursor-not-allowed border-4 border-white shadow-sm">Sniff... Out of Stock</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                            <button type="submit" class="flex-1 h-16 bg-primary text-white rounded-full font-heading text-xl transition-all shadow-float hover:-translate-y-1 hover:bg-pink-600 border-4 border-white flex items-center justify-center gap-3">
-                                Add To Cart Yay! <i class="fas fa-shopping-cart text-funyellow"></i>
-                            </button>
-                            @endif
-                            @if($client->show_chat_button ?? true)
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                            @endif
-                        @endif
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
             </div>
         </div>
@@ -171,4 +112,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+@include('shop.partials.product-sticky-bar')
 @endsection

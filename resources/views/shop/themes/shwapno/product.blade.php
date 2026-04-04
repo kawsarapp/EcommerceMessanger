@@ -38,26 +38,7 @@
     @media(max-width:1024px){ .sw-carousel-arrow { display: none; } }
 </style>
 
-<div class="max-w-[1340px] mx-auto px-4 lg:px-6" x-data="{ 
-    mainImg: '{{ asset('storage/'.$product->thumbnail) }}', 
-    qty: 1, 
-    color: '', 
-    size: '',
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
-    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    updatePrice() {
-        if(this.hasVariants) {
-            let matched = this.variants.find(v => 
-                (v.color === this.color || (!v.color && !this.color)) && 
-                (v.size === this.size || (!v.size && !this.size))
-            );
-            if(matched && matched.price) this.currentPrice = parseInt(matched.price);
-            else this.currentPrice = this.basePrice;
-        }
-    }
-}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
+<div class="max-w-[1340px] mx-auto px-4 lg:px-6"   x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     {{-- Breadcrumb --}}
     <div class="sw-breadcrumb">
@@ -126,65 +107,7 @@
                 @endif
             </div>
 
-            <form action="{{ $baseUrl.'/checkout/'.$product->slug }}" method="GET" class="border-t border-gray-100 pt-5 mt-1">
-                
-                {{-- Color Selection --}}
-                @if($product->colors)
-                <div class="mb-4 bg-gray-50 p-3 rounded">
-                    <span class="text-gray-800 text-xs font-bold block mb-2 uppercase">Select Color:</span>
-                    <div class="flex gap-2 flex-wrap">
-                        @foreach($product->colors as $c)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="color" value="{{ $c }}" x-model="color" class="peer hidden">
-                            <span class="px-3 py-1.5 border peer-checked:border-swred peer-checked:bg-white peer-checked:text-swred peer-checked:font-bold text-xs text-gray-600 bg-white block transition rounded-sm shadow-sm">{{ $c }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                {{-- Size/Variant Selection --}}
-                @if($product->sizes)
-                <div class="mb-4 bg-gray-50 p-3 rounded">
-                    <span class="text-gray-800 text-xs font-bold block mb-2 uppercase">Select Variant:</span>
-                    <div class="flex gap-2 flex-wrap">
-                        @foreach($product->sizes as $s)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="size" value="{{ $s }}" x-model="size" class="peer hidden">
-                            <span class="px-3 py-1.5 border peer-checked:border-swred peer-checked:bg-white peer-checked:text-swred peer-checked:font-bold text-xs text-gray-600 bg-white block transition rounded-sm shadow-sm">{{ $s }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                {{-- Quantity --}}
-                <div class="flex items-center gap-1 mb-5">
-                    <button type="button" @click="if(qty>1)qty--" class="sw-qty-btn"><i class="fas fa-minus text-xs"></i></button>
-                    <input type="number" name="qty" x-model="qty" class="sw-qty-input" readonly>
-                    
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="button" @click="qty++" class="sw-qty-btn"><i class="fas fa-plus text-xs"></i></button>
-                    <span class="text-xs text-gray-500 ml-2">pieces</span>
-                </div>
-
-                <div class="flex flex-wrap gap-3 mt-3 items-center">
-                    @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                        <button type="button" disabled class="w-[80%] max-w-[200px] sw-btn-pill py-3 text-sm bg-gray-200 text-gray-500 cursor-not-allowed">OUT OF STOCK</button>
-                    @else
-                        @if($client->show_order_button ?? true)
-                        <button type="submit" class="flex-1 min-w-[180px] sw-btn-pill sw-btn-red py-3 text-sm hover:shadow-lg">
-                            <i class="fas fa-bag-shopping mr-2"></i> Add to Bag
-                        </button>
-                        @endif
-                        @if($client->show_chat_button ?? true)
-                            <div class="flex-1 min-w-[120px]">
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product, 'btnClass' => 'w-full h-full min-h-[44px] bg-swbg text-swdark border border-gray-200 rounded-full font-bold text-sm hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-2 px-4'])
-                            </div>
-                        @endif
-                    @endif
-                </div>
-            </form>
+            @include('shop.partials.product-variations')
 
             @if($product->material)
             <div class="mt-5 text-[12px] text-gray-600"><strong>Material:</strong> {{ $product->material }}</div>
@@ -331,7 +254,7 @@
     <div class="mb-16">
         <h3 class="sw-section-title">YOU MAY ALSO LIKE</h3>
         <div style="position:relative;">
-            <div class="sw-scroll-track" x-data="{}" id="relatedSlider">
+            <div class="sw-scroll-track"  id="relatedSlider">
                 @foreach($related as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
@@ -360,4 +283,5 @@
     @endif
 
 </div>
+@include('shop.partials.product-sticky-bar')
 @endsection

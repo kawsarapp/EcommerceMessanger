@@ -6,30 +6,8 @@
     $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-gray-100 py-6" x-data="{ 
-    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
-    qty: 1, 
-    color: '', 
-    size: '',
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
-    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    updatePrice() {
-        if(this.hasVariants) {
-            let matched = this.variants.find(v => 
-                (v.color === this.color || (!v.color && !this.color)) && 
-                (v.size === this.size || (!v.size && !this.size))
-            );
-            if(matched && matched.price) {
-                this.currentPrice = parseInt(matched.price);
-            } else {
-                this.currentPrice = this.basePrice;
-            }
-        }
-    }
-}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
-    <div class="max-w-7xl mx-auto px-4 md:px-6">
+<div class="bg-gray-100 py-6"  >
+    <div class="max-w-7xl mx-auto px-4 md:px-6" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
         
         {{-- Breadcrumb --}}
         <div class="text-sm text-gray-500 mb-4 flex items-center gap-2">
@@ -114,65 +92,7 @@
                         @endif
                     </div>
 
-                    <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-6 mt-auto">
-                        
-                        {{-- Variations --}}
-                        @if($product->colors)
-                        <div>
-                            <span class="text-gray-500 text-sm font-medium mr-4">কালার</span>
-                            <div class="flex gap-2 flex-wrap mt-2">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                    <span class="px-3 py-1 text-sm border border-gray-300 rounded peer-checked:border-primary peer-checked:text-primary transition bg-white block">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($product->sizes)
-                        <div>
-                            <span class="text-gray-500 text-sm font-medium mr-4">সাইজ</span>
-                            <div class="flex gap-2 flex-wrap mt-2">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                    <span class="min-w-[2.5rem] text-center px-3 py-1 text-sm border border-gray-300 rounded peer-checked:border-primary peer-checked:text-primary transition bg-white block">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
-                        <div class="flex items-center gap-6 pt-4 border-t border-gray-100">
-                            <span class="text-gray-500 text-sm font-medium">পরিমাণ</span>
-                            <div class="flex items-center select-none">
-                                <button type="button" @click="if(qty>1)qty--" class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-minus text-xs"></i></button>
-                                <input type="number" name="qty" x-model="qty" class="w-12 text-center text-sm font-bold border-none bg-transparent focus:ring-0" readonly>
-                                <button type="button" @click="qty++" class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-plus text-xs"></i></button>
-                            </div>
-                        </div>
-
-                        @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
-                            <div class="text-xs font-bold text-green-600 mb-1 mt-4"><i class="fas fa-check-circle mr-1"></i> ইন স্টক (In Stock)</div>
-                        @else
-                            <div class="mb-1 mt-4"></div>
-                        @endif
-
-                        <div class="flex gap-3 pt-2">
-                            @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                                <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 py-3 rounded font-bold uppercase cursor-not-allowed">স্টক আউট</button>
-                            @else
-                                @if($client->show_order_button ?? true)
-                                    <button type="submit" class="flex-1 bg-[#2ABBE8] hover:bg-[#1d9fc9] text-white py-3 rounded text-sm font-bold transition shadow-sm">এখনই কিনুন</button>
-                                @endif
-                                @if($client->show_chat_button ?? true)
-                                    @include('shop.themes.daraz.chat-button', ['client' => $client, 'product' => $product])
-                                @endif
-                            @endif
-                        </div>
-                    </form>
+                    @include('shop.partials.product-variations')
                 </div>
 
                 {{-- Right: Delivery Options (3 cols) --}}
@@ -265,4 +185,5 @@
 
     </div>
 </div>
+@include('shop.partials.product-sticky-bar')
 @endsection

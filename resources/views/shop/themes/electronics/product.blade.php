@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <!-- Breadcrumb terminal style -->
     <div class="mb-8 font-mono text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center gap-2">
@@ -77,68 +77,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     </div>
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 flex-1 flex flex-col">
-                    
-                    <div class="space-y-6 flex-1">
-                        @if($product->colors)
-                        <div>
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuration Color</span>
-                                <span class="text-primary font-mono text-sm font-bold" x-text="color"></span>
-                            </div>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only">
-                                    <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                        
-                        @if($product->sizes)
-                        <div>
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Memory / Size Option</span>
-                                <span class="text-primary font-mono text-sm font-bold" x-text="size"></span>
-                            </div>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only">
-                                    <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <div class="flex gap-4 pt-6 border-t border-gray-800">
-                        <div class="w-32 bg-dark tech-border rounded-xl flex border border-gray-700">
-                            <button type="button" @click="if(qty>1)qty--" class="flex-1 text-gray-400 hover:text-white transition"><i class="fas fa-minus text-xs"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-mono font-bold text-white p-0 focus:ring-0" readonly>
-                            <button type="button" @click="qty++" class="flex-1 text-gray-400 hover:text-white transition"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                        
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 bg-gray-900 border border-gray-800 text-gray-600 rounded-none font-bold font-mono uppercase tracking-widest text-sm cursor-not-allowed">SYS_OFFLINE</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                            
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="submit" class="flex-1 bg-primary/10 text-primary rounded-none font-bold neon-border transition-all hover:bg-primary hover:text-dark uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:shadow-[0_0_20px_var(--tw-color-primary)] group/btn relative overflow-hidden">
-                                <span class="absolute inset-0 w-full h-full bg-primary/20 -translate-x-full group-hover/btn:animate-[shimmer_1s_infinite]"></span>
-                                <i class="fas fa-terminal"></i> [ INIT CHECKOUT ]
-                            </button>
-                            @endif
-                            @if($client->show_chat_button ?? true)
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                            @endif
-                        @endif
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
             </div>
         </div>
@@ -178,4 +117,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     {{-- Dynamic Reviews Section --}}
     @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
+@include('shop.partials.product-sticky-bar')
 @endsection

@@ -35,30 +35,7 @@
     .text-justify { text-align: justify; }
 </style>
 
-<div class="max-w-[1240px] mx-auto bg-white" x-data="{ 
-    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
-    qty: 1, 
-    color: '', 
-    size: '',
-    tab: 'description',
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
-    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    updatePrice() {
-        if(this.hasVariants) {
-            let matched = this.variants.find(v => 
-                (v.color === this.color || (!v.color && !this.color)) && 
-                (v.size === this.size || (!v.size && !this.size))
-            );
-            if(matched && matched.price) {
-                this.currentPrice = parseInt(matched.price);
-            } else {
-                this.currentPrice = this.basePrice;
-            }
-        }
-    }
-}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
+<div class="max-w-[1240px] mx-auto bg-white"   x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     {{-- Breadcrumb --}}
     <div class="sh-breadcrumb flex items-center gap-2">
@@ -147,58 +124,7 @@
                 </div>
 
                 {{-- Action Form --}}
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="border-t border-b border-gray-100 py-6 mb-6">
-                    
-                    {{-- Attributes --}}
-                    @if($product->colors)
-                    <div class="mb-4">
-                        <span class="text-gray-800 text-xs font-bold block mb-2 uppercase">Color</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->colors as $c)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                <span class="px-3 py-1.5 border border-gray-300 peer-checked:border-shred peer-checked:bg-red-50 peer-checked:text-shred text-xs text-gray-600 bg-white block transition">{{$c}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    @if($product->sizes)
-                    <div class="mb-4">
-                        <span class="text-gray-800 text-xs font-bold block mb-2 uppercase">Size</span>
-                        <div class="flex gap-2 flex-wrap">
-                            @foreach($product->sizes as $s)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                <span class="min-w-[40px] text-center px-2 py-1.5 border border-gray-300 peer-checked:border-shred peer-checked:bg-red-50 peer-checked:text-shred text-xs text-gray-600 bg-white block transition">{{$s}}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center inline-flex">
-                            <button type="button" @click="if(qty>1)qty--" class="sh-qty-btn"><i class="fas fa-minus text-[10px]"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="sh-qty-input" readonly>
-                            
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="button" @click="qty++" class="sh-qty-btn"><i class="fas fa-plus text-[10px]"></i></button>
-                        </div>
-
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="sh-btn-red h-8 px-6 opacity-50 cursor-not-allowed">OUT OF STOCK</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                                <button type="submit" class="sh-btn-red h-8 px-8 hover:bg-red-700">ADD TO CART</button>
-                            @endif
-                            @if($client->show_chat_button ?? true)
-                                @include('shop.partials.chat-button', ['client' => $client, 'product' => $product])
-                            @endif
-                        @endif
-                    </div>
-                </form>
+                @include('shop.partials.product-variations')
 
                 {{-- Details Short --}}
                 <div class="text-[11px] text-gray-500 leading-relaxed font-medium mb-6">
@@ -360,4 +286,5 @@
 
     </div>
 </div>
+@include('shop.partials.product-sticky-bar')
 @endsection

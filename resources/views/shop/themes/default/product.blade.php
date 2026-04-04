@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : route('shop.show', $client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '', activeTab: 'description' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
     
     <!-- Clean Breadcrumb -->
     <nav class="mb-8 flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 overflow-hidden bg-white/40 backdrop-blur-xl px-5 py-3.5 rounded-2xl w-fit border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -115,88 +115,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                     </div>
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8 flex-1 flex flex-col">
-                    
-                    <div class="space-y-6">
-                        @if($product->colors)
-                        <div>
-                            <span class="text-xs font-bold text-slate-800 block mb-3 uppercase tracking-widest">Color Variation <span class="text-primary font-normal ml-2 capitalize" x-text="color"></span></span>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer relative group block">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only">
-                                    <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                        
-                        @if($product->sizes)
-                        <div>
-                            <span class="text-xs font-bold text-slate-800 block mb-3 uppercase tracking-widest">Size Options <span class="text-primary font-normal ml-2 capitalize" x-text="size"></span></span>
-                            <div class="flex gap-3 flex-wrap">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer block">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only">
-                                    <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <hr class="border-slate-100">
-
-                    <!-- Actions -->
-                    <div class="flex flex-col sm:flex-row gap-4 pt-2">
-                        <!-- Quantity Control -->
-                        <div class="h-14 bg-slate-50 rounded-xl border border-slate-200 flex w-full sm:w-36 items-center px-1">
-                            <button type="button" @click="if(qty>1)qty--" class="flex-1 h-full flex items-center justify-center text-slate-500 hover:text-slate-900 premium-transition"><i class="fas fa-minus text-sm"></i></button>
-                            <input type="number" name="qty" x-model="qty" class="w-12 text-center bg-transparent border-none font-bold text-slate-900 p-0 focus:ring-0 text-lg" readonly>
-                            <button type="button" @click="qty++" class="flex-1 h-full flex items-center justify-center text-slate-500 hover:text-slate-900 premium-transition"><i class="fas fa-plus text-sm"></i></button>
-                        </div>
-                        
-                        @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <button type="button" disabled class="flex-1 h-14 bg-slate-100 text-slate-400 rounded-xl font-bold uppercase tracking-widest text-sm cursor-not-allowed">Unavailable</button>
-                        @else
-                            @if($client->show_order_button ?? true)
-                            <button type="submit" class="flex-1 h-14 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-sm premium-transition hover:bg-slate-800 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i class="fas fa-shopping-bag text-base"></i> Buy Now
-                            </button>
-                            @endif
-                            
-                            {{-- Chat Button --}}
-                            @include('shop.partials.chat-button', ['client' => $client])
-                        @endif
-                    </div>
-                    
-                    <!-- Trust Badges + Warranty inside Form -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t border-slate-100">
-                        <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
-                            <i class="fas fa-truck text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">Fast Delivery</span>
-                        </div>
-                        <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
-                            <i class="fas fa-shield-alt text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">
-                                @if(!empty($product->warranty)){{ $product->warranty }}@else Secure Checkout @endif
-                            </span>
-                        </div>
-                        <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
-                            <i class="fas fa-undo text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">
-                                @if(!empty($product->return_policy)){{ $product->return_policy }}@else Easy Returns @endif
-                            </span>
-                        </div>
-                        <div class="flex flex-col items-center justify-center text-center gap-2 text-slate-400">
-                            <i class="fas fa-award text-xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wider">100% Authentic</span>
-                        </div>
-                    </div>
-
-                </form>
+                @include('shop.partials.product-variations')
 
             </div>
         </div>
@@ -324,4 +243,5 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
     @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
 
 </main>
+@include('shop.partials.product-sticky-bar')
 @endsection
