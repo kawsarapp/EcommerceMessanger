@@ -17,7 +17,6 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
     <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
-    meta_description ?? $client->shop_name . ' - ?????? ???? ???? ???? ????' }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>

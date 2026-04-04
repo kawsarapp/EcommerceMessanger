@@ -17,7 +17,6 @@ $primary='#1a3673';
     <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
     <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
     <meta property="og:url" content="{{ url()->current() }}">
-    meta_description ?? $client->shop_name . ' - ?????? ???? ???? ???? ????' }}">
     
     @include('shop.partials.tracking', ['client' => $client])
 
@@ -191,8 +190,8 @@ $primary='#1a3673';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} — {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' — ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} ï¿½ {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ï¿½ ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -290,7 +289,7 @@ $primary='#1a3673';
                 {{-- Bottom Bar --}}
                 <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-[11px] text-gray-400">
-                        {!! nl2br(e($client->footer_text ?? ('© '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}
+                        {!! nl2br(e($client->footer_text ?? ('ï¿½ '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}
                     </div>
                     
                     <div class="flex items-center gap-2 flex-wrap">

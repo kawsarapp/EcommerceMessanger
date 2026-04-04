@@ -17,7 +17,6 @@
     <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
     <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
-    meta_description ?? $client->shop_name . ' - Organic Food Store' }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
     {{-- Alpine Plugins MUST load before Alpine core --}}
@@ -176,7 +175,7 @@
         $footerDesc  = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
         $showSocial  = $client->widgets['footer']['show_social'] ?? true;
         $showPayment = $client->widgets['footer']['show_payment'] ?? true;
-        $footerCopy  = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+        $footerCopy  = $client->footer_text ?? ('ï¿½ ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
         $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null;
         $ytUrl = $client->social_youtube  ?? $client->youtube_url  ?? null;
         $igUrl = $client->social_instagram ?? $client->instagram_url ?? null;
@@ -201,7 +200,7 @@
                     @endif
                 </a>
                 <p class="text-[13px] text-gray-500 leading-relaxed mb-8 pr-4">
-                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' — ????? ????????, ??? ????, ?????????') }}
+                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' ï¿½ ????? ????????, ??? ????, ?????????') }}
                 </p>
                 <div class="flex flex-wrap items-center gap-8">
                     @if($client->address)
