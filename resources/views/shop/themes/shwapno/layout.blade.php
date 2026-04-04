@@ -3,11 +3,11 @@
 $clean  = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')); 
 $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug); 
 
-// Footer settings (from widgets JSON — no migration needed)
+// Footer settings (from widgets JSON ï¿½ no migration needed)
 $footerDesc        = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
 $footerShowPay     = $client->widgets['footer']['show_payment'] ?? true;
 $footerShowSocial  = $client->widgets['footer']['show_social'] ?? true;
-$footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+$footerCopyright   = $client->footer_text ?? ('ï¿½ ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
 @endphp
 <html lang="en">
 <head>
@@ -23,7 +23,7 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->
     <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
     <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
-    meta_description ?? ($client->description ?? $client->shop_name . ' - Online Shop') }}">
+    
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
