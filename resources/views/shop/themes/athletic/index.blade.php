@@ -7,13 +7,13 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @endphp
 
 <!-- Hero Banner -->
-@if($client->banner)
+@if(($client->widgets['hero_banner']['image'] ?? $client->banner))
 <section class="max-w-[100rem] mx-auto px-4 sm:px-8 mt-8 mb-20 relative group overflow-hidden">
     <div class="w-full h-[60vh] md:h-[75vh] relative card-brutal overflow-hidden">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-1000 ease-in-out cursor-pointer filter grayscale hover:grayscale-0" alt="{{$client->shop_name}} Banner">
+        <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-1000 ease-in-out cursor-pointer filter grayscale hover:grayscale-0" alt="{{$client->shop_name}} Banner">
         <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/40 to-transparent flex flex-col justify-end p-8 md:p-16">
             <h2 class="text-6xl md:text-9xl text-white font-display font-bold uppercase leading-[0.85] tracking-tighter mix-blend-difference drop-shadow-2xl">
-                {{$client->meta_title ?? $client->shop_name}}
+                {{$client->widgets['hero_banner']['text'] ?? $client->meta_title ?? $client->shop_name}}
             </h2>
             @if($client->meta_description)
             <p class="text-white/80 font-sans font-semibold text-lg md:text-2xl mt-4 max-w-xl">{{$client->meta_description}}</p>
@@ -30,7 +30,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     
     <!-- Section Header & Category Filters -->
     <div class="flex flex-col md:flex-row justify-between md:items-end mb-16 border-b-[6px] border-dark pb-6 gap-8 relative">
-        <h3 class="text-5xl md:text-7xl font-display font-bold uppercase tracking-tighter text-dark bg-primary px-4 py-2 text-white w-fit -skew-x-[8deg] ml-2">সর্বশেষ পণ্য</h3>
+        <h3 class="text-5xl md:text-7xl font-display font-bold uppercase tracking-tighter text-dark bg-primary px-4 py-2 text-white w-fit -skew-x-[8deg] ml-2">{{ $client->widgets['products_section']['title'] ?? 'সর্বশেষ পণ্য' }}</h3>
         
         <div class="flex gap-4 overflow-x-auto hide-scroll pb-2 w-full md:w-auto font-display text-xl uppercase tracking-wider font-bold">
             <a href="?category=all" class="px-6 py-2 border-4 border-dark whitespace-nowrap {{!request('category')||request('category')=='all'?'bg-dark text-primary shadow-primary-sm':'bg-white text-dark hover:bg-gray-100'}} transition-all -skew-x-[6deg]">

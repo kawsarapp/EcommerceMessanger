@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -27,6 +27,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{

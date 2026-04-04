@@ -207,7 +207,7 @@
         @if(request('category') && request('category') != 'all')
             <h2 class="text-xl font-bold border-l-4 border-bdblue pl-3 mb-6">{{ $categories->where('slug', request('category'))->first()?->name ?? 'Category Products' }}</h2>
         @else
-            <h2 class="section-title-lines">Specially for You</h2>
+            <h2 class="section-title-lines">{{ $client->widgets['products_section']['title'] ?? 'Specially for You' }}</h2>
         @endif
 
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">

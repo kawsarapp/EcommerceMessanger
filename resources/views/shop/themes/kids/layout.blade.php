@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -119,12 +119,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </div>
                     <span class="text-3xl font-heading text-slate-800 tracking-wide">{{$client->shop_name}}</span>
                 </a>
-                <p class="text-slate-500 font-bold text-base leading-relaxed mb-6">Making playtime the best time! Discover a universe of fun, learning, and endless smiles.</p>
+                <p class="text-slate-500 font-bold text-base leading-relaxed mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Making playtime the best time! Discover a universe of fun, learning, and endless smiles.') }}</p>
             </div>
             
             <div>
                 <h4 class="font-heading text-slate-800 text-xl mb-6 relative inline-block">
-                    <span class="relative z-10">Fun Zones</span>
+                    <span class="relative z-10">{{ $client->widgets['footer']['menu1_title'] ?? 'Fun Zones' }}</span>
                     <span class="absolute bottom-0 left-0 w-full h-3 bg-funyellow/50 -rotate-2 -z-0"></span>
                 </h4>
                 <div class="flex flex-col space-y-4 font-bold text-base text-slate-600">
@@ -137,7 +137,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
             <div>
                  <h4 class="font-heading text-slate-800 text-xl mb-6 relative inline-block">
-                    <span class="relative z-10">Parent Help</span>
+                    <span class="relative z-10">{{ $client->widgets['footer']['menu2_title'] ?? 'Parent Help' }}</span>
                     <span class="absolute bottom-0 left-0 w-full h-3 bg-primary/30 rotate-2 -z-0"></span>
                 </h4>
                 <div class="flex flex-col space-y-4 font-bold text-base text-slate-600">
@@ -149,7 +149,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
             <div>
                  <h4 class="font-heading text-slate-800 text-xl mb-6 relative inline-block">
-                    <span class="relative z-10">Say Hello!</span>
+                    <span class="relative z-10">{{ $client->widgets['footer']['menu3_title'] ?? 'Say Hello!' }}</span>
                     <span class="absolute bottom-0 left-0 w-full h-3 bg-emerald-400/30 -rotate-1 -z-0"></span>
                 </h4>
                 <div class="flex flex-col items-center sm:items-start space-y-5 font-bold text-base text-slate-600">

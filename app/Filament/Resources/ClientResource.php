@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\Page;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\BasicInfoTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontHeaderTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontBodyTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontWidgetsTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\PaymentGatewaysTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\DomainSeoTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\FeaturesTab;
@@ -69,7 +72,10 @@ class ClientResource extends Resource
             Tabs::make('Client Setup')
                 ->tabs([
                     Tabs\Tab::make('Profile')->schema(BasicInfoTab::schema())->icon('heroicon-o-user')->iconPosition('before'),
-                    Tabs\Tab::make('Storefront')->schema(StorefrontTab::schema())->icon('heroicon-o-shopping-bag')->iconPosition('before'),
+                    Tabs\Tab::make('🎨 Header')->schema(StorefrontHeaderTab::schema())->icon('heroicon-o-sparkles')->iconPosition('before'),
+                    Tabs\Tab::make('🏪 Body')->schema(StorefrontBodyTab::schema())->icon('heroicon-o-squares-2x2')->iconPosition('before'),
+                    Tabs\Tab::make('🧩 Widgets')->schema(StorefrontWidgetsTab::schema())->icon('heroicon-o-puzzle-piece')->iconPosition('before'),
+                    Tabs\Tab::make('🦶 Footer')->schema(StorefrontTab::schema())->icon('heroicon-o-bars-3-bottom-right')->iconPosition('before'),
                     Tabs\Tab::make('Payments')->schema(PaymentGatewaysTab::schema())->icon('heroicon-o-credit-card')->iconPosition('before'),
                     Tabs\Tab::make('Domain & SEO')->schema(DomainSeoTab::schema())->icon('heroicon-o-globe-alt')->iconPosition('before'),
                     Tabs\Tab::make('Omnichannel')->schema(IntegrationsTab::schema())->icon('heroicon-o-chat-bubble-left-right')->iconPosition('before'),
@@ -115,7 +121,12 @@ class ClientResource extends Resource
     {
         return $page->generateNavigationItems([
             Pages\EditBasicInfo::class,
+            // ── Storefront Layout Editor (4 sub-sections) ──
+            Pages\EditStorefrontHeader::class,
+            Pages\EditStorefrontBody::class,
+            Pages\EditStorefrontWidgets::class,
             Pages\EditStorefront::class,
+            // ── Other Settings ──
             Pages\EditDomainSeo::class,
             Pages\EditAiBrain::class,
             Pages\EditLogistics::class,
@@ -133,21 +144,26 @@ class ClientResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListClients::route('/'),
-            'create' => Pages\CreateClient::route('/create'),
-            'edit' => Pages\EditBasicInfo::route('/{record}/edit'), // Default Edit Route points to Basic Info
-            'storefront' => Pages\EditStorefront::route('/{record}/storefront'),
-            'domain-seo' => Pages\EditDomainSeo::route('/{record}/domain-seo'),
-            'ai-brain' => Pages\EditAiBrain::route('/{record}/ai-brain'),
-            'logistics' => Pages\EditLogistics::route('/{record}/logistics'),
-            'courier-api' => Pages\EditCourierApi::route('/{record}/courier-api'),
-            'payment-gateways' => Pages\EditPaymentGateways::route('/{record}/payment-gateways'),
-            'integrations' => Pages\EditIntegrations::route('/{record}/integrations'),
-            'inbox-automation' => Pages\EditInboxAutomation::route('/{record}/inbox-automation'),
-            'store-sync' => Pages\EditStoreSync::route('/{record}/store-sync'),
-            'whatsapp-api' => Pages\EditWhatsAppApi::route('/{record}/whatsapp-api'),
-            'admin-permissions' => Pages\EditAdminPermissions::route('/{record}/admin-permissions'),
-            'features' => Pages\EditFeatures::route('/{record}/features'),
+            'index'                    => Pages\ListClients::route('/'),
+            'create'                   => Pages\CreateClient::route('/create'),
+            'edit'                     => Pages\EditBasicInfo::route('/{record}/edit'),
+            // ── Storefront Layout Editor ──
+            'storefront-header'        => Pages\EditStorefrontHeader::route('/{record}/storefront/header'),
+            'storefront-body'          => Pages\EditStorefrontBody::route('/{record}/storefront/body'),
+            'storefront-widgets'       => Pages\EditStorefrontWidgets::route('/{record}/storefront/widgets'),
+            'storefront'               => Pages\EditStorefront::route('/{record}/storefront/footer'),
+            // ── Other Settings ──
+            'domain-seo'               => Pages\EditDomainSeo::route('/{record}/domain-seo'),
+            'ai-brain'                 => Pages\EditAiBrain::route('/{record}/ai-brain'),
+            'logistics'                => Pages\EditLogistics::route('/{record}/logistics'),
+            'courier-api'              => Pages\EditCourierApi::route('/{record}/courier-api'),
+            'payment-gateways'         => Pages\EditPaymentGateways::route('/{record}/payment-gateways'),
+            'integrations'             => Pages\EditIntegrations::route('/{record}/integrations'),
+            'inbox-automation'         => Pages\EditInboxAutomation::route('/{record}/inbox-automation'),
+            'store-sync'               => Pages\EditStoreSync::route('/{record}/store-sync'),
+            'whatsapp-api'             => Pages\EditWhatsAppApi::route('/{record}/whatsapp-api'),
+            'admin-permissions'        => Pages\EditAdminPermissions::route('/{record}/admin-permissions'),
+            'features'                 => Pages\EditFeatures::route('/{record}/features'),
         ];
     }
 

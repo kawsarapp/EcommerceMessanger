@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php
     $clean = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
@@ -30,6 +30,7 @@
     
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -175,7 +176,7 @@
         $footerDesc  = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
         $showSocial  = $client->widgets['footer']['show_social'] ?? true;
         $showPayment = $client->widgets['footer']['show_payment'] ?? true;
-        $footerCopy  = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+        $footerCopy  = $client->footer_text ?? ('? ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
         $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null;
         $ytUrl = $client->social_youtube  ?? $client->youtube_url  ?? null;
         $igUrl = $client->social_instagram ?? $client->instagram_url ?? null;
@@ -200,7 +201,7 @@
                     @endif
                 </a>
                 <p class="text-[13px] text-gray-500 leading-relaxed mb-8 pr-4">
-                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' � ????? ????????, ??? ????, ?????????') }}
+                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' ? ????? ????????, ??? ????, ?????????') }}
                 </p>
                 <div class="flex flex-wrap items-center gap-8">
                     @if($client->address)

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -28,6 +28,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -175,7 +176,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             
             <div>
-                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">QUICK LINKS</h4>
+                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">{{ strtoupper($client->widgets['footer']['menu1_title'] ?? 'QUICK LINKS') }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
                     <a href="{{$baseUrl}}" class="hover:text-white transition-colors uppercase w-fit">সব পণ্য দেখুন</a>
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition-colors uppercase w-fit">অর্ডার ট্র্যাক করুন</a>
@@ -196,7 +197,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">CONTACT US</h4>
+                <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">{{ strtoupper($client->widgets['footer']['menu2_title'] ?? 'CONTACT US') }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
                     @if($client->phone) 
                     <a href="tel:{{$client->phone}}" class="uppercase hover:text-white transition-colors">

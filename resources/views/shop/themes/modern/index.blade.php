@@ -7,12 +7,12 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @endphp
 
 <!-- Giant Hero Minimalist -->
-@if($client->banner)
+@if(($client->widgets['hero_banner']['image'] ?? $client->banner))
 <section class="w-full h-[65vh] md:h-[80vh] relative bg-gray-100 group overflow-hidden">
-    <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out cursor-pointer">
+    <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out cursor-pointer">
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-16">
         <div class="max-w-[90rem] w-full mx-auto">
-            <h2 class="text-5xl md:text-8xl text-white font-black tracking-tighter uppercase leading-[0.9] drop-shadow-sm">{{$client->meta_title ?? 'New Era.'}}</h2>
+            <h2 class="text-5xl md:text-8xl text-white font-black tracking-tighter uppercase leading-[0.9] drop-shadow-sm">{{$client->widgets['hero_banner']['text'] ?? $client->meta_title ?? 'New Era.'}}</h2>
         </div>
     </div>
 </section>
@@ -23,7 +23,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     <div class="flex flex-col lg:flex-row justify-between lg:items-end mb-16 border-b border-gray-200 pb-8 gap-8">
         <div>
             <span class="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Curated Collection</span>
-            <h3 class="text-4xl md:text-5xl font-black tracking-tighter uppercase">Essentials.</h3>
+            <h3 class="text-4xl md:text-5xl font-black tracking-tighter uppercase">{{ $client->widgets['products_section']['title'] ?? 'Essentials.' }}</h3>
         </div>
         
         <div class="flex gap-6 overflow-x-auto hide-scroll w-full lg:w-auto">

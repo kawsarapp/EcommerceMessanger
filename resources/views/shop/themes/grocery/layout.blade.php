@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -29,6 +29,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -135,7 +136,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             
             <div>
-                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-carrot text-primary"></i> Categories</h4>
+                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-carrot text-primary"></i>{{ $client->widgets['footer']['menu1_title'] ?? 'Categories' }}</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
                     <a href="?category=all" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Fresh Produce</a>
                                         @if(isset($pages) && count($pages) > 0)
@@ -149,7 +150,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-heart text-red-400"></i> Customer Care</h4>
+                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-heart text-red-400"></i>{{ $client->widgets['footer']['menu2_title'] ?? 'Customer Care' }}</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Track Your Order</a>
                                         @if(isset($pages) && count($pages) > 0)
@@ -163,7 +164,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-headset text-blue-500"></i> Contact Us</h4>
+                <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-headset text-blue-500"></i>{{ $client->widgets['footer']['menu3_title'] ?? 'Contact Us' }}</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
                     @if($client->phone) 
                         <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">

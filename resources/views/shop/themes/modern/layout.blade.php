@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -28,6 +28,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -101,7 +102,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             
             <div>
-                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">Explore</h4>
+                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu1_title'] ?? 'Explore' }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                     <a href="{{$baseUrl}}" class="hover:text-primary transition-colors inline-block w-fit">Shop All</a>
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition-colors inline-block w-fit">Track My Order</a>
@@ -109,7 +110,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">Policies</h4>
+                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu2_title'] ?? 'Policies' }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                                         @if(isset($pages) && count($pages) > 0)
                         @foreach($pages as $page)
@@ -122,7 +123,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">Contact</h4>
+                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu3_title'] ?? 'Contact' }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-gray-300"></i> {{$client->phone}}</p> @endif
                     @if($client->email) <p><i class="fas fa-envelope mr-2 text-gray-300"></i> {{$client->email}}</p> @endif

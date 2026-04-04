@@ -7,17 +7,17 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @endphp
 
 <!-- Vogue Style Hero Split -->
-@if($client->banner)
+@if(($client->widgets['hero_banner']['image'] ?? $client->banner))
 <section class="w-full h-[70vh] md:h-[85vh] flex flex-col md:flex-row border-b border-gray-100 relative overflow-hidden">
     <div class="w-full md:w-1/2 h-full bg-nude flex items-center justify-center p-8 md:p-16 relative z-10" x-data="{ loaded: false }" x-init="setTimeout(() => loaded = true, 100)">
         <div class="max-w-md text-center md:text-left z-10 w-full transition-all duration-1000 ease-[cubic-bezier(0.2,0.8,0.2,1)] delay-300" :class="loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
             <span class="block text-xs font-medium uppercase tracking-[0.2em] text-gray-500 mb-4 tracking-[0.3em]">Latest Arrival</span>
             <h2 class="text-5xl md:text-7xl lg:text-8xl font-heading font-black leading-[1.1] text-black mb-8 italic">{{$client->meta_title ?? 'New Season.'}}</h2>
-            <a href="#collection" class="inline-block border-b bg-transparent border-black text-xs font-bold uppercase tracking-[0.2em] pb-1.5 hover:text-gray-500 hover:border-gray-500 transition-all">Shop Now</a>
+            <a href="#collection" class="inline-block border-b bg-transparent border-black text-xs font-bold uppercase tracking-[0.2em] pb-1.5 hover:text-gray-500 hover:border-gray-500 transition-all">{{ $client->widgets['products_section']['title'] ?? 'Shop Now' }}</a>
         </div>
     </div>
     <div class="w-full md:w-1/2 h-full absolute md:relative inset-0 md:inset-auto block group overflow-hidden bg-gray-100 z-0">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-[3s] ease-out">
+        <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-[3s] ease-out">
         <div class="absolute inset-0 bg-white/30 md:hidden pointer-events-none"></div>
     </div>
 </section>

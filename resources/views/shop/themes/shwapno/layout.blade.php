@@ -33,6 +33,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
     
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -234,7 +235,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
 
                 {{-- Column 2: Footer Menu 1 --}}
                 <div>
-                    <h4 class="footer-heading">{{ $footerMenu1->name ?? ($client->widgets['footer']['menu1_title'] ?? 'Information') }}</h4>
+                    <h4 class="footer-heading">{{ $client->widgets['footer']['menu1_title'] ?? $footerMenu1->name ?? 'Information' }}</h4>
                     @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
                         @foreach($footerMenu1->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
@@ -244,7 +245,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
 
                 {{-- Column 3: Footer Menu 2 --}}
                 <div>
-                    <h4 class="footer-heading">{{ $footerMenu2->name ?? ($client->widgets['footer']['menu2_title'] ?? 'Customer Service') }}</h4>
+                    <h4 class="footer-heading">{{ $client->widgets['footer']['menu2_title'] ?? $footerMenu2->name ?? 'Customer Service' }}</h4>
                     @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
                         @foreach($footerMenu2->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
@@ -256,7 +257,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
 
                 {{-- Column 4: Footer Menu 3 --}}
                 <div>
-                    <h4 class="footer-heading">{{ $footerMenu3->name ?? ($client->widgets['footer']['menu3_title'] ?? 'Quick Links') }}</h4>
+                    <h4 class="footer-heading">{{ $client->widgets['footer']['menu3_title'] ?? $footerMenu3->name ?? 'Quick Links' }}</h4>
                     @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
                         @foreach($footerMenu3->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>

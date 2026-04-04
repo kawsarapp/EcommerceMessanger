@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -28,6 +28,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -126,7 +127,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             
             <div class="md:col-span-3">
-                <h4 class="font-sans text-[10px] uppercase tracking-[0.3em] font-semibold text-gray-300 mb-8">Information</h4>
+                <h4 class="font-sans text-[10px] uppercase tracking-[0.3em] font-semibold text-gray-300 mb-8">{{ $client->widgets['footer']['menu1_title'] ?? 'Information' }}</h4>
                 <div class="flex flex-col space-y-4 text-xs font-light tracking-wide text-gray-500">
                     <a href="{{$baseUrl}}" class="hover:text-primary transition">Homepage</a>
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">Track Order</a>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -30,6 +30,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -157,7 +158,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <a href="{{$baseUrl}}" class="inline-block">
                             <span class="text-3xl font-extrabold tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{{$client->shop_name}}</span>
                         </a>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' � ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ? ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
                         @include('shop.partials.footer-links', ['client' => $client])
                         <div class="flex gap-4 items-center pt-2">
                             @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift premium-transition shadow-sm"><i class="fab fa-facebook-f"></i></a>@endif

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -26,6 +26,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -147,7 +148,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 
                 {{-- Quick Links --}}
                 <div>
-                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">?????</h4>
+                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">{{ strtoupper($client->widgets['footer']['menu1_title'] ?? 'Quick Links') }}</h4>
                     <div class="flex flex-col space-y-2.5 text-sm text-slate-400">
                         <a href="{{$baseUrl}}" class="hover:text-white transition w-fit">??? ????</a>
                         <a href="{{$baseUrl}}?category=all" class="hover:text-white transition w-fit">???? ???</a>
@@ -156,7 +157,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Support --}}
                 <div>
-                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">???????</h4>
+                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">{{ strtoupper($client->widgets['footer']['menu2_title'] ?? 'Support') }}</h4>
                     <div class="flex flex-col space-y-2.5 text-sm text-slate-400">
                         <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition w-fit">?????? ???????</a>
                         <a href="#" class="hover:text-white transition w-fit">??????? ?????</a>
@@ -166,7 +167,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- Contact --}}
                 <div>
-                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">???????</h4>
+                    <h4 class="font-bold text-sm mb-4 text-white/80 uppercase tracking-wider">{{ strtoupper($client->widgets['footer']['menu3_title'] ?? 'Contact') }}</h4>
                     <div class="flex flex-col space-y-3 text-sm text-slate-400">
                         @if($client->phone)<a href="tel:{{$client->phone}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-phone-alt text-primary"></i> {{$client->phone}}</a>@endif
                         @if($client->email)<a href="mailto:{{$client->email}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-envelope text-primary"></i> {{$client->email}}</a>@endif

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -29,6 +29,7 @@ $primary='#1a3673';
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -190,8 +191,8 @@ $primary='#1a3673';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} � {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' � ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} ? {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ? ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -234,7 +235,7 @@ $primary='#1a3673';
                     </div>
 
                     <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu1->name ?? 'Quick Links' }}</h4>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $client->widgets['footer']['menu1_title'] ?? $footerMenu1->name ?? 'Quick Links' }}</h4>
                         <ul class="space-y-3 text-sm text-gray-400">
                             @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
                                 @foreach($footerMenu1->items as $item)
@@ -249,7 +250,7 @@ $primary='#1a3673';
                     </div>
 
                     <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu2->name ?? 'Categories' }}</h4>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $client->widgets['footer']['menu2_title'] ?? $footerMenu2->name ?? 'Categories' }}</h4>
                         <ul class="space-y-3 text-sm text-gray-400">
                             @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
                                 @foreach($footerMenu2->items as $item)
@@ -264,7 +265,7 @@ $primary='#1a3673';
                     </div>
 
                     <div>
-                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $footerMenu3->name ?? 'Customer Service' }}</h4>
+                        <h4 class="font-bold text-sm mb-6 pb-2 border-b border-white/10">{{ $client->widgets['footer']['menu3_title'] ?? $footerMenu3->name ?? 'Customer Service' }}</h4>
                         <ul class="space-y-3 text-sm text-gray-400 mb-6">
                             @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
                                 @foreach($footerMenu3->items as $item)
@@ -289,7 +290,7 @@ $primary='#1a3673';
                 {{-- Bottom Bar --}}
                 <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-[11px] text-gray-400">
-                        {!! nl2br(e($client->footer_text ?? ('� '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}
+                        {!! nl2br(e($client->footer_text ?? ('? '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}
                     </div>
                     
                     <div class="flex items-center gap-2 flex-wrap">

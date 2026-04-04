@@ -60,7 +60,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
         @if($client->widget('flash_sale'))
             <div class="stagger-4 relative z-10 glass-panel rounded-3xl p-6 md:p-10 mb-8 md:mb-12">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-bl-[100px] pointer-events-none"></div>
-                <x-shop.widgets.product-grid :client="$client" :config="$client->widgetConfig('flash_sale')" :products="$products->take(10)" title="Featured Products" />
+                <x-shop.widgets.product-grid :client="$client" :config="$client->widgetConfig('flash_sale')" :products="$products->take(10)" title="{{ $client->widgets['flash_sale']['text'] ?? 'Featured Products' }}" />
             </div>
         @endif
         

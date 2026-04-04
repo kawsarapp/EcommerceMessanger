@@ -7,13 +7,13 @@
 @endphp
 
 <!-- Hero Section with Parallax aesthetic -->
-@if($client->banner)
+@if(($client->widgets['hero_banner']['image'] ?? $client->banner))
 <section class="relative w-full h-[65vh] lg:h-[75vh] flex items-center justify-center overflow-hidden">
     <!-- Blurred vibrant backing -->
     <div class="absolute inset-0 bg-primary/20 blur-3xl z-0 transform -translate-y-1/2 scale-150"></div>
     <!-- Main Background -->
     <div class="absolute inset-0 z-10">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover object-center" alt="Cover Banner">
+        <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center" alt="Cover Banner">
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
     </div>
     

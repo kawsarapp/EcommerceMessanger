@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -29,6 +29,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     
     <script>
         tailwind.config={
+            darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
@@ -129,7 +130,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
             
             <div>
-                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">Categories</h4>
+                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">{{ $client->widgets['footer']['menu1_title'] ?? 'Categories' }}</h4>
                 <div class="flex flex-col space-y-3 text-sm font-medium text-gray-400">
                     @if(isset($categories) && $categories->count() > 0)
                         @foreach($categories->take(5) as $cat)
@@ -143,7 +144,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">Support</h4>
+                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">{{ $client->widgets['footer']['menu2_title'] ?? 'Support' }}</h4>
                 <div class="flex flex-col space-y-3 text-sm font-medium text-gray-400">
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Live Tracking</a>
                     <a href="#" class="hover:text-primary transition flex items-center gap-2"><i class="fas fa-angle-right text-[10px] text-gray-600"></i> Return Policy</a>
@@ -152,7 +153,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
 
             <div>
-                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">Stay Connected</h4>
+                <h4 class="font-bold text-white mb-6 uppercase tracking-wider text-xs">{{ $client->widgets['footer']['menu3_title'] ?? 'Stay Connected' }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-400">
                     @if($client->phone) 
                         <div class="flex items-center gap-3 bg-dark tech-border p-3 rounded-lg text-white font-mono text-xs">

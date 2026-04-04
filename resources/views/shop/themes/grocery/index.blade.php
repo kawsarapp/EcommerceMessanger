@@ -7,10 +7,10 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 @endphp
 
 <!-- Fresh Hero Banner -->
-@if($client->banner)
+@if(($client->widgets['hero_banner']['image'] ?? $client->banner))
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8">
     <div class="w-full h-[35vh] md:h-[50vh] rounded-[2rem] overflow-hidden relative shadow-soft group border border-slate-100 bg-emerald-50">
-        <img src="{{asset('storage/'.$client->banner)}}" class="w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-1000 ease-in-out">
+        <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-1000 ease-in-out">
         
         <!-- Subtle Gradient for reading text -->
         <div class="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/30 to-transparent z-10"></div>
