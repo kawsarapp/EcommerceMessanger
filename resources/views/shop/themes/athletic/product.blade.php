@@ -1,4 +1,4 @@
-@extends('shop.themes.athletic.layout')
+﻿@extends('shop.themes.athletic.layout')
 @section('title', $product->meta_title ?? (strtoupper($product->name) . ' | ' . $client->shop_name))
 
 @section('content')
@@ -179,7 +179,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         </button>
                     @else
                         @if($client->show_order_button ?? true)
-                            <button type="submit" class="h-20 w-full xl:w-2/3 btn-speed shadow-primary-lg border-4 border-dark flex justify-center items-center">
+                            
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="submit" class="h-20 w-full xl:w-2/3 btn-speed shadow-primary-lg border-4 border-dark flex justify-center items-center">
                                 <span class="font-display font-bold text-3xl uppercase tracking-widest">অর্ডার করুন <i class="fas fa-bolt ml-3"></i></span>
                             </button>
                         @endif

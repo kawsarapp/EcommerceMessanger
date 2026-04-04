@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php
     $clean = preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show',$client->slug);
@@ -121,7 +121,8 @@
             </div>
         </div>
     </footer>
-    @include('shop.partials.floating-chat', ['client' => $client])
+        @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+@include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>

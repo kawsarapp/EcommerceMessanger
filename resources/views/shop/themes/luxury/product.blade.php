@@ -1,4 +1,4 @@
-@extends('shop.themes.luxury.layout')
+﻿@extends('shop.themes.luxury.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -37,6 +37,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 
                 <div class="flex items-center justify-center lg:justify-start gap-4">
                     <span class="text-2xl md:text-3xl font-light tracking-widest text-gray-200">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                     @if($product->sale_price)
                         <del class="text-sm font-light text-gray-600 tracking-widest">৳{{number_format($product->regular_price)}}</del>
                     @endif

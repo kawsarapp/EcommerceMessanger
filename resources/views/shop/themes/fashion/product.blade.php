@@ -43,6 +43,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <span class="text-xl text-red-500 ml-2 relative -top-1">৳{{number_format($product->regular_price)}}</span>
                     @endif
                 </div>
+                @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+                @include('shop.partials.stock-alert-badge', ['product' => $product, 'client' => $client])
             </div>
 
             <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-10 flex-1">

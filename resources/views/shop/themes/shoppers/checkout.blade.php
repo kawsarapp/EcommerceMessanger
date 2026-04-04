@@ -1,4 +1,4 @@
-@extends('shop.themes.shoppers.layout')
+﻿@extends('shop.themes.shoppers.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')

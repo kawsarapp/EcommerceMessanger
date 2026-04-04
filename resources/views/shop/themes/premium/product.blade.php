@@ -1,4 +1,4 @@
-@extends('shop.themes.premium.layout')
+﻿@extends('shop.themes.premium.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -130,7 +130,9 @@
                             </button>
                         @else
                             @if($client->show_order_button ?? true)
-                            <button type="submit" class="sm:w-2/3 btn-premium text-white py-5 rounded-2xl font-bold text-lg shadow-lg flex justify-center items-center gap-3">
+                            
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="submit" class="sm:w-2/3 btn-premium text-white py-5 rounded-2xl font-bold text-lg shadow-lg flex justify-center items-center gap-3">
                                 Buy It Now <i class="fas fa-arrow-right"></i>
                             </button>
                             @endif

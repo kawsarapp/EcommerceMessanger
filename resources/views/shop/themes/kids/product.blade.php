@@ -1,4 +1,4 @@
-@extends('shop.themes.kids.layout')
+﻿@extends('shop.themes.kids.layout')
 @section('title', $product->name . ' | Yay! Kids Corner')
 
 @section('content')
@@ -54,6 +54,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     
                     <div class="flex flex-col sm:flex-row items-center lg:items-end justify-center lg:justify-start gap-4">
                         <span class="text-5xl lg:text-6xl font-heading text-primary bg-primary/10 px-6 py-3 rounded-3xl border-2 border-primary/20 shadow-inner">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                         @if($product->sale_price)
                             <div class="bg-red-50 px-4 py-2 rounded-2xl border-2 border-red-100 flex flex-col items-center">
                                 <span class="text-xs font-bold text-red-400 uppercase tracking-widest mb-1">Was</span>

@@ -1,4 +1,4 @@
-@extends('shop.themes.bdpro.layout')
+﻿@extends('shop.themes.bdpro.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')

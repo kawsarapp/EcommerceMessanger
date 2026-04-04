@@ -91,6 +91,12 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
         Route::post('/cart/clear',            [ShopController::class, 'clearCart'])->name('shop.cart.clear');
         Route::get('/cart/checkout',          [ShopController::class, 'cartCheckout'])->name('shop.cart.checkout');
         Route::post('/cart/checkout/process', [ShopController::class, 'processCartCheckout'])->name('shop.cart.checkout.process');
+
+        // ⚖️ Product Compare
+        Route::get('/compare',  [ShopController::class, 'comparePage'])->name('shop.compare');
+
+        // 🔔 Stock Notify Me
+        Route::post('/stock/notify', [ShopController::class, 'stockNotify'])->name('shop.stock.notify');
     });
 
     // ==========================================
@@ -119,6 +125,12 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
     Route::post('/cart/clear',            [ShopController::class, 'clearCart'])->name('shop.cart.clear.custom');
     Route::get('/cart/checkout',          [ShopController::class, 'cartCheckout'])->name('shop.cart.checkout.custom');
     Route::post('/cart/checkout/process', [ShopController::class, 'processCartCheckout'])->name('shop.cart.checkout.process.custom');
+
+    // ⚖️ Product Compare (Custom Domain)
+    Route::get('/compare',  [ShopController::class, 'comparePage'])->name('shop.compare.custom');
+
+    // 🔔 Stock Notify Me (Custom Domain)
+    Route::post('/stock/notify', [ShopController::class, 'stockNotify'])->name('shop.stock.notify.custom');
     
     // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
     // URL: example.com/terms-condition

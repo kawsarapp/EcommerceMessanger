@@ -1,4 +1,4 @@
-@extends('shop.themes.pikabo.layout')
+﻿@extends('shop.themes.pikabo.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')

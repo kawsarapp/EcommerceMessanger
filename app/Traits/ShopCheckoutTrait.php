@@ -2,6 +2,8 @@
 namespace App\Traits;
 
 use Illuminate\Http\Request;
+use App\Services\SmsService;
+use App\Services\StockAlertService;
 
 trait ShopCheckoutTrait
 {
@@ -187,6 +189,12 @@ trait ShopCheckoutTrait
             $product->stock_status = $product->stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
             $product->saveQuietly();
         }
+
+        // 📱 SMS Confirmation
+        app(SmsService::class)->sendOrderConfirmation($client, $order);
+
+        // 📦 Stock Alert check
+        app(StockAlertService::class)->checkAfterOrder($client, $product);
 
         // 🔥 Server-Side Tracking
         app(\App\Services\ServerSideTrackingService::class)->dispatchPurchase($order);

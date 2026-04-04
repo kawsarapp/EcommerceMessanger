@@ -1,4 +1,4 @@
-@extends('shop.themes.bdshop.layout')
+﻿@extends('shop.themes.bdshop.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -98,6 +98,8 @@ $totalReviews = $reviews->count();
                 {{-- Price --}}
                 <div class="flex items-end gap-3 mb-6">
                     <span class="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                     @if($product->sale_price)
                         <del class="text-lg text-slate-400 font-semibold mb-1">৳{{number_format($product->regular_price)}}</del>
                         <span class="bg-red-50 text-red-500 text-xs font-bold px-2 py-1 rounded mb-1">

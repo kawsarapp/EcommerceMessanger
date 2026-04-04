@@ -1,4 +1,4 @@
-@extends('shop.themes.shoppers.layout')
+﻿@extends('shop.themes.shoppers.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -182,7 +182,9 @@
                         <div class="flex items-center inline-flex">
                             <button type="button" @click="if(qty>1)qty--" class="sh-qty-btn"><i class="fas fa-minus text-[10px]"></i></button>
                             <input type="number" name="qty" x-model="qty" class="sh-qty-input" readonly>
-                            <button type="button" @click="qty++" class="sh-qty-btn"><i class="fas fa-plus text-[10px]"></i></button>
+                            
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="button" @click="qty++" class="sh-qty-btn"><i class="fas fa-plus text-[10px]"></i></button>
                         </div>
 
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')

@@ -1,4 +1,4 @@
-@extends('shop.themes.default.layout')
+﻿@extends('shop.themes.default.layout')
 @section('title', $product->name . ' | Shop')
 
 @section('content')
@@ -106,6 +106,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
 
                     <div class="flex items-end gap-3 mt-6">
                         <span class="text-4xl font-extrabold text-slate-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                         @if($product->sale_price)
                             <del class="text-xl text-slate-400 font-semibold mb-1">৳{{number_format($product->regular_price)}}</del>
                             <span class="bg-red-50 text-red-500 text-xs font-bold px-2.5 py-1 rounded-lg mb-1">Save ৳{{ number_format($product->regular_price - $product->sale_price) }}</span>

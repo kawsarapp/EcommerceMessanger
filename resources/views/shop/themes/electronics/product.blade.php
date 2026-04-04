@@ -1,4 +1,4 @@
-@extends('shop.themes.electronics.layout')
+﻿@extends('shop.themes.electronics.layout')
 @section('title', $product->name . ' | Spec Details')
 
 @section('content')
@@ -126,7 +126,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <button type="button" disabled class="flex-1 bg-gray-900 border border-gray-800 text-gray-600 rounded-none font-bold font-mono uppercase tracking-widest text-sm cursor-not-allowed">SYS_OFFLINE</button>
                         @else
                             @if($client->show_order_button ?? true)
-                            <button type="submit" class="flex-1 bg-primary/10 text-primary rounded-none font-bold neon-border transition-all hover:bg-primary hover:text-dark uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:shadow-[0_0_20px_var(--tw-color-primary)] group/btn relative overflow-hidden">
+                            
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="submit" class="flex-1 bg-primary/10 text-primary rounded-none font-bold neon-border transition-all hover:bg-primary hover:text-dark uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:shadow-[0_0_20px_var(--tw-color-primary)] group/btn relative overflow-hidden">
                                 <span class="absolute inset-0 w-full h-full bg-primary/20 -translate-x-full group-hover/btn:animate-[shimmer_1s_infinite]"></span>
                                 <i class="fas fa-terminal"></i> [ INIT CHECKOUT ]
                             </button>

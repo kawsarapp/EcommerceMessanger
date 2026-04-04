@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -207,7 +207,7 @@ $primary='#1a3673';
                             @endif
                             <span class="text-white font-extrabold text-2xl uppercase tracking-tighter">{{$client->shop_name}}<sup class="text-[10px] font-normal">&trade;</sup></span>
                         </div>
-                        <p class="text-gray-400 text-xs leading-relaxed mb-6 max-w-sm">Your premier destination for quality products. We deliver excellence in every product.</p>
+                        <p class="text-gray-400 text-xs leading-relaxed mb-6 max-w-sm">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Your premier destination for quality products. We deliver excellence in every product.') }}</p>
                         
                         <div class="space-y-3 mb-6">
                             @if($client->phone)<a href="tel:{{$client->phone}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-phone-alt text-primary min-w-[20px]"></i> {{$client->phone}}</a>@endif
@@ -215,11 +215,14 @@ $primary='#1a3673';
                             <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> {{ $client->widgets['office_hours']['text'] ?? '\u09B8ন্ধ্যা \u09EE\u09EA\u09F7\u09EA\u09EE' }}</div>
                         </div>
 
+                        @if($client->widgets['footer']['show_social'] ?? true)
                         <div class="flex gap-3 mt-4">
-                            @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-facebook-f"></i></a>@endif
-                            @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-instagram"></i></a>@endif
-                            @if($client->youtube_url ?? false)<a href="{{$client->youtube_url}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-youtube"></i></a>@endif
+                            @php $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null; $ytUrl = $client->social_youtube ?? $client->youtube_url ?? null; $igUrl = $client->social_instagram ?? $client->instagram_url ?? null; @endphp
+                            @if($fbUrl)<a href="{{$fbUrl}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-facebook-f"></i></a>@endif
+                            @if($igUrl)<a href="{{$igUrl}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-instagram"></i></a>@endif
+                            @if($ytUrl)<a href="{{$ytUrl}}" target="_blank" class="w-8 h-8 rounded-full bg-white/10 hover:bg-primary flex items-center justify-center transition text-sm"><i class="fab fa-youtube"></i></a>@endif
                         </div>
+                        @endif
                     </div>
 
                     <div>
@@ -278,22 +281,32 @@ $primary='#1a3673';
                 {{-- Bottom Bar --}}
                 <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-[11px] text-gray-400">
-                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. সর্বস্বত্ব সংরক্ষিত।
+                        {!! nl2br(e($client->footer_text ?? ('© '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}
                     </div>
                     
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs text-gray-400 mr-2">Secure Payment:</span>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain" loading="lazy"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-4 object-contain" loading="lazy"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain" loading="lazy"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-3 object-contain" loading="lazy"></div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        @if(!empty($client->footer_links))
+                            @foreach((array)$client->footer_links as $fl)
+                            <a href="{{ $fl['url'] ?? '#' }}" class="text-[11px] text-gray-500 hover:text-white transition">{{ $fl['title'] ?? '' }}</a>
+                            @endforeach
+                        @endif
+                        @if($client->cod_active)
+                        <span class="text-[10px] font-bold text-gray-400 border border-white/10 px-2 py-0.5 rounded-sm">COD</span>
+                        @endif
+                        @if($client->isPaymentGatewayActive('bkash_pgw') || $client->isPaymentGatewayActive('bkash_merchant'))
+                        <span class="text-[10px] font-bold text-pink-400 border border-pink-900/30 px-2 py-0.5 rounded-sm">bKash</span>
+                        @endif
+                        @if($client->isPaymentGatewayActive('sslcommerz'))
+                        <span class="text-[10px] font-bold text-green-400 border border-green-900/30 px-2 py-0.5 rounded-sm">SSL</span>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </footer>
 
-    @include('shop.partials.floating-chat', ['client' => $client])
+        @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+@include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>

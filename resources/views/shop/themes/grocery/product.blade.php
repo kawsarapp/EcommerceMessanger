@@ -1,4 +1,4 @@
-@extends('shop.themes.grocery.layout')
+﻿@extends('shop.themes.grocery.layout')
 @section('title', $product->name . ' | Fresh Details')
 
 @section('content')
@@ -133,7 +133,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <button type="button" disabled class="flex-1 h-14 bg-slate-200 text-slate-400 rounded-xl font-black text-lg cursor-not-allowed">Product Unavailable</button>
                         @else
                             @if($client->show_order_button ?? true)
-                            <button type="submit" class="flex-1 h-14 bg-primary text-white pill-btn text-lg flex items-center justify-center gap-3 shadow-md hover:bg-emerald-600 hover:shadow-lg">
+                            
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="submit" class="flex-1 h-14 bg-primary text-white pill-btn text-lg flex items-center justify-center gap-3 shadow-md hover:bg-emerald-600 hover:shadow-lg">
                                 Buy Fresh Now <i class="fas fa-shopping-basket"></i>
                             </button>
                             @endif

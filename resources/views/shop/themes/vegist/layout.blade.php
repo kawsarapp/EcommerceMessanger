@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php
-    $clean = preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/'));
-    $baseUrl = $clean ? 'https://'.$clean : route('shop.show',$client->slug);
+    $clean = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
+    $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
 @endphp
 <html lang="en">
 <head>
@@ -72,12 +72,10 @@
     {{-- Top Bar (Dark) --}}
     <div class="bg-[#1f1f1f] text-[#cfcfcf] text-[11px] py-2.5 hidden lg:block">
         <div class="max-w-[1400px] mx-auto px-4 xl:px-8 flex justify-between items-center tracking-wide">
-            <div>
-                {{ $client->topbar_text ?? ('সব পণ্যে ফ্রি শিপিং সুবিধা | সারাদেশে ডেলিভারি') }}
-            </div>
+            <div>{{ $client->topbar_text ?? 'সব পণ্যে ফ্রি শিপিং সুবিধা | সারাদেশে ডেলিভারি' }}</div>
             <div class="flex items-center gap-6">
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition">My order</a>
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-white transition">Track order</a>
+                <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-white transition">My order</a>
+                <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-white transition">Track order</a>
                 <a href="{{ $client->email ? 'mailto:'.$client->email : '#' }}" class="hover:text-white transition">Contact us</a>
                 @if($client->widgets['language_switcher']['active'] ?? false)
                 <span class="pl-6 border-l border-gray-700 cursor-pointer hover:text-white"><i class="fas fa-globe mr-1"></i> BD</span>
@@ -97,13 +95,13 @@
                 </div>
 
                 {{-- Logo --}}
-                <a href="{{$baseUrl}}" class="flex items-center gap-2 shrink-0">
+                <a href="{{ $baseUrl }}" class="flex items-center gap-2 shrink-0">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-10 md:h-12 object-contain hidden md:block">
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-8 object-contain md:hidden">
+                        <img src="{{ asset('storage/'.$client->logo) }}" class="h-10 md:h-12 object-contain hidden md:block" alt="{{ $client->shop_name }}">
+                        <img src="{{ asset('storage/'.$client->logo) }}" class="h-8 object-contain md:hidden" alt="{{ $client->shop_name }}">
                     @else
                         <span class="text-2xl md:text-3xl font-black text-primary uppercase tracking-tight flex items-center gap-1">
-                            <i class="fas fa-leaf text-xl text-green-500"></i> {{$client->shop_name}}
+                            <i class="fas fa-leaf text-xl text-green-500"></i> {{ $client->shop_name }}
                         </span>
                     @endif
                 </a>
@@ -117,41 +115,31 @@
                         </a>
                         @endforeach
                     @else
-                        <a href="{{$baseUrl}}" class="vg-nav-link {!! request()->is('/') ? '!text-primary' : '' !!}">Home</a>
-                        <a href="{{$baseUrl}}?category=all" class="vg-nav-link {!! request()->is('*category=all*') ? '!text-primary' : '' !!}">Shop</a>
+                        <a href="{{ $baseUrl }}" class="vg-nav-link">Home</a>
+                        <a href="{{ $baseUrl }}?category=all" class="vg-nav-link">Shop</a>
                         @if(isset($categories) && $categories->count() > 0)
                             @foreach($categories->take(2) as $cat)
-                            <a href="{{$baseUrl}}?category={{$cat->slug}}" class="vg-nav-link">{{$cat->name}}</a>
+                            <a href="{{ $baseUrl }}?category={{ $cat->slug }}" class="vg-nav-link">{{ $cat->name }}</a>
                             @endforeach
-                        @else
-                            <a href="{{$baseUrl}}?category=all" class="vg-nav-link">Collection</a>
                         @endif
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="vg-nav-link relative">Track Order</a>
+                        <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="vg-nav-link">Track Order</a>
                     @endif
                 </nav>
 
                 {{-- Right Icons --}}
                 <div class="flex items-center gap-5 xl:gap-7 shrink-0 text-dark">
                     <button class="hover:text-primary transition text-lg" onclick="document.getElementById('mobile-search').classList.toggle('hidden')"><i class="fas fa-search"></i></button>
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
-                    @php $wishlistCount = session()->has('wishlist') ? count(session()->get('wishlist')) : 0; @endphp
-                    <div class="hover:text-primary transition text-lg relative hidden md:block cursor-pointer">
-                        <i class="far fa-heart"></i>
-                        <span class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $wishlistCount }}</span>
-                    </div>
+                    <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
                     
                     @php
                         $cartKey   = 'cart_' . $client->id;
                         $cartItems = session($cartKey, []);
                         $cartCount = count($cartItems);
-                        $cartUrl   = $clean
-                            ? 'https://'.$clean.'/cart'
-                            : route('shop.cart', $client->slug);
+                        $cartUrl   = $clean ? 'https://'.$clean.'/cart' : route('shop.cart', $client->slug);
                     @endphp
                     <a href="{{ $cartUrl }}" class="hover:text-primary transition text-lg relative group">
                         <i class="fas fa-shopping-bag"></i>
-                        <span data-cart-badge
-                              class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition">{{ $cartCount }}</span>
+                        <span data-cart-badge class="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition">{{ $cartCount }}</span>
                     </a>
                 </div>
 
@@ -160,8 +148,8 @@
         
         {{-- Expandable Search --}}
         <div id="mobile-search" class="hidden absolute top-full left-0 w-full bg-white p-4 shadow-lg border-t border-gray-100 z-50">
-            <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center max-w-2xl mx-auto">
-                <input type="text" name="search" value="{{request('search')}}" placeholder="Search products..." 
+            <form action="{{ $baseUrl }}" method="GET" class="w-full relative flex items-center max-w-2xl mx-auto">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products..." 
                     class="w-full bg-gray-50 px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none border border-gray-200 rounded-sm">
                 <button class="absolute right-0 text-dark h-full px-5 hover:text-primary transition border-l border-gray-200">
                     <i class="fas fa-search"></i>
@@ -174,87 +162,103 @@
         @yield('content')
     </main>
 
-    {{-- Footer --}}
+    {{-- ===== FOOTER ===== --}}
+    @php
+        $footerDesc  = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
+        $showSocial  = $client->widgets['footer']['show_social'] ?? true;
+        $showPayment = $client->widgets['footer']['show_payment'] ?? true;
+        $footerCopy  = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+        $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null;
+        $ytUrl = $client->social_youtube  ?? $client->youtube_url  ?? null;
+        $igUrl = $client->social_instagram ?? $client->instagram_url ?? null;
+        $tkUrl = $client->tiktok_url ?? null;
+        $col1Title = $client->widgets['footer']['menu1_title'] ?? ($footerMenu1->name ?? 'Services');
+        $col2Title = $client->widgets['footer']['menu2_title'] ?? ($footerMenu2->name ?? 'Privacy & Terms');
+        $col3Title = $client->widgets['footer']['menu3_title'] ?? ($footerMenu3->name ?? 'My Account');
+    @endphp
+
     <footer class="bg-white border-t border-gray-100 mt-20 pt-16 pb-12">
         <div class="max-w-[1400px] mx-auto px-4 xl:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-12">
             
-            {{-- Column 1: Info --}}
+            {{-- Column 1: Brand Info --}}
             <div class="lg:col-span-2">
-                <a href="{{$baseUrl}}" class="inline-block mb-6">
+                <a href="{{ $baseUrl }}" class="inline-block mb-6">
                     @if($client->logo)
-                        <img src="{{asset('storage/'.$client->logo)}}" class="h-10 object-contain">
+                        <img src="{{ asset('storage/'.$client->logo) }}" class="h-10 object-contain" alt="{{ $client->shop_name }}">
                     @else
                         <span class="text-3xl font-black text-primary uppercase flex items-center gap-1">
-                            <i class="fas fa-leaf text-xl text-green-500"></i> {{$client->shop_name}}
+                            <i class="fas fa-leaf text-xl text-green-500"></i> {{ $client->shop_name }}
                         </span>
                     @endif
                 </a>
                 <p class="text-[13px] text-gray-500 leading-relaxed mb-8 pr-4">
-                    {{ $client->footer_text ?? 'Lorem ipsum is simply dummy text of the printing and typesetting industry. Lorem ipsum has been the industry\'s standard dummy text ever since the 1500s.' }}
+                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' — দ্রুত ডেলিভারি, আসল পণ্য, সারাদেশে।') }}
                 </p>
                 <div class="flex flex-wrap items-center gap-8">
+                    @if($client->address)
                     <div class="flex items-start gap-4">
                         <i class="fas fa-map-marker-alt text-primary text-xl mt-1"></i>
                         <div>
-                            <h4 class="text-sm font-bold text-dark mb-1">Contact us</h4>
-                            <p class="text-[12px] text-gray-500">{{ $client->address ?? 'Dhaka, Bangladesh' }}</p>
+                            <h4 class="text-sm font-bold text-dark mb-1">{{ $client->widgets['footer']['contact_title'] ?? 'Contact us' }}</h4>
+                            <p class="text-[12px] text-gray-500">{{ $client->address }}</p>
                         </div>
                     </div>
+                    @endif
                     @if($client->phone || $client->email)
                     <div class="flex items-start gap-4">
                         <i class="fas fa-phone-alt text-primary text-xl mt-1"></i>
                         <div>
-                            @if($client->phone)<a href="tel:{{$client->phone}}" class="block text-[12px] text-gray-500 hover:text-primary font-medium">{{$client->phone}}</a>@endif
-                            @if($client->email)<a href="mailto:{{$client->email}}" class="block text-[12px] text-gray-500 hover:text-primary mt-1">{{$client->email}}</a>@endif
+                            @if($client->phone)<a href="tel:{{ $client->phone }}" class="block text-[12px] text-gray-500 hover:text-primary font-medium">{{ $client->phone }}</a>@endif
+                            @if($client->email)<a href="mailto:{{ $client->email }}" class="block text-[12px] text-gray-500 hover:text-primary mt-1">{{ $client->email }}</a>@endif
                         </div>
                     </div>
                     @endif
                 </div>
+                @if($showSocial && ($fbUrl || $ytUrl || $igUrl || $tkUrl))
+                <div class="flex gap-3 mt-6">
+                    @if($fbUrl)<a href="{{ $fbUrl }}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-facebook-f"></i></a>@endif
+                    @if($ytUrl)<a href="{{ $ytUrl }}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-youtube"></i></a>@endif
+                    @if($igUrl)<a href="{{ $igUrl }}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-instagram"></i></a>@endif
+                    @if($tkUrl)<a href="{{ $tkUrl }}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-tiktok"></i></a>@endif
+                </div>
+                @endif
             </div>
 
-            {{-- Column 2: Services --}}
+            {{-- Column 2 --}}
             <div class="lg:col-span-1">
-                <h4 class="vg-heading text-lg mb-6">{{ $footerMenu1->name ?? 'Services' }}</h4>
+                <h4 class="vg-heading text-lg mb-6">{{ $col1Title }}</h4>
                 <div class="flex flex-col space-y-3">
                     @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
                         @foreach($footerMenu1->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
-                    @else
-                        <a href="{{$baseUrl}}?category=all" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">About {{$client->shop_name}}</a>
-                        <a href="{{ $client->email ? 'mailto:'.$client->email : '#' }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Contact us</a>
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My Account</a>
                     @endif
                 </div>
             </div>
 
-            {{-- Column 3: Privacy & terms --}}
+            {{-- Column 3 --}}
             <div class="lg:col-span-1">
-                <h4 class="vg-heading text-lg mb-6">{{ $footerMenu2->name ?? 'Privacy & terms' }}</h4>
+                <h4 class="vg-heading text-lg mb-6">{{ $col2Title }}</h4>
                 <div class="flex flex-col space-y-3">
                     @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
                         @foreach($footerMenu2->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
-                    @else
-                        <a href="{{$clean?$baseUrl.'/page/privacy':route('shop.page.slug', ['slug' => $client->slug, 'pageSlug' => 'privacy'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Privacy policy</a>
-                        <a href="{{$clean?$baseUrl.'/page/terms':route('shop.page.slug', ['slug' => $client->slug, 'pageSlug' => 'terms'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Terms & conditions</a>
                     @endif
                 </div>
             </div>
 
-            {{-- Column 4: My account --}}
+            {{-- Column 4 --}}
             <div class="lg:col-span-1">
-                <h4 class="vg-heading text-lg mb-6">{{ $footerMenu3->name ?? 'My account' }}</h4>
+                <h4 class="vg-heading text-lg mb-6">{{ $col3Title }}</h4>
                 <div class="flex flex-col space-y-3">
                     @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
                         @foreach($footerMenu3->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My account</a>
-                        <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My cart</a>
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Track order</a>
+                        <a href="{{ $clean ? $baseUrl.'/cart' : route('shop.cart', $client->slug) }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My cart</a>
+                        <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Track order</a>
                     @endif
                 </div>
             </div>
@@ -265,16 +269,19 @@
     {{-- Bottom Copyright Strip --}}
     <div class="bg-[#1f1f1f] text-gray-400 text-xs py-4">
         <div class="max-w-[1400px] mx-auto px-4 xl:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p>&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
-            <div class="flex gap-4">
-                @if($client->social_facebook ?? $client->facebook_url)<a href="{{$client->social_facebook ?? $client->facebook_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif
-                @if($client->social_youtube ?? $client->youtube_url)<a href="{{$client->social_youtube ?? $client->youtube_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-youtube text-sm"></i></a>@endif
-                @if($client->social_instagram ?? $client->instagram_url)<a href="{{$client->social_instagram ?? $client->instagram_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-instagram text-sm"></i></a>@endif
+            <p>{!! nl2br(e($footerCopy)) !!}</p>
+            <div class="flex gap-4 flex-wrap">
+                @if(!empty($client->footer_links))
+                    @foreach((array)$client->footer_links as $fl)
+                    <a href="{{ $fl['url'] ?? '#' }}" class="hover:text-white transition">{{ $fl['title'] ?? '' }}</a>
+                    @endforeach
+                @endif
             </div>
         </div>
     </div>
 
-    @include('shop.partials.floating-chat', ['client' => $client])
+        @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+@include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
     

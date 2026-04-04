@@ -1,4 +1,4 @@
-@extends('shop.themes.pikabo.layout')
+﻿@extends('shop.themes.pikabo.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -147,7 +147,9 @@ function productApp() {
                     <button class="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition"><i class="fas fa-heart text-2xl"></i></button>
                     
                     <div class="absolute bottom-4 left-0 right-0 flex gap-4 px-4 w-full justify-between">
-                        <button type="button" class="w-1/2 prod-btn-outline py-2.5 rounded text-sm uppercase">Add to Cart</button>
+                        
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="button" class="w-1/2 prod-btn-outline py-2.5 rounded text-sm uppercase">Add to Cart</button>
                         <button type="submit" form="checkout-form" class="w-1/2 prod-btn-solid py-2.5 rounded text-sm uppercase">Buy Now</button>
                     </div>
                 </div>

@@ -176,18 +176,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                 <h4 class="font-display text-2xl uppercase tracking-widest text-primary mb-4">POLICIES</h4>
                 <div class="flex flex-col space-y-4 text-sm font-sans font-bold text-gray-300">
-                    @if($client->delivery_policy_url ?? false)
-                    <a href="{{$client->delivery_policy_url}}" class="hover:text-white transition-colors uppercase w-fit">ডেলিভারি নীতি</a>
+                    @if(isset($pages) && count($pages) > 0)
+                        @foreach($pages as $page)
+                            <a href="{{ $clean ? $baseUrl.'/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-white transition-colors uppercase w-fit">{{ $page->title }}</a>
+                        @endforeach
                     @else
-                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">ডেলিভারি নীতি</a>
-                    @endif
-                    @if($client->return_policy_url ?? false)
-                    <a href="{{$client->return_policy_url}}" class="hover:text-white transition-colors uppercase w-fit">রিটার্ন নীতি</a>
-                    @else
-                    <a href="#" class="hover:text-white transition-colors uppercase w-fit">রিটার্ন নীতি</a>
-                    @endif
-                    @if($client->terms_conditions_url ?? false)
-                    <a href="{{$client->terms_conditions_url}}" class="hover:text-white transition-colors uppercase w-fit">Terms & Conditions</a>
+                        <span class="opacity-50 italic">No policies added yet.</span>
                     @endif
                 </div>
             </div>
@@ -221,7 +215,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
     </footer>
 
-    @include('shop.partials.floating-chat', ['client' => $client])
+        @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+@include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.popup-banner', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>

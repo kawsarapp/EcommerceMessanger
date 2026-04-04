@@ -1,4 +1,4 @@
-@extends('shop.themes.modern.layout')
+﻿@extends('shop.themes.modern.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -46,6 +46,8 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 
                 <div class="flex items-end gap-4">
                     <span class="text-3xl font-black text-gray-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                     @if($product->sale_price)
                         <del class="text-lg text-gray-400 font-bold mb-0.5 tracking-widest">৳{{number_format($product->regular_price)}}</del>
                     @endif

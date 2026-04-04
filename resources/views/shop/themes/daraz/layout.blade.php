@@ -151,6 +151,7 @@
 
     @include('shop.themes.daraz.floating-chat', ['client' => $client])
     @include('shop.partials.popup-banner', ['client' => $client])
+    @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
     @include('shop.themes.daraz.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>

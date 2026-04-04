@@ -1,4 +1,4 @@
-@extends('shop.themes.bdpro.layout')
+﻿@extends('shop.themes.bdpro.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -58,6 +58,8 @@ function productApp() {
     };
 }
 </script>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
     <div class="max-w-[1400px] mx-auto px-4">
         
         {{-- Breadcrumb --}}

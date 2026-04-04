@@ -1,4 +1,4 @@
-@extends('shop.themes.daraz.layout')
+﻿@extends('shop.themes.daraz.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -50,6 +50,8 @@
                         <div class="absolute top-4 right-4 bg-primary text-white text-xs font-bold px-3 py-1 rounded">
                             -{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}%
                         </div>
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+
                         @endif
                         <img :src="mainImg" class="w-full h-full object-contain cursor-zoom-in" loading="lazy">
                     </div>

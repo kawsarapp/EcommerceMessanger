@@ -1,4 +1,4 @@
-@extends('shop.themes.vegist.layout')
+﻿@extends('shop.themes.vegist.layout')
 
 @section('title', $product->name . ' - ' . $client->shop_name)
 
@@ -247,7 +247,9 @@
                     </div>
                 @else
                     {{-- Add to Cart (AJAX) --}}
-                    <button type="button" @click="addToCart()"
+                    
+    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
+<button type="button" @click="addToCart()"
                             :disabled="isLoading"
                             class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
                         <span x-show="!isLoading && !added" class="flex items-center gap-2">

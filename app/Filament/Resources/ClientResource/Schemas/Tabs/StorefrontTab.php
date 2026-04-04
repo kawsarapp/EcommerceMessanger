@@ -239,20 +239,107 @@ class StorefrontTab
                         ->onColor('success'),
                 ])->columns(3),
                 
-            Section::make('Footer Settings')
+            Section::make('🦶 Footer Content Manager')
+                ->description('সব থিমের Footer এখান থেকে dynamically কাস্টমাইজ করুন। Menu গুলো Menu Manager থেকে সেট করুন।')
                 ->schema([
-                    Textarea::make('footer_text')
-                        ->label('Custom Footer Text')
-                        ->placeholder('Copyright 2026. All rights reserved.'),
-                    Repeater::make('footer_links')
-                        ->label('Dynamic Footer Links')
+
+                    Section::make('Brand & Contact Info')
+                        ->description('Footer-এর বাম কলামে দেখাবে।')
                         ->schema([
-                            TextInput::make('title')->label('Link Title')->required(),
-                            TextInput::make('url')->label('Link URL')->url()->required(),
-                        ])
-                        ->columns(2)
-                        ->defaultItems(0)
-                        ->collapsible(),
+                            Textarea::make('widgets.footer.brand_description')
+                                ->label('Footer Brand Description')
+                                ->placeholder('আমরা সেরা মানের পণ্য দ্রুত ডেলিভারি করি। সারা দেশে শিপিং সুবিধা।')
+                                ->rows(3)
+                                ->helperText('না দিলে shop description ব্যবহার হবে।')
+                                ->columnSpanFull(),
+                        ])->columns(1)->collapsible(),
+
+                    Section::make('Footer Menu Column Headings')
+                        ->description('Footer-এ ৩টি menu column heading কাস্টম করুন (menu items Menu Manager থেকে যোগ করুন।)')
+                        ->schema([
+                            TextInput::make('widgets.footer.menu1_title')
+                                ->label('Column 1 Heading')
+                                ->placeholder('Information'),
+                            TextInput::make('widgets.footer.menu2_title')
+                                ->label('Column 2 Heading')
+                                ->placeholder('Customer Service'),
+                            TextInput::make('widgets.footer.menu3_title')
+                                ->label('Column 3 Heading')
+                                ->placeholder('Quick Links'),
+                        ])->columns(3)->collapsible(),
+
+                    Section::make('Delivery & Miscellaneous')
+                        ->schema([
+                            TextInput::make('widgets.delivery_time.text')
+                                ->label('Delivery Time Text')
+                                ->placeholder('Same day delivery within Dhaka')
+                                ->helperText('Product page ও footer-এ delivery info দেখাবে।'),
+                            TextInput::make('widgets.footer.contact_title')
+                                ->label('Contact Section Heading')
+                                ->placeholder('যোগাযোগ করুন'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('Footer Display Options')
+                        ->schema([
+                            Toggle::make('widgets.footer.show_payment')
+                                ->label('Show Payment Methods in Footer')
+                                ->default(true)
+                                ->onColor('success')
+                                ->helperText('Footer-এ COD, bKash, SSL ইত্যাদি payment badge দেখাবে।'),
+                            Toggle::make('widgets.footer.show_social')
+                                ->label('Show Social Media Icons in Footer')
+                                ->default(true)
+                                ->onColor('success')
+                                ->helperText('Social links section-এর URL গুলো "Shop Info & Social Links" থেকে দিন।'),
+                        ])->columns(2)->collapsible(),
+
+                    Section::make('Copyright & Quick Links')
+                        ->schema([
+                            Textarea::make('footer_text')
+                                ->label('Copyright / Bottom Text')
+                                ->placeholder('© 2026 আপনার শপের নাম। সর্বস্বত্ব সংরক্ষিত।')
+                                ->helperText('খালি রাখলে automatic copyright text দেখাবে।')
+                                ->rows(2)
+                                ->columnSpanFull(),
+                            Repeater::make('footer_links')
+                                ->label('Bottom Quick Links (copyright bar-এ)')
+                                ->schema([
+                                    TextInput::make('title')->label('Link Title')->required()->placeholder('Privacy Policy'),
+                                    TextInput::make('url')->label('Link URL')->url()->required()->placeholder('https://...'),
+                                ])
+                                ->columns(2)
+                                ->defaultItems(0)
+                                ->collapsible()
+                                ->addActionLabel('+ Add Quick Link')
+                                ->helperText('Privacy Policy, Terms & Conditions ইত্যাদি এখানে যোগ করুন।')
+                                ->columnSpanFull(),
+                        ])->columns(1)->collapsible(),
+
+                    Section::make('🧩 Trust Badges (Dynamic Items)')
+                        ->description('Homepage-এ trust badge section-এর items কাস্টম করুন। খালি রাখলে default 4টি badge দেখাবে।')
+                        ->schema([
+                            Repeater::make('widgets.trust_badges.items')
+                                ->label('Trust Badge Items')
+                                ->schema([
+                                    TextInput::make('icon')
+                                        ->label('Font Awesome Icon')
+                                        ->placeholder('fa-truck')
+                                        ->helperText('e.g. fa-truck, fa-shield-alt, fa-headset, fa-wallet'),
+                                    TextInput::make('title')
+                                        ->label('Title')
+                                        ->placeholder('Fast Delivery')
+                                        ->required(),
+                                    TextInput::make('subtitle')
+                                        ->label('Subtitle')
+                                        ->placeholder('Same day delivery available'),
+                                ])
+                                ->columns(3)
+                                ->defaultItems(0)
+                                ->collapsible()
+                                ->addActionLabel('+ Add Badge')
+                                ->columnSpanFull(),
+                        ])->columns(1)->collapsible(),
+
                 ])->columns(1),
                 
             Section::make('Offer Popup Banner')

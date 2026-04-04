@@ -12,6 +12,18 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\Page;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\ClientInfoTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\PaymentGatewaysTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\DomainSeoTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\FeaturesTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\IntegrationsTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\InboxAutomationTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\WhatsAppApiTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\AdminPermissionsTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\StoreSyncTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\SmsNotificationTab;
+use Filament\Forms\Components\Tabs;
 
 class ClientResource extends Resource
 {
@@ -51,10 +63,24 @@ class ClientResource extends Resource
         return ['shop_name', 'slug', 'fb_page_id', 'custom_domain', 'phone'];
     }
 
-    // Schema গুলো আলাদা ক্লাস থেকে কল করা হচ্ছে (for create)
     public static function form(Form $form): Form
     {
-        return $form->schema(ClientFormSchema::schema());
+        return $form->schema([
+            Tabs::make('Client Setup')
+                ->tabs([
+                    Tabs\Tab::make('Profile')->schema(ClientInfoTab::schema())->icon('heroicon-o-user')->iconPosition('before'),
+                    Tabs\Tab::make('Storefront')->schema(StorefrontTab::schema())->icon('heroicon-o-shopping-bag')->iconPosition('before'),
+                    Tabs\Tab::make('Payments')->schema(PaymentGatewaysTab::schema())->icon('heroicon-o-credit-card')->iconPosition('before'),
+                    Tabs\Tab::make('Domain & SEO')->schema(DomainSeoTab::schema())->icon('heroicon-o-globe-alt')->iconPosition('before'),
+                    Tabs\Tab::make('Omnichannel')->schema(IntegrationsTab::schema())->icon('heroicon-o-chat-bubble-left-right')->iconPosition('before'),
+                    Tabs\Tab::make('SMS & Alerts')->schema(SmsNotificationTab::schema())->icon('heroicon-o-device-phone-mobile')->iconPosition('before'),
+                    Tabs\Tab::make('Inbox Auto')->schema(InboxAutomationTab::schema())->icon('heroicon-o-inbox-stack')->iconPosition('before'),
+                    Tabs\Tab::make('WhatsApp API')->schema(WhatsAppApiTab::schema())->icon('heroicon-o-chat-bubble-oval-left-ellipsis')->iconPosition('before'),
+                    Tabs\Tab::make('Features')->schema(FeaturesTab::schema())->icon('heroicon-o-sparkles')->iconPosition('before'),
+                    Tabs\Tab::make('Sync')->schema(StoreSyncTab::schema())->icon('heroicon-o-arrow-path')->iconPosition('before'),
+                    Tabs\Tab::make('Permissions')->schema(AdminPermissionsTab::schema())->icon('heroicon-o-shield-check')->iconPosition('before'),
+                ])->columnSpanFull()->persistTabInQueryString('client-tab')
+        ]);
     }
 
     public static function table(Table $table): Table

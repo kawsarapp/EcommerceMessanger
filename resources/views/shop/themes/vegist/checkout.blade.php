@@ -1,4 +1,4 @@
-@extends('shop.themes.vegist.layout')
+﻿@extends('shop.themes.vegist.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')
@@ -184,10 +184,14 @@ function checkoutApp() {
                         Pay now
                     </button>
                     
-                    <div class="mt-6 flex justify-center gap-4 text-gray-400 text-xs font-bold border-t border-gray-200 pt-6">
-                        <a href="#" class="hover:text-primary">Refund policy</a>
-                        <a href="#" class="hover:text-primary">Shipping policy</a>
-                        <a href="#" class="hover:text-primary">Privacy policy</a>
+                                        <div class="mt-6 flex flex-wrap justify-center gap-4 text-gray-400 text-xs font-bold border-t border-gray-200 pt-6">
+                        @if(isset($pages) && count($pages) > 0)
+                            @foreach($pages as $page)
+                                <a href="{{ $clean ? $baseUrl.'/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary">{{ $page->title }}</a>
+                            @endforeach
+                        @else
+                            <span class="opacity-50">© {{ date('Y') }} {{ $client->shop_name }}</span>
+                        @endif
                     </div>
                 </div>
 

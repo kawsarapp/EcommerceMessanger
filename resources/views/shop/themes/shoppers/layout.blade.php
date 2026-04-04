@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -70,17 +70,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <div class="bg-shdark text-gray-300 text-[11px] py-2 hidden md:block border-b border-gray-700">
         <div class="max-w-[1240px] mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-6">
-                @if($client->email)<a href="mailto:{{$client->email}}" class="hover:text-white transition flex items-center gap-2"><i class="far fa-envelope text-gray-400"></i> Email: {{$client->email}}</a>@else<span class="flex items-center gap-2"><i class="far fa-envelope text-gray-400"></i> Email: support@{{$client->slug}}.com</span>@endif
+                @if($client->email)<a href="mailto:{{$client->email}}" class="hover:text-white transition flex items-center gap-2"><i class="far fa-envelope text-gray-400"></i> Email: {{$client->email}}</a>@endif
                 @if($client->phone)<a href="tel:{{$client->phone}}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-phone-alt text-gray-400"></i> Hotline: {{$client->phone}}</a>@endif
             </div>
             <div class="flex items-center gap-5">
-                <a href="#" class="hover:text-shred transition font-medium">Contact Us</a>
+                <a href="{{ $client->email ? 'mailto:'.$client->email : '#' }}" class="hover:text-shred transition font-medium">Contact Us</a>
                 <div class="flex items-center gap-4 text-gray-400">
-                    @if($client->facebook_url)<a href="{{$client->facebook_url}}" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
-                    <a href="#" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="hover:text-white transition"><i class="fab fa-twitter"></i></a>
-                    @if($client->instagram_url)<a href="{{$client->instagram_url}}" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
-                    <a href="#" class="hover:text-white transition"><i class="fab fa-linkedin-in"></i></a>
+                    @if($client->social_facebook ?? $client->facebook_url)<a href="{{$client->social_facebook ?? $client->facebook_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-facebook-f"></i></a>@endif
+                    @if($client->social_youtube ?? $client->youtube_url)<a href="{{$client->social_youtube ?? $client->youtube_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-youtube"></i></a>@endif
+                    @if($client->social_instagram ?? $client->instagram_url)<a href="{{$client->social_instagram ?? $client->instagram_url}}" target="_blank" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>@endif
                 </div>
             </div>
         </div>
@@ -208,89 +206,79 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     
                     {{-- Column 1: Contact --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">CORPORATE HEADQUARTER</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ $client->widgets['footer']['contact_title'] ?? 'CONTACT & INFO' }}</h4>
                         <div class="space-y-4 mt-4">
+                            @if($client->address)
                             <div class="flex items-start gap-3">
                                 <i class="fas fa-map-marker-alt text-shred mt-1 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">{{$client->address ?? 'House: 134, Road: 12, Block: E, Banani, Dhaka - 1213'}}</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">{{ $client->address }}</span>
                             </div>
+                            @endif
+                            @if($client->phone)
                             <div class="flex items-start gap-3">
                                 <i class="fas fa-phone-alt text-shred mt-0.5 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">Hotline: {{$client->phone ?? '01879 222 444'}}</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">Hotline: {{ $client->phone }}</span>
                             </div>
+                            @endif
+                            @if($client->email)
                             <div class="flex items-start gap-3">
                                 <i class="far fa-envelope text-shred mt-0.5 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">Email: {{$client->email ?? 'sales@'.$client->slug.'.com'}}</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">Email: {{ $client->email }}</span>
                             </div>
+                            @endif
+                            @if($client->widgets['office_hours']['text'] ?? false)
                             <div class="flex items-start gap-3">
                                 <i class="far fa-clock text-shred mt-0.5 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: {{ $client->widgets['office_hours']['text'] ?? 'Everyday 11AM - 9PM' }}</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: {{ $client->widgets['office_hours']['text'] }}</span>
                             </div>
+                            @endif
                         </div>
 
                         {{-- Social Square Icons --}}
+                        @if($client->widgets['footer']['show_social'] ?? true)
                         <div class="flex gap-2 mt-6">
-                            @if($client->facebook_url)<a href="{{$client->facebook_url}}" class="w-8 h-8 flex items-center justify-center bg-[#3b5998] hover:bg-[#2d4373] text-white rounded transition"><i class="fab fa-facebook-f text-sm"></i></a>@else
-                            <a href="#" class="w-8 h-8 flex items-center justify-center bg-[#3b5998] hover:bg-[#2d4373] text-white rounded transition"><i class="fab fa-facebook-f text-sm"></i></a>
-                            @endif
-                            <a href="#" class="w-8 h-8 flex items-center justify-center bg-[#cd201f] hover:bg-[#a31918] text-white rounded transition"><i class="fab fa-youtube text-sm"></i></a>
-                            <a href="#" class="w-8 h-8 flex items-center justify-center bg-[#1da1f2] hover:bg-[#1483c6] text-white rounded transition"><i class="fab fa-twitter text-sm"></i></a>
-                            @if($client->instagram_url)<a href="{{$client->instagram_url}}" class="w-8 h-8 flex items-center justify-center bg-[#c13584] hover:bg-[#9c2b6b] text-white rounded transition"><i class="fab fa-instagram text-sm"></i></a>@else
-                            <a href="#" class="w-8 h-8 flex items-center justify-center bg-[#c13584] hover:bg-[#9c2b6b] text-white rounded transition"><i class="fab fa-instagram text-sm"></i></a>
-                            @endif
-                            <a href="#" class="w-8 h-8 flex items-center justify-center bg-[#0077b5] hover:bg-[#005c8c] text-white rounded transition"><i class="fab fa-linkedin-in text-sm"></i></a>
+                            @php $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null; $ytUrl = $client->social_youtube ?? $client->youtube_url ?? null; $igUrl = $client->social_instagram ?? $client->instagram_url ?? null; @endphp
+                            @if($fbUrl)<a href="{{$fbUrl}}" target="_blank" class="w-8 h-8 flex items-center justify-center bg-[#3b5998] hover:bg-[#2d4373] text-white rounded transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif
+                            @if($ytUrl)<a href="{{$ytUrl}}" target="_blank" class="w-8 h-8 flex items-center justify-center bg-[#cd201f] hover:bg-[#a31918] text-white rounded transition"><i class="fab fa-youtube text-sm"></i></a>@endif
+                            @if($igUrl)<a href="{{$igUrl}}" target="_blank" class="w-8 h-8 flex items-center justify-center bg-[#c13584] hover:bg-[#9c2b6b] text-white rounded transition"><i class="fab fa-instagram text-sm"></i></a>@endif
                         </div>
+                        @endif
                     </div>
 
                     {{-- Column 2 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu1->name ?? 'CUSTOMER SERVICE') }}</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($client->widgets['footer']['menu1_title'] ?? ($footerMenu1->name ?? 'CUSTOMER SERVICE')) }}</h4>
                         <div class="mt-4">
                             @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
                                 @foreach($footerMenu1->items as $item)
                                     <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
                                 @endforeach
                             @else
-                                <a href="#" class="footer-link">Shipping & Returns</a>
-                                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="footer-link">Track Your Order</a>
-                                <a href="#" class="footer-link">International Shipping</a>
-                                <a href="#" class="footer-link">Payment Method</a>
-                                <a href="#" class="footer-link">About Us</a>
+                                <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="footer-link">Track Your Order</a>
                             @endif
                         </div>
                     </div>
 
                     {{-- Column 3 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu2->name ?? 'MAKE MONEY WITH US') }}</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($client->widgets['footer']['menu2_title'] ?? ($footerMenu2->name ?? 'USEFUL LINKS')) }}</h4>
                         <div class="mt-4">
                             @if(isset($footerMenu2) && $footerMenu2->items->count() > 0)
                                 @foreach($footerMenu2->items as $item)
                                     <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
                                 @endforeach
-                            @else
-                                <a href="#" class="footer-link">Become An Affiliate</a>
-                                <a href="#" class="footer-link">Become A Drop Shipper</a>
-                                <a href="#" class="footer-link">Become A Franchise</a>
-                                <a href="#" class="footer-link">Become A Retailer</a>
-                                <a href="#" class="footer-link">Become A Wholesaler</a>
                             @endif
                         </div>
                     </div>
 
                     {{-- Column 4 --}}
                     <div>
-                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($footerMenu3->name ?? 'TERMS & POLICY '.date('Y')) }}</h4>
+                        <h4 class="footer-heading pb-2 border-b border-gray-200 inline-block">{{ mb_strtoupper($client->widgets['footer']['menu3_title'] ?? ($footerMenu3->name ?? 'TERMS & POLICY '.date('Y'))) }}</h4>
                         <div class="mt-4">
                             @if(isset($footerMenu3) && $footerMenu3->items->count() > 0)
                                 @foreach($footerMenu3->items as $item)
                                     <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="footer-link">{{ $item->label }}</a>
                                 @endforeach
-                            @else
-                                <a href="#" class="footer-link">Terms & Condition Of Use</a>
-                                <a href="#" class="footer-link">Privacy Policy</a>
-                                <a href="#" class="footer-link">Delivery & Return Policy</a>
-                                <a href="#" class="footer-link">Same Day Express Delivery!</a>
                             @endif
                         </div>
                     </div>
@@ -299,7 +287,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             </div>
         </div>
 
-            {{-- Bottom --}}
+            {{-- Bottom Bar --}}
             <div class="bg-white py-6 border-b-[6px] border-shred">
                 <div class="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                     @if($client->widgets['app_links']['active'] ?? false)
@@ -326,16 +314,23 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                             <span class="text-[10px] font-bold text-gray-600 border border-gray-200 px-2 py-1">COD</span>
                             @endif
                             @if($client->partial_payment_active || ($client->full_payment_active ?? false))
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-[18px] object-contain border border-gray-200 p-0.5" loading="lazy">
+                            <span class="text-[10px] font-bold text-pink-600 border border-pink-200 px-2 py-1">Mobile Pay</span>
                             @endif
                         </div>
-                        <div class="text-[9px] text-gray-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</div>
+                        <div class="text-[10px] text-gray-400 flex gap-4">
+                            <span>{!! nl2br(e($client->footer_text ?? ('&copy; '.date('Y').' '.$client->shop_name.'. All Rights Reserved.'))) !!}</span>
+                            @if(!empty($client->footer_links))
+                                @foreach((array)$client->footer_links as $fl)
+                                <a href="{{ $fl['url'] ?? '#' }}" class="hover:text-shred transition">{{ $fl['title'] ?? '' }}</a>
+                                @endforeach
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
 
-    @include('shop.partials.floating-chat', ['client' => $client])
+        @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
+@include('shop.partials.floating-chat', ['client' => $client])
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
