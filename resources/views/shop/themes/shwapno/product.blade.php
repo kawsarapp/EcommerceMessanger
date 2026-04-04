@@ -38,26 +38,7 @@
     @media(max-width:1024px){ .sw-carousel-arrow { display: none; } }
 </style>
 
-<div class="max-w-[1340px] mx-auto px-4 lg:px-6" x-data="{ 
-    mainImg: '{{ asset('storage/'.$product->thumbnail) }}', 
-    qty: 1, 
-    color: '', 
-    size: '',
-    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
-    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
-    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
-    updatePrice() {
-        if(this.hasVariants) {
-            let matched = this.variants.find(v => 
-                (v.color === this.color || (!v.color && !this.color)) && 
-                (v.size === this.size || (!v.size && !this.size))
-            );
-            if(matched && matched.price) this.currentPrice = parseInt(matched.price);
-            else this.currentPrice = this.basePrice;
-        }
-    }
-}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
+<div class="max-w-[1340px] mx-auto px-4 lg:px-6" x-data="{ mainImg: '{{ asset('storage/'.$product->thumbnail) }}' }">
     
     {{-- Breadcrumb --}}
     <div class="sw-breadcrumb">
@@ -117,7 +98,7 @@
             <h1 class="text-[17px] text-gray-800 font-bold leading-snug mb-3">{{ $product->name }}</h1>
             
             <div class="flex items-center gap-2 mb-5">
-                <span class="text-3xl font-black text-swred" x-text="'?' + new Intl.NumberFormat('en-IN').format(currentPrice)">?{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
+                <span class="text-3xl font-black text-swred">৳{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
                 @if($product->sale_price)
                     <del class="text-[15px] text-gray-400 font-medium ml-1">?{{ number_format($product->regular_price, 0) }}</del>
                     <span class="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">

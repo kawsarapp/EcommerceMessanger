@@ -133,8 +133,10 @@ document.addEventListener('alpine:init', () => {
             if (actionType === 'checkout') {
                 // Redirect standard GET URL
                 let params = new URLSearchParams();
-                if(this.form.size) params.append('size', this.form.size);
-                if(this.form.color) params.append('color', this.form.color);
+                let vArr = [];
+                if(this.form.color) vArr.push("Color: " + this.form.color);
+                if(this.form.size)  vArr.push("Size: " + this.form.size);
+                if(vArr.length > 0) params.append('variant', vArr.join(', '));
                 params.append('qty', this.form.qty);
                 window.location.href = config.checkoutUrl + '?' + params.toString();
             } else {
@@ -144,8 +146,11 @@ document.addEventListener('alpine:init', () => {
                 body.append('_token', config.csrfToken);
                 body.append('product_id', config.productId);
                 body.append('qty', this.form.qty);
-                if(this.form.size) body.append('size', this.form.size);
-                if(this.form.color) body.append('color', this.form.color);
+                
+                let vArr = [];
+                if(this.form.color) vArr.push("Color: " + this.form.color);
+                if(this.form.size)  vArr.push("Size: " + this.form.size);
+                if(vArr.length > 0) body.append('variant', vArr.join(', '));
 
                 fetch(config.cartUrl, {
                     method: 'POST',
