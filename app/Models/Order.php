@@ -14,6 +14,11 @@ class Order extends Model
 {
     use HasFactory;
 
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     // 🔥 FIX: শুধুমাত্র guarded থাকবে, কোনো fillable থাকবে না। এতে করে যেকোনো নতুন ডাটা সহজেই সেভ হবে।
     protected $guarded = ['id'];
 

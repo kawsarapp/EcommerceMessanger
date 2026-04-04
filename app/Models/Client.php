@@ -128,6 +128,11 @@ class Client extends Model
         return $this->hasMany(Order::class);
     }
 
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);

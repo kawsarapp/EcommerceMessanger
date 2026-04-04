@@ -366,3 +366,4 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->
 </html>
 
 
+

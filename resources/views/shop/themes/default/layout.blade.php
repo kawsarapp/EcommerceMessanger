@@ -246,3 +246,4 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 </html>
 
 
+

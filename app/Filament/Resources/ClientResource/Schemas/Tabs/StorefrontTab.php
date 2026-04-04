@@ -178,6 +178,21 @@ class StorefrontTab
                         ->visible(fn ($get) => $get('homepage_banner_active')),
                 ])->columns(2),
 
+            Section::make('🔒 Customer Authentication System')
+                ->description('নিয়ন্ত্রণ করুন কাস্টমাররা কিভাবে আপনার শপে একাউন্ট খুলতে পারবে।')
+                ->schema([
+                    Select::make('customer_auth_mode')
+                        ->label('Customer Registration & Login Mode')
+                        ->options([
+                            'email' => 'Email & Password (Standard Secure Mode)',
+                            'phone' => 'Phone Number & Password',
+                            'both' => 'Allow Both Email and Phone',
+                        ])
+                        ->default('email')
+                        ->required()
+                        ->helperText('This allows buyers to create accounts, see their old orders, and earn points on your shop.'),
+                ])->columns(1),
+
             Section::make('🛒 Shop Display Controls')
                 ->description('আপনার শপে কোন বাটনগুলো দেখাবে তা নিয়ন্ত্রণ করুন।')
                 ->schema([
