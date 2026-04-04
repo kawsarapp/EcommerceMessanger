@@ -23,7 +23,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     applyCoupon() {
         if (!this.couponCode.trim()) { this.couponError = 'কুপন কোড লিখুন'; return; }
         this.couponError = '';
-        fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
+        fetch('{{ $client->custom_domain ? $baseUrl.'/apply-coupon' : route('shop.apply-coupon.sub', $client->slug) }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
             body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})

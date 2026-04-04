@@ -40,7 +40,7 @@
     
     applyCoupon() {
         if(!this.couponCode) { this.couponError = 'Please enter a coupon code'; return; }
-        fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
+        fetch('{{ $clean ? $baseUrl.'/apply-coupon' : route('shop.apply-coupon.sub', $client->slug) }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
             body: JSON.stringify({code: this.couponCode, product_id: {{ $product->id }}, subtotal: this.subtotal})

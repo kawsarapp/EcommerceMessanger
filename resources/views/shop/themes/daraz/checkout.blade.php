@@ -22,7 +22,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
     applyCoupon() {
         if(!this.coupon.trim()) { this.error = 'কুপন কোড লিখুন'; return; }
         this.error = '';
-        fetch('{{ route(''shop.apply-coupon.sub'', \->slug) }}', {
+        fetch('{{ $client->custom_domain ? $baseUrl.'/apply-coupon' : route('shop.apply-coupon.sub', $client->slug) }}', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
             body: JSON.stringify({code: this.coupon, product_id: {{ $product->id }}, subtotal: this.subtotal})
