@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
     
     <!-- Breadcrumb terminal style -->
     <div class="mb-8 font-mono text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center gap-2">

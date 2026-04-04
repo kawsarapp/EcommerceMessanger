@@ -38,7 +38,26 @@
     @media(max-width:1024px){ .sw-carousel-arrow { display: none; } }
 </style>
 
-<div class="max-w-[1340px] mx-auto px-4 lg:px-6"   x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<div class="max-w-[1340px] mx-auto px-4 lg:px-6" x-data="{ 
+    mainImg: '{{ asset('storage/'.$product->thumbnail) }}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) this.currentPrice = parseInt(matched.price);
+            else this.currentPrice = this.basePrice;
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     
     {{-- Breadcrumb --}}
     <div class="sw-breadcrumb">
@@ -254,7 +273,7 @@
     <div class="mb-16">
         <h3 class="sw-section-title">YOU MAY ALSO LIKE</h3>
         <div style="position:relative;">
-            <div class="sw-scroll-track"  id="relatedSlider">
+            <div class="sw-scroll-track" x-data="{}" id="relatedSlider">
                 @foreach($related as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif

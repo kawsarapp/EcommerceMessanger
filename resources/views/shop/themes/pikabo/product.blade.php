@@ -61,7 +61,7 @@
     .thumbnail-scroll::-webkit-scrollbar { display: none; }
 </style>
 
-<div class="bg-[#f5f6f8] min-h-screen py-6" >
+<div class="bg-[#f5f6f8] min-h-screen py-6" x-data="productApp()">
 <script>
 function productApp() {
     return {
@@ -110,7 +110,7 @@ function productApp() {
     };
 }
 </script>
-    <div class="max-w-[1400px] mx-auto px-4" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+    <div class="max-w-[1400px] mx-auto px-4">
         
         <div class="bg-white p-6 rounded shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-8">
             

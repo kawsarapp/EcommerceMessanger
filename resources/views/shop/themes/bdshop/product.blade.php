@@ -9,7 +9,7 @@ $avgRating = $reviews->avg('rating') ?? 0;
 $totalReviews = $reviews->count();
 @endphp
 
-<main class="max-w-[1280px] mx-auto px-4 py-4 sm:py-8"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<main class="max-w-[1280px] mx-auto px-4 py-4 sm:py-8" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
     
     {{-- Breadcrumb --}}
     <nav class="mb-4 flex items-center text-xs text-slate-500 font-medium overflow-hidden">

@@ -12,11 +12,11 @@
      x-cloak>
      
     <div class="flex items-center gap-3 max-w-lg mx-auto">
-        <a href="#buy-section" @click.prevent="document.querySelector('.product-variations-wrapper').scrollIntoView({behavior: 'smooth', block: 'center'})" 
+        <a href="#buy-section" @click.prevent="let el = document.querySelector('.product-variations-wrapper') || document.querySelector('.lg\\:col-span-5'); if(el) el.scrollIntoView({behavior: 'smooth', block: 'start'})" 
            class="flex-1 flex justify-center items-center h-12 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm">
             <i class="fas fa-shopping-cart mr-2"></i> Cart
         </a>
-        <a href="#buy-section" @click.prevent="document.querySelector('.product-variations-wrapper').scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(() => { document.querySelector('.product-variations-wrapper button:last-child').classList.add('ring-4', 'ring-primary/40'); setTimeout(()=>document.querySelector('.product-variations-wrapper button:last-child').classList.remove('ring-4', 'ring-primary/40'), 1000) }, 500)" 
+        <a href="#buy-section" @click.prevent="let el = document.querySelector('.product-variations-wrapper') || document.querySelector('.lg\\:col-span-5'); if(el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); setTimeout(() => { let btn = el.querySelector('button:last-of-type'); if(btn) { btn.classList.add('ring-4', 'ring-primary/40'); setTimeout(()=>btn.classList.remove('ring-4', 'ring-primary/40'), 1000) } }, 500) }" 
            class="flex-1 flex justify-center items-center h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-md">
             <i class="fas fa-bolt mr-2"></i> Buy Now
         </a>

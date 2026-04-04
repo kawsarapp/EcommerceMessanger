@@ -35,7 +35,30 @@
     .text-justify { text-align: justify; }
 </style>
 
-<div class="max-w-[1240px] mx-auto bg-white"   x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<div class="max-w-[1240px] mx-auto bg-white" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    tab: 'description',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched && matched.price) {
+                this.currentPrice = parseInt(matched.price);
+            } else {
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
     
     {{-- Breadcrumb --}}
     <div class="sh-breadcrumb flex items-center gap-2">

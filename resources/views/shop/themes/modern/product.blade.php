@@ -6,7 +6,7 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[90rem] mx-auto px-6 py-12 md:py-24"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<main class="max-w-[90rem] mx-auto px-6 py-12 md:py-24" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
     
     <!-- Minimal Breadcrumb -->
     <div class="mb-12">
@@ -15,7 +15,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start"  >
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)">
         
         <!-- Imagery Left Column (7 cols) -->
         <div class="lg:col-span-7 flex flex-col-reverse md:flex-row gap-6 transition-all duration-500 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">

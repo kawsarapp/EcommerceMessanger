@@ -6,9 +6,9 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24"  x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+<main class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
     
-    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start"  >
+    <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 100)">
         
         <!-- Left: Image (Stately & Tall) -->
         <div class="w-full lg:w-1/2 flex flex-col gap-6 transition-all duration-[2s] ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">

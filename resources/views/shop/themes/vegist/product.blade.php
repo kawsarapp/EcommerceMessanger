@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.vegist.layout')
+@extends('shop.themes.vegist.layout')
 
 @section('title', $product->name . ' - ' . $client->shop_name)
 
@@ -34,7 +34,7 @@
 
 {{-- Breadcrumb --}}
 <div class="bg-[#fcfdfa] py-4 mb-6 border-b border-gray-100">
-    <div class="max-w-[1400px] mx-auto px-4 xl:px-8 text-[12px] text-gray-500 font-medium tracking-wide flex items-center gap-2" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+    <div class="max-w-[1400px] mx-auto px-4 xl:px-8 text-[12px] text-gray-500 font-medium tracking-wide flex items-center gap-2">
         <a href="{{$baseUrl}}" class="hover:text-primary transition">Home</a>
         @if($product->category)
         <span>/</span>
@@ -45,13 +45,18 @@
     </div>
 </div>
 
-<div  class="max-w-[1400px] mx-auto px-4 xl:px-8 pb-24 md:pb-16">
+<div x-data="productData()" class="max-w-[1400px] mx-auto px-4 xl:px-8 pb-24 md:pb-16">
 
     {{-- === MAIN PRODUCT GRID === --}}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
         {{-- ─── Left: Image Gallery ─── --}}
-        <div class="lg:col-span-4" >
+        <div class="lg:col-span-4" x-data="{
+            zoomPos: '50% 50%',
+            showZoom: false,
+            showLightbox: false,
+            lightboxImg: ''
+        }">
 
             {{-- Main Image --}}
             <div class="relative bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden"
@@ -180,7 +185,7 @@
                         <input type="radio" name="variant" value="{{$sizePrice}}" data-name="{{$sizeName}}"
                                class="peer sr-only"
                                @change="updateVariant($event)"
-                               @if($loop->first) checked  @endif>
+                               @if($loop->first) checked x-init="$nextTick(()=>{ updateVariant({target:$el}) })" @endif>
                         <div class="px-4 py-2 border-2 rounded-lg text-[13px] font-medium text-gray-600
                                     peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/5
                                     hover:border-gray-300 transition select-none">
@@ -347,7 +352,7 @@
     </div>{{-- end main grid --}}
 
     {{-- === TABS === --}}
-    <div class="mt-14" >
+    <div class="mt-14" x-data="{ tab: 'description' }">
         <div class="flex overflow-x-auto hide-scroll border-b border-gray-200 gap-0">
             <button @click="tab='description'"
                     :class="tab==='description'?'border-b-2 border-primary text-primary font-bold':'text-gray-500 hover:text-primary'"

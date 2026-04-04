@@ -7,7 +7,7 @@
     $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
 @endphp
 
-<div class="bg-white py-4" >
+<div class="bg-white py-4" x-data="productApp()">
 <script>
 function productApp() {
     return {
@@ -60,7 +60,7 @@ function productApp() {
 </script>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
-    <div class="max-w-[1400px] mx-auto px-4" x-data="{ mainImg: '{{ asset('storage/'.($product->thumbnail ?? 'images/placeholder.png')) }}' }">
+    <div class="max-w-[1400px] mx-auto px-4">
         
         {{-- Breadcrumb --}}
         <nav class="flex items-center text-[11px] text-gray-500 mb-6 bg-gray-50 py-2.5 px-4 rounded-sm border border-gray-100/50 w-fit">
