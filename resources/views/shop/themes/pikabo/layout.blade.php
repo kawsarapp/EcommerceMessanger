@@ -110,7 +110,7 @@ $primary='#0084d6';
                     
                     {{-- Mini Cart Icon --}}
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
                         <i class="fas fa-shopping-cart text-lg"></i>
                         <span class="text-sm">Cart</span>
                         <span class="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">{{ $cartCount }}</span>

@@ -253,7 +253,7 @@
                         @endforeach
                     @else
                         <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My account</a>
-                        <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My cart</a>
+                        <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">My cart</a>
                         <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Track order</a>
                     @endif
                 </div>

@@ -34,7 +34,7 @@
     </a>
     
     @php $mobCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-    <a href="{{$clean??false ? $baseUrl.'/checkout' : route('shop.checkout', $client->slug)}}" title="Cart" class="relative {{ request()->route()->getName() === 'shop.checkout' || request()->is('*/checkout') ? 'active' : '' }}">
+    <a href="{{$clean??false ? $baseUrl.'/cart' : route('shop.cart', $client->slug)}}" title="Cart" class="relative {{ request()->route()->getName() === 'shop.cart' || request()->is('*/cart') ? 'active' : '' }}">
         <i class="fas fa-shopping-cart"></i>Cart
         @if($mobCartCount > 0)
             <span class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">{{ $mobCartCount }}</span>

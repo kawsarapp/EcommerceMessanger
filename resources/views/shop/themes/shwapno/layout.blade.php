@@ -98,7 +98,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                     {{-- Mobile Cart Icon --}}
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="md:hidden text-white flex items-center gap-2">
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="md:hidden text-white flex items-center gap-2">
                         <div class="relative">
                             <i class="fas fa-shopping-bag text-2xl"></i>
                             <span class="absolute -top-1 -right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
@@ -137,7 +137,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </a>
 
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/checkout':route('shop.checkout',$client->slug)}}" class="relative ml-2 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative ml-2 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">
                         <i class="fas fa-shopping-bag text-white text-2xl group-hover:scale-110 transition"></i>
                         <span class="absolute top-3 right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-swdark shadow-sm">{{ $cartCount }}</span>
                     </a>
