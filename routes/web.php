@@ -185,9 +185,13 @@ Route::middleware(['auth'])->prefix('admin-backup')->group(function () {
 // ==========================================
 Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->prefix('payment')->group(function () {
 
-    // 📲 bKash Reference Confirmation (AJAX)
+    // 📲 bKash Reference Confirmation (AJAX — Manual)
     Route::post('/bkash/personal/confirm',  [PaymentController::class, 'confirmBkashPersonal'])->name('payment.bkash.personal.confirm');
     Route::post('/bkash/merchant/confirm',  [PaymentController::class, 'confirmBkashMerchant'])->name('payment.bkash.merchant.confirm');
+
+    // 🔴 bKash PGW — Official Tokenized Checkout API
+    Route::get('/bkash-pgw/{orderId}/init',     [PaymentController::class, 'initiateBkashPgw'])->name('payment.bkash.pgw.init');
+    Route::get('/bkash-pgw/{orderId}/callback', [PaymentController::class, 'bkashPgwCallback'])->name('payment.bkash.pgw.callback');
 
     // 💳 SSL Commerz
     Route::get('/sslcommerz/{orderId}/init',    [PaymentController::class, 'initiateSslCommerz'])->name('payment.sslcommerz.init');

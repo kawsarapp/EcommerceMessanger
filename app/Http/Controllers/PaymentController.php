@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Client;
+use App\Services\BkashPgwService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -463,6 +464,130 @@ class PaymentController extends Controller
         }
 
         return $this->redirectToOrderFail($order, $order->client, 'Payment cancelled.');
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 📱 bKASH PGW — Official Tokenized Checkout API
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    public function initiateBkashPgw(Request $request, $orderId)
+    {
+        $order  = Order::with('client')->findOrFail($orderId);
+        $client = $order->client;
+
+        // 🔒 Gateway active check
+        if (!$client->isPaymentGatewayActive('bkash_pgw')) {
+            abort(403, 'bKash PGW is not enabled for this shop.');
+        }
+
+        // 🔒 Already paid হলে re-initiate করা যাবে না
+        if ($order->payment_status === 'paid') {
+            return $this->redirectToOrderSuccess($order, $client, 'This order is already paid.');
+        }
+
+        $config = $client->getPaymentGatewayConfig('bkash_pgw');
+        $bkash  = new BkashPgwService();
+
+        try {
+            $callbackUrl = route('payment.bkash.pgw.callback', $orderId);
+            $cancelUrl   = route('payment.bkash.pgw.callback', $orderId) . '?status=cancel';
+
+            $result = $bkash->createPayment($config, $order, $callbackUrl, $cancelUrl);
+
+            // 🔒 Store paymentID in order for later verification
+            $order->update([
+                'payment_method'    => 'bkash_pgw',
+                'payment_status'    => 'pending',
+                'payment_reference' => $result['paymentID'],
+            ]);
+
+            // Redirect customer to bKash checkout page
+            return redirect($result['bkashURL']);
+
+        } catch (\Exception $e) {
+            Log::error('bKash PGW Init Error: ' . $e->getMessage(), ['order_id' => $orderId]);
+            return $this->redirectToOrderFail($order, $client, 'bKash payment initialization failed. Please try again.');
+        }
+    }
+
+    public function bkashPgwCallback(Request $request, $orderId)
+    {
+        $order  = Order::with('client')->findOrFail($orderId);
+        $client = $order->client;
+
+        // 🔒 Cancelled by user
+        $status = $request->get('status', '');
+        if ($status === 'cancel' || $status === 'failure') {
+            if ($order->payment_status !== 'paid') {
+                $order->update(['payment_status' => 'pending']);
+            }
+            return $this->redirectToOrderFail($order, $client, 'bKash payment was cancelled or failed.');
+        }
+
+        // 🔒 paymentID must be present in callback
+        $callbackPaymentID = $request->get('paymentID');
+        if (empty($callbackPaymentID)) {
+            Log::warning('bKash PGW: Callback missing paymentID', ['order_id' => $orderId, 'query' => $request->all()]);
+            return $this->redirectToOrderFail($order, $client, 'Invalid callback from bKash.');
+        }
+
+        // 🔒 Already paid — idempotency guard
+        if ($order->payment_status === 'paid') {
+            return $this->redirectToOrderSuccess($order, $client, 'Your order is already confirmed.');
+        }
+
+        // 🔒 paymentID must match what we stored at initiation
+        $storedPaymentID = $order->payment_reference;
+        if ($storedPaymentID && $storedPaymentID !== $callbackPaymentID) {
+            Log::warning('bKash PGW: paymentID mismatch', [
+                'order_id' => $orderId,
+                'stored'   => $storedPaymentID,
+                'received' => $callbackPaymentID,
+            ]);
+            return $this->redirectToOrderFail($order, $client, 'Payment reference mismatch. Please contact support.');
+        }
+
+        // 🔒 Gateway still active
+        if (!$client->isPaymentGatewayActive('bkash_pgw')) {
+            return $this->redirectToOrderFail($order, $client, 'bKash payment gateway is not active.');
+        }
+
+        $config = $client->getPaymentGatewayConfig('bkash_pgw');
+        $bkash  = new BkashPgwService();
+
+        try {
+            // ── Step 5: Execute Payment ──────────────────────────
+            $executeData = $bkash->executePayment($config, $callbackPaymentID);
+
+            // ── Security: Amount verification ────────────────────
+            $bkash->verifyAmount($order, $executeData);
+
+            // ── Security: Query & confirm Completed status ───────
+            $bkash->verifyCompletion($config, $callbackPaymentID);
+
+            // ── Update order ─────────────────────────────────────
+            $order->update([
+                'payment_status'    => 'paid',
+                'payment_method'    => 'bkash_pgw',
+                'payment_reference' => $executeData['trxID'] ?? $callbackPaymentID,
+                'advance_amount'    => (float) ($executeData['amount'] ?? $bkash->resolveAmount($order)),
+            ]);
+
+            Log::info('bKash PGW: Payment successful', [
+                'order_id'  => $orderId,
+                'paymentID' => $callbackPaymentID,
+                'trxID'     => $executeData['trxID'] ?? null,
+            ]);
+
+            return $this->redirectToOrderSuccess($order, $client, 'bKash payment successful! Your order is confirmed.');
+
+        } catch (\Exception $e) {
+            Log::error('bKash PGW Callback Error: ' . $e->getMessage(), [
+                'order_id'  => $orderId,
+                'paymentID' => $callbackPaymentID,
+            ]);
+            return $this->redirectToOrderFail($order, $client, 'bKash payment verification failed. Please contact support.');
+        }
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

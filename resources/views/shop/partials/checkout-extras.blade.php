@@ -200,6 +200,24 @@
             </div>
         </label>
         @endif
+
+        {{-- 🔴 bKash PGW — Official Checkout API --}}
+        @if(isset($methods['bkash_pgw']))
+        <label class="cursor-pointer">
+            <input type="radio" name="payment_method" value="bkash_pgw" x-model="selectedPayment" class="peer hidden" {{ $firstKey === 'bkash_pgw' ? 'checked' : '' }}>
+            <div class="border-2 border-slate-200 rounded-xl p-4 peer-checked:border-[#E2136E] peer-checked:bg-[#FFF0F6] transition-all hover:border-pink-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-[#E2136E] flex items-center justify-center flex-shrink-0">
+                        <span class="font-black text-white text-[10px] leading-none text-center">bKash</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-bold text-slate-800">bKash Payment</span>
+                        <span class="block text-xs text-[#E2136E] font-medium">Official Gateway — Auto Verify</span>
+                    </div>
+                </div>
+            </div>
+        </label>
+        @endif
     </div>
 
     {{-- ══ bKash Merchant Info + TRX ID ══ --}}
@@ -301,6 +319,27 @@
             <p class="text-xs text-orange-600 mt-1">
                 "Order Confirm" করলে আপনাকে Surjopay payment page এ নেওয়া হবে।
             </p>
+        </div>
+    </div>
+    @endif
+
+    {{-- ══ bKash PGW Info ══ --}}
+    @if(isset($methods['bkash_pgw']))
+    <div x-show="selectedPayment === 'bkash_pgw'"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+        class="bg-[#FFF0F6] border-2 border-[#E2136E]/30 rounded-xl p-5 mb-4">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-[#E2136E] flex items-center justify-center flex-shrink-0">
+                <span class="font-black text-white text-[10px] leading-none">bKash</span>
+            </div>
+            <div>
+                <p class="text-sm font-bold text-[#9B1B4A] mb-1">bKash Official Payment Gateway</p>
+                <p class="text-xs text-[#C01F5F] leading-relaxed">
+                    "Order Confirm" করলে আপনাকে bKash এর Official Payment page এ নেওয়া হবে।<br>
+                    bKash App অথবা USSD দিয়ে payment করুন।<br>
+                    Payment হলে <strong>automatically order confirm</strong> হবে।
+                </p>
+            </div>
         </div>
     </div>
     @endif

@@ -94,6 +94,7 @@ class OrderTableSchema
                 })
                 ->description(fn (Order $record): string =>
                     match ($record->payment_method) {
+                        'bkash_pgw'      => '🔴 bKash (Official PGW)',
                         'bkash_merchant' => '📲 bKash Merchant',
                         'bkash_personal' => '📱 bKash Personal',
                         'sslcommerz'     => '💳 SSL Commerz',
@@ -146,6 +147,7 @@ class OrderTableSchema
                 ->label('Payment Method')
                 ->options([
                     'cod'            => '🚚 Cash on Delivery',
+                    'bkash_pgw'      => '🔴 bKash PGW',
                     'bkash_merchant' => '📲 bKash Merchant',
                     'bkash_personal' => '📱 bKash Personal',
                     'sslcommerz'     => '💳 SSL Commerz',

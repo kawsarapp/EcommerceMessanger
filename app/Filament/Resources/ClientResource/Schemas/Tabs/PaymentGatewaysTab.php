@@ -13,6 +13,68 @@ class PaymentGatewaysTab
         return [
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 🔴 bKash PGW — Official API (Tokenized Checkout)
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Section::make('🔴 bKash PGW — Official Checkout API')
+                ->description('bKash এর official Tokenized Checkout API। Customer সরাসরি bKash App এ redirect হবে — automatic payment verify। bKash থেকে আলাদা Merchant account দরকার।')
+                ->schema([
+                    Toggle::make('payment_gateways.bkash_pgw.active')
+                        ->label('bKash PGW চালু করুন')
+                        ->default(false)
+                        ->live()
+                        ->onColor('success'),
+
+                    Toggle::make('payment_gateways.bkash_pgw.is_sandbox')
+                        ->label('Sandbox Mode (Test)')
+                        ->default(true)
+                        ->onColor('warning')
+                        ->offColor('danger')
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->helperText('⚠️ Live করতে হলে Sandbox বন্ধ করুন। Real টাকা কাটবে।'),
+
+                    TextInput::make('payment_gateways.bkash_pgw.app_key')
+                        ->label('App Key')
+                        ->placeholder('your_app_key')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->required(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->helperText('bKash Developer Portal থেকে পাবেন।'),
+
+                    TextInput::make('payment_gateways.bkash_pgw.app_secret')
+                        ->label('App Secret')
+                        ->placeholder('your_app_secret')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->required(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->helperText('bKash Developer Portal থেকে পাবেন।'),
+
+                    TextInput::make('payment_gateways.bkash_pgw.username')
+                        ->label('Merchant Username')
+                        ->placeholder('your_merchant_username')
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->required(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->helperText('bKash Merchant account এর username।'),
+
+                    TextInput::make('payment_gateways.bkash_pgw.password')
+                        ->label('Merchant Password')
+                        ->placeholder('your_merchant_password')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->required(fn ($get) => $get('payment_gateways.bkash_pgw.active'))
+                        ->helperText('bKash Merchant account এর password।'),
+
+                    Placeholder::make('bkash_pgw_note')
+                        ->label('')
+                        ->content('📌 Sandbox credentials পেতে: developer.bkash.com — Register করে Sandbox credentials নিন। Live credentials এর জন্য bKash এর সাথে যোগাযোগ করুন।')
+                        ->visible(fn ($get) => $get('payment_gateways.bkash_pgw.active')),
+                ])
+                ->columns(2)
+                ->collapsible(),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // 📲 bKash Merchant
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             Section::make('📲 bKash Merchant Number')

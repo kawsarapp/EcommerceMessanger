@@ -357,6 +357,11 @@ class Client extends Model
             $methods["full"] = "Full Pre-Payment";
         }
 
+        // bKash PGW (Official Tokenized Checkout API)
+        if (!empty($gateways["bkash_pgw"]["active"]) && !empty($gateways["bkash_pgw"]["app_key"])) {
+            $methods["bkash_pgw"] = "bKash (Official Gateway)";
+        }
+
         // bKash Merchant
         if (!empty($gateways["bkash_merchant"]["active"]) && !empty($gateways["bkash_merchant"]["number"])) {
             $methods["bkash_merchant"] = "bKash Merchant";
