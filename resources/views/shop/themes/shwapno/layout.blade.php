@@ -132,7 +132,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-4 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">বাংলা</a>
                     @endif
                     
-                    <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
                         <i class="far fa-user text-sm"></i> Track Order
                     </a>
 

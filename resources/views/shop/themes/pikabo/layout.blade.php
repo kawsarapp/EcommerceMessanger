@@ -104,7 +104,7 @@ $primary='#0084d6';
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50 ml-auto">
-                    <a href="{{$clean?$baseUrl.'/orders':route('shop.customer.orders',$client->slug)}}" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-bdblue transition px-6 py-1.5 rounded-md text-sm font-medium">
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-bdblue transition px-6 py-1.5 rounded-md text-sm font-medium">
                         Track Order
                     </a>
                     
