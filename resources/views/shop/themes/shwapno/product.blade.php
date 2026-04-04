@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.shwapno.layout')
+@extends('shop.themes.shwapno.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -117,9 +117,9 @@
             <h1 class="text-[17px] text-gray-800 font-bold leading-snug mb-3">{{ $product->name }}</h1>
             
             <div class="flex items-center gap-2 mb-5">
-                <span class="text-3xl font-black text-swred" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
+                <span class="text-3xl font-black text-swred" x-text="'?' + new Intl.NumberFormat('en-IN').format(currentPrice)">?{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
                 @if($product->sale_price)
-                    <del class="text-[15px] text-gray-400 font-medium ml-1">৳{{ number_format($product->regular_price, 0) }}</del>
+                    <del class="text-[15px] text-gray-400 font-medium ml-1">?{{ number_format($product->regular_price, 0) }}</del>
                     <span class="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                         {{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF
                     </span>
@@ -229,7 +229,9 @@
         <div class="bg-swyellow text-swdark font-bold text-xs px-6 py-2 rounded-full inline-block shadow-sm mb-4">Customer Reviews</div>
         <div class="border border-gray-200 rounded-sm bg-white p-8 flex flex-col items-center justify-center">
             <div class="w-full max-w-2xl">
-                @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                @include('shop.partials.related-products', ['client' => $client, 'product' => $product, 'relatedProducts' => App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(8)->get()])
+
+@include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
             </div>
         </div>
     </div>
@@ -250,8 +252,8 @@
                         <h4 class="text-[11px] font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-1 hover:text-swred transition">{{ $p->name }}</h4>
                     </a>
                     <div class="flex items-center justify-center gap-1.5 mb-2">
-                        @if($p->sale_price)<del class="text-[9px] text-gray-400">৳{{ number_format((float)$p->regular_price, 0) }}</del>@endif
-                        <span class="font-bold text-swred text-xs">৳{{ number_format((float)($p->sale_price ?? $p->regular_price), 0) }}</span>
+                        @if($p->sale_price)<del class="text-[9px] text-gray-400">?{{ number_format((float)$p->regular_price, 0) }}</del>@endif
+                        <span class="font-bold text-swred text-xs">?{{ number_format((float)($p->sale_price ?? $p->regular_price), 0) }}</span>
                     </div>
                     @if($client->show_order_button ?? true)
                     <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full">
@@ -276,7 +278,7 @@
             <div class="sw-scroll-track" x-data="{}" id="relatedSlider">
                 @foreach($related as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
-                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
+                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">?{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="flex items-center justify-center h-40 mb-2 mt-4">
                         <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300" alt="{{ $p->name }}">
                     </a>
@@ -285,8 +287,8 @@
                             <h4 class="text-xs font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-2 hover:text-swred transition">{{ $p->name }}</h4>
                         </a>
                         <div class="flex items-center justify-center gap-1.5 mb-2">
-                            @if($p->sale_price)<del class="text-[11px] text-gray-400">৳{{ number_format((float)$p->regular_price, 0) }}</del>@endif
-                            <span class="font-bold text-swred text-sm">৳{{ number_format((float)($p->sale_price ?? $p->regular_price), 0) }}</span>
+                            @if($p->sale_price)<del class="text-[11px] text-gray-400">?{{ number_format((float)$p->regular_price, 0) }}</del>@endif
+                            <span class="font-bold text-swred text-sm">?{{ number_format((float)($p->sale_price ?? $p->regular_price), 0) }}</span>
                         </div>
                         @if($client->show_order_button ?? true)
                         <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full mt-1">
@@ -304,3 +306,4 @@
 </div>
 @include('shop.partials.product-sticky-bar')
 @endsection
+

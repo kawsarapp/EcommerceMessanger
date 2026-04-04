@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.shoppers.layout')
+@extends('shop.themes.shoppers.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -253,12 +253,14 @@
                 </div>
                 
                 <div x-show="tab === 'reviews'" class="animate-fade-in hidden">
-                    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                    @include('shop.partials.related-products', ['client' => $client, 'product' => $product, 'relatedProducts' => App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(8)->get()])
+
+@include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
                 </div>
 
                 <div x-show="tab === 'bengali'" class="animate-fade-in hidden">
                     <p class="text-justify font-medium text-gray-600">
-                        এই পণ্যটির সম্পর্কে বিস্তারিত বাংলা বিবরণ এখনো যোগ করা হয়নি।
+                        ?? ??????? ???????? ????????? ????? ????? ???? ??? ??? ??????
                     </p>
                 </div>
                 
@@ -311,3 +313,4 @@
 </div>
 @include('shop.partials.product-sticky-bar')
 @endsection
+

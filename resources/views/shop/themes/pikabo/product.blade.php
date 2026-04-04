@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.pikabo.layout')
+@extends('shop.themes.pikabo.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -192,9 +192,9 @@ function productApp() {
 
                 {{-- Pricing --}}
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="text-xl font-bold text-bdblue">৳<span x-text="displayPrice"></span></span>
+                    <span class="text-xl font-bold text-bdblue">?<span x-text="displayPrice"></span></span>
                     @if($product->sale_price)
-                        <del class="text-sm text-gray-400">৳{{number_format($product->regular_price)}}</del>
+                        <del class="text-sm text-gray-400">?{{number_format($product->regular_price)}}</del>
                         <span class="text-[10px] font-bold text-red-500 border border-red-500 px-1 py-0.5 rounded">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}%</span>
                     @endif
                 </div>
@@ -211,7 +211,7 @@ function productApp() {
                 {{-- EMI & Warranty Box Info --}}
                 <div class="text-xs text-gray-700 space-y-4">
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                        <span>EMI from : ৳{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
+                        <span>EMI from : ?{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
                         <a href="#" class="text-bdblue hover:underline flex items-center gap-1 font-semibold">Know More <i class="fas fa-chevron-right text-[8px]"></i></a>
                     </div>
                     <div class="flex items-center gap-2 p-2">
@@ -311,7 +311,9 @@ function productApp() {
                 </div>
                 
                 <div x-show="tab === 'reviews'" class="animate-fade-in hidden">
-                    @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                    @include('shop.partials.related-products', ['client' => $client, 'product' => $product, 'relatedProducts' => App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(8)->get()])
+
+@include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
                 </div>
             </div>
         </div>
@@ -337,3 +339,4 @@ window.dataLayer.push({
 </script>
 @include('shop.partials.product-sticky-bar')
 @endsection
+
