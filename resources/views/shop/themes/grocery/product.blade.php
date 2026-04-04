@@ -96,7 +96,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
                                     <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$c}}</span>
                                 </label>
                                 @endforeach
@@ -110,7 +110,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer group">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
                                     <span class="block px-5 py-2.5 rounded-full grocer-card text-center text-slate-600 font-bold text-sm transition-all peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary hover:border-primary/30 border-2 border-transparent">{{$s}}</span>
                                 </label>
                                 @endforeach

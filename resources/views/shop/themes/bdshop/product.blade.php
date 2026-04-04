@@ -114,7 +114,7 @@ $totalReviews = $reviews->count();
                         <div class="flex gap-2 flex-wrap">
                             @foreach($product->colors as $c)
                             <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
                                 <span class="block px-5 py-2 rounded-full border-2 border-transparent bg-slate-100 text-sm font-bold peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-md peer-checked:-translate-y-1 smooth-transition shadow-sm hover:bg-slate-200">{{$c}}</span>
                             </label>
                             @endforeach
@@ -129,7 +129,7 @@ $totalReviews = $reviews->count();
                         <div class="flex gap-2 flex-wrap">
                             @foreach($product->sizes as $s)
                             <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
                                 <span class="block min-w-12 h-10 px-3 flex items-center justify-center rounded-2xl border-2 border-transparent bg-slate-100 text-sm font-bold peer-checked:bg-slate-800 peer-checked:text-white peer-checked:shadow-md peer-checked:-translate-y-1 smooth-transition shadow-sm hover:bg-slate-200">{{$s}}</span>
                             </label>
                             @endforeach

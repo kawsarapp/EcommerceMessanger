@@ -51,7 +51,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <div class="flex gap-4 flex-wrap justify-center lg:justify-start">
                         @foreach($product->colors as $c)
                         <label class="cursor-pointer group">
-                            <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                            <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
                             <span class="block px-8 py-3 border border-gray-600 text-xs font-medium tracking-widest text-gray-300 peer-checked:bg-white peer-checked:border-white peer-checked:text-black transition uppercase duration-300">{{$c}}</span>
                         </label>
                         @endforeach
@@ -65,7 +65,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <div class="flex gap-4 flex-wrap justify-center lg:justify-start">
                         @foreach($product->sizes as $s)
                         <label class="cursor-pointer group">
-                            <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                            <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
                             <span class="min-w-[4rem] text-center px-6 py-3 border border-gray-600 text-xs font-medium tracking-widest text-gray-300 peer-checked:bg-white peer-checked:border-white peer-checked:text-black transition uppercase duration-300">{{$s}}</span>
                         </label>
                         @endforeach

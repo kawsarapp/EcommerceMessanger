@@ -87,7 +87,7 @@
                         <div class="flex gap-3 flex-wrap">
                             @foreach($product->colors as $c)
                             <label class="cursor-pointer">
-                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden" required>
+                                <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
                                 <span class="px-6 py-3 rounded-xl border-2 border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-gray-600 font-bold text-sm transition-all block hover:border-gray-300">
                                     {{$c}}
                                 </span>
@@ -105,7 +105,7 @@
                         <div class="flex gap-3 flex-wrap">
                             @foreach($product->sizes as $s)
                             <label class="cursor-pointer">
-                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden" required>
+                                <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
                                 <span class="min-w-[4rem] flex justify-center py-3 rounded-xl border-2 border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-gray-600 font-bold text-sm transition-all hover:border-gray-300">
                                     {{$s}}
                                 </span>

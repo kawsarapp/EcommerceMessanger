@@ -89,7 +89,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer group">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only" required>
+                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only">
                                     <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$c}}</span>
                                 </label>
                                 @endforeach
@@ -106,7 +106,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer group">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only" required>
+                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only">
                                     <span class="block px-5 py-2.5 rounded border border-gray-700 bg-dark text-gray-400 font-bold font-mono text-sm transition-all peer-checked:bg-primary/20 peer-checked:neon-border peer-checked:text-primary hover:border-primary hover:shadow-[0_0_10px_var(--tw-color-primary)]">{{$s}}</span>
                                 </label>
                                 @endforeach

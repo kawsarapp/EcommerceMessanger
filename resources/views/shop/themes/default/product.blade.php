@@ -122,7 +122,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->colors as $c)
                                 <label class="cursor-pointer relative group block">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only" required>
+                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer sr-only">
                                     <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$c}}</span>
                                 </label>
                                 @endforeach
@@ -136,7 +136,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                             <div class="flex gap-3 flex-wrap">
                                 @foreach($product->sizes as $s)
                                 <label class="cursor-pointer block">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only" required>
+                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer sr-only">
                                     <span class="block px-6 py-2.5 rounded-2xl border border-white bg-white/50 backdrop-blur-sm text-slate-700 font-bold text-sm premium-transition peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 peer-checked:shadow-[0_8px_20px_rgb(0,0,0,0.12)] peer-checked:-translate-y-1 hover:bg-white shadow-sm">{{$s}}</span>
                                 </label>
                                 @endforeach
