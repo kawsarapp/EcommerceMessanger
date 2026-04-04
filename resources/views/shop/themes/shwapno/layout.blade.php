@@ -1,21 +1,29 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean  = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')); 
 $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug); 
 
-// Footer settings (from widgets JSON — no migration needed)
+// Footer settings (from widgets JSON � no migration needed)
 $footerDesc        = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
 $footerShowPay     = $client->widgets['footer']['show_payment'] ?? true;
 $footerShowSocial  = $client->widgets['footer']['show_social'] ?? true;
-$footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+$footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
 @endphp
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title')</title>
+        <title>@yield('title', $client->shop_name)</title>
+    <meta name="description" content="@yield('meta_description', $client->meta_description ?? $client->about_us ?? 'Welcome to ' . $client->shop_name)">
+    <meta name="theme-color" content="{{ $client->primary_color ?? '#ffffff' }}">
+    <link rel="icon" type="image/x-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <meta property="og:title" content="@yield('title', $client->shop_name)">
+    <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
+    <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
-    <meta name="description" content="{{ $client->meta_description ?? ($client->description ?? $client->shop_name . ' - Online Shop') }}">
+    meta_description ?? ($client->description ?? $client->shop_name . ' - Online Shop') }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -126,7 +134,7 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client-
                 {{-- Right Actions (Desktop) --}}
                 <div class="hidden md:flex items-center gap-3 shrink-0">
                     @if($client->widgets['language_switcher']['active'] ?? false)
-                    <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-3 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">বাংলা</a>
+                    <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-3 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">?????</a>
                     @endif
                     
                     <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
@@ -355,3 +363,4 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client-
     @endif
 </body>
 </html>
+

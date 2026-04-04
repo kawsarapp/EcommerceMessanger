@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -7,7 +7,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title')</title>
+        <title>@yield('title', $client->shop_name)</title>
+    <meta name="description" content="@yield('meta_description', $client->meta_description ?? $client->about_us ?? 'Welcome to ' . $client->shop_name)">
+    <meta name="theme-color" content="{{ $client->primary_color ?? '#ffffff' }}">
+    <link rel="icon" type="image/x-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <meta property="og:title" content="@yield('title', $client->shop_name)">
+    <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
+    <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
     
     <!-- AlpineJS & TailwindCSS -->
@@ -53,7 +61,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 </head>
 <body class="bg-white text-gray-900 antialiased flex flex-col min-h-screen font-sans selection:bg-black selection:text-white">
 
-    {{-- ⚡ Flash Sale Banner --}}
+    {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
     @if($client->announcement_text)
@@ -96,7 +104,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <footer class="bg-white border-t border-gray-100 pt-24 pb-12 mt-auto">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 flex flex-col items-center">
             <h3 class="font-heading font-black text-4xl mb-4 text-center">{{$client->shop_name}}</h3>
-            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-8">{{ $client->description ?? ($client->tagline ?? 'আপনার পছন্দের ফ্যাশন গন্তব্য। সেরা মানের পোশাক ও আনুষঙ্গিক।') }}</p>
+            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-8">{{ $client->description ?? ($client->tagline ?? '????? ??????? ?????? ???????? ???? ????? ????? ? ??????????') }}</p>
             
             <div class="flex gap-6 mb-8">
                 @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-400 hover:text-black transition"><i class="fab fa-facebook-f"></i></a>@endif
@@ -121,3 +129,4 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php
     $clean = preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show',$client->slug);
@@ -7,7 +7,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title')</title>
+        <title>@yield('title', $client->shop_name)</title>
+    <meta name="description" content="@yield('meta_description', $client->meta_description ?? $client->about_us ?? 'Welcome to ' . $client->shop_name)">
+    <meta name="theme-color" content="{{ $client->primary_color ?? '#ffffff' }}">
+    <link rel="icon" type="image/x-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <meta property="og:title" content="@yield('title', $client->shop_name)">
+    <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
+    <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
     <!-- Tailwind CSS & Alpine JS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,7 +65,7 @@
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen">
     
-    {{-- ⚡ Flash Sale Banner --}}
+    {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
     @if($client->announcement_text)
@@ -96,7 +104,7 @@
     <footer class="bg-white border-t border-gray-200 mt-auto pt-16 pb-8">
         <div class="max-w-5xl mx-auto px-4 text-center">
             <h3 class="text-2xl font-bold tracking-widest uppercase mb-4">{{$client->shop_name}}</h3>
-            <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xl mx-auto">{{ $client->description ?? ($client->tagline ?? 'আপনার প্রিমিয়াম শপিং গন্তব্য। সেরা মানের পণ্য, সেরা দামে।') }}</p>
+            <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xl mx-auto">{{ $client->description ?? ($client->tagline ?? '????? ?????????? ???? ???????? ???? ????? ????, ???? ?????') }}</p>
 
             <div class="flex justify-center gap-6 mb-6 flex-wrap">
                 @if($client->phone)<a href="tel:{{$client->phone}}" class="text-gray-400 hover:text-primary transition flex items-center gap-2 text-sm"><i class="fas fa-phone"></i> {{$client->phone}}</a>@endif
@@ -127,3 +135,4 @@
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+

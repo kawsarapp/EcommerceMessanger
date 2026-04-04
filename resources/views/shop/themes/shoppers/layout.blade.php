@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -7,9 +7,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title')</title>
+        <title>@yield('title', $client->shop_name)</title>
+    <meta name="description" content="@yield('meta_description', $client->meta_description ?? $client->about_us ?? 'Welcome to ' . $client->shop_name)">
+    <meta name="theme-color" content="{{ $client->primary_color ?? '#ffffff' }}">
+    <link rel="icon" type="image/x-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <meta property="og:title" content="@yield('title', $client->shop_name)">
+    <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
+    <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
-    <meta name="description" content="{{ $client->meta_description ?? $client->shop_name . ' - Your Beauty Destination' }}">
+    meta_description ?? $client->shop_name . ' - Your Beauty Destination' }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -334,3 +342,4 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+

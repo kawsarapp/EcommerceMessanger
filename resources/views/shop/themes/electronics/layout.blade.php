@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
@@ -7,7 +7,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title')</title>
+        <title>@yield('title', $client->shop_name)</title>
+    <meta name="description" content="@yield('meta_description', $client->meta_description ?? $client->about_us ?? 'Welcome to ' . $client->shop_name)">
+    <meta name="theme-color" content="{{ $client->primary_color ?? '#ffffff' }}">
+    <link rel="icon" type="image/x-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ $client->logo ? asset('storage/'.$client->logo) : asset('favicon.ico') }}">
+    <meta property="og:title" content="@yield('title', $client->shop_name)">
+    <meta property="og:description" content="@yield('meta_description', $client->meta_description ?? $client->about_us)">
+    <meta property="og:image" content="@yield('meta_image', $client->logo ? asset('storage/'.$client->logo) : asset('images/logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     @include('shop.partials.tracking', ['client' => $client])
     
     <!-- AlpineJS & TailwindCSS -->
@@ -70,7 +78,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 </head>
 <body class="bg-[#030712] text-gray-200 antialiased flex flex-col min-h-screen cyber-grid selection:bg-primary/30 selection:text-white">
 
-    {{-- ⚡ Flash Sale Banner --}}
+    {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
 
     <header class="bg-panel/80 backdrop-blur-lg sticky top-0 z-50 border-b border-primary/20 shadow-[0_4px_30px_rgba(14,165,233,0.1)] transition-all">
@@ -169,3 +177,4 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
