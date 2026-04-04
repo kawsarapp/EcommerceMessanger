@@ -57,7 +57,11 @@ trait ShopCartTrait
             }
 
             $qty     = max(1, (int)($request->qty ?? 1));
-            $variant = trim($request->variant ?? $request->attributes ?? '');
+            
+            // Cleanly get variant or attributes, avoiding Symfony ParameterBag clashes
+            $rawVariant = $request->input('variant') ?? $request->input('attributes');
+            $variant = is_string($rawVariant) ? trim($rawVariant) : (is_array($rawVariant) ? json_encode($rawVariant) : '');
+            
             $price   = (float)($product->sale_price ?? $product->regular_price ?? 0);
 
             if ($request->filled('price')) {
