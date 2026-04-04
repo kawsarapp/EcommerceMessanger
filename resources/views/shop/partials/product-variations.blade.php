@@ -127,16 +127,14 @@ document.addEventListener('alpine:init', () => {
             @endif
 
             if (actionType === 'checkout') {
-                // Redirect standard GET URL
+                // Redirect with separate color/size params — matches ShopCheckoutTrait expectations
                 let params = new URLSearchParams();
-                let vArr = [];
-                if(this.form.color) vArr.push("Color: " + this.form.color);
-                if(this.form.size)  vArr.push("Size: " + this.form.size);
-                if(vArr.length > 0) params.append('variant', vArr.join(', '));
+                if(this.form.color) params.append('color', this.form.color);
+                if(this.form.size)  params.append('size', this.form.size);
                 params.append('qty', this.form.qty);
                 window.location.href = config.checkoutUrl + '?' + params.toString();
             } else {
-                // Add to Cart via POST fetch
+                // Add to Cart via POST — send variant as combined string for cart session
                 this.isLoading = true;
                 const body = new FormData();
                 body.append('_token', config.csrfToken);
@@ -144,8 +142,8 @@ document.addEventListener('alpine:init', () => {
                 body.append('qty', this.form.qty);
                 
                 let vArr = [];
-                if(this.form.color) vArr.push("Color: " + this.form.color);
-                if(this.form.size)  vArr.push("Size: " + this.form.size);
+                if(this.form.color) vArr.push('Color: ' + this.form.color);
+                if(this.form.size)  vArr.push('Size: ' + this.form.size);
                 if(vArr.length > 0) body.append('variant', vArr.join(', '));
 
                 fetch(config.cartUrl, {

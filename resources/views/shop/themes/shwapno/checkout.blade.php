@@ -27,8 +27,8 @@
 </style>
 
 <div class="max-w-[1100px] mx-auto px-4 py-10" x-data="{
-    area: 'inside', // 'inside', 'outside'
-    paymentMethod: 'cod',
+    area: 'inside',
+    paymentMethod: '{{ array_key_first($activePaymentMethods ?? $client->getActivePaymentMethods()) ?? 'cod' }}',
     qty: {{ request('qty', 1) }},
     price: {{ $product->sale_price ?? $product->regular_price }},
     
@@ -63,6 +63,7 @@
         @csrf
         <input type="hidden" name="product_id" value="{{ $product->id }}">
         <input type="hidden" name="qty" :value="qty">
+        <input type="hidden" name="payment_method" :value="paymentMethod">
         @if(request('color'))<input type="hidden" name="color" value="{{ request('color') }}">@endif
         @if(request('size'))<input type="hidden" name="size" value="{{ request('size') }}">@endif
         <input type="hidden" name="area" :value="area">
@@ -127,21 +128,47 @@
             <div class="sw-box">
                 <div class="sw-box-header"><i class="fas fa-wallet text-gray-400"></i> Payment Method</div>
                 
-                <label class="relative block">
-                    <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="peer hidden sw-radio-input" checked>
+                @php $activePay = $activePaymentMethods ?? $client->getActivePaymentMethods(); @endphp
+                
+                @foreach($activePay as $payKey => $payLabel)
+                <label class="relative block mb-3">
+                    <input type="radio" name="_pmt" value="{{ $payKey }}" 
+                           @change="paymentMethod='{{ $payKey }}'"
+                           class="peer hidden sw-radio-input"
+                           {{ $loop->first ? 'checked' : '' }}>
                     <div class="sw-radio-container items-center mb-0">
                         <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-swred flex items-center justify-center shrink-0 bg-white">
-                            <div class="w-2.5 h-2.5 rounded-full bg-swred opacity-0" :class="{'opacity-100': paymentMethod==='cod'}"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-swred opacity-0" :class="{'opacity-100': paymentMethod==='{{ $payKey }}'}"></div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <i class="far fa-money-bill-alt text-2xl text-green-600"></i>
-                            <div>
-                                <div class="text-sm font-bold text-gray-800">Cash On Delivery (COD)</div>
-                                <div class="text-[11px] text-gray-500">Pay when you receive the product</div>
-                            </div>
+                            @if($payKey === 'cod')
+                                <i class="far fa-money-bill-alt text-2xl text-green-600"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">{{ $payLabel }}</div>
+                                    <div class="text-[11px] text-gray-500">Pay when you receive the product</div>
+                                </div>
+                            @elseif(str_contains($payKey, 'bkash'))
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Bkash_logo.svg/120px-Bkash_logo.svg.png" class="h-6 object-contain" alt="bKash">
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">{{ $payLabel }}</div>
+                                    <div class="text-[11px] text-gray-500">Pay securely via bKash</div>
+                                </div>
+                            @elseif($payKey === 'sslcommerz')
+                                <i class="fas fa-credit-card text-2xl text-blue-600"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">{{ $payLabel }}</div>
+                                    <div class="text-[11px] text-gray-500">Card / Mobile Banking</div>
+                                </div>
+                            @else
+                                <i class="fas fa-wallet text-2xl text-purple-500"></i>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">{{ $payLabel }}</div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </label>
+                @endforeach
             </div>
 
         </div>
@@ -163,7 +190,7 @@
                         <h4 class="text-xs font-bold text-gray-700 leading-tight mb-2">{{ $product->name }}</h4>
                         <div class="text-[11px] text-gray-500 font-medium">Qty: <span x-text="qty"></span> <span class="mx-2">|</span> <span>৳<span x-text="(qty * price).toLocaleString()"></span></span></div>
                         @if(request('color') || request('size'))
-                            <div class="text-[10px] text-gray-400 mt-1 uppercase">{{ request('color') }} {{ request('size') }}</div>
+                            <div class="text-[10px] text-gray-400 mt-1 uppercase font-medium">{{ request('color') }} {{ request('size') }}</div>
                         @endif
                     </div>
                 </div>
