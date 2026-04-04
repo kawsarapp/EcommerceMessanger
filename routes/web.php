@@ -97,6 +97,17 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
 
         // 🔔 Stock Notify Me
         Route::post('/stock/notify', [ShopController::class, 'stockNotify'])->name('shop.stock.notify');
+
+        // 🔐 Customer Portal Auth
+        Route::get('/login', [App\Http\Controllers\CustomerAuthController::class, 'showLoginForm'])->name('shop.customer.login');
+        Route::post('/login', [App\Http\Controllers\CustomerAuthController::class, 'login'])->name('shop.customer.login.submit');
+        Route::get('/register', [App\Http\Controllers\CustomerAuthController::class, 'showRegisterForm'])->name('shop.customer.register');
+        Route::post('/register', [App\Http\Controllers\CustomerAuthController::class, 'register'])->name('shop.customer.register.submit');
+        Route::post('/logout', [App\Http\Controllers\CustomerAuthController::class, 'logout'])->name('shop.customer.logout');
+        
+        Route::middleware(['auth:customer'])->group(function () {
+            Route::get('/customer/dashboard', [App\Http\Controllers\CustomerDashboardController::class, 'index'])->name('shop.customer.dashboard');
+        });
     });
 
     // ==========================================
@@ -131,6 +142,17 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
 
     // 🔔 Stock Notify Me (Custom Domain)
     Route::post('/stock/notify', [ShopController::class, 'stockNotify'])->name('shop.stock.notify.custom');
+
+    // 🔐 Customer Portal Auth (Custom Domain)
+    Route::get('/login', [App\Http\Controllers\CustomerAuthController::class, 'showLoginForm'])->name('shop.customer.login.custom');
+    Route::post('/login', [App\Http\Controllers\CustomerAuthController::class, 'login'])->name('shop.customer.login.submit.custom');
+    Route::get('/register', [App\Http\Controllers\CustomerAuthController::class, 'showRegisterForm'])->name('shop.customer.register.custom');
+    Route::post('/register', [App\Http\Controllers\CustomerAuthController::class, 'register'])->name('shop.customer.register.submit.custom');
+    Route::post('/logout', [App\Http\Controllers\CustomerAuthController::class, 'logout'])->name('shop.customer.logout.custom');
+    
+    Route::middleware(['auth:customer'])->group(function () {
+        Route::get('/customer/dashboard', [App\Http\Controllers\CustomerDashboardController::class, 'index'])->name('shop.customer.dashboard.custom');
+    });
     
     // 🔥 ডাইনামিক পেজ (Custom Domain - সবার শেষে)
     // URL: example.com/terms-condition

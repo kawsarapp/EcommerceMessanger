@@ -41,6 +41,17 @@
         @endif
     </a>
 
+    {{-- User Profile / Login --}}
+    @if(auth('customer')->check())
+    <a href="{{$clean??false ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug)}}" title="Account" class="{{ request()->is('*/customer/dashboard') ? 'active' : '' }}">
+        <i class="fas fa-user-circle"></i>Account
+    </a>
+    @else
+    <a href="{{$clean??false ? $baseUrl.'/login' : route('shop.customer.login', $client->slug)}}" title="Login" class="{{ request()->is('*/login') ? 'active' : '' }}">
+        <i class="fas fa-user"></i>Login
+    </a>
+    @endif
+
     {{-- Track Order --}}
     <a href="{{$clean??false ? $baseUrl.'/track' : route('shop.track', $client->slug)}}" title="Track">
         <i class="fas fa-truck-fast"></i>Track
