@@ -12,7 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\Page;
-use App\Filament\Resources\ClientResource\Schemas\Tabs\ClientInfoTab;
+use App\Filament\Resources\ClientResource\Schemas\Tabs\BasicInfoTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\StorefrontTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\PaymentGatewaysTab;
 use App\Filament\Resources\ClientResource\Schemas\Tabs\DomainSeoTab;
@@ -68,7 +68,7 @@ class ClientResource extends Resource
         return $form->schema([
             Tabs::make('Client Setup')
                 ->tabs([
-                    Tabs\Tab::make('Profile')->schema(ClientInfoTab::schema())->icon('heroicon-o-user')->iconPosition('before'),
+                    Tabs\Tab::make('Profile')->schema(BasicInfoTab::schema())->icon('heroicon-o-user')->iconPosition('before'),
                     Tabs\Tab::make('Storefront')->schema(StorefrontTab::schema())->icon('heroicon-o-shopping-bag')->iconPosition('before'),
                     Tabs\Tab::make('Payments')->schema(PaymentGatewaysTab::schema())->icon('heroicon-o-credit-card')->iconPosition('before'),
                     Tabs\Tab::make('Domain & SEO')->schema(DomainSeoTab::schema())->icon('heroicon-o-globe-alt')->iconPosition('before'),
