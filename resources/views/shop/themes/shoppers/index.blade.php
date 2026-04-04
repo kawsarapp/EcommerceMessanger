@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.shoppers.layout')
+@extends('shop.themes.shoppers.layout')
 @section('title', $client->shop_name . ' | Cosmetics & Beauty')
 
 @section('content')
@@ -63,7 +63,7 @@
         <div class="flex-1 flex flex-col md:flex-row gap-4">
             {{-- Big Banner --}}
             <div class="flex-1 bg-yellow-50 relative overflow-hidden group cursor-pointer border border-gray-100 flex items-center justify-center p-8 min-h-[300px] md:min-h-[400px]">
-                <img src="https://images.unsplash.com/photo-1596462502278-27bf85033e5a?auto=format&fit=crop&w=800&q=80" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700" loading="lazy">
+                <img src="{{ $client->banner ? asset('storage/'.$client->banner) : 'https://images.unsplash.com/photo-1596462502278-27bf85033e5a?auto=format&fit=crop&w=800&q=80' }}" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-700" loading="lazy">
                 <div class="relative z-10 text-center">
                     <h2 class="text-4xl md:text-5xl font-black text-shred mb-2 tracking-tighter drop-shadow-sm">SPECIAL OFFER</h2>
                     <div class="inline-block bg-white px-4 py-2 text-shdark font-bold text-2xl mb-4 border border-shred border-2 shadow-sm">SALE <span class="text-shred font-black text-3xl">UP TO 70% OFF</span></div>
@@ -289,3 +289,4 @@
 </div>
 
 @endsection
+

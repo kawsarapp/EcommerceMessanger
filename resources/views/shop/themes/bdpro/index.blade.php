@@ -70,7 +70,7 @@
     @if(!request('category') || request('category') == 'all')
     <div class="flex flex-col md:flex-row gap-4 mb-16">
         
-        <div class="hero-card shadow-sm" style="background-image: url('https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');">
+        <div class="hero-card shadow-sm" style="background-image: url({{ $client->banner ? 'url('.asset('storage/'.$client->banner).')' : 'url(https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80)' }});">
             <div class="absolute top-6 w-full text-center z-10 px-4"><img src="https://ajkerdeal.com/images/category/flash.png" class="h-16 mx-auto mb-2 opacity-0" loading="lazy"><h2 class="text-white font-black text-3xl leading-tight drop-shadow-lg">সুরক্ষিত<br>ওয়েবসাইট</h2></div>
             <div class="hero-card-content">
                 <h3 class="font-bold text-lg">Electronics Hub</h3>
@@ -263,3 +263,4 @@
 </div>
 
 @endsection
+
