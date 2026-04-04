@@ -117,7 +117,7 @@
             <div class="mt-7 pt-5 border-t border-gray-100">
                 <h3 class="text-[13px] font-bold text-gray-800 mb-2">Product Description</h3>
                 <div class="text-[11px] text-gray-500 leading-relaxed text-justify">
-                    {!! clean($product->description ?? $product->long_description) !!}
+                    {!! $product->description ?? $product->long_description !!}
                 </div>
             </div>
         </div>

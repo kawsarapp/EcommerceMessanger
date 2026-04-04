@@ -8,11 +8,7 @@
     $colors = is_array($product->colors) ? $product->colors : (json_decode($product->colors ?? '[]', true) ?? []);
     
     // Calculate initial price
-    $currentPrice = $product->discount_amount > 0 
-        ? ($product->discount_type === 'percentage' 
-            ? $product->price - ($product->price * $product->discount_amount / 100)
-            : $product->price - $product->discount_amount)
-        : $product->price;
+    $currentPrice = $product->sale_price ?? $product->regular_price ?? 0;
 @endphp
 
 <div x-data="productVariations({
