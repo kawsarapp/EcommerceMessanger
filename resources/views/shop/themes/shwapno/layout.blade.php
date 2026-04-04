@@ -37,6 +37,7 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->
                 extend: {
                     colors: {
                         primary: '{{ $client->primary_color ?? "#e31e24" }}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         swred:   '#e31e24',
                         swyellow:'#ffd100',
                         swdark:  '#222222',
@@ -71,7 +72,7 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
-<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-swred/20 selection:text-swred">
+<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-swred/20 selection:text-swred" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
     
     @if(!empty($client->announcement_text))
     <div class="bg-swdark text-swyellow text-center py-1.5 px-4 text-[11px] md:text-xs font-bold w-full uppercase tracking-wider relative z-50 flex items-center justify-center gap-2 shadow-sm">
@@ -363,4 +364,5 @@ $footerCopyright   = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->
     @endif
 </body>
 </html>
+
 

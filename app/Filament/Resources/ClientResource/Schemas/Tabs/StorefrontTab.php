@@ -83,9 +83,19 @@ class StorefrontTab
                     ->helperText('Choose a layout for your store.'),
 
                 ColorPicker::make('primary_color')
-                    ->label('Brand Color')
+                    ->label('Primary Brand Color')
                     ->default('#4f46e5')
-                    ->helperText('This color will be used for buttons and links.'),
+                    ->helperText('This color will be used for buttons and main links.'),
+                    
+                ColorPicker::make('secondary_color')
+                    ->label('Secondary / Accent Color')
+                    ->helperText('Used for gradients and secondary highlights. (Optional)')
+                    ->nullable(),
+                    
+                ColorPicker::make('bg_color')
+                    ->label('Theme Background Color')
+                    ->helperText('Used for full page background tint. Defaults to white/slate if empty.')
+                    ->nullable(),
                 
                 TextInput::make('announcement_text')
                     ->label('Announcement Bar')

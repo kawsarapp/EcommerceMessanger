@@ -31,7 +31,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             theme:{
                 extend:{
                     colors:{
-                        primary:'{{$client->primary_color ?? "#d4af37"}}', /* Classic Gold Default */
+                        primary:'{{$client->primary_color ?? "#d4af37"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}', /* Classic Gold Default */
                         dark: '#0a0a0a',
                         surface: '#121212'
                     },
@@ -57,7 +58,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-dark text-gray-200 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/30 selection:text-white luxury-gradient">
+<body class="bg-dark text-gray-200 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/30 selection:text-white luxury-gradient" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -155,4 +156,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

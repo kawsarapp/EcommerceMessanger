@@ -31,6 +31,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 extend:{
                     colors:{
                         primary: '{{$client->primary_color ?? "#f85606"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         secondary: '#fef0eb',
                         accent: '#1a9cb7',
                         dark: '#212121',
@@ -61,7 +62,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
     
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -195,4 +196,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

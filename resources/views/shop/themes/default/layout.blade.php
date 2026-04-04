@@ -33,7 +33,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             theme:{
                 extend:{
                     colors:{
-                        primary: '{{$client->primary_color ?? "#0f172a"}}', // Deep slate
+                        primary: '{{$client->primary_color ?? "#0f172a"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}', // Deep slate
                     },
                     fontFamily:{
                         sans:['Inter','sans-serif']
@@ -83,7 +84,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative overflow-x-hidden">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative overflow-x-hidden" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     <!-- Top Announcement Bar -->
     @if($client->announcement_text)
@@ -243,4 +244,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

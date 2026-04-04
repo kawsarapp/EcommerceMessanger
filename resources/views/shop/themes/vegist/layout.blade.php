@@ -35,6 +35,7 @@
                 extend: {
                     colors: {
                         primary: '{{$client->primary_color ?? "#f6a52a"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         dark: '#222222',
                         lightgreen: '#f5f7f0',
                         vgtext: '#777777',
@@ -65,7 +66,7 @@
         .btn-dark:hover { background-color: var(--tw-color-primary); }
     </style>
 </head>
-<body class="antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white pb-20 md:pb-0">
+<body class="antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white pb-20 md:pb-0" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -295,4 +296,5 @@
     
 </body>
 </html>
+
 

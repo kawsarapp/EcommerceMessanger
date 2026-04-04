@@ -54,7 +54,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-[#fafafa] text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white">
+<body class="bg-[#fafafa] text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -142,4 +142,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

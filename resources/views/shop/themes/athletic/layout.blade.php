@@ -32,6 +32,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 extend:{
                     colors:{
                         primary:'{{$client->primary_color ?? "#e11d48"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         dark: '#111111'
                     },
                     fontFamily:{
@@ -126,7 +127,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-white text-dark antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white border-t-4 border-primary">
+<body class="bg-white text-dark antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white border-t-4 border-primary" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- Flash Sale / Global Highlight Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -229,4 +230,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

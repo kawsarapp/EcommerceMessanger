@@ -34,6 +34,7 @@ $primary='#1a3673';
                 extend:{
                     colors:{
                         primary: '{{$client->primary_color ?? "#f85606"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         bdblue: '#1a3673',
                         bdlight: '#f5f7fa',
                         bdhover: '#e2e8f0',
@@ -58,7 +59,7 @@ $primary='#1a3673';
         .nav-dropdown:hover .dropdown-menu { display: block; }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -319,4 +320,5 @@ $primary='#1a3673';
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

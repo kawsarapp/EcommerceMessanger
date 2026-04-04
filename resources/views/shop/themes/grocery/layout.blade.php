@@ -32,7 +32,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             theme:{
                 extend:{
                     colors:{
-                        primary:'{{$client->primary_color ?? "#10b981"}}', // Emerald Green by default
+                        primary:'{{$client->primary_color ?? "#10b981"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}', // Emerald Green by default
                         secondary: '#facc15' // Yellow accent
                     },
                     fontFamily:{
@@ -66,7 +67,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary blob-bg relative">
+<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary blob-bg relative" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- Decorative Background Blobs --}}
     <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
@@ -199,4 +200,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

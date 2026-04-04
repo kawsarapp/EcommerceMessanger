@@ -29,6 +29,7 @@
                 extend: {
                     colors: {
                         primary: '{{$client->primary_color ?? "#6366f1"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         accent: '#f43f5e'
                     },
                     fontFamily: {
@@ -63,7 +64,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen">
+<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
     
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -135,4 +136,5 @@
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

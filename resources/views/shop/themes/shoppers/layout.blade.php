@@ -32,6 +32,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 extend:{
                     colors:{
                         primary: '{{$client->primary_color ?? "#ef4444"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         shred: '#eb484e', /* Shoppers Red */
                         shdark: '#24263f', /* Shoppers Dark Blue Head/Foot */
                         shbg: '#f8f8f8',
@@ -69,7 +70,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         .footer-link:hover { color: #eb484e; }
     </style>
 </head>
-<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-shred/20 selection:text-shred">
+<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-shred/20 selection:text-shred" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -342,4 +343,5 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     @include('shop.partials.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 

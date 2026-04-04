@@ -29,6 +29,7 @@
                 extend: {
                     colors: {
                         primary: '{{$client->primary_color ?? "#F85606"}}',
+                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         dark: '#0f172a',
                     },
                     fontFamily: {
@@ -54,7 +55,7 @@
         }
     </style>
 </head>
-<body class="text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white">
+<body class="text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
 
     {{-- Top Announcement Bar --}}
     @if($client->announcement_text)
@@ -163,4 +164,5 @@
     @include('shop.themes.daraz.mobile-nav', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 </body>
 </html>
+
 
