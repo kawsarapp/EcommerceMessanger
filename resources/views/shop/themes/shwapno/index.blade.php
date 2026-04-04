@@ -298,8 +298,9 @@
     {{-- PRODUCTS SECTION 2 --}}
     @php
         $sec2Text = $client->widgets['everyday_essentials']['text'] ?? ($client->widgets['products_section']['title'] ?? 'ALL PRODUCTS');
+        $skipCount = $flashActive ? 10 : 0;
     @endphp
-    @if($products->skip(10)->count() > 0 || $products->count() > 0)
+    @if($products->skip($skipCount)->count() > 0 || $products->count() > 0)
     <div class="mb-20">
         <h3 class="sw-section-title">{{ $sec2Text }}</h3>
         
@@ -310,7 +311,7 @@
             <button type="button" @click="scrollLeft()" class="sw-carousel-arrow left"><i class="fas fa-chevron-left text-xs text-swdark"></i></button>
             
             <div x-ref="slider" class="sw-scroll-track">
-            @forelse($products->skip(10) as $p)
+            @forelse($products->skip($skipCount) as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
                     @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     
