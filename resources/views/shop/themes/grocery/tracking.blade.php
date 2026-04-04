@@ -19,9 +19,9 @@
             
             <div class="relative flex items-center bg-white border-2 border-slate-200 focus-within:border-primary rounded-[2rem] p-2 shadow-sm focus-within:shadow-xl focus-within:shadow-primary/10 transition-all duration-300">
                 <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-focus-within:text-primary transition shrink-0 ml-2">
-                    <i class="fas fa-mobile-alt text-lg"></i>
+                    <i class="fas fa-hashtag text-lg"></i>
                 </div>
-                <input type="text" name="phone" value="{{request('phone')}}" placeholder="E.g. 017XXXXXXXX" class="w-full bg-transparent border-none px-4 py-4 text-slate-800 font-black text-lg focus:ring-0 placeholder-slate-300 tracking-wider" required>
+                <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="E.g. 017XXXXXXXX" class="w-full bg-transparent border-none px-4 py-4 text-slate-800 font-black text-lg focus:ring-0 placeholder-slate-300 tracking-wider" required>
                 <button type="submit" class="bg-primary text-white h-14 px-8 rounded-[1.5rem] font-black text-base hover:bg-emerald-600 transition shadow-md whitespace-nowrap hidden sm:block mr-1">
                     Track Now
                 </button>
@@ -32,7 +32,7 @@
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-4xl mx-auto space-y-10">
             @forelse($orders ?? [] as $o)
                 <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-soft border border-slate-100 relative overflow-hidden group hover:border-primary/30 transition duration-300">
@@ -98,3 +98,4 @@
     @endif
 </div>
 @endsection
+

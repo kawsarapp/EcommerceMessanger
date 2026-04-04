@@ -22,9 +22,9 @@
             
             <div class="relative flex items-center bg-white border-8 border-slate-100 focus-within:border-funyellow rounded-[3rem] p-3 shadow-cloud transition-all duration-300 transform group-hover:scale-105">
                 <div class="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-focus-within:text-funyellow transition shrink-0 ml-2 border-4 border-slate-100">
-                    <i class="fas fa-mobile-alt text-xl"></i>
+                    <i class="fas fa-hashtag text-xl"></i>
                 </div>
-                <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="w-full bg-transparent border-none px-6 py-4 text-slate-800 font-heading text-2xl focus:ring-0 placeholder-slate-300 tracking-widest text-center" required>
+                <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="w-full bg-transparent border-none px-6 py-4 text-slate-800 font-heading text-2xl focus:ring-0 placeholder-slate-300 tracking-widest text-center" required>
                 <button type="submit" class="bg-funyellow text-white h-16 w-16 md:w-32 rounded-[2rem] font-heading text-xl md:text-2xl hover:bg-yellow-500 transition shadow-inner border-4 border-white flex justify-center items-center shrink-0">
                     <span class="hidden md:block">Search</span>
                     <i class="fas fa-search block md:hidden"></i>
@@ -33,7 +33,7 @@
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-4xl mx-auto space-y-12 relative z-10">
             @forelse($orders ?? [] as $o)
                 <div class="bg-white rounded-[3rem] p-8 md:p-14 shadow-cloud border-4 border-slate-100 relative overflow-hidden hover:border-funblue/30 transition duration-300 transform md:rotate-1 hover:rotate-0 group">
@@ -103,3 +103,4 @@
     @endif
 </div>
 @endsection
+

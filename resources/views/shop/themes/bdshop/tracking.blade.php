@@ -15,16 +15,16 @@
     {{-- Search --}}
     <div class="max-w-md mx-auto mb-12">
         <form method="GET" class="flex items-center bg-white border-2 border-slate-200 focus-within:border-primary rounded-xl overflow-hidden transition">
-            <div class="pl-4 text-slate-400"><i class="fas fa-mobile-alt"></i></div>
-            <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="flex-1 bg-transparent border-none py-3.5 text-dark font-bold text-base focus:ring-0 placeholder-slate-400">
+            <div class="pl-4 text-slate-400"><i class="fas fa-hashtag"></i></div>
+            <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="flex-1 bg-transparent border-none py-3.5 text-dark font-bold text-base focus:ring-0 placeholder-slate-400">
             <button type="submit" class="bg-primary text-white px-6 py-3.5 font-bold text-sm uppercase tracking-wider hover:bg-primary/90 transition">ট্র্যাক</button>
         </form>
     </div>
 
     {{-- Results --}}
-    @if(request('phone'))
+    @if(request('order_id'))
     <div class="max-w-4xl mx-auto space-y-4">
-        <h4 class="font-bold text-dark mb-4 text-center"><span class="text-primary">{{request('phone')}}</span> নম্বরের অর্ডার সমূহ</h4>
+        <h4 class="font-bold text-dark mb-4 text-center"><span class="text-primary">{{request('order_id')}}</span> নম্বরের অর্ডার সমূহ</h4>
         
         @forelse($orders ?? [] as $o)
             <div class="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 hover:border-primary/30 transition">
@@ -87,3 +87,4 @@
     @endif
 </div>
 @endsection
+

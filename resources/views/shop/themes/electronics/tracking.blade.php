@@ -22,7 +22,7 @@
         <form method="GET" action="" class="flex flex-col sm:flex-row gap-4 relative z-10">
             <div class="relative flex-1">
                 <i class="fas fa-fingerprint absolute left-4 top-1/2 -translate-y-1/2 text-gray-600"></i>
-                <input type="text" name="phone" value="{{request('phone')}}" placeholder="Comm Number (01XXXXXXXXX)" class="w-full bg-dark tech-border border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white focus:ring-1 focus:ring-primary focus:border-primary transition font-mono tracking-widest shadow-inner placeholder-gray-600" required>
+                <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="Comm Number (01XXXXXXXXX)" class="w-full bg-dark tech-border border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white focus:ring-1 focus:ring-primary focus:border-primary transition font-mono tracking-widest shadow-inner placeholder-gray-600" required>
             </div>
             <button type="submit" class="bg-primary text-white px-8 py-4 rounded-xl font-bold tech-glow tech-border transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-xs hover:bg-white hover:text-black">
                 <i class="fas fa-search"></i> Scan
@@ -30,7 +30,7 @@
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-4xl mx-auto space-y-8">
             <div class="flex items-center gap-3 text-primary font-mono text-sm uppercase font-bold tracking-widest mb-6">
                 <span class="w-1.5 h-6 bg-primary"></span> Scan Results Compiled
@@ -104,3 +104,4 @@
     @endif
 </div>
 @endsection
+

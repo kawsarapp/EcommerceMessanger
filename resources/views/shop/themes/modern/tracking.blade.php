@@ -12,7 +12,7 @@
     <!-- Minimal Search Form -->
     <div class="mb-20">
         <form method="GET" action="" class="flex flex-col sm:flex-row border-b-2 border-gray-200 focus-within:border-black transition-colors duration-300">
-            <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="flex-1 bg-transparent border-0 px-0 py-6 text-xl font-bold text-black focus:ring-0 placeholder-gray-300 text-center sm:text-left tracking-widest" required>
+            <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="flex-1 bg-transparent border-0 px-0 py-6 text-xl font-bold text-black focus:ring-0 placeholder-gray-300 text-center sm:text-left tracking-widest" required>
             <button type="submit" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-6 hover:text-gray-500 transition-colors">
                 Locate
             </button>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Results Section -->
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="space-y-12">
             @forelse($orders ?? [] as $o)
                 <div class="bg-gray-50 p-8 md:p-12 border border-gray-100 hover:border-black transition-colors duration-500">
@@ -70,3 +70,4 @@
     @endif
 </div>
 @endsection
+

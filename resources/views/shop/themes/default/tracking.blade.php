@@ -9,7 +9,7 @@
             <i class="fas fa-box"></i>
         </div>
         <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">Track Your Order</h1>
-        <p class="text-slate-500 font-medium text-base">Enter the phone number associated with your order to track its current status and details.</p>
+        <p class="text-slate-500 font-medium text-base">Enter your assigned Order ID to track its current status and details.</p>
     </div>
 
     <!-- Search Form -->
@@ -20,9 +20,9 @@
             
             <div class="relative bg-white border-2 border-slate-100 focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/10 rounded-2xl p-2 shadow-sm flex items-center premium-transition">
                 <div class="px-4 text-slate-400 group-focus-within:text-primary premium-transition">
-                    <i class="fas fa-mobile-alt"></i>
+                    <i class="fas fa-hashtag"></i>
                 </div>
-                <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="w-full bg-transparent border-none py-3 text-slate-900 font-bold text-lg focus:ring-0 placeholder-slate-300 tracking-wider">
+                <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="w-full bg-transparent border-none py-3 text-slate-900 font-bold text-lg focus:ring-0 placeholder-slate-300 tracking-wider">
                 <button type="submit" class="bg-slate-900 text-white py-3 px-8 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-primary premium-transition shadow-sm">
                     Track
                 </button>
@@ -31,9 +31,9 @@
     </div>
 
     <!-- Results Section -->
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-4xl mx-auto space-y-8">
-            <h4 class="font-bold text-slate-900 mb-6 text-center text-lg">Order History associated with <span class="text-primary">{{request('phone')}}</span></h4>
+            <h4 class="font-bold text-slate-900 mb-6 text-center text-lg">Order History associated with <span class="text-primary">{{request('order_id')}}</span></h4>
             
             @forelse($orders ?? [] as $o)
                 <div class="bg-white rounded-[2rem] border border-slate-100 p-8 md:p-12 shadow-soft hover:shadow-float premium-transition border-b-4 border-b-transparent hover:border-b-primary group">
@@ -98,10 +98,11 @@
                         <i class="fas fa-ghost text-3xl"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-slate-800 mb-2 tracking-tight">No Order Records Found</h3>
-                    <p class="text-base font-medium text-slate-500 max-w-sm mx-auto">Please check the phone number and try again.</p>
+                    <p class="text-base font-medium text-slate-500 max-w-sm mx-auto">Please check the Order ID and try again.</p>
                 </div>
             @endforelse
         </div>
     @endif
 </div>
 @endsection
+

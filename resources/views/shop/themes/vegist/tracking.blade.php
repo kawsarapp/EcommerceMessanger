@@ -24,7 +24,7 @@
         
         <div class="max-w-md mx-auto">
             <form id="trackForm" class="flex flex-col gap-4">
-                <input type="text" id="phone" name="phone" placeholder="Mobile Number (e.g. 017XXXXXXX)" required class="w-full border border-gray-200 rounded px-5 py-3 text-sm focus:outline-none focus:border-primary transition font-mono">
+                <input type="text" id="phone" name="order_id" placeholder="Mobile Number (e.g. 017XXXXXXX)" required class="w-full border border-gray-200 rounded px-5 py-3 text-sm focus:outline-none focus:border-primary transition font-mono">
                 <button type="submit" class="w-full btn-primary !py-3 tracking-wide">Track Status</button>
             </form>
             <div id="trackResult" class="mt-8 text-left hidden"></div>
@@ -80,3 +80,4 @@ document.getElementById('trackForm').addEventListener('submit', async function(e
 });
 </script>
 @endsection
+

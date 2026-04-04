@@ -15,7 +15,7 @@
     <!-- Search Form -->
     <div class="bg-white p-8 lg:p-12 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100 flex flex-col mb-12">
         <form method="GET" action="" class="w-full flex flex-col sm:flex-row gap-4">
-            <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="flex-1 bg-gray-50 border-gray-200 rounded-2xl px-6 py-5 text-lg font-bold text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent transition shadow-inner" required>
+            <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="flex-1 bg-gray-50 border-gray-200 rounded-2xl px-6 py-5 text-lg font-bold text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent transition shadow-inner" required>
             <button type="submit" class="btn-premium text-white px-10 py-5 rounded-2xl font-extrabold text-lg shadow-lg flex items-center justify-center gap-3">
                 <i class="fas fa-search opacity-80"></i> Track
             </button>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Results Section -->
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="mt-8 space-y-6">
             @forelse($orders ?? [] as $o)
                 <div class="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm hover:shadow-md transition">
@@ -63,3 +63,4 @@
     @endif
 </div>
 @endsection
+

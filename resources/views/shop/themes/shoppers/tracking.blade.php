@@ -14,7 +14,7 @@
             <div class="bg-gray-50 px-4 flex items-center border-r border-gray-200 text-gray-400">
                 <i class="fas fa-phone-alt text-sm"></i>
             </div>
-            <input type="text" name="phone" value="{{ request('phone') }}" placeholder="Mobile Number" required
+            <input type="text" name="order_id" value="{{ request('order_id') }}" placeholder="Mobile Number" required
                 class="flex-1 py-3 px-4 text-sm font-medium text-dark focus:outline-none focus:ring-1 focus:ring-shred border-none placeholder-gray-400">
             <button type="submit" class="bg-shred hover:bg-red-600 text-white px-6 font-bold text-xs uppercase tracking-wider transition">
                 Find
@@ -22,11 +22,11 @@
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
     <div>
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
             <h4 class="text-sm font-bold text-gray-700 uppercase">Search Results</h4>
-            <span class="text-xs text-gray-400">Mobile: <strong class="text-shred">{{ request('phone') }}</strong></span>
+            <span class="text-xs text-gray-400">Mobile: <strong class="text-shred">{{ request('order_id') }}</strong></span>
         </div>
 
         @forelse($orders ?? [] as $o)
@@ -103,3 +103,4 @@
 
 @php $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); @endphp
 @endsection
+

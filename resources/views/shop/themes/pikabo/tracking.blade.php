@@ -12,9 +12,9 @@
     <div class="max-w-md mx-auto mb-12">
         <form method="GET" class="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden flex">
             <div class="bg-gray-50 px-4 flex items-center border-r border-gray-200 text-gray-400">
-                <i class="fas fa-mobile-alt"></i>
+                <i class="fas fa-hashtag"></i>
             </div>
-            <input type="text" name="phone" value="{{ request('phone') }}" placeholder="Enter 11-digit mobile number"
+            <input type="text" name="order_id" value="{{ request('order_id') }}" placeholder="Enter 11-digit mobile number"
                 class="flex-1 py-3.5 px-4 text-sm font-medium text-dark focus:outline-none border-none placeholder-gray-400">
             <button type="submit" class="bg-bdblue hover:bg-bddeep text-white px-6 font-bold text-sm uppercase tracking-wider transition">
                 Track
@@ -22,10 +22,10 @@
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
     <div>
         <h4 class="text-center mb-6 text-sm font-bold text-gray-700 border-b border-gray-200 pb-4">
-            Orders for <span class="bg-blue-50 text-bdblue px-2 py-0.5 rounded ml-1">{{ request('phone') }}</span>
+            Orders for <span class="bg-blue-50 text-bdblue px-2 py-0.5 rounded ml-1">{{ request('order_id') }}</span>
         </h4>
 
         @forelse($orders ?? [] as $o)
@@ -96,3 +96,4 @@
 
 @php $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); @endphp
 @endsection
+

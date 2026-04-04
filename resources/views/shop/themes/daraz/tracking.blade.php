@@ -17,8 +17,8 @@
     <div class="max-w-md mx-auto mb-12">
         <form method="GET">
             <div class="flex bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="pl-4 text-gray-400 flex items-center"><i class="fas fa-mobile-alt"></i></div>
-                <input type="text" name="phone" value="{{ request('phone') }}" placeholder="01XXXXXXXXX"
+                <div class="pl-4 text-gray-400 flex items-center"><i class="fas fa-hashtag"></i></div>
+                <input type="text" name="order_id" value="{{ request('order_id') }}" placeholder="e.g. 10045"
                     class="flex-1 bg-transparent border-none py-4 px-3 text-dark font-bold focus:ring-0 placeholder-gray-400">
                 <button type="submit" class="btn-primary px-6 text-white font-bold text-sm uppercase flex items-center gap-2 transition">
                     <i class="fas fa-search"></i> ট্র্যাক
@@ -29,10 +29,10 @@
     </div>
 
     {{-- Results --}}
-    @if(request('phone'))
+    @if(request('order_id'))
     <div>
         <h4 class="text-center mb-6">
-            <span class="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold">{{ request('phone') }}</span>
+            <span class="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-bold">{{ request('order_id') }}</span>
             <span class="text-gray-500 text-sm ml-2">নম্বরের অর্ডার সমূহ</span>
         </h4>
 
@@ -121,3 +121,4 @@
     @endif
 </div>
 @endsection
+

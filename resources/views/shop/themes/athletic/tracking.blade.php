@@ -24,7 +24,7 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
         <form method="GET" class="relative">
             <div class="flex flex-col sm:flex-row bg-white border-[6px] border-dark shadow-primary-xl p-2 md:p-4 -skew-x-[4deg]">
                 <div class="pl-6 text-dark flex items-center skew-x-[4deg]"><i class="fas fa-phone text-4xl"></i></div>
-                <input type="text" name="phone" value="{{ request('phone') }}" 
+                <input type="text" name="order_id" value="{{ request('order_id') }}" 
                     placeholder="ফোন নম্বর লিখুন (01XXXXXXXXX)"
                     class="flex-1 bg-transparent border-none py-6 px-6 text-dark font-display font-bold text-xl md:text-3xl focus:ring-0 placeholder-gray-300 skew-x-[4deg] outline-none">
                 <button type="submit" class="btn-speed bg-primary px-8 md:px-12 py-6 text-white font-display font-bold text-2xl md:text-3xl uppercase tracking-widest transition skew-x-[4deg] border-4 border-dark mt-4 sm:mt-0">
@@ -35,12 +35,12 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     </div>
 
     <!-- Results -->
-    @if(request('phone'))
+    @if(request('order_id'))
     <div>
         <h4 class="text-center mb-16 pb-8 border-b-8 border-dark">
             <span class="font-display font-bold text-4xl text-gray-400 uppercase tracking-widest block mb-2">এই নম্বরের অর্ডার সমূহ</span>
             <span class="bg-dark text-primary px-8 py-3 text-3xl md:text-5xl font-display font-bold uppercase tracking-widest shadow-primary-md border-4 border-primary -skew-x-[6deg] inline-block">
-                <span class="skew-x-[6deg] block">{{ request('phone') }}</span>
+                <span class="skew-x-[6deg] block">{{ request('order_id') }}</span>
             </span>
         </h4>
 
@@ -180,3 +180,4 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
     @endif
 </div>
 @endsection
+

@@ -11,14 +11,14 @@
 
     <div class="max-w-xl mx-auto mb-28">
         <form method="GET" action="" class="flex flex-col border-b border-white/20 focus-within:border-white transition duration-500 group relative">
-            <input type="text" name="phone" value="{{request('phone')}}" placeholder="Registered Identity (01X...)" class="w-full bg-transparent border-none px-0 py-6 text-sm font-light text-white focus:ring-0 transition tracking-widest text-center placeholder-gray-600" required>
+            <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="Registered Identity (01X...)" class="w-full bg-transparent border-none px-0 py-6 text-sm font-light text-white focus:ring-0 transition tracking-widest text-center placeholder-gray-600" required>
             <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 group-focus-within:text-white transition hover:text-primary">
                 Reveal
             </button>
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-5xl mx-auto space-y-16">
             @forelse($orders ?? [] as $o)
                 <div class="bg-surface/50 border border-white/5 p-10 md:p-16 relative overflow-hidden group hover:border-white/20 transition duration-700">
@@ -74,3 +74,4 @@
     @endif
 </div>
 @endsection
+

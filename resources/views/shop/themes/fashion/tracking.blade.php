@@ -11,14 +11,14 @@
 
     <div class="max-w-2xl mx-auto mb-20">
         <form method="GET" action="" class="flex flex-col sm:flex-row gap-0 group">
-            <input type="text" name="phone" value="{{request('phone')}}" placeholder="01XXXXXXXXX" class="flex-1 bg-transparent border-0 border-b border-gray-300 px-0 py-5 text-lg font-medium text-gray-900 focus:ring-0 focus:border-black transition tracking-widest text-center sm:text-left placeholder-gray-300" required>
+            <input type="text" name="order_id" value="{{request('order_id')}}" placeholder="e.g. 10045" class="flex-1 bg-transparent border-0 border-b border-gray-300 px-0 py-5 text-lg font-medium text-gray-900 focus:ring-0 focus:border-black transition tracking-widest text-center sm:text-left placeholder-gray-300" required>
             <button type="submit" class="border-b border-gray-300 group-focus-within:border-black text-xs font-bold uppercase tracking-[0.2em] px-8 py-5 hover:text-gray-500 transition-all sm:ml-4 mt-4 sm:mt-0">
                 Track
             </button>
         </form>
     </div>
 
-    @if(request('phone'))
+    @if(request('order_id'))
         <div class="max-w-4xl mx-auto space-y-12">
             @forelse($orders ?? [] as $o)
                 <div class="border border-gray-200 p-8 md:p-12">
@@ -68,3 +68,4 @@
     @endif
 </div>
 @endsection
+
