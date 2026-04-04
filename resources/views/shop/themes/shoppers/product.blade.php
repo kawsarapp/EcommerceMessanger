@@ -211,10 +211,10 @@
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-bold text-gray-800">Share It</span>
                     <div class="flex gap-1.5">
-                        <a href="#" class="sh-share-icon bg-[#3b5998]"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="sh-share-icon bg-[#1da1f2]"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="sh-share-icon bg-[#bd081c]"><i class="fab fa-pinterest-p"></i></a>
-                        <a href="#" class="sh-share-icon bg-[#0077b5]"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" class="sh-share-icon bg-[#3b5998]"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://twitter.com/intent/tweet?url={{ urlencode(url()->current()) }}&text={{ urlencode(`$product->name) }}" target="_blank" class="sh-share-icon bg-[#1da1f2]"><i class="fab fa-twitter"></i></a>
+                        <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(url()->current()) }}&media={{ urlencode(asset(`"storage/`".`$product->thumbnail)) }}&description={{ urlencode(`$product->name) }}" target="_blank" class="sh-share-icon bg-[#bd081c]"><i class="fab fa-pinterest-p"></i></a>
+                        <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ urlencode(url()->current()) }}" target="_blank" class="sh-share-icon bg-[#0077b5]"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
 

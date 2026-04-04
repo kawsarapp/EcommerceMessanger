@@ -103,9 +103,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                 <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">Policies</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
-                    <a href="#" class="hover:text-primary transition-colors inline-block w-fit">Shipping Details</a>
-                    <a href="#" class="hover:text-primary transition-colors inline-block w-fit">Refund Policy</a>
-                    <a href="#" class="hover:text-primary transition-colors inline-block w-fit">Terms of Service</a>
+                                        @if(isset($pages) && count($pages) > 0)
+                        @foreach($pages as $page)
+                            <a href="{{ $clean ? $baseUrl.'/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition-colors inline-block w-fit">{{ $page->title }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition-colors inline-block w-fit">Track Order</a>
+                    @endif
                 </div>
             </div>
 

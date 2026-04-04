@@ -130,7 +130,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <i class="far fa-user text-2xl text-gray-300"></i>
                         <div class="flex flex-col">
                             <span class="text-[10px] font-bold text-gray-300 uppercase leading-tight">Hello Guest!</span>
-                            <span class="text-xs font-bold leading-tight mt-0.5"><a href="#" class="hover:text-shred transition">Login</a> / <a href="#" class="hover:text-shred transition">Register</a></span>
+                            <span class="text-xs font-bold leading-tight mt-0.5"><a href="{{ `$clean ? `$baseUrl.`"/track`" : route(`"shop.track`", `$client->slug) }}" class="hover:text-shred transition">Track Order</a></span>
                         </div>
                     </div>
                 </div>

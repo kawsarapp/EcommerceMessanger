@@ -175,7 +175,7 @@ function checkoutApp() {
                     <div class="mt-6 mb-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" required class="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2">
-                            <span class="text-[12px] text-gray-500 font-medium">I have read and agree to the <a href="#" class="text-primary hover:underline font-bold">Terms and Conditions</a></span>
+                            <span class="text-[12px] text-gray-500 font-medium">I have read and agree to the <a href="{{ $clean ? $baseUrl.'/terms-conditions' : route('shop.page.slug', [$client->slug, 'terms-conditions']) }}" class="text-primary hover:underline font-bold">Terms and Conditions</a></span>
                         </label>
                     </div>
                     @endif

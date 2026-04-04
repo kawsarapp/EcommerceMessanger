@@ -129,9 +129,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-carrot text-primary"></i> Categories</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
                     <a href="?category=all" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Fresh Produce</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Dairy & Bakery</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Snacks & Beverages</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Meat & Seafood</a>
+                                        @if(isset($pages) && count($pages) > 0)
+                        @foreach($pages as $page)
+                            <a href="{{ $clean ? $baseUrl.'/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition-colors inline-block w-fit">{{ $page->title }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition-colors inline-block w-fit">Track Order</a>
+                    @endif
                 </div>
             </div>
 
@@ -139,9 +143,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-extrabold text-slate-800 text-lg mb-6 flex items-center gap-2"><i class="fas fa-heart text-red-400"></i> Customer Care</h4>
                 <div class="flex flex-col space-y-4 font-bold text-sm text-slate-500">
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Track Your Order</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Delivery Information</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Returns & Refunds</a>
-                    <a href="#" class="hover:text-primary transition hover:translate-x-1 w-fit transform duration-200">Help Center</a>
+                                        @if(isset($pages) && count($pages) > 0)
+                        @foreach($pages as $page)
+                            <a href="{{ $clean ? $baseUrl.'/'.$page->slug : route('shop.page.slug', [$client->slug, $page->slug]) }}" class="hover:text-primary transition-colors inline-block w-fit">{{ $page->title }}</a>
+                        @endforeach
+                    @else
+                        <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition-colors inline-block w-fit">Track Order</a>
+                    @endif
                 </div>
             </div>
 

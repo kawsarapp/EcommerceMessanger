@@ -1,4 +1,4 @@
-@extends('shop.themes.vegist.layout')
+﻿@extends('shop.themes.vegist.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')
@@ -172,7 +172,7 @@ function checkoutApp() {
                 @if($client->show_terms_checkbox ?? false)
                 <label class="flex items-start gap-2 cursor-pointer mt-4">
                     <input type="checkbox" required class="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary mt-0.5">
-                    <span class="text-xs text-gray-500">I agree to the <a href="#" class="text-primary hover:underline font-bold">Terms and Conditions</a></span>
+                    <span class="text-xs text-gray-500">I agree to the <a href="{{ $clean ? $baseUrl.'/terms-conditions' : route('shop.page.slug', [$client->slug, 'terms-conditions']) }}" class="text-primary hover:underline font-bold">Terms and Conditions</a></span>
                 </label>
                 @endif
 

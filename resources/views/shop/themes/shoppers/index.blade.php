@@ -1,4 +1,4 @@
-@extends('shop.themes.shoppers.layout')
+﻿@extends('shop.themes.shoppers.layout')
 @section('title', $client->shop_name . ' | Cosmetics & Beauty')
 
 @section('content')
@@ -119,9 +119,9 @@
 
     {{-- Banner Row --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1629198688000-71f23e745b6e?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
-        <a href="#" class="block overflow-hidden"><img src="https://images.unsplash.com/photo-1599305090598-fe179d501227?auto=format&fit=crop&w=600&h=250&q=80" class="w-full h-full object-cover hover:opacity-90 transition" loading="lazy"></a>
+        <!-- Removed dummy banner -->
+        <!-- Removed dummy banner -->
+        <!-- Removed dummy banner -->
     </div>
 
     {{-- FEATURED BRAND Placeholder --}}

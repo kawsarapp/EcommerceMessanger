@@ -119,7 +119,7 @@ function checkoutApp() {
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Delivery Address *</label>
                                 <textarea name="shipping_address" required rows="3" placeholder="Enter your complete delivery address with house number, street, area, and district" 
                                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-bdblue focus:ring-1 focus:ring-bdblue transition shadow-sm resize-none bg-white"></textarea>
-                                <span class="text-[10px] text-gray-400 mt-1 block flex items-center gap-1"><i class="fas fa-info-circle text-blue-400"></i> <a href="#" class="text-blue-500 hover:underline">Login</a> or <a href="#" class="text-blue-500 hover:underline">register</a> to save addresses for faster checkout next time</span>
+                                <span class="text-[10px] text-gray-400 mt-1 block flex items-center gap-1"><i class="fas fa-info-circle text-blue-400"></i> <a href="{{ `$clean ? `$baseUrl.`"/track`" : route(`"shop.track`", `$client->slug) }}" class="text-blue-500 hover:underline">Track Order</a> to save addresses for faster checkout next time</span>
                             </div>
                         </div>
                     </div>
@@ -283,9 +283,9 @@ function checkoutApp() {
                             <label class="flex items-start gap-2 cursor-pointer">
                                 <input type="checkbox" required class="mt-0.5 w-4 h-4 text-bdblue bg-white border-gray-300 rounded focus:ring-bdblue">
                                 <span class="text-xs text-gray-700 font-medium leading-tight">
-                                    I have read and agree to the <a href="#" class="text-bdblue hover:underline font-bold">Terms and Conditions</a>, 
-                                    <a href="#" class="text-bdblue hover:underline font-bold">Privacy Policy</a>, and 
-                                    <a href="#" class="text-bdblue hover:underline font-bold">Return Policy</a>.
+                                    I have read and agree to the <a href="{{ $clean ? $baseUrl.'/terms-conditions' : route('shop.page.slug', [$client->slug, 'terms-conditions']) }}" class="text-bdblue hover:underline font-bold">Terms and Conditions</a>, 
+                                    <a href="{{ $clean ? $baseUrl.'/privacy-policy' : route('shop.page.slug', [$client->slug, 'privacy-policy']) }}" class="text-bdblue hover:underline font-bold">Privacy Policy</a>, and 
+                                    <a href="{{ $clean ? $baseUrl.'/return-policy' : route('shop.page.slug', [$client->slug, 'return-policy']) }}" class="text-bdblue hover:underline font-bold">Return Policy</a>.
                                 </span>
                             </label>
                         </div>
@@ -298,7 +298,7 @@ function checkoutApp() {
                     
                     @if(!($client->show_terms_checkbox ?? false))
                     <div class="text-center">
-                        <span class="text-[10px] text-gray-400">By placing your order, you agree to our <a href="#" class="underline">terms and conditions</a></span>
+                        <span class="text-[10px] text-gray-400">By placing your order, you agree to our <a href="{{ $clean ? $baseUrl.'/terms-conditions' : route('shop.page.slug', [$client->slug, 'terms-conditions']) }}" class="underline">Terms and Conditions</a></span>
                     </div>
                     @endif
 
