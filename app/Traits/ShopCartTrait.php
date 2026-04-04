@@ -30,74 +30,76 @@ trait ShopCartTrait
     // ─── POST /cart/add ──────────────────────────────────────────
     public function addToCart(Request $request, $slug = null)
     {
-        $client = $request->has('current_client')
-            ? $request->current_client
-            : $this->clientService->getSafeClient($request, $slug);
+        try {
+            $client = $request->has('current_client')
+                ? $request->current_client
+                : $this->clientService->getSafeClient($request, $slug);
 
-        if (!$client || !$client->exists) {
-            return response()->json(['success' => false, 'message' => 'Shop not found'], 404);
-        }
-
-        $request->validate([
-            'product_id' => 'required|integer|exists:products,id',
-            'qty'        => 'nullable|integer|min:1|max:100',
-        ]);
-
-        $product = Product::where('id', $request->product_id)
-            ->where('client_id', $client->id)
-            ->first();
-
-        if (!$product) {
-            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
-        }
-
-        if (($product->stock_status ?? 'in_stock') === 'out_of_stock') {
-            return response()->json(['success' => false, 'message' => 'This product is out of stock'], 422);
-        }
-
-        $qty     = max(1, (int)($request->qty ?? 1));
-        $variant = trim($request->variant ?? $request->attributes ?? '');
-        $price   = (float)($product->sale_price ?? $product->regular_price ?? 0);
-
-        // If custom price passed (from variant selection), validate it's reasonable
-        if ($request->filled('price')) {
-            $reqPrice = (float)$request->price;
-            if ($reqPrice > 0 && $reqPrice <= ($product->regular_price * 5)) {
-                $price = $reqPrice;
+            if (!$client || !$client->exists) {
+                return response()->json(['success' => false, 'message' => 'Shop not found'], 404);
             }
+
+            $request->validate([
+                'product_id' => 'required|integer|exists:products,id',
+                'qty'        => 'nullable|integer|min:1|max:100',
+            ]);
+
+            $product = Product::where('id', $request->product_id)
+                ->where('client_id', $client->id)
+                ->first();
+
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+            }
+
+            if (($product->stock_status ?? 'in_stock') === 'out_of_stock') {
+                return response()->json(['success' => false, 'message' => 'This product is out of stock'], 422);
+            }
+
+            $qty     = max(1, (int)($request->qty ?? 1));
+            $variant = trim($request->variant ?? $request->attributes ?? '');
+            $price   = (float)($product->sale_price ?? $product->regular_price ?? 0);
+
+            if ($request->filled('price')) {
+                $reqPrice = (float)$request->price;
+                if ($reqPrice > 0 && $reqPrice <= ($product->regular_price * 5)) {
+                    $price = $reqPrice;
+                }
+            }
+
+            $itemKey = 'p' . $product->id . ($variant ? '_' . md5($variant) : '');
+
+            $cart = $this->getCart($client->id);
+
+            if (isset($cart[$itemKey])) {
+                $cart[$itemKey]['qty'] = min(99, $cart[$itemKey]['qty'] + $qty);
+            } else {
+                $cart[$itemKey] = [
+                    'key'        => $itemKey,
+                    'product_id' => $product->id,
+                    'slug'       => $product->slug,
+                    'name'       => $product->name,
+                    'thumbnail'  => $product->thumbnail,
+                    'price'      => $price,
+                    'qty'        => $qty,
+                    'variant'    => $variant,
+                ];
+            }
+
+            $this->saveCart($client->id, $cart);
+
+            $totalItems = array_sum(array_column($cart, 'qty'));
+
+            return response()->json([
+                'success'     => true,
+                'message'     => 'Added to cart!',
+                'cart_count'  => count($cart),
+                'total_items' => $totalItems,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('CART_ADD_ERROR: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()], 500);
         }
-
-        // Cart item unique key
-        $itemKey = 'p' . $product->id . ($variant ? '_' . md5($variant) : '');
-
-        $cart = $this->getCart($client->id);
-
-        if (isset($cart[$itemKey])) {
-            // Increment quantity if already exists
-            $cart[$itemKey]['qty'] = min(99, $cart[$itemKey]['qty'] + $qty);
-        } else {
-            $cart[$itemKey] = [
-                'key'        => $itemKey,
-                'product_id' => $product->id,
-                'slug'       => $product->slug,
-                'name'       => $product->name,
-                'thumbnail'  => $product->thumbnail,
-                'price'      => $price,
-                'qty'        => $qty,
-                'variant'    => $variant,
-            ];
-        }
-
-        $this->saveCart($client->id, $cart);
-
-        $totalItems = array_sum(array_column($cart, 'qty'));
-
-        return response()->json([
-            'success'     => true,
-            'message'     => 'Added to cart!',
-            'cart_count'  => count($cart),
-            'total_items' => $totalItems,
-        ]);
     }
 
     // ─── GET /cart ───────────────────────────────────────────────
