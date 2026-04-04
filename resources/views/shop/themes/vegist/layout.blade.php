@@ -237,8 +237,8 @@
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="{{$clean?$baseUrl.'/page/privacy':route('shop.page', ['shop' => $client->slug, 'slug' => 'privacy'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Privacy policy</a>
-                        <a href="{{$clean?$baseUrl.'/page/terms':route('shop.page', ['shop' => $client->slug, 'slug' => 'terms'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Terms & conditions</a>
+                        <a href="{{$clean?$baseUrl.'/page/privacy':route('shop.page.slug', ['slug' => $client->slug, 'pageSlug' => 'privacy'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Privacy policy</a>
+                        <a href="{{$clean?$baseUrl.'/page/terms':route('shop.page.slug', ['slug' => $client->slug, 'pageSlug' => 'terms'])}}" class="text-[14px] text-gray-500 hover:text-primary transition capitalize">Terms & conditions</a>
                     @endif
                 </div>
             </div>
