@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 @php
     $clean = preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show',$client->slug);
@@ -129,6 +129,11 @@
                 <p class="text-xs text-gray-400 font-medium tracking-wide">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
             </div>
         </div>
+
+    {{-- Dynamic Social + Payment + Copyright from admin panel --}}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-6">
+        @include('shop.partials.dynamic-footer-extras', ['client' => $client, 'baseUrl' => $baseUrl ?? '', 'clean' => $clean ?? ''])
+    </div>
     </footer>
         @include('shop.partials.compare-bar', ['client' => $client, 'baseUrl' => $baseUrl, 'clean' => $clean])
 @include('shop.partials.floating-chat', ['client' => $client])
