@@ -16,7 +16,7 @@
 @endphp
 
 <div x-data="productVariations({
-    basePrice: {{ currentPrice }},
+    basePrice: {{ $currentPrice }},
     cartUrl: '{{ $cartUrl }}',
     checkoutUrl: '{{ $checkoutUrl }}',
     productId: {{ $product->id }},
