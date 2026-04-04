@@ -208,9 +208,7 @@
         <div class="bg-swyellow text-swdark font-bold text-xs px-6 py-2 rounded-full inline-block shadow-sm mb-4">Customer Reviews</div>
         <div class="border border-gray-200 rounded-sm bg-white p-8 flex flex-col items-center justify-center">
             <div class="w-full max-w-2xl">
-                @include('shop.partials.related-products', ['client' => $client, 'product' => $product, 'relatedProducts' => App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->limit(8)->get()])
-
-@include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+                @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
             </div>
         </div>
     </div>
