@@ -7,25 +7,27 @@
     $baseUrl = $baseUrl ?? url('/');
 @endphp
 
-<a href="{{$baseUrl.'/product/'.$p->slug}}" class="product-card group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 relative">
+<a href="{{$baseUrl.'/product/'.$p->slug}}" class="product-card group flex flex-col h-full bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 relative">
     
     @if($p->sale_price)
         @php $discount = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
-        <div class="absolute top-2.5 left-2.5 z-20 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md">
+        <div class="absolute top-2.5 left-2.5 z-20 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
             -{{ $discount }}%
         </div>
     @endif
     
     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
         <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-30 flex items-center justify-center">
-            <span class="bg-slate-900/80 text-white font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg">স্টক শেষ</span>
+            <span class="bg-slate-900/80 text-white font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-md">স্টক শেষ</span>
         </div>
     @endif
 
-    {{-- Image --}}
-    <div class="aspect-square bg-slate-50 relative p-4 flex items-center justify-center overflow-hidden">
-        <img src="{{asset('storage/'.$p->thumbnail)}}" alt="{{$p->name}}" loading="lazy"
-            class="max-w-full max-h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
+    {{-- Strict Square Image Container --}}
+    <div class="relative w-full pt-[100%] bg-slate-50 shrink-0">
+        <div class="absolute inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden">
+            <img src="{{asset('storage/'.$p->thumbnail)}}" alt="{{$p->name}}" loading="lazy"
+                class="w-full h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
+        </div>
     </div>
     
     {{-- Info --}}
