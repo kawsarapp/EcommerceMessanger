@@ -103,31 +103,35 @@ $primary='var(--tw-color-primary)';
                 <div class="hidden lg:flex flex-1 max-w-2xl">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-lg overflow-hidden border border-gray-200 focus-within:border-primary transition-colors">
                         <i class="fas fa-search text-gray-400 pl-4"></i>
-                        <input type="text" name="search" value="{{request('search')}}" placeholder="Search for products, brands, or categories..." 
+                        <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                             class="w-full bg-transparent px-4 py-3 text-sm font-medium text-dark placeholder-gray-500 focus:outline-none focus:ring-0 border-none transition h-full">
                     </form>
                 </div>
 
-                {{-- Action Buttons (Desktop only placeholders) --}}
-                <div class="hidden xl:flex items-center gap-2 shrink-0">
-                    <a href="#" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-4 py-2.5 rounded-md flex items-center gap-2 shadow-sm transition"><i class="fas fa-users"></i> Group Buy</a>
-                    <a href="#" class="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold px-4 py-2.5 rounded-md flex items-center gap-2 shadow-sm transition"><i class="fas fa-box-open"></i> Dropshop</a>
-                    <a href="#" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-md flex items-center gap-2 shadow-sm transition"><i class="fas fa-handshake"></i> Be Partner</a>
-                </div>
-
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50">
-                    <a href="#" class="hidden sm:flex flex-col items-center text-gray-600 hover:text-primary transition">
+                    @if(auth('customer')->check())
+                    <a href="{{$clean?$baseUrl.'/customer/dashboard':route('shop.customer.dashboard',$client->slug)}}" class="hidden sm:flex flex-col items-center text-gray-600 hover:text-primary transition">
                         <i class="far fa-user text-xl mb-1"></i>
                         <span class="text-[10px] font-bold">Account</span>
                     </a>
+                    @else
+                    <a href="{{$clean?$baseUrl.'/login':route('shop.customer.login',$client->slug)}}" class="hidden sm:flex flex-col items-center text-gray-600 hover:text-primary transition">
+                        <i class="far fa-user text-xl mb-1"></i>
+                        <span class="text-[10px] font-bold">Sign In</span>
+                    </a>
+                    @endif
                     
-                    {{-- Mini Cart Icon (Placeholder UI) --}}
-                    <div class="relative flex flex-col items-center text-gray-600 hover:text-primary transition cursor-pointer">
+                    @php $bgCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative flex flex-col items-center text-gray-600 hover:text-primary transition cursor-pointer">
                         <i class="fas fa-shopping-bag text-xl mb-1"></i>
                         <span class="text-[10px] font-bold">My Cart</span>
-                        <span class="absolute -top-1 right-0 sm:right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 outline outline-2 outline-white">0</span>
-                    </div>
+                        @if($bgCartCount > 0)
+                            <span class="absolute -top-1 right-0 sm:right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 outline outline-2 outline-white" data-cart-badge>{{ $bgCartCount }}</span>
+                        @else
+                            <span class="absolute -top-1 right-0 sm:right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 outline outline-2 outline-white hidden" data-cart-badge>0</span>
+                        @endif
+                    </a>
                 </div>
                 
             </div>
@@ -136,7 +140,7 @@ $primary='var(--tw-color-primary)';
             <div class="lg:hidden mt-3">
                 <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                     <i class="fas fa-search text-gray-400 pl-3 text-sm"></i>
-                    <input type="text" name="search" value="{{request('search')}}" placeholder="Search products..." 
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                         class="w-full bg-transparent px-3 py-2 text-sm text-dark placeholder-gray-500 focus:outline-none border-none">
                 </form>
             </div>
@@ -265,7 +269,7 @@ $primary='var(--tw-color-primary)';
                         <h5 class="font-bold text-xs mb-3 text-white">Newsletter</h5>
                         <p class="text-[10px] text-gray-400 mb-3 block">Subscribe for exclusive deals & updates</p>
                         <form class="flex overflow-hidden rounded border border-white/20 focus-within:border-primary transition max-w-[200px]">
-                            <input type="email" placeholder="Your email" class="w-full bg-white/5 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none border-none">
+                            <input type="email" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" class="w-full bg-white/5 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none border-none">
                             <button type="button" class="bg-blue-500 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                         </form>
                     </div>

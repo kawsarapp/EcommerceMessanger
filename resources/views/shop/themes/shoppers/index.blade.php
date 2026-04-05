@@ -23,6 +23,24 @@
     @endif
 
     {{-- Feature Boxes --}}
+    @if($client->widget('feature_strip'))
+    @php $features = $client->widgetConfig('feature_strip'); @endphp
+    @if(isset($features['items']) && is_array($features['items']) && count($features['items']) > 0)
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-gray-100 mb-12 bg-white">
+        @foreach(array_slice($features['items'], 0, 4) as $item)
+        <div class="border border-r border-b lg:border-b-0 p-4 flex items-center gap-3">
+            <div class="w-12 h-12 bg-gray-50 rounded flex items-center justify-center shrink-0">
+                <i class="fas {{ $item['icon'] ?? 'fa-check' }} text-primary text-xl"></i>
+            </div>
+            <div>
+                <h4 class="text-[11px] font-bold text-gray-700 leading-tight mb-1">{{ mb_strtoupper($item['title'] ?? '') }}</h4>
+                <p class="text-[10px] text-gray-500">{{ $item['subtitle'] ?? '' }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
+    @endif
+    @else
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-gray-100 mb-12 bg-white">
         <div class="border border-r border-b lg:border-b-0 p-4 flex items-center gap-3">
             <div class="w-12 h-12 bg-primary/10 rounded flex items-center justify-center shrink-0"><i class="fas fa-rocket text-primary text-xl"></i></div>
@@ -53,6 +71,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Main Products Grid Feed --}}
     <div class="mb-12">

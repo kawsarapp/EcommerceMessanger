@@ -189,6 +189,8 @@ function cartApp() {
         updateBadge() {
             document.querySelectorAll('[data-cart-badge]').forEach(el => {
                 el.textContent = this.cartCount;
+                if(this.cartCount > 0) el.classList.remove('hidden');
+                else el.classList.add('hidden');
             });
         },
 

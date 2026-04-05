@@ -115,7 +115,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Search Bar --}}
                 <div class="flex-1 w-full max-w-2xl lg:ml-8">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded shadow-sm overflow-hidden h-10 md:h-11 border border-white focus-within:ring-2 focus-within:ring-primary/50">
-                        <input type="text" name="search" value="{{request('search')}}" placeholder="Search entire store here..." 
+                        <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                             class="w-full bg-transparent px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none border-none h-full">
                         <button class="bg-primary hover:bg-red-600 text-white w-12 md:w-16 h-full flex items-center justify-center transition">
                             <i class="fas fa-search text-sm"></i>
@@ -125,13 +125,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
                 {{-- User / Cart Icons --}}
                 <div class="hidden md:flex items-center gap-8 shrink-0 text-white">
-                    <a href="#" class="flex items-center gap-3 hover:text-primary transition group cursor-pointer">
+                    @php $bgCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="flex items-center gap-3 hover:text-primary transition group cursor-pointer">
                         <div class="relative">
                             <i class="fas fa-shopping-cart text-2xl text-gray-300 group-hover:text-white transition"></i>
-                            <span class="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-gray-900">0</span>
+                            @if($bgCartCount > 0)
+                                <span class="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-gray-900" data-cart-badge>{{ $bgCartCount }}</span>
+                            @else
+                                <span class="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-gray-900 hidden" data-cart-badge>0</span>
+                            @endif
                         </div>
                         <div class="flex flex-col pt-1">
-                            <span class="text-[10px] text-gray-400 font-bold uppercase leading-none">0</span>
                             <span class="text-sm font-bold leading-none mt-1">My Cart</span>
                         </div>
                     </a>
@@ -139,8 +143,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <div class="flex items-center gap-3">
                         <i class="far fa-user text-2xl text-gray-300"></i>
                         <div class="flex flex-col">
-                            <span class="text-[10px] font-bold text-gray-300 uppercase leading-tight">Hello Guest!</span>
-                            <span class="text-xs font-bold leading-tight mt-0.5"><a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition">Track Order</a></span>
+                            @if(auth('customer')->check())
+                                <span class="text-[10px] font-bold text-gray-300 uppercase leading-tight">Hello, User!</span>
+                                <span class="text-xs font-bold leading-tight mt-0.5"><a href="{{ $clean ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug) }}" class="hover:text-primary transition">Account</a></span>
+                            @else
+                                <span class="text-[10px] font-bold text-gray-300 uppercase leading-tight">Hello Guest!</span>
+                                <span class="text-xs font-bold leading-tight mt-0.5"><a href="{{ $clean ? $baseUrl.'/login' : route('shop.customer.login', $client->slug) }}" class="hover:text-primary transition">Sign In</a></span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -153,13 +162,8 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[1240px] mx-auto px-4 flex items-center h-12">
             
             {{-- Category Button --}}
-            <div class="w-64 h-full relative group">
-                <a href="{{$baseUrl}}?category=all" class="h-full flex items-center justify-between px-5 bg-primary hover:bg-red-600 transition text-white text-sm font-bold cursor-pointer">
-                    <div class="flex items-center gap-3 flex-1">
-                        <span class="tracking-wide">ALL CATEGORIES</span>
-                    </div>
-                    <i class="fas fa-bars opacity-80"></i>
-                </a>
+            <div class="relative group h-full flex items-center border border-gray-100 bg-gray-50 hover:bg-gray-100 transition px-5 w-64">
+                @include('shop.partials.header-category-menu')
             </div>
 
             <div class="flex items-center pl-6 flex-1 gap-1">
@@ -202,7 +206,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </div>
                     
                     <form class="flex w-full md:w-1/2 max-w-lg h-10 shadow-sm">
-                        <input type="email" placeholder="Your email address" required class="flex-1 px-4 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary border-none h-full bg-white">
+                        <input type="email" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" required class="flex-1 px-4 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary border-none h-full bg-white">
                         <button type="submit" class="bg-primary hover:bg-red-600 text-white font-bold text-xs px-6 uppercase tracking-wider transition h-full text-center">SUBSCRIBE</button>
                     </form>
                 </div>

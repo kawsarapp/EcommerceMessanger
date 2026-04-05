@@ -79,7 +79,7 @@
 
             {{-- Search Bar --}}
             <form action="{{$baseUrl}}" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
-                <input type="text" name="search" value="{{request('search')}}" placeholder="???? ??????..." class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition outline-none">
+                <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition outline-none">
                 <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[var(--tw-color-primary)] transition">
                     <i class="fas fa-search"></i>
                 </button>
@@ -90,16 +90,34 @@
                 <div class="h-10 relative group flex items-center border-x border-gray-100 px-4">
                     @include('shop.partials.header-category-menu')
                 </div>
-                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
-                    <i class="fas fa-truck-fast text-xl mb-1 group-hover:scale-110 transition"></i>
-                    <span class="text-[10px] font-bold uppercase">?????? ???????</span>
+                
+                @if(auth('customer')->check())
+                <a href="{{$clean?$baseUrl.'/customer/dashboard':route('shop.customer.dashboard',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
+                    <i class="far fa-user text-xl mb-1 group-hover:scale-110 transition"></i>
+                    <span class="text-[10px] font-bold uppercase">Account</span>
                 </a>
-                @if($client->fb_page_id)
-                <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="flex flex-col items-center text-gray-600 hover:text-blue-600 transition group">
-                    <i class="fab fa-facebook-messenger text-xl mb-1 group-hover:scale-110 transition"></i>
-                    <span class="text-[10px] font-bold uppercase">?????</span>
+                @else
+                <a href="{{$clean?$baseUrl.'/login':route('shop.customer.login',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
+                    <i class="far fa-user text-xl mb-1 group-hover:scale-110 transition"></i>
+                    <span class="text-[10px] font-bold uppercase">Sign In</span>
                 </a>
                 @endif
+                
+                @php $bgCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative flex flex-col items-center text-gray-600 hover:text-primary transition group cursor-pointer">
+                    <i class="fas fa-shopping-cart text-xl mb-1 group-hover:scale-110 transition"></i>
+                    <span class="text-[10px] font-bold uppercase">Cart</span>
+                    @if($bgCartCount > 0)
+                        <span class="absolute -top-1 -right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full" data-cart-badge>{{ $bgCartCount }}</span>
+                    @else
+                        <span class="absolute -top-1 -right-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden" data-cart-badge>0</span>
+                    @endif
+                </a>
+
+                <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
+                    <i class="fas fa-truck-fast text-xl mb-1 group-hover:scale-110 transition"></i>
+                    <span class="text-[10px] font-bold uppercase">Track Order</span>
+                </a>
             </div>
         </div>
     </header>
