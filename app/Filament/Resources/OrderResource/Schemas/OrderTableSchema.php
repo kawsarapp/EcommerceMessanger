@@ -243,10 +243,10 @@ class OrderTableSchema
                 ->color('danger')
                 ->action(function (Order $record) {
                     $phone = preg_replace('/[^0-9]/', '', $record->customer_phone ?? '');
-                    
+
                     if (strlen($phone) < 10) {
                         \Filament\Notifications\Notification::make()
-                            ->title('Invalid Phone Number')
+                            ->title('⚠️ Invalid Phone Number')
                             ->body('This order has no valid phone number to check.')
                             ->warning()
                             ->send();
@@ -255,49 +255,105 @@ class OrderTableSchema
 
                     try {
                         $response = \Illuminate\Support\Facades\Http::withToken(config('services.bdcourier.api_key'))
-                            ->timeout(8)
+                            ->timeout(10)
                             ->post('https://api.bdcourier.com/courier-check', [
-                                'phone' => $phone
+                                'phone' => $phone,
                             ]);
 
-                        $data = $response->json();
+                        $json = $response->json();
 
-                        if ($response->successful() && ($data['status'] ?? '') === 'success') {
-                            $couriers = $data['data']['couriers'] ?? [];
-
-                            if (empty($couriers)) {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('✅ No Courier Record Found')
-                                    ->body("Phone {$phone} has no courier history. Likely a new or low-risk customer.")
-                                    ->success()
-                                    ->persistent()
-                                    ->send();
-                                return;
-                            }
-
-                            $activeCouriers = collect($couriers)->where('status', 'active')->pluck('name')->join(', ');
-                            $allNames = collect($couriers)->pluck('name')->join(', ');
-                            $count = count($couriers);
-
-                            $riskLevel = $count >= 3 ? '🔴 HIGH RISK' : ($count >= 1 ? '🟡 MODERATE' : '🟢 LOW RISK');
-
+                        // ── API Error ──────────────────────────────────────────────
+                        if (!$response->successful() || ($json['status'] ?? '') !== 'success') {
                             \Filament\Notifications\Notification::make()
-                                ->title("{$riskLevel} — {$count} Courier(s) Found")
-                                ->body("Phone: {$phone}\nActive on: {$activeCouriers}\nAll records: {$allNames}")
-                                ->warning()
+                                ->title('❌ API Error')
+                                ->body('BDCourier returned an error: ' . ($json['message'] ?? 'Unknown error'))
+                                ->danger()
                                 ->persistent()
                                 ->send();
-                        } else {
+                            return;
+                        }
+
+                        // ── Parse response ─────────────────────────────────────────
+                        $courierData = $json['data'] ?? [];          // new format key: 'data'
+                        $reports     = $json['reports'] ?? [];
+                        $summary     = $courierData['summary'] ?? null;
+
+                        // Remove 'summary' from per-courier iteration
+                        $couriers = collect($courierData)->except('summary')->filter(fn($c) => is_array($c));
+
+                        // ── No data at all ────────────────────────────────────────
+                        if ($couriers->isEmpty() && empty($reports)) {
                             \Filament\Notifications\Notification::make()
                                 ->title('✅ Clean Record')
-                                ->body("Phone {$phone} has no known courier fraud record.")
+                                ->body("Phone {$phone} has no courier history. Likely a new or low-risk customer.")
                                 ->success()
+                                ->persistent()
                                 ->send();
+                            return;
                         }
+
+                        // ── Risk Calculation ──────────────────────────────────────
+                        // Factor 1: fraud reports count
+                        $reportCount = count($reports);
+                        // Factor 2: couriers with low success ratio (<70%) or high cancellations
+                        $highRiskCouriers = $couriers->filter(fn($c) => ($c['success_ratio'] ?? 100) < 70 || ($c['cancelled_parcel'] ?? 0) >= 5);
+                        $totalCancelled   = $summary['cancelled_parcel'] ?? $couriers->sum(fn($c) => $c['cancelled_parcel'] ?? 0);
+                        $overallRatio     = $summary['success_ratio'] ?? 100;
+                        $totalParcels     = $summary['total_parcel'] ?? $couriers->sum(fn($c) => $c['total_parcel'] ?? 0);
+
+                        // Determine risk level
+                        if ($reportCount > 0 || $overallRatio < 60 || $highRiskCouriers->count() >= 2) {
+                            $riskIcon  = '🔴';
+                            $riskLabel = 'HIGH RISK';
+                            $notifType = 'danger';
+                        } elseif ($overallRatio < 80 || $totalCancelled >= 10 || $highRiskCouriers->count() >= 1) {
+                            $riskIcon  = '🟡';
+                            $riskLabel = 'MODERATE RISK';
+                            $notifType = 'warning';
+                        } else {
+                            $riskIcon  = '🟢';
+                            $riskLabel = 'LOW RISK';
+                            $notifType = 'success';
+                        }
+
+                        // ── Build Summary Body ────────────────────────────────────
+                        $lines = [];
+                        $lines[] = "📞 Phone: {$phone}";
+                        $lines[] = "📦 Total Parcels: {$totalParcels} | ✅ Success: " . ($summary['success_parcel'] ?? '-') . " | ❌ Cancelled: {$totalCancelled}";
+                        $lines[] = "📊 Overall Success Rate: {$overallRatio}%";
+                        $lines[] = '';
+
+                        // Per-courier breakdown (only couriers with activity)
+                        $activeCouriers = $couriers->filter(fn($c) => ($c['total_parcel'] ?? 0) > 0);
+                        if ($activeCouriers->isNotEmpty()) {
+                            $lines[] = "🚚 Courier Breakdown:";
+                            foreach ($activeCouriers as $c) {
+                                $ratio   = $c['success_ratio'] ?? 0;
+                                $emoji   = $ratio >= 80 ? '✅' : ($ratio >= 60 ? '⚠️' : '❌');
+                                $lines[] = "  {$emoji} {$c['name']}: {$c['total_parcel']} parcels | {$ratio}% success | {$c['cancelled_parcel']} cancelled";
+                            }
+                        }
+
+                        // Fraud reports
+                        if (!empty($reports)) {
+                            $lines[] = '';
+                            $lines[] = "🚨 Fraud Reports ({$reportCount}):";
+                            foreach ($reports as $rep) {
+                                $lines[] = "  • [{$rep['courierName']}] {$rep['name']}: {$rep['details']}";
+                            }
+                        }
+
+                        \Filament\Notifications\Notification::make()
+                            ->title("{$riskIcon} {$riskLabel} — BDCourier Check")
+                            ->body(implode("\n", $lines))
+                            ->{$notifType}()
+                            ->persistent()
+                            ->send();
+
                     } catch (\Exception $e) {
                         \Filament\Notifications\Notification::make()
-                            ->title('API Error')
-                            ->body('BDCourier API unreachable: ' . $e->getMessage())
+                            ->title('❌ API Unreachable')
+                            ->body('BDCourier API error: ' . $e->getMessage())
                             ->danger()
                             ->send();
                     }
