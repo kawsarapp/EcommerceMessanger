@@ -91,6 +91,7 @@
             </div>
 
             {{-- CTA Buttons --}}
+            @if($client->show_order_button ?? true)
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-gray-100">
                 <button type="button" @click="submitLogic('cart')" :disabled="isLoading" 
                         class="h-14 w-full flex items-center justify-center rounded-xl bg-white border-2 border-primary text-primary font-bold hover:bg-primary/5 transition disabled:opacity-50">
@@ -102,6 +103,15 @@
                     <i class="fas fa-bolt mr-2"></i> Buy Now
                 </button>
             </div>
+            @elseif($client->show_chat_button ?? true)
+            @php $waPhone = preg_replace('/[^0-9]/', '', $client->phone ?? ''); @endphp
+            <div class="pt-4 border-t border-gray-100">
+                <a href="https://wa.me/{{$waPhone}}?text={{ urlencode('আস-সালামু আলাইকুম! আমি এই প্রোডাক্টটি অর্ডার করতে চাই: ' . $product->name . ' (' . url()->current() . ')') }}" target="_blank"
+                   class="h-14 w-full flex items-center justify-center rounded-xl bg-emerald-500 text-white font-bold tracking-wider hover:-translate-y-0.5 transition-all shadow hover:shadow-lg gap-2">
+                    <i class="fab fa-whatsapp text-lg"></i> Message on WhatsApp
+                </a>
+            </div>
+            @endif
             
         </form>
     @endif

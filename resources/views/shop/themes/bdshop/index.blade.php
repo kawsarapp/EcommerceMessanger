@@ -6,6 +6,9 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
+{{-- Homepage Offer Banner --}}
+@include('shop.partials.homepage-offer-banner', ['client' => $client])
+
 {{-- Hero Banner --}}
 @if($client->widget('hero_banner'))
     <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" />

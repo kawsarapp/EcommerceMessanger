@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.bdshop.layout')
+@extends('shop.themes.bdshop.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -86,11 +86,13 @@ $totalReviews = $reviews->count();
                     @else
                         <span class="text-sm text-slate-400">এখনো কোনো রিভিউ নেই</span>
                     @endif
+                    @if($client->show_stock ?? true)
                     <span class="text-slate-300">|</span>
                     @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                         <span class="text-red-500 text-sm font-bold"><i class="fas fa-circle text-[6px] mr-1"></i>স্টক শেষ</span>
                     @else
                         <span class="text-emerald-500 text-sm font-bold"><i class="fas fa-circle text-[6px] mr-1"></i>স্টকে আছে</span>
+                    @endif
                     @endif
                 </div>
                 @endif
@@ -173,7 +175,9 @@ $totalReviews = $reviews->count();
     @endif
 
 
+    @if($client->show_related_products ?? true)
         @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
+    @endif
     @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 </main>
 @include('shop.partials.product-sticky-bar')

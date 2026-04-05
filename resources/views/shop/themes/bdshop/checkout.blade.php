@@ -126,6 +126,44 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                     <p x-show="couponError" x-text="couponError" class="text-red-500 text-xs font-bold mt-2"></p>
                 </div>
 
+                {{-- Payment Method --}}
+                <div class="mat-card mat-elevated border-0 p-5 sm:p-6 lg:p-7">
+                    <h3 class="text-base font-bold text-dark mb-4 flex items-center gap-2">
+                        <i class="fas fa-wallet text-primary"></i> পেমেন্ট পদ্ধতি
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @if($client->cod_active ?? true)
+                        <label class="cursor-pointer">
+                            <input type="radio" name="payment_method" value="cod" class="peer hidden" checked>
+                            <div class="border-2 border-slate-200 rounded-lg p-4 peer-checked:border-primary peer-checked:bg-primary/5 transition flex items-center gap-3 h-full">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 peer-checked:bg-primary peer-checked:text-white transition">
+                                    <i class="fas fa-hand-holding-usd text-lg"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-bold text-dark mb-0.5">ক্যাশ অন ডেলিভারি</span>
+                                    <span class="block text-[10px] text-slate-500 font-medium leading-tight">পণ্য হাতে পেয়ে সম্পূর্ণ টাকা পরিশোধ করুন</span>
+                                </div>
+                            </div>
+                        </label>
+                        @endif
+
+                        @if(($client->full_payment_active ?? false) || ($client->partial_payment_active ?? false))
+                        <label class="cursor-pointer">
+                            <input type="radio" name="payment_method" value="online" class="peer hidden" {{ !($client->cod_active ?? true) ? 'checked' : '' }}>
+                            <div class="border-2 border-slate-200 rounded-lg p-4 peer-checked:border-primary peer-checked:bg-primary/5 transition flex items-center gap-3 h-full">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 peer-checked:bg-primary peer-checked:text-white transition">
+                                    <i class="fas fa-credit-card text-lg"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-bold text-dark mb-0.5">অনলাইন পেমেন্ট</span>
+                                    <span class="block text-[10px] text-slate-500 font-medium leading-tight">bKash / Nagad / Rocket / Cards</span>
+                                </div>
+                            </div>
+                        </label>
+                        @endif
+                    </div>
+                </div>
+
                 {{-- Terms --}}
                 @if($client->show_terms_checkbox ?? false)
                 <div class="bg-white rounded-xl border border-slate-200 p-5">
@@ -143,8 +181,8 @@ $baseUrl=$client->custom_domain?'https://'.preg_replace('/^https?:\/\//','',rtri
                 <button type="submit" class="w-full py-4 bg-primary text-white rounded-xl font-bold text-base uppercase tracking-wider hover:bg-primary/90 smooth-transition shadow-[0_8px_15px_-3px_rgba(0,0,0,0.1)] hover:-translate-y-1 hover:shadow-[0_12px_20px_-5px_rgba(0,0,0,0.2)] flex items-center justify-center gap-2">
                     <i class="fas fa-lock text-sm"></i> অর্ডার কনফার্ম করুন
                 </button>
-                <p class="text-center text-xs text-slate-400 font-medium">
-                    <i class="fas fa-shield-check mr-1"></i> আপনার তথ্য সম্পূর্ণ নিরাপদ   |   ক্যাশ অন ডেলিভারি
+                <p class="text-center text-xs text-slate-400 font-medium mt-3">
+                    <i class="fas fa-shield-check mr-1 text-primary"></i> আপনার তথ্য সম্পূর্ণ নিরাপদ &nbsp;|&nbsp; 100% সিকিউর পেমেন্ট
                 </p>
             </form>
         </div>
