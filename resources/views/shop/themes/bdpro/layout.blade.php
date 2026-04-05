@@ -2,7 +2,7 @@
 @php 
 $clean=preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')); 
 $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug); 
-$primary='#1a3673';
+$primary='var(--tw-color-primary)';
 @endphp
 <html lang="bn">
 <head>
@@ -35,9 +35,9 @@ $primary='#1a3673';
                     colors:{
                         primary: '{{$client->primary_color ?? "#f85606"}}',
                         secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
-                        bdblue: '#1a3673',
-                        bdlight: '#f5f7fa',
-                        bdhover: '#e2e8f0',
+                        primary: 'var(--tw-color-primary)',
+                        gray-50: '#f5f7fa',
+                        gray-100: '#e2e8f0',
                         bddeep: '#0a2540',
                         dark: '#1e293b',
                     },
@@ -49,7 +49,7 @@ $primary='#1a3673';
         }
     </script>
     <style>
-        :root { --tw-color-primary: {{$client->primary_color ?? "#f85606"}}; --mob-primary: #1a3673; }
+        :root { --tw-color-primary: {{$client->primary_color ?? "#f85606"}}; --mob-primary: var(--tw-color-primary); }
         [x-cloak]{display:none!important}
         body { background-color: #f8f9fa; }
         .hide-scroll::-webkit-scrollbar{display:none}
@@ -60,7 +60,7 @@ $primary='#1a3673';
     </style>
     @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -96,12 +96,12 @@ $primary='#1a3673';
                     @if($client->logo)
                         <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain" alt="{{$client->shop_name}}">
                     @endif
-                    <span class="text-bdblue font-extrabold text-xl ml-2 hidden sm:block">{{$client->shop_name}}</span>
+                    <span class="text-primary font-extrabold text-xl ml-2 hidden sm:block">{{$client->shop_name}}</span>
                 </a>
 
                 {{-- Search Bar (Large Center) --}}
                 <div class="hidden lg:flex flex-1 max-w-2xl">
-                    <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-lg overflow-hidden border border-gray-200 focus-within:border-bdblue transition-colors">
+                    <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-lg overflow-hidden border border-gray-200 focus-within:border-primary transition-colors">
                         <i class="fas fa-search text-gray-400 pl-4"></i>
                         <input type="text" name="search" value="{{request('search')}}" placeholder="Search for products, brands, or categories..." 
                             class="w-full bg-transparent px-4 py-3 text-sm font-medium text-dark placeholder-gray-500 focus:outline-none focus:ring-0 border-none transition h-full">
@@ -117,13 +117,13 @@ $primary='#1a3673';
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50">
-                    <a href="#" class="hidden sm:flex flex-col items-center text-gray-600 hover:text-bdblue transition">
+                    <a href="#" class="hidden sm:flex flex-col items-center text-gray-600 hover:text-primary transition">
                         <i class="far fa-user text-xl mb-1"></i>
                         <span class="text-[10px] font-bold">Account</span>
                     </a>
                     
                     {{-- Mini Cart Icon (Placeholder UI) --}}
-                    <div class="relative flex flex-col items-center text-gray-600 hover:text-bdblue transition cursor-pointer">
+                    <div class="relative flex flex-col items-center text-gray-600 hover:text-primary transition cursor-pointer">
                         <i class="fas fa-shopping-bag text-xl mb-1"></i>
                         <span class="text-[10px] font-bold">My Cart</span>
                         <span class="absolute -top-1 right-0 sm:right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform translate-x-1 outline outline-2 outline-white">0</span>
@@ -144,28 +144,12 @@ $primary='#1a3673';
     </header>
 
     {{-- Blue Navigation Bar --}}
-    <nav class="bg-bdblue text-white sticky top-0 sm:top-[-1px] z-40 hidden md:block border-b border-light/10 shadow-sm">
+    <nav class="bg-primary text-white sticky top-0 sm:top-[-1px] z-40 hidden md:block border-b border-light/10 shadow-sm">
         <div class="max-w-[1400px] mx-auto px-4 flex items-center h-12">
             
             {{-- Category Dropdown Button --}}
-            <div class="nav-dropdown h-full relative group">
-                <button class="h-full flex items-center gap-3 px-5 bg-white/10 hover:bg-white/20 transition cursor-pointer text-sm font-bold w-60">
-                    <i class="fas fa-bars"></i>
-                    <span class="flex-1 text-left">Shop by Category</span>
-                    <i class="fas fa-chevron-down text-[10px]"></i>
-                </button>
-                
-                {{-- Dropdown Menu --}}
-                <div class="dropdown-menu absolute top-full left-0 w-64 bg-white shadow-xl border border-gray-100 rounded-b-lg hidden z-50">
-                    <ul class="py-2 text-sm text-gray-700">
-                        <li><a href="{{$baseUrl}}?category=all" class="block px-5 py-2 hover:bg-gray-50 hover:text-bdblue font-medium transition"><i class="fas fa-th-large mr-2 w-4 text-center text-gray-400"></i> All Products</a></li>
-                        @if(isset($categories))
-                            @foreach($categories->take(10) as $c)
-                            <li><a href="{{$baseUrl}}?category={{$c->slug}}" class="block px-5 py-2 hover:bg-gray-50 hover:text-bdblue font-medium transition line-clamp-1"><i class="fas fa-caret-right mr-2 w-4 text-center text-gray-400"></i> {{$c->name}}</a></li>
-                            @endforeach
-                        @endif
-                    </ul>
-                </div>
+            <div class="relative group h-full flex items-center bg-white/10 hover:bg-white/20 transition px-5 w-60">
+                @include('shop.partials.header-category-menu')
             </div>
 
             <div class="flex items-center ml-6 flex-1 gap-1">
@@ -197,7 +181,7 @@ $primary='#1a3673';
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
-                    <span class="flex items-center gap-1.5"><i class="fas fa-truck text-bdblue"></i> Fast Nationwide Delivery</span>
+                    <span class="flex items-center gap-1.5"><i class="fas fa-truck text-primary"></i> Fast Nationwide Delivery</span>
                     <span class="flex items-center gap-1.5"><i class="fas fa-leaf text-green-600"></i> Best Selections</span>
                     <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-blue-500"></i> Official Warranty</span>
                 </div>
@@ -205,7 +189,7 @@ $primary='#1a3673';
         </div>
 
         {{-- Deep Blue Footer block --}}
-        <div class="bg-bddeep text-white pt-16 pb-8 border-t-[8px] border-bdblue">
+        <div class="bg-bddeep text-white pt-16 pb-8 border-t-[8px] border-primary">
             <div class="max-w-[1400px] mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
                     

@@ -64,13 +64,13 @@ function productApp() {
         
         {{-- Breadcrumb --}}
         <nav class="flex items-center text-[11px] text-gray-500 mb-6 bg-gray-50 py-2.5 px-4 rounded-sm border border-gray-100/50 w-fit">
-            <a href="{{$baseUrl}}" class="hover:text-bdblue transition"><i class="fas fa-home"></i></a>
+            <a href="{{$baseUrl}}" class="hover:text-primary transition"><i class="fas fa-home"></i></a>
             <i class="fas fa-chevron-right text-[8px] mx-3 text-gray-300"></i>
-            <a href="{{$baseUrl}}?category=all" class="hover:text-bdblue transition">Products</a>
+            <a href="{{$baseUrl}}?category=all" class="hover:text-primary transition">Products</a>
             <i class="fas fa-chevron-right text-[8px] mx-3 text-gray-300"></i>
-            <a href="{{$baseUrl}}?category={{$product->category->slug ?? 'all'}}" class="hover:text-bdblue transition">{{$product->category->name ?? 'General'}}</a>
+            <a href="{{$baseUrl}}?category={{$product->category->slug ?? 'all'}}" class="hover:text-primary transition">{{$product->category->name ?? 'General'}}</a>
             <i class="fas fa-chevron-right text-[8px] mx-3 text-gray-300"></i>
-            <span class="text-bdblue font-medium">{{$product->name}}</span>
+            <span class="text-primary font-medium">{{$product->name}}</span>
         </nav>
 
         {{-- Product Details Row --}}
@@ -85,14 +85,14 @@ function productApp() {
                 {{-- Thumbnails --}}
                 <div class="flex gap-3 overflow-x-auto hide-scroll pb-2">
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
-                         :class="{ 'border-bdblue shadow-sm ring-1 ring-bdblue': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200 hover:border-bdblue/50': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
+                         :class="{ 'border-primary shadow-sm ring-1 ring-primary': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200 hover:border-primary/50': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-20 h-20 bg-white border rounded cursor-pointer transition p-2 flex items-center justify-center shrink-0">
                         <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </div>
                     
                     @foreach($product->gallery ?? [] as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
-                         :class="{ 'border-bdblue shadow-sm ring-1 ring-bdblue': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200 hover:border-bdblue/50': mainImg !== '{{asset('storage/'.$img)}}' }"
+                         :class="{ 'border-primary shadow-sm ring-1 ring-primary': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200 hover:border-primary/50': mainImg !== '{{asset('storage/'.$img)}}' }"
                          class="w-20 h-20 bg-white border rounded cursor-pointer transition p-2 flex items-center justify-center shrink-0">
                         <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain" loading="lazy">
                     </div>
@@ -100,7 +100,7 @@ function productApp() {
                 </div>
                 
                 @if($product->video_url)
-                <a href="{{$product->video_url}}" target="_blank" class="mt-4 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-bdblue border border-blue-200 font-bold py-2.5 rounded-lg transition text-xs shadow-sm w-full">
+                <a href="{{$product->video_url}}" target="_blank" class="mt-4 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-primary border border-blue-200 font-bold py-2.5 rounded-lg transition text-xs shadow-sm w-full">
                     <i class="fab fa-youtube text-red-500 text-base"></i> Watch Product Video
                 </a>
                 @endif
@@ -110,10 +110,10 @@ function productApp() {
             <div class="lg:col-span-7 flex flex-col">
                 {{-- Meta Info --}}
                 <div class="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    <span class="text-bdblue">{{$product->category->name ?? 'Category'}}</span> 
+                    <span class="text-primary">{{$product->category->name ?? 'Category'}}</span> 
                     @if($product->brand)
                     <span class="text-gray-300">by</span> 
-                    <span class="text-bdblue bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{{$product->brand}}</span>
+                    <span class="text-primary bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{{$product->brand}}</span>
                     @endif
                 </div>
 
@@ -123,7 +123,7 @@ function productApp() {
                 {{-- ID and Review --}}
                 <div class="flex flex-wrap items-center gap-6 mb-6 pb-6 border-b border-gray-100">
                     <div class="text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded flex items-center gap-2 border border-gray-100">
-                        <span class="font-bold text-gray-700">Product ID:</span> {{$product->id}}{{$product->client_id*87}} <i class="fas fa-copy text-gray-400 cursor-pointer hover:text-bdblue" onclick="navigator.clipboard.writeText('{{$product->id}}{{$product->client_id*87}}'); alert('Product ID Copied!')"></i>
+                        <span class="font-bold text-gray-700">Product ID:</span> {{$product->id}}{{$product->client_id*87}} <i class="fas fa-copy text-gray-400 cursor-pointer hover:text-primary" onclick="navigator.clipboard.writeText('{{$product->id}}{{$product->client_id*87}}'); alert('Product ID Copied!')"></i>
                     </div>
                     
                     <div class="flex items-center gap-1.5 text-xs">
@@ -172,7 +172,7 @@ function productApp() {
                 {{-- Shipping Options Box --}}
                 <div class="mt-8 border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
                     <div class="px-5 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center gap-2">
-                        <i class="fas fa-truck text-bdblue"></i> <span class="font-bold text-sm text-dark">Shipping Options</span>
+                        <i class="fas fa-truck text-primary"></i> <span class="font-bold text-sm text-dark">Shipping Options</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {{-- Option --}}
@@ -204,9 +204,9 @@ function productApp() {
         <div class="mb-12">
             {{-- Tab Headers --}}
             <div class="flex border-b border-gray-200 gap-1 overflow-x-auto hide-scroll">
-                <button @click="tab = 'description'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'description', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'description'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Description</button>
-                <button @click="tab = 'specifications'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'specifications', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'specifications'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Specifications</button>
-                <button @click="tab = 'reviews'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'reviews', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'reviews'}" class="px-6 py-4 text-sm whitespace-nowrap transition text-gray-400">Reviews (0)</button>
+                <button @click="tab = 'description'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'description', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'description'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Description</button>
+                <button @click="tab = 'specifications'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'specifications', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'specifications'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Specifications</button>
+                <button @click="tab = 'reviews'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'reviews', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'reviews'}" class="px-6 py-4 text-sm whitespace-nowrap transition text-gray-400">Reviews (0)</button>
             </div>
             
             {{-- Tab Contents --}}
@@ -256,12 +256,12 @@ function productApp() {
             <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 @php $related = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
                 @foreach($related as $p)
-                <div class="border border-gray-100 rounded-lg p-3 hover:border-bdblue hover:shadow-md transition group bg-white relative">
+                <div class="border border-gray-100 rounded-lg p-3 hover:border-primary hover:shadow-md transition group bg-white relative">
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block bg-gray-50 mb-3 rounded overflow-hidden aspect-square flex items-center justify-center">
                         <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300">
                     </a>
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">
-                        <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-bdblue transition">{{$p->name}}</h4>
+                        <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-primary transition">{{$p->name}}</h4>
                         <div class="font-bold text-blue-600 text-sm">?{{number_format($p->sale_price ?? $p->regular_price)}}</div>
                     </a>
                 </div>

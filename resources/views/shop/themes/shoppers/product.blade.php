@@ -11,23 +11,23 @@
     /* Shoppers Product specific CSS */
     .sh-breadcrumb { font-size: 11px; color: #6b7280; font-weight: 500; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; margin-bottom: 24px; }
     .sh-breadcrumb a { color: #4b5563; transition: color 0.2s; }
-    .sh-breadcrumb a:hover { color: #eb484e; }
+    .sh-breadcrumb a:hover { color: var(--tw-color-primary); }
     
     .sh-price { color: #ef4444; font-size: 24px; font-weight: 700; }
     .sh-qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; background: #fff; cursor: pointer; color: #4b5563; font-weight: bold; transition: background 0.2s; }
     .sh-qty-btn:hover { background: #f3f4f6; }
     .sh-qty-input { width: 40px; height: 32px; text-align: center; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-left: none; border-right: none; font-weight: bold; color: #333; outline: none; }
     
-    .sh-btn-red { background: #eb484e; color: #fff; border: 1px solid #eb484e; font-weight: 700; text-transform: uppercase; font-size: 12px; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    .sh-btn-red { background: var(--tw-color-primary); color: #fff; border: 1px solid var(--tw-color-primary); font-weight: 700; text-transform: uppercase; font-size: 12px; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .sh-btn-red:hover { background: #d63d42; }
-    .sh-btn-dark { background: #24263f; color: #fff; border: 1px solid #24263f; display: inline-flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .sh-btn-dark { background: var(--tw-color-primary); color: #fff; border: 1px solid var(--tw-color-primary); display: inline-flex; align-items: center; justify-content: center; transition: background 0.2s; }
     .sh-btn-dark:hover { background: #1a1b2d; }
     
     .sh-tab-container { border: 1px solid #e5e7eb; margin-top: 40px; }
     .sh-tab-header { display: flex; border-bottom: 1px solid #e5e7eb; background: #f9fafb; flex-wrap: wrap; }
     .sh-tab-btn { padding: 14px 24px; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #4b5563; border-right: 1px solid #e5e7eb; transition: all 0.2s; }
-    .sh-tab-btn:hover { color: #eb484e; }
-    .sh-tab-active { background: #eb484e; color: #fff !important; }
+    .sh-tab-btn:hover { color: var(--tw-color-primary); }
+    .sh-tab-active { background: var(--tw-color-primary); color: #fff !important; }
     
     .sh-share-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; transition: opacity 0.2s; cursor: pointer; }
     .sh-share-icon:hover { opacity: 0.8; }
@@ -86,13 +86,13 @@
                 @if($product->gallery && count($product->gallery) > 0)
                 <div class="w-full flex gap-2 overflow-x-auto hide-scroll justify-center">
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
-                         :class="{ 'border-shred': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
+                         :class="{ 'border-primary': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-16 h-16 bg-white border cursor-pointer p-1">
                         <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
                     </div>
                     @foreach($product->gallery as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
-                         :class="{ 'border-shred': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
+                         :class="{ 'border-primary': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
                          class="w-16 h-16 bg-white border cursor-pointer p-1">
                         <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain" loading="lazy">
                     </div>
@@ -101,7 +101,7 @@
                 @endif
 
                 @if($product->video_url)
-                <a href="{{$product->video_url}}" target="_blank" class="w-full mt-4 bg-red-50 hover:bg-red-100 text-shred font-bold text-xs py-2.5 rounded border border-red-200 flex items-center justify-center transition">
+                <a href="{{$product->video_url}}" target="_blank" class="w-full mt-4 bg-red-50 hover:bg-red-100 text-primary font-bold text-xs py-2.5 rounded border border-red-200 flex items-center justify-center transition">
                     <i class="fab fa-youtube text-lg mr-2"></i> WATCH PRODUCT VIDEO
                 </a>
                 @endif
@@ -121,7 +121,7 @@
                     <div class="flex text-gray-300 text-xs">
                         <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
                     </div>
-                    <a href="#" @click.prevent="tab='reviews'" class="text-[11px] text-gray-500 hover:text-shred font-medium">Be the first to review this product</a>
+                    <a href="#" @click.prevent="tab='reviews'" class="text-[11px] text-gray-500 hover:text-primary font-medium">Be the first to review this product</a>
                 </div>
 
                 {{-- Price Block --}}
@@ -130,7 +130,7 @@
                     @if($product->sale_price)
                         <del class="text-gray-500 font-medium text-sm mb-1">TK {{number_format($product->regular_price, 2)}}</del>
                     @endif
-                    <span class="bg-shred text-white text-[10px] font-bold px-2 py-0.5 ml-auto self-center uppercase">Live Stock</span>
+                    <span class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 ml-auto self-center uppercase">Live Stock</span>
                 </div>
 
                 {{-- Stock & SKU --}}
@@ -139,7 +139,7 @@
                     @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
                         <span class="text-red-500 font-bold ml-1">Out of stock</span>
                     @else
-                        <span class="text-shred font-medium ml-1">More than 10 available</span>
+                        <span class="text-primary font-medium ml-1">More than 10 available</span>
                     @endif
                 </div>
                 <div class="text-xs text-gray-500 mb-6">
@@ -289,18 +289,18 @@
                 @php $related = App\Models\Product::where('client_id', $client->id)->where('category_id', $product->category_id)->where('id', '!=', $product->id)->inRandomOrder()->limit(5)->get(); @endphp
                 @foreach($related as $p)
                 <div class="border-r border-b border-gray-200 p-4 relative group bg-white">
-                    @if($p->sale_price)<span class="absolute top-4 left-4 bg-shred text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
+                    @if($p->sale_price)<span class="absolute top-4 left-4 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}" class="block flex items-center justify-center h-40 mb-4">
                         <img src="{{asset('storage/'.$p->thumbnail)}}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:-translate-y-1 transition duration-300">
                     </a>
                     
                     <a href="{{$baseUrl.'/product/'.$p->slug}}">
-                        <h4 class="text-[11px] font-medium text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-shred transition leading-snug">{{$p->name}}</h4>
+                        <h4 class="text-[11px] font-medium text-gray-700 line-clamp-2 h-8 mb-2 group-hover:text-primary transition leading-snug">{{$p->name}}</h4>
                     </a>
                     
                     <div class="flex items-end gap-1 mb-1">
-                        <span class="font-bold text-shred text-xs">TK {{number_format($p->sale_price ?? $p->regular_price, 2)}}</span>
+                        <span class="font-bold text-primary text-xs">TK {{number_format($p->sale_price ?? $p->regular_price, 2)}}</span>
                         @if($p->sale_price)<del class="text-[9px] text-gray-400 font-medium line-through">TK {{number_format($p->regular_price, 2)}}</del>@endif
                     </div>
                 </div>

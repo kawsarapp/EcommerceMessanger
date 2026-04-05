@@ -29,7 +29,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '{{$client->primary_color ?? "#F85606"}}',
+                        primary: '{{$client->primary_color ?? "var(--tw-color-primary)"}}',
                         secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
                         dark: '#0f172a',
                     },
@@ -42,15 +42,15 @@
     </script>
     <style>
         :root {
-            --tw-color-primary: {{$client->primary_color ?? "#F85606"}};
-            --mob-primary: {{$client->primary_color ?? "#F85606"}};
+            --tw-color-primary: {{$client->primary_color ?? "var(--tw-color-primary)"}};
+            --mob-primary: {{$client->primary_color ?? "var(--tw-color-primary)"}};
         }
         body { background-color: #F5F5F5; }
         [x-cloak] { display: none !important; }
         .hide-scroll::-webkit-scrollbar { display: none; }
-        .hero-gradient { background: linear-gradient(90deg, var(--tw-color-primary) 0%, #ff8a00 100%); }
+        .hero-gradient { background: linear-gradient(90deg, var(--tw-color-primary) 0%, var(--tw-color-secondary) 100%); }
         .btn-primary { background: var(--tw-color-primary); transition: background 0.3s; }
-        .btn-primary:hover { background: #d04000; }
+        .btn-primary:hover { background: var(--tw-color-primary); }
         @media(max-width:767px){
             .shop-name-text{font-size:1rem!important;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         }
@@ -80,13 +80,16 @@
             {{-- Search Bar --}}
             <form action="{{$baseUrl}}" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
                 <input type="text" name="search" value="{{request('search')}}" placeholder="???? ??????..." class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition outline-none">
-                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[#d04000] transition">
+                <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[var(--tw-color-primary)] transition">
                     <i class="fas fa-search"></i>
                 </button>
             </form>
 
             {{-- Right Actions --}}
             <div class="hidden md:flex items-center gap-6 shrink-0">
+                <div class="h-10 relative group flex items-center border-x border-gray-100 px-4">
+                    @include('shop.partials.header-category-menu')
+                </div>
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="flex flex-col items-center text-gray-600 hover:text-primary transition group">
                     <i class="fas fa-truck-fast text-xl mb-1 group-hover:scale-110 transition"></i>
                     <span class="text-[10px] font-bold uppercase">?????? ???????</span>

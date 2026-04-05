@@ -9,7 +9,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 {{-- Hero Banner --}}
 @if($client->widget('hero_banner'))
 <section class="bg-white">
-    <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" />
+    <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="$categories ?? null" />
 </section>
 @endif
 

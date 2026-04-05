@@ -5,7 +5,7 @@
 <div class="max-w-[800px] mx-auto px-4 py-12 md:py-20 bg-white">
     
     <div class="text-center mb-10">
-        <h1 class="text-2xl font-black text-shdark mb-3 uppercase tracking-wider">Order Tracking</h1>
+        <h1 class="text-2xl font-black text-gray-900 mb-3 uppercase tracking-wider">Order Tracking</h1>
         <p class="text-gray-500 text-xs max-w-sm mx-auto">Please enter your 11-digit mobile number below to track the status of your current orders.</p>
     </div>
 
@@ -15,8 +15,8 @@
                 <i class="fas fa-phone-alt text-sm"></i>
             </div>
             <input type="text" name="order_id" value="{{ request('order_id') }}" placeholder="Mobile Number" required
-                class="flex-1 py-3 px-4 text-sm font-medium text-dark focus:outline-none focus:ring-1 focus:ring-shred border-none placeholder-gray-400">
-            <button type="submit" class="bg-shred hover:bg-red-600 text-white px-6 font-bold text-xs uppercase tracking-wider transition">
+                class="flex-1 py-3 px-4 text-sm font-medium text-dark focus:outline-none focus:ring-1 focus:ring-primary border-none placeholder-gray-400">
+            <button type="submit" class="bg-primary hover:bg-red-600 text-white px-6 font-bold text-xs uppercase tracking-wider transition">
                 Find
             </button>
         </form>
@@ -26,7 +26,7 @@
     <div>
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
             <h4 class="text-sm font-bold text-gray-700 uppercase">Search Results</h4>
-            <span class="text-xs text-gray-400">Mobile: <strong class="text-shred">{{ request('order_id') }}</strong></span>
+            <span class="text-xs text-gray-400">Mobile: <strong class="text-primary">{{ request('order_id') }}</strong></span>
         </div>
 
         @forelse($orders ?? [] as $o)
@@ -34,7 +34,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-dashed border-gray-200">
                     <div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Order ID</span>
-                        <span class="text-xl font-black text-shdark tracking-tight">#{{ $o->id }}</span>
+                        <span class="text-xl font-black text-gray-900 tracking-tight">#{{ $o->id }}</span>
                     </div>
                     
                     @php
@@ -60,7 +60,7 @@
                     </div>
                     <div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Total Amount</span>
-                        <span class="text-sm font-black text-shred block">TK {{ number_format($o->total_amount) }}</span>
+                        <span class="text-sm font-black text-primary block">TK {{ number_format($o->total_amount) }}</span>
                     </div>
                     <div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase block mb-1">Payment Status</span>

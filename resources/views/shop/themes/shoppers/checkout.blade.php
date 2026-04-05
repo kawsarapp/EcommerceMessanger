@@ -10,14 +10,14 @@
 <style>
     .sh-breadcrumb { font-size: 11px; color: #6b7280; font-weight: 500; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; margin-bottom: 24px; }
     .sh-input { width: 100%; border: 1px solid #d1d5db; border-radius: 2px; padding: 10px 14px; font-size: 13px; color: #4b5563; transition: border 0.2s; outline: none; background: #fff; }
-    .sh-input:focus { border-color: #eb484e; box-shadow: 0 0 0 1px #eb484e1a; }
+    .sh-input:focus { border-color: var(--tw-color-primary); box-shadow: 0 0 0 1px var(--tw-color-primary)1a; }
     .sh-label { display: block; font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 6px; }
     .sh-box { border: 1px solid #e5e7eb; background: #fff; border-radius: 2px; }
     .sh-box-title { font-size: 16px; font-weight: 700; color: #333; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; display: flex; align-items: center; gap: 8px; }
     
     .sh-radio-btn { display: flex; align-items: flex-start; gap: 12px; border: 1px solid #e5e7eb; padding: 16px; border-radius: 2px; cursor: pointer; transition: all 0.2s; background: #fff; }
-    .sh-radio-btn:hover { border-color: #eb484e; }
-    .sh-radio-input:checked + .sh-radio-btn { border-color: #eb484e; background: #fff0f1; }
+    .sh-radio-btn:hover { border-color: var(--tw-color-primary); }
+    .sh-radio-input:checked + .sh-radio-btn { border-color: var(--tw-color-primary); background: #fff0f1; }
 </style>
 
 <div class="max-w-[1240px] mx-auto bg-[#fafafa]" x-data="checkoutApp()">
@@ -60,7 +60,7 @@ function checkoutApp() {
 </script>
     
     <div class="sh-breadcrumb flex items-center gap-2 bg-white mb-8 border-t">
-        <a href="{{$baseUrl}}" class="hover:text-shred transition">Home</a>
+        <a href="{{$baseUrl}}" class="hover:text-primary transition">Home</a>
         <i class="fas fa-angle-double-right text-[8px] text-gray-400 mt-[1px]"></i>
         <span class="text-gray-400 font-normal">Checkout</span>
     </div>
@@ -88,20 +88,20 @@ function checkoutApp() {
                 
                 {{-- Address Box --}}
                 <div class="sh-box shadow-sm">
-                    <div class="sh-box-title"><span class="bg-shred text-white w-6 h-6 rounded flex items-center justify-center text-xs">1</span> CUSTOMER INFORMATION</div>
+                    <div class="sh-box-title"><span class="bg-primary text-white w-6 h-6 rounded flex items-center justify-center text-xs">1</span> CUSTOMER INFORMATION</div>
                     <div class="p-6">
                         <div class="grid sm:grid-cols-2 gap-5 mb-5">
                             <div>
-                                <label class="sh-label">First & Last Name <span class="text-shred">*</span></label>
+                                <label class="sh-label">First & Last Name <span class="text-primary">*</span></label>
                                 <input type="text" name="customer_name" required placeholder="Enter full name" class="sh-input">
                             </div>
                             <div>
-                                <label class="sh-label">Mobile Number <span class="text-shred">*</span></label>
+                                <label class="sh-label">Mobile Number <span class="text-primary">*</span></label>
                                 <input type="tel" name="customer_phone" required placeholder="01XXXXXXXXX" class="sh-input font-mono">
                             </div>
                         </div>
                         <div>
-                            <label class="sh-label">Delivery Address <span class="text-shred">*</span></label>
+                            <label class="sh-label">Delivery Address <span class="text-primary">*</span></label>
                             <textarea name="shipping_address" required rows="3" placeholder="House/Apt, Street, Area" class="sh-input resize-none"></textarea>
                         </div>
                     </div>
@@ -109,19 +109,19 @@ function checkoutApp() {
 
                 {{-- Delivery Options --}}
                 <div class="sh-box shadow-sm">
-                    <div class="sh-box-title"><span class="bg-shred text-white w-6 h-6 rounded flex items-center justify-center text-xs">2</span> DELIVERY OPTION</div>
+                    <div class="sh-box-title"><span class="bg-primary text-white w-6 h-6 rounded flex items-center justify-center text-xs">2</span> DELIVERY OPTION</div>
                     <div class="p-6 grid sm:grid-cols-2 gap-4">
                         @if(isset($shippingMethods) && $shippingMethods->count() > 0)
                             @foreach($shippingMethods as $method)
                             <label class="relative block">
                                 <input type="radio" name="_sm_temp" value="{{ $method->id }}" @change="shippingMethodId = {{ $method->id }}" class="peer hidden sh-radio-input" :checked="shippingMethodId == {{ $method->id }}">
                                 <div class="sh-radio-btn h-full shadow-sm">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-[13px] font-bold text-gray-800">{{ $method->name }}</div>
-                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">{!! $method->cost > 0 ? 'TK '.number_format($method->cost) : 'Free' !!}</span></div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-primary font-bold">{!! $method->cost > 0 ? 'TK '.number_format($method->cost) : 'Free' !!}</span></div>
                                         @if($method->estimated_time)
                                             <div class="text-[10px] text-gray-400 mt-1">{{ $method->estimated_time }}</div>
                                         @endif
@@ -133,12 +133,12 @@ function checkoutApp() {
                             <label class="relative block">
                                 <input type="radio" name="_area_temp" value="inside" @change="area = 'inside'" class="peer hidden sh-radio-input" :checked="area === 'inside'">
                                 <div class="sh-radio-btn h-full shadow-sm">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'inside'}"></div>
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'inside'}"></div>
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-[13px] font-bold text-gray-800">Inside Dhaka</div>
-                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_inside ?? 50}}</span></div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-primary font-bold">TK {{$client->delivery_charge_inside ?? 50}}</span></div>
                                         <div class="text-[10px] text-gray-400 mt-1">2-3 Working Days</div>
                                     </div>
                                 </div>
@@ -147,12 +147,12 @@ function checkoutApp() {
                             <label class="relative block">
                                 <input type="radio" name="_area_temp" value="outside" @change="area = 'outside'" class="peer hidden sh-radio-input" :checked="area === 'outside'">
                                 <div class="sh-radio-btn h-full shadow-sm">
-                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0 mt-0.5">
-                                        <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'outside'}"></div>
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                        <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100" :class="{'opacity-100': area === 'outside'}"></div>
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-[13px] font-bold text-gray-800">Outside Dhaka</div>
-                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-shred font-bold">TK {{$client->delivery_charge_outside ?? 100}}</span></div>
+                                        <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-primary font-bold">TK {{$client->delivery_charge_outside ?? 100}}</span></div>
                                         <div class="text-[10px] text-gray-400 mt-1">3-5 Working Days</div>
                                     </div>
                                 </div>
@@ -163,13 +163,13 @@ function checkoutApp() {
 
                 {{-- Payment --}}
                 <div class="sh-box shadow-sm">
-                    <div class="sh-box-title"><span class="bg-shred text-white w-6 h-6 rounded flex items-center justify-center text-xs">3</span> PAYMENT METHOD</div>
+                    <div class="sh-box-title"><span class="bg-primary text-white w-6 h-6 rounded flex items-center justify-center text-xs">3</span> PAYMENT METHOD</div>
                     <div class="p-6">
                         <label class="relative block mb-3">
                             <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="peer hidden sh-radio-input" checked>
                             <div class="sh-radio-btn shadow-sm items-center">
-                                <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-shred flex items-center justify-center shrink-0">
-                                    <div class="w-2 h-2 rounded-full bg-shred opacity-0 peer-checked:opacity-100" :class="{'opacity-100': paymentMethod==='cod'}"></div>
+                                <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0">
+                                    <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100" :class="{'opacity-100': paymentMethod==='cod'}"></div>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-hand-holding-usd text-[22px] text-gray-400"></i>
@@ -188,7 +188,7 @@ function checkoutApp() {
             {{-- Checkout Right Flow (Review) --}}
             <div class="lg:col-span-4">
                 <div class="sh-box shadow-sm sticky top-6">
-                    <div class="sh-box-title bg-shdark text-white border-shdark">ORDER SUMMARY</div>
+                    <div class="sh-box-title bg-gray-900 text-white border-gray-900">ORDER SUMMARY</div>
                     
                     <div class="p-6">
                         {{-- Product Preview --}}
@@ -198,7 +198,7 @@ function checkoutApp() {
                             </div>
                             <div class="flex flex-col justify-center">
                                 <h4 class="text-xs font-medium text-gray-700 line-clamp-2 leading-tight mb-2">{{ $product->name }}</h4>
-                                <div class="text-[11px] text-gray-500 font-bold">Qty: <span x-text="qty"></span> <span class="mx-2">|</span> <span class="text-shred">TK <span x-text="(qty * price).toLocaleString()"></span></span></div>
+                                <div class="text-[11px] text-gray-500 font-bold">Qty: <span x-text="qty"></span> <span class="mx-2">|</span> <span class="text-primary">TK <span x-text="(qty * price).toLocaleString()"></span></span></div>
                                 @if(request('color') || request('size'))
                                     <div class="text-[9px] text-gray-400 mt-1 uppercase">{{ request('color') }} {{ request('size') }}</div>
                                 @endif
@@ -215,33 +215,33 @@ function checkoutApp() {
                                 <div><i class="fas fa-check mr-1"></i> Coupon '<span x-text="couponCode" class="uppercase"></span>' Applied</div>
                                 <button type="button" @click="couponApplied=false; couponDiscount=0; couponCode=''" class="text-red-500 hover:underline">Remove</button>
                             </div>
-                            <p x-show="couponError" x-text="couponError" class="text-[10px] text-shred mt-1 font-medium"></p>
+                            <p x-show="couponError" x-text="couponError" class="text-[10px] text-primary mt-1 font-medium"></p>
                         </div>
 
                         {{-- Totals --}}
                         <div class="space-y-3 text-xs mb-6">
                             <div class="flex justify-between text-gray-600"><span class="font-medium">Sub-Total:</span> <span>TK <span x-text="subtotal.toLocaleString()"></span></span></div>
                             <div class="flex justify-between text-gray-600"><span class="font-medium">Delivery Fee:</span> <span>TK <span x-text="delivery"></span></span></div>
-                            <div x-show="couponApplied" class="flex justify-between text-shred"><span class="font-bold">Discount:</span> <span class="font-bold">-TK <span x-text="couponDiscount.toLocaleString()"></span></span></div>
+                            <div x-show="couponApplied" class="flex justify-between text-primary"><span class="font-bold">Discount:</span> <span class="font-bold">-TK <span x-text="couponDiscount.toLocaleString()"></span></span></div>
                         </div>
                         
                         <div class="flex justify-between items-end border-t border-gray-200 pt-4 mb-8">
                             <span class="text-sm font-bold text-gray-800 uppercase">Total Amount:</span>
-                            <span class="text-2xl font-black text-shred tracking-tight leading-none">TK <span x-text="total.toLocaleString()"></span></span>
+                            <span class="text-2xl font-black text-primary tracking-tight leading-none">TK <span x-text="total.toLocaleString()"></span></span>
                         </div>
 
                         @if($client->show_terms_checkbox ?? false)
                         <div class="mb-5">
                             <label class="flex items-start gap-3 cursor-pointer group">
-                                <input type="checkbox" required class="mt-1 w-4 h-4 text-shred bg-white border-gray-300 rounded focus:ring-shred focus:ring-2">
+                                <input type="checkbox" required class="mt-1 w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2">
                                 <span class="text-[11px] text-gray-600 font-medium group-hover:text-gray-800 transition">
-                                    I have read and agree to the <a href="#" class="text-shred hover:underline font-bold">Terms and Conditions</a> and <a href="#" class="text-shred hover:underline font-bold">Privacy Policy</a>
+                                    I have read and agree to the <a href="#" class="text-primary hover:underline font-bold">Terms and Conditions</a> and <a href="#" class="text-primary hover:underline font-bold">Privacy Policy</a>
                                 </span>
                             </label>
                         </div>
                         @endif
 
-                        <button type="submit" class="w-full bg-shred hover:bg-[#d63d42] text-white font-bold py-4 text-sm uppercase tracking-wider transition rounded-sm shadow-md flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full bg-primary hover:bg-[#d63d42] text-white font-bold py-4 text-sm uppercase tracking-wider transition rounded-sm shadow-md flex items-center justify-center gap-2">
                             <i class="fas fa-lock"></i> PLACE ORDER
                         </button>
                     </div>

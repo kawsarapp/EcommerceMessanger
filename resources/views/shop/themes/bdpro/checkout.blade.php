@@ -59,7 +59,7 @@ function checkoutApp() {
         
         {{-- Breadcrumb --}}
         <nav class="flex items-center text-xs text-gray-400 mb-6 font-medium">
-            <a href="{{$baseUrl}}" class="hover:text-bdblue transition">Home</a>
+            <a href="{{$baseUrl}}" class="hover:text-primary transition">Home</a>
             <i class="fas fa-chevron-right text-[8px] mx-3"></i>
             <span class="text-gray-600">Checkout</span>
         </nav>
@@ -107,18 +107,18 @@ function checkoutApp() {
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5"><i class="far fa-user text-gray-400 mr-1"></i> Full Name *</label>
                                 <input type="text" name="customer_name" required placeholder="Enter your full name" 
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-bdblue focus:ring-1 focus:ring-bdblue transition shadow-sm bg-white">
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition shadow-sm bg-white">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5"><i class="fas fa-mobile-alt text-gray-400 mr-1"></i> Mobile Number *</label>
                                 <input type="tel" name="customer_phone" required placeholder="01XXXXXXXXX" 
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-bdblue focus:ring-1 focus:ring-bdblue transition shadow-sm bg-white">
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition shadow-sm bg-white">
                                 <span class="text-[10px] text-gray-400 mt-1 block">Enter 11-digit mobile number</span>
                             </div>
                             <div class="sm:col-span-2 mt-2">
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Delivery Address *</label>
                                 <textarea name="shipping_address" required rows="3" placeholder="Enter your complete delivery address with house number, street, area, and district" 
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-bdblue focus:ring-1 focus:ring-bdblue transition shadow-sm resize-none bg-white"></textarea>
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition shadow-sm resize-none bg-white"></textarea>
                                 <span class="text-[10px] text-gray-400 mt-1 block flex items-center gap-1"><i class="fas fa-info-circle text-blue-400"></i> <a href="#" class="text-blue-500 hover:underline">Login</a> or <a href="#" class="text-blue-500 hover:underline">register</a> to save addresses for faster checkout next time</span>
                             </div>
                         </div>
@@ -133,12 +133,12 @@ function checkoutApp() {
                                 @foreach($shippingMethods as $method)
                                 <label class="cursor-pointer">
                                     <input type="radio" name="temp_sm" value="{{ $method->id }}" @change="shippingMethodId = {{ $method->id }}" class="peer hidden" :checked="shippingMethodId == {{ $method->id }}">
-                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
-                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-primary peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-primary rounded-full opacity-0" :class="{'opacity-100': shippingMethodId == {{ $method->id }}}"></div>
                                         </div>
                                         <div>
-                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-bdblue"></i> {{ $method->name }}</div>
+                                            <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-primary"></i> {{ $method->name }}</div>
                                             <div class="text-xs text-gray-500 font-medium">{!! $method->cost > 0 ? '৳'.number_format($method->cost) : 'Free' !!}</div>
                                             @if($method->estimated_time)
                                                 <div class="text-[9px] text-gray-400 mt-0.5"><i class="far fa-clock"></i> {{ $method->estimated_time }}</div>
@@ -157,9 +157,9 @@ function checkoutApp() {
                             <div class="grid sm:grid-cols-3 gap-3">
                                 <label class="cursor-pointer">
                                     <input type="radio" name="_area_selector" value="office" @change="area = 'office'" class="peer hidden" :checked="area === 'office'">
-                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
-                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'office'}"></div>
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-primary peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-primary rounded-full opacity-0" :class="{'opacity-100': area === 'office'}"></div>
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-building text-gray-400"></i> Office Pickup</div>
@@ -170,9 +170,9 @@ function checkoutApp() {
                                 
                                 <label class="cursor-pointer">
                                     <input type="radio" name="_area_selector" value="inside" @change="area = 'inside'" class="peer hidden" :checked="area === 'inside'">
-                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
-                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-primary peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-primary rounded-full opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-blue-500"></i> Inside Dhaka</div>
@@ -183,9 +183,9 @@ function checkoutApp() {
 
                                 <label class="cursor-pointer">
                                     <input type="radio" name="_area_selector" value="outside" @change="area = 'outside'" class="peer hidden" :checked="area === 'outside'">
-                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-bdblue peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
-                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-bdblue flex items-center justify-center shrink-0 mt-0.5">
-                                            <div class="w-2 h-2 rounded-full bg-bdblue rounded-full opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
+                                    <div class="border border-gray-300 rounded-md p-3 peer-checked:border-primary peer-checked:bg-blue-50/50 transition relative bg-white flex items-start gap-3 shadow-sm hover:border-gray-400 h-full">
+                                        <div class="w-4 h-4 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                            <div class="w-2 h-2 rounded-full bg-primary rounded-full opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-green-500"></i> Outside Dhaka</div>
@@ -199,7 +199,7 @@ function checkoutApp() {
                                 <i class="fas fa-info-circle text-blue-500 mr-2"></i> Selected: <span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')" class="font-bold text-gray-800 ml-1"></span> 
                                 <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
                                 <span class="mx-2 text-gray-300">•</span> Time: Same day 
-                                <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-bdblue mr-1"></i> Free delivery above ৳10,000.00
+                                <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-primary mr-1"></i> Free delivery above ৳10,000.00
                             </div>
                         @endif
                     </div>
@@ -211,15 +211,15 @@ function checkoutApp() {
                         <div class="flex gap-4 border-b border-gray-200 mb-4 pb-1">
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="radio" name="payment_type" value="full" @change="paymentType='full'" class="peer hidden" checked>
-                                <div class="w-3.5 h-3.5 rounded-full border flex items-center justify-center peer-checked:border-bdblue">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentType==='full'}"></div>
+                                <div class="w-3.5 h-3.5 rounded-full border flex items-center justify-center peer-checked:border-primary">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentType==='full'}"></div>
                                 </div>
                                 <span class="text-xs font-semibold text-gray-600 peer-checked:text-dark">Full Payment</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="radio" name="payment_type" value="partial" @change="paymentType='partial'" class="peer hidden">
-                                <div class="w-3.5 h-3.5 rounded-full border flex items-center justify-center peer-checked:border-bdblue">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentType==='partial'}"></div>
+                                <div class="w-3.5 h-3.5 rounded-full border flex items-center justify-center peer-checked:border-primary">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentType==='partial'}"></div>
                                 </div>
                                 <span class="text-xs font-semibold text-gray-500 peer-checked:text-dark">Partial Payment (10%)</span>
                             </label>
@@ -228,9 +228,9 @@ function checkoutApp() {
                         <div class="grid sm:grid-cols-3 gap-3 mb-3">
                             <label class="cursor-pointer">
                                 <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="peer hidden" checked>
-                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
-                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-bdblue">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentMethod==='cod'}"></div>
+                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
+                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='cod'}"></div>
                                     </div>
                                     <div class="flex flex-col">
                                         <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-clock text-orange-500"></i> Pay in 30 min</div>
@@ -241,9 +241,9 @@ function checkoutApp() {
                             
                             <label class="cursor-pointer">
                                 <input type="radio" name="_pmt" value="bkash" @change="paymentMethod='bkash'" class="peer hidden">
-                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
-                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-bdblue">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentMethod==='bkash'}"></div>
+                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
+                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='bkash'}"></div>
                                     </div>
                                     <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-mobile text-[#e2136e]"></i> bKash</div>
                                 </div>
@@ -251,9 +251,9 @@ function checkoutApp() {
 
                             <label class="cursor-pointer">
                                 <input type="radio" name="_pmt" value="online" @change="paymentMethod='online'" class="peer hidden">
-                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
-                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-bdblue">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentMethod==='online'}"></div>
+                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
+                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='online'}"></div>
                                     </div>
                                     <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-shield-alt text-green-600"></i> Pay Online</div>
                                 </div>
@@ -263,9 +263,9 @@ function checkoutApp() {
                         <div class="w-full sm:w-1/3 pr-1.5">
                             <label class="cursor-pointer h-full">
                                 <input type="radio" name="_pmt" value="credit" @change="paymentMethod='credit'" class="peer hidden">
-                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-bdblue peer-checked:ring-1 peer-checked:ring-bdblue transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
-                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-bdblue">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-bdblue opacity-0" :class="{'opacity-100': paymentMethod==='credit'}"></div>
+                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
+                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='credit'}"></div>
                                     </div>
                                     <div class="flex flex-col">
                                         <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-credit-card text-bddeep"></i> Use Credit</div>
@@ -281,11 +281,11 @@ function checkoutApp() {
                         @if($client->show_terms_checkbox ?? false)
                         <div class="mb-4 bg-blue-50/50 border border-blue-100 rounded-md p-3">
                             <label class="flex items-start gap-2 cursor-pointer">
-                                <input type="checkbox" required class="mt-0.5 w-4 h-4 text-bdblue bg-white border-gray-300 rounded focus:ring-bdblue">
+                                <input type="checkbox" required class="mt-0.5 w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary">
                                 <span class="text-xs text-gray-700 font-medium leading-tight">
-                                    I have read and agree to the <a href="#" class="text-bdblue hover:underline font-bold">Terms and Conditions</a>, 
-                                    <a href="#" class="text-bdblue hover:underline font-bold">Privacy Policy</a>, and 
-                                    <a href="#" class="text-bdblue hover:underline font-bold">Return Policy</a>.
+                                    I have read and agree to the <a href="#" class="text-primary hover:underline font-bold">Terms and Conditions</a>, 
+                                    <a href="#" class="text-primary hover:underline font-bold">Privacy Policy</a>, and 
+                                    <a href="#" class="text-primary hover:underline font-bold">Return Policy</a>.
                                 </span>
                             </label>
                         </div>
@@ -308,7 +308,7 @@ function checkoutApp() {
             {{-- Right Column: Order Summary --}}
             <div class="lg:col-span-4 lg:sticky lg:top-20">
                 <div class="bg-white border text-sm border-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2 text-bdblue font-bold">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2 text-primary font-bold">
                         <i class="fas fa-file-invoice"></i> Order Summary
                     </div>
                     
@@ -321,7 +321,7 @@ function checkoutApp() {
                                 <img src="{{ asset('storage/'.$product->thumbnail) }}" class="max-w-full max-h-full object-contain">
                             </div>
                             <div class="flex-1 flex flex-col justify-center">
-                                <h4 class="font-bold text-gray-800 text-[11px] line-clamp-1 pr-10 hover:text-bdblue transition cursor-pointer" title="{{ $product->name }}">{{ $product->name }}</h4>
+                                <h4 class="font-bold text-gray-800 text-[11px] line-clamp-1 pr-10 hover:text-primary transition cursor-pointer" title="{{ $product->name }}">{{ $product->name }}</h4>
                                 <div class="text-[10px] text-gray-500 font-medium">Qty: <span x-text="qty"></span> &times; ৳{{ number_format($product->sale_price ?? $product->regular_price) }}</div>
                                 @if(request('color') || request('size'))
                                     <div class="text-[9px] text-gray-400 mt-0.5 font-medium uppercase">{{ request('color') }} {{ request('size') }}</div>
@@ -332,10 +332,10 @@ function checkoutApp() {
 
                         {{-- Coupon Form --}}
                         <div class="bg-blue-50/50 p-3 rounded-md border border-blue-50 mb-6">
-                            <div class="text-[11px] font-bold text-gray-600 mb-2 flex items-center gap-1.5"><i class="fas fa-tag text-bdblue"></i> Coupon Code</div>
+                            <div class="text-[11px] font-bold text-gray-600 mb-2 flex items-center gap-1.5"><i class="fas fa-tag text-primary"></i> Coupon Code</div>
                             <div class="flex gap-1" x-show="!couponApplied">
                                 <input type="text" x-model="couponCode" placeholder="ENTER COUPON CODE" 
-                                    class="flex-1 text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-bdblue uppercase font-mono shadow-sm bg-white text-gray-700">
+                                    class="flex-1 text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-primary uppercase font-mono shadow-sm bg-white text-gray-700">
                                 <button type="button" @click="applyCoupon()" class="bg-[#4d61fc] hover:bg-blue-600 text-white px-3 py-1.5 rounded text-[11px] font-bold uppercase transition flex items-center gap-1 shadow-sm"><i class="fas fa-check"></i> Apply</button>
                             </div>
                             <div x-show="couponApplied" class="flex justify-between items-center text-[10px] font-bold text-green-600">
