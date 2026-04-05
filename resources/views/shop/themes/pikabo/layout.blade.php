@@ -35,7 +35,7 @@ $primary='#0084d6';
                     colors:{
                         primary: '{{$client->primary_color ?? "#0084d6"}}',
                         secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
-                        bdblue: '{{$client->primary_color ?? "#0084d6"}}',
+                        primary: '{{$client->primary_color ?? "#0084d6"}}',
                         bdlight: '#f5f7fa',
                         bdhover: '#e2e8f0',
                         bddeep: '#005b96',
@@ -60,7 +60,7 @@ $primary='#0084d6';
     </style>
     @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -70,7 +70,7 @@ $primary='#0084d6';
     <div class="bg-gray-900 text-gray-300 text-[11px] py-1.5 hidden md:block">
         <div class="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <i class="fas fa-heart text-red-500"></i>
+                <i class="fas fa-heart text-primary"></i>
                 <span class="font-medium">{{ $client->topbar_text }}</span>
             </div>
             
@@ -91,7 +91,7 @@ $primary='#0084d6';
     @endif
 
     {{-- Main Header (Blue) --}}
-    <header class="bg-bdblue sticky sm:relative top-0 z-50">
+    <header class="bg-primary sticky sm:relative top-0 z-50">
         <div class="max-w-[1400px] mx-auto px-4 py-3 sm:py-4">
             <div class="flex items-center justify-between gap-4 md:gap-8">
                 
@@ -108,13 +108,13 @@ $primary='#0084d6';
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden border border-transparent focus-within:border-white transition-colors h-11 shadow-sm">
                         <input type="text" name="search" value="{{request('search')}}" placeholder="Search for products, brands and more" 
                             class="w-full bg-transparent px-4 py-2 text-sm font-medium text-dark placeholder-gray-400 focus:outline-none border-none transition h-full">
-                        <button type="submit" class="bg-transparent text-bdblue px-4 h-full"><i class="fas fa-search"></i></button>
+                        <button type="submit" class="bg-transparent text-primary px-4 h-full"><i class="fas fa-search"></i></button>
                     </form>
                 </div>
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50 ml-auto">
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-bdblue transition px-6 py-1.5 rounded-md text-sm font-medium">
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden sm:flex items-center border border-white text-white hover:bg-white hover:text-primary transition px-6 py-1.5 rounded-md text-sm font-medium">
                         Track Order
                     </a>
                     
@@ -123,7 +123,7 @@ $primary='#0084d6';
                     <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
                         <i class="fas fa-shopping-cart text-lg"></i>
                         <span class="text-sm">Cart</span>
-                        <span class="bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">{{ $cartCount }}</span>
+                        <span class="bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">{{ $cartCount }}</span>
                     </a>
                 </div>
                 
@@ -134,7 +134,7 @@ $primary='#0084d6';
                 <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden">
                     <input type="text" name="search" value="{{request('search')}}" placeholder="Search products..." 
                         class="w-full bg-transparent px-3 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none border-none">
-                    <button type="submit" class="text-bdblue px-3"><i class="fas fa-search text-sm"></i></button>
+                    <button type="submit" class="text-primary px-3"><i class="fas fa-search text-sm"></i></button>
                 </form>
             </div>
         </div>
@@ -153,12 +153,12 @@ $primary='#0084d6';
             <div class="flex items-center ml-6 flex-1 gap-6">
                 @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)
                     @foreach($primaryMenu->items as $item)
-                        <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-sm font-medium hover:text-bdblue transition {{ request()->is(ltrim($item->resolved_url, '/')) ? 'text-bdblue' : 'text-gray-700' }}">{{ $item->label }}</a>
+                        <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="text-sm font-medium hover:text-primary transition {{ request()->is(ltrim($item->resolved_url, '/')) ? 'text-primary' : 'text-gray-700' }}">{{ $item->label }}</a>
                     @endforeach
                 @else
-                    <a href="{{$baseUrl}}" class="text-sm font-medium hover:text-bdblue transition {{ request()->is('/') ? 'text-bdblue' : 'text-gray-700' }}">Home</a>
-                    <a href="{{$baseUrl}}?category=hot-deals" class="text-sm font-medium hover:text-bdblue transition text-red-600 font-bold">Offer</a>
-                    <a href="{{$baseUrl}}?category=all" class="text-sm font-medium hover:text-bdblue transition text-gray-700">Products</a>
+                    <a href="{{$baseUrl}}" class="text-sm font-medium hover:text-primary transition {{ request()->is('/') ? 'text-primary' : 'text-gray-700' }}">Home</a>
+                    <a href="{{$baseUrl}}?category=hot-deals" class="text-sm font-medium hover:text-primary transition text-red-600 font-bold">Offer</a>
+                    <a href="{{$baseUrl}}?category=all" class="text-sm font-medium hover:text-primary transition text-gray-700">Products</a>
                 @endif
             </div>
         </div>
@@ -178,7 +178,7 @@ $primary='#0084d6';
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
-                    <span class="flex items-center gap-1.5"><i class="fas fa-truck text-bdblue"></i> Fast Nationwide Delivery</span>
+                    <span class="flex items-center gap-1.5"><i class="fas fa-truck text-primary"></i> Fast Nationwide Delivery</span>
                     <span class="flex items-center gap-1.5"><i class="fas fa-leaf text-green-600"></i> Best Selections</span>
                     <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-blue-500"></i> Official Warranty</span>
                 </div>
@@ -186,7 +186,7 @@ $primary='#0084d6';
         </div>
 
         {{-- Deep Blue Footer block --}}
-        <div class="bg-bddeep text-white pt-16 pb-8 border-t-[8px] border-bdblue">
+        <div class="bg-bddeep text-white pt-16 pb-8 border-t-[8px] border-primary">
             <div class="max-w-[1400px] mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
                     

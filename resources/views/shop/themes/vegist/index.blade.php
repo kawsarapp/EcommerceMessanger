@@ -71,7 +71,7 @@
                 @if($category->image)
                     <img src="{{asset('storage/'.$category->image)}}" class="w-16 h-16 object-cover group-hover:scale-110 transition duration-300">
                 @else
-                    <div class="w-16 h-16 rounded-full bg-lightgreen flex items-center justify-center text-primary text-2xl group-hover:scale-110 transition duration-300">
+                    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl group-hover:scale-110 transition duration-300">
                         <i class="fas fa-seedling"></i>
                     </div>
                 @endif
@@ -135,7 +135,7 @@
                     get seconds() { return Math.floor((this.distance % (1000 * 60)) / 1000); }
                 }"
                 x-init="setInterval(() => { distance = end - new Date().getTime() }, 1000)"
-                class="hidden sm:flex gap-2 items-center bg-red-50 px-3 py-1.5 rounded text-red-600 font-mono text-sm border border-red-100 shadow-inner">
+                class="hidden sm:flex gap-2 items-center bg-primary/5 px-3 py-1.5 rounded text-primary font-mono text-sm border border-primary/20 shadow-inner">
                 <div class="flex flex-col items-center leading-none"><span x-text="days < 10 ? '0'+Math.max(0, days) : Math.max(0, days)" class="font-bold">00</span><span class="text-[8px] uppercase">Days</span></div>
                 <span class="font-bold pb-2">:</span>
                 <div class="flex flex-col items-center leading-none"><span x-text="hours < 10 ? '0'+Math.max(0, hours) : Math.max(0, hours)" class="font-bold">00</span><span class="text-[8px] uppercase">Hrs</span></div>

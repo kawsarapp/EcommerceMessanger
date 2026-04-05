@@ -81,7 +81,7 @@
                         <div class="w-full h-28 md:h-40 overflow-hidden bg-gray-100">
                             <img src="{{ asset('storage/'.$c->banner_image) }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" loading="lazy" alt="{{ $c->name }}">
                         </div>
-                        <div class="absolute bottom-2 bg-swyellow text-swdark font-bold text-[11px] md:text-xs px-5 py-1.5 rounded-full inline-block text-center shadow whitespace-nowrap border border-yellow-300">
+                        <div class="absolute bottom-2 bg-secondary text-swdark font-bold text-[11px] md:text-xs px-5 py-1.5 rounded-full inline-block text-center shadow whitespace-nowrap border border-yellow-300">
                             {{ $c->name }}
                         </div>
                     </a>
@@ -135,7 +135,7 @@
         <div class="flex items-center justify-between mb-5">
             <h3 class="sw-section-title mb-0">{{ $flashText }}</h3>
             @if($client->widgets['flash_sale']['link'] ?? false)
-            <a href="{{ $client->widgets['flash_sale']['link'] }}" class="text-xs text-swred font-bold hover:underline flex items-center gap-1">View All <i class="fas fa-arrow-right text-[10px]"></i></a>
+            <a href="{{ $client->widgets['flash_sale']['link'] }}" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">View All <i class="fas fa-arrow-right text-[10px]"></i></a>
             @endif
         </div>
         

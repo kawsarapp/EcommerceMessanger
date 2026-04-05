@@ -114,10 +114,10 @@
     {{-- Official Warranty Banner / Trust Badges --}}
     @if($client->widgets['trust_badges']['active'] ?? true)
     <div class="bg-white border border-gray-200 rounded-lg py-4 px-6 flex items-center justify-between mb-10 overflow-x-auto gap-4 hide-scroll">
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-undo text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_1'] ?? 'Easy Returns' }}</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-shield-alt text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_2'] ?? '100% Authentic' }}</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-truck text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_3'] ?? 'Fast Delivery' }}</span></div>
-        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-credit-card text-bdblue/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_4'] ?? 'Secure Payment' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-undo text-primary/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_1'] ?? 'Easy Returns' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-shield-alt text-primary/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_2'] ?? '100% Authentic' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-truck text-primary/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_3'] ?? 'Fast Delivery' }}</span></div>
+        <div class="flex items-center gap-3 shrink-0"><i class="fas fa-credit-card text-primary/80 text-xl"></i> <span class="font-medium text-sm text-gray-700">{{ $client->widgets['trust_badges']['badge_4'] ?? 'Secure Payment' }}</span></div>
     </div>
     @endif
 
@@ -158,7 +158,7 @@
                 {{-- Fallback --}}
                 @for($i=1; $i<=6; $i++)
                 <div class="category-card">
-                    <div class="category-img-container bg-blue-50"><i class="fas fa-tv text-4xl text-bdblue/20"></i></div>
+                    <div class="category-img-container bg-primary/10"><i class="fas fa-tv text-4xl text-primary/20"></i></div>
                     <div class="p-2 text-center text-[10px] text-gray-500">Official Warranty</div>
                     <div class="category-badge">Electronics</div>
                 </div>
@@ -190,8 +190,8 @@
     @endphp
     
     @if($activeFlashSale && count($flashProducts) > 0)
-    <div class="mb-12 border border-red-500 rounded-lg overflow-hidden">
-        <div class="bg-red-500 flex justify-between items-center px-4 py-3">
+    <div class="mb-12 border border-primary rounded-lg overflow-hidden">
+        <div class="bg-primary flex justify-between items-center px-4 py-3">
             <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
                 <h2 class="text-xl font-bold text-white uppercase italic tracking-wider">{{ $flashText }}</h2>
                 <div class="flex gap-1.5 text-white/90" x-data="{
@@ -219,10 +219,10 @@
             </div>
             <a href="{{$baseUrl}}?category=all" class="text-white text-sm font-semibold hover:underline">View All<i class="fas fa-chevron-right text-[10px] ml-1"></i></a>
         </div>
-        <div class="bg-red-50 p-4" x-data="{ scrollLeft() { $refs.flock.scrollBy({left: -200, behavior: 'smooth'}); }, scrollRight() { $refs.flock.scrollBy({left: 200, behavior: 'smooth'}); } }">
+        <div class="bg-primary/5 p-4" x-data="{ scrollLeft() { $refs.flock.scrollBy({left: -200, behavior: 'smooth'}); }, scrollRight() { $refs.flock.scrollBy({left: 200, behavior: 'smooth'}); } }">
             <div class="relative group">
-                <button type="button" @click="scrollLeft()" class="absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-bdblue z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-left"></i></button>
-                <button type="button" @click="scrollRight()" class="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-bdblue z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-right"></i></button>
+                <button type="button" @click="scrollLeft()" class="absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-primary z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-left"></i></button>
+                <button type="button" @click="scrollRight()" class="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-primary z-10 opacity-0 group-hover:opacity-100 transition shadow-md"><i class="fas fa-chevron-right"></i></button>
                 
                 <div x-ref="flock" class="flex gap-4 overflow-x-auto hide-scroll pb-2">
                     @foreach($flashProducts->take(10) as $p)
@@ -243,12 +243,12 @@
         @if(!request('category') || request('category') == 'all')
         <div class="w-64 hidden lg:block shrink-0">
             <h3 class="font-normal text-lg mb-4">Filter</h3>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Price</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Brand</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Display Size (Inches)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">RAM(GB)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">Processor</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-bdblue"><span class="text-sm font-medium">5G</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Price</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Brand</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Display Size (Inches)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">RAM(GB)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Processor</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
+            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">5G</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
         </div>
         @endif
 
@@ -261,7 +261,7 @@
                 </div>
                 <div class="hidden sm:flex items-center text-sm">
                     <span class="text-gray-500 mr-2">Sort By:</span>
-                    <select class="border border-gray-200 rounded px-3 py-1 bg-white focus:outline-none focus:border-bdblue text-xs">
+                    <select class="border border-gray-200 rounded px-3 py-1 bg-white focus:outline-none focus:border-primary text-xs">
                         <option>Default</option>
                         <option>Price Low to High</option>
                         <option>Price High to Low</option>

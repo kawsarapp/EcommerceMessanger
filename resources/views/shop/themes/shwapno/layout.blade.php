@@ -74,17 +74,17 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
     </style>
     @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
-<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-swred/20 selection:text-swred" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
+<body class="antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     @if(!empty($client->announcement_text))
-    <div class="bg-swdark text-swyellow text-center py-1.5 px-4 text-[11px] md:text-xs font-bold w-full uppercase tracking-wider relative z-50 flex items-center justify-center gap-2 shadow-sm">
+    <div class="bg-swdark text-secondary text-center py-1.5 px-4 text-[11px] md:text-xs font-bold w-full uppercase tracking-wider relative z-50 flex items-center justify-center gap-2 shadow-sm">
         <i class="fas fa-bullhorn shrink-0 text-white/50"></i>
         <span>{{ $client->announcement_text }}</span>
     </div>
     @endif
 
     {{-- Main Top Header --}}
-    <header class="bg-swred sticky sm:relative top-0 z-50 shadow-sm border-b border-red-700">
+    <header class="bg-primary sticky sm:relative top-0 z-50 shadow-sm border-b border-red-700">
         <div class="max-w-[1340px] mx-auto px-4 lg:px-6">
             <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 py-3 md:py-0 md:h-16">
                 
@@ -111,7 +111,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                     <a href="{{ $clean ? $baseUrl.'/cart' : route('shop.cart', $client->slug) }}" class="md:hidden text-white flex items-center gap-2">
                         <div class="relative">
                             <i class="fas fa-shopping-bag text-2xl"></i>
-                            <span class="absolute -top-1 -right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
+                            <span class="absolute -top-1 -right-2 bg-secondary text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
                         </div>
                     </a>
                 </div>
@@ -147,7 +147,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
                     <a href="{{ $clean ? $baseUrl.'/cart' : route('shop.cart', $client->slug) }}" class="relative ml-1 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">
                         <i class="fas fa-shopping-bag text-white text-2xl group-hover:scale-110 transition"></i>
-                        <span class="absolute top-3 right-2 bg-swyellow text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-swdark shadow-sm">{{ $cartCount }}</span>
+                        <span class="absolute top-3 right-2 bg-secondary text-swdark text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-swdark shadow-sm">{{ $cartCount }}</span>
                     </a>
                 </div>
             </div>
@@ -176,10 +176,10 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
 
             <div class="flex items-center gap-5">
                 @if($client->phone)
-                <a href="tel:{{ $client->phone }}" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="fas fa-phone-alt text-gray-400"></i> {{ $client->phone }}</a>
+                <a href="tel:{{ $client->phone }}" class="text-[11px] text-gray-500 hover:text-primary flex items-center gap-1.5 font-medium transition"><i class="fas fa-phone-alt text-gray-400"></i> {{ $client->phone }}</a>
                 @endif
                 @if($client->widgets['top_help_links'] ?? true)
-                <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="text-[11px] text-gray-500 hover:text-swred flex items-center gap-1.5 font-medium transition"><i class="far fa-question-circle text-gray-400"></i> Help</a>
+                <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="text-[11px] text-gray-500 hover:text-primary flex items-center gap-1.5 font-medium transition"><i class="far fa-question-circle text-gray-400"></i> Help</a>
                 @endif
             </div>
         </div>
@@ -311,7 +311,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                 @if(!empty($client->footer_links) && is_array($client->footer_links))
                 <div class="flex gap-4 flex-wrap justify-center">
                     @foreach($client->footer_links as $link)
-                    <a href="{{ $link['url'] ?? '#' }}" class="text-[11px] text-gray-500 hover:text-swyellow transition">{{ $link['title'] ?? '' }}</a>
+                    <a href="{{ $link['url'] ?? '#' }}" class="text-[11px] text-gray-500 hover:text-secondary transition">{{ $link['title'] ?? '' }}</a>
                     @endforeach
                 </div>
                 @endif

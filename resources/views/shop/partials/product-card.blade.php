@@ -18,7 +18,7 @@
     
     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
         <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-30 flex items-center justify-center">
-            <span class="bg-slate-900/80 text-white font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-md">স্টক শেষ</span>
+            <span class="bg-slate-900/80 text-white font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-md">Out of Stock</span>
         </div>
     @endif
 
