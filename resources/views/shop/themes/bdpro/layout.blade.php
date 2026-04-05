@@ -269,7 +269,7 @@ $primary='var(--tw-color-primary)';
                         <h5 class="font-bold text-xs mb-3 text-white">Newsletter</h5>
                         <p class="text-[10px] text-gray-400 mb-3 block">Subscribe for exclusive deals & updates</p>
                         <form class="flex overflow-hidden rounded border border-white/20 focus-within:border-primary transition max-w-[200px]">
-                            <input type="email" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" class="w-full bg-white/5 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none border-none">
+                                <input type="email" placeholder="Your email address" class="w-full bg-white/5 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none border-none">
                             <button type="button" class="bg-blue-500 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                         </form>
                     </div>

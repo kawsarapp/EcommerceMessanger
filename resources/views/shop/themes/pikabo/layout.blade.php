@@ -106,7 +106,7 @@ $primary='#0084d6';
                 {{-- Search Bar --}}
                 <div class="hidden lg:flex flex-1 max-w-3xl ml-10">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden border border-transparent focus-within:border-white transition-colors h-11 shadow-sm">
-                        <input type="text" name="search" value="{{request('search')}}" placeholder="Search for products, brands and more" 
+                        <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                             class="w-full bg-transparent px-4 py-2 text-sm font-medium text-dark placeholder-gray-400 focus:outline-none border-none transition h-full">
                         <button type="submit" class="bg-transparent text-primary px-4 h-full"><i class="fas fa-search"></i></button>
                     </form>
@@ -132,7 +132,7 @@ $primary='#0084d6';
             {{-- Mobile Search --}}
             <div class="lg:hidden mt-3">
                 <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden">
-                    <input type="text" name="search" value="{{request('search')}}" placeholder="Search products..." 
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                         class="w-full bg-transparent px-3 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none border-none">
                     <button type="submit" class="text-primary px-3"><i class="fas fa-search text-sm"></i></button>
                 </form>

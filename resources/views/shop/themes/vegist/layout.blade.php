@@ -144,7 +144,11 @@
                 {{-- Right Icons --}}
                 <div class="flex items-center gap-5 xl:gap-7 shrink-0 text-dark">
                     <button class="hover:text-primary transition text-lg" onclick="document.getElementById('mobile-search').classList.toggle('hidden')"><i class="fas fa-search"></i></button>
-                    <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
+                    @if(auth('customer')->check())
+                    <a href="{{ $clean ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug) }}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user-circle"></i></a>
+                    @else
+                    <a href="{{ $clean ? $baseUrl.'/login' : route('shop.customer.login', $client->slug) }}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user"></i></a>
+                    @endif
                     
                     @php
                         $cartKey   = 'cart_' . $client->id;
@@ -164,7 +168,7 @@
         {{-- Expandable Search --}}
         <div id="mobile-search" class="hidden absolute top-full left-0 w-full bg-white p-4 shadow-lg border-t border-gray-100 z-50">
             <form action="{{ $baseUrl }}" method="GET" class="w-full relative flex items-center max-w-2xl mx-auto">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products..." 
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                     class="w-full bg-gray-50 px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none border border-gray-200 rounded-sm">
                 <button class="absolute right-0 text-dark h-full px-5 hover:text-primary transition border-l border-gray-200">
                     <i class="fas fa-search"></i>

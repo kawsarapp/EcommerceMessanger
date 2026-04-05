@@ -125,7 +125,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                 @if($searchActive)
                 <div class="w-full md:flex-1 max-w-2xl px-0 md:px-4 order-3 md:order-none">
                     <form action="{{ $baseUrl }}" method="GET" class="w-full relative flex items-center bg-white rounded-sm overflow-hidden h-10 shadow-inner">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $searchText }}" 
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
                             class="w-full bg-transparent px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none border-none h-full">
                         <button class="text-swdark w-12 h-full flex items-center justify-center transition border-l border-yellow-200" style="background-color:{{ $searchColor }};">
                             <i class="fas fa-search"></i>
@@ -141,8 +141,17 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                     @endif
                     
                     <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
-                        <i class="far fa-user text-sm"></i> Track Order
+                        <i class="fas fa-truck-fast text-sm"></i> Track Order
                     </a>
+                    @if(auth('customer')->check())
+                    <a href="{{ $clean ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug) }}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
+                        <i class="far fa-user-circle text-sm"></i> Account
+                    </a>
+                    @else
+                    <a href="{{ $clean ? $baseUrl.'/login' : route('shop.customer.login', $client->slug) }}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
+                        <i class="far fa-user text-sm"></i> Login
+                    </a>
+                    @endif
 
                     @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
                     <a href="{{ $clean ? $baseUrl.'/cart' : route('shop.cart', $client->slug) }}" class="relative ml-1 group cursor-pointer h-16 flex items-center px-4 bg-red-700/40 hover:bg-red-700/60 transition md:-mr-6 border-l border-red-800">

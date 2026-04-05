@@ -206,7 +206,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     </div>
                     
                     <form class="flex w-full md:w-1/2 max-w-lg h-10 shadow-sm">
-                        <input type="email" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" required class="flex-1 px-4 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary border-none h-full bg-white">
+                        <input type="email" placeholder="Your email address" required class="flex-1 px-4 py-2 text-sm text-dark placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary border-none h-full bg-white">
                         <button type="submit" class="bg-primary hover:bg-red-600 text-white font-bold text-xs px-6 uppercase tracking-wider transition h-full text-center">SUBSCRIBE</button>
                     </form>
                 </div>
