@@ -6,36 +6,44 @@
         
         {{-- Left Sidebar Categories (Visible only on LG+) --}}
         @if($categories && count($categories) > 0)
-        <div class="hidden lg:block w-[260px] xl:w-[280px] shrink-0 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-[350px] md:h-[450px]">
-            <h3 class="bg-slate-50 px-5 py-3.5 border-b border-slate-100 font-bold text-slate-800 flex items-center gap-2">
+        <div x-data="{ activeCategory: null, hoverPanel: false }" class="hidden lg:block w-[260px] xl:w-[280px] shrink-0 bg-white rounded-2xl shadow-sm border border-slate-100 h-[350px] md:h-[450px] relative z-[90]">
+            <h3 class="bg-slate-50 px-5 py-3.5 border-b border-slate-100 rounded-t-2xl font-bold text-slate-800 flex items-center gap-2">
                 <i class="fas fa-list-ul text-primary"></i> ক্যাটাগরি সমূহ
             </h3>
-            <ul class="overflow-y-auto h-[calc(100%-52px)] custom-scrollbar pb-2">
+            <ul class="overflow-y-auto h-[calc(100%-52px)] custom-scrollbar pb-2 rounded-b-2xl relative" @mouseleave="setTimeout(() => { if(!hoverPanel) activeCategory = null }, 50)">
                 @foreach($categories as $c)
-                <li class="group/item relative border-b border-slate-50 last:border-0 hover:bg-primary/5 transition-colors">
+                <li class="border-b border-slate-50 last:border-0 hover:bg-primary/5 transition-colors" 
+                    @mouseenter="activeCategory = '{{$c->slug}}'">
                     <a href="?category={{ $c->slug }}" class="flex items-center justify-between px-5 py-3 text-sm font-semibold text-slate-700 hover:text-primary">
                         <span>{{ $c->name }}</span>
                         @if($c->children->count() > 0)
                             <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
                         @endif
                     </a>
-                    
-                    {{-- Flyout Submenu --}}
-                    @if($c->children->count() > 0)
-                    <div class="absolute top-0 left-full ml-1 w-56 bg-white border border-slate-100 rounded-xl shadow-xl opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all duration-200 z-[100] overflow-hidden py-2" style="min-height: 100%;">
-                        <a href="?category={{ $c->slug }}" class="block px-6 py-2 text-[13px] font-bold text-primary hover:text-primary-dark transition-colors border-b border-slate-50 pb-2 mb-1">
-                            <i class="fas fa-arrow-right text-[10px] mr-1"></i> সব {{ $c->name }}
-                        </a>
-                        @foreach($c->children as $sub)
-                            <a href="?category={{ $sub->slug }}" class="block px-6 py-2 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors">
-                                {{ $sub->name }}
-                            </a>
-                        @endforeach
-                    </div>
-                    @endif
                 </li>
                 @endforeach
             </ul>
+
+            {{-- Flyout Submenus Rendered Outside UL to prevent scroll clipping --}}
+            @foreach($categories as $c)
+                @if($c->children->count() > 0)
+                <div x-show="activeCategory === '{{$c->slug}}'" 
+                     @mouseenter="hoverPanel = true; activeCategory = '{{$c->slug}}'" 
+                     @mouseleave="hoverPanel = false; activeCategory = null"
+                     x-transition.opacity.duration.150ms
+                     style="display: none;"
+                     class="absolute top-0 left-full ml-2 w-56 h-full bg-white border border-slate-100 rounded-2xl shadow-xl z-[100] py-4 overflow-y-auto custom-scrollbar">
+                    <a href="?category={{ $c->slug }}" class="block px-6 py-2 text-[13px] font-bold text-primary hover:text-primary-dark transition-colors border-b border-slate-50 pb-3 mb-1">
+                        <i class="fas fa-arrow-right text-[10px] mr-1"></i> সব {{ $c->name }}
+                    </a>
+                    @foreach($c->children as $sub)
+                        <a href="?category={{ $sub->slug }}" class="block px-6 py-2.5 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors">
+                            {{ $sub->name }}
+                        </a>
+                    @endforeach
+                </div>
+                @endif
+            @endforeach
         </div>
         @endif
 
