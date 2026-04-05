@@ -16,7 +16,7 @@
                     @include('shop.themes.' . $client->theme_name . '.product-card', ['p' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
                 @else
                     {{-- Native safe fallback card just in case --}}
-                    <a href="{{ $clean ?? false ? 'https://'.$clean.'/product/'.$rp->slug : route('shop.product', ['slug' => $client->slug, 'productSlug' => $rp->slug]) }}" class="group block h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-xl transition-all">
+                    <a href="{{ $clean ?? false ? 'https://'.$clean.'/product/'.$rp->slug : route('shop.product.details', ['slug' => $client->slug, 'productSlug' => $rp->slug]) }}" class="group block h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-xl transition-all">
                         <div class="aspect-square bg-gray-50 relative overflow-hidden">
                             <img src="{{ asset('storage/'.$rp->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500">
                         </div>
