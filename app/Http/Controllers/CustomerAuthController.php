@@ -107,6 +107,49 @@ class CustomerAuthController extends Controller
         return redirect()->to($dashboardUrl)->with('success', 'একাউন্ট সফলভাবে তৈরি হয়েছে!');
     }
 
+    public function showForgotForm(Request $request, $slug = null)
+    {
+        $client = $this->clientService->getSafeClient($request, $slug);
+        if (!$client->exists) return redirect('/');
+
+        $clean = preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'));
+        $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
+
+        return view('shop.auth.forgot', compact('client', 'clean', 'baseUrl'));
+    }
+
+    public function processForgot(Request $request, $slug = null)
+    {
+        $client = $this->clientService->getSafeClient($request, $slug);
+        
+        $request->validate([
+            'login' => 'required|string',
+        ]);
+        
+        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $customer = Customer::where('client_id', $client->id)
+                            ->where($loginField, $request->login)
+                            ->first();
+
+        if (!$customer) {
+            return back()->withErrors(['login' => 'এই নাম্বারে বা ইমেইলে কোনো একাউন্ট পাওয়া যায়নি।']);
+        }
+
+        // Redirect to Client's WhatsApp Support
+        $waNumber = preg_replace('/[^0-9]/', '', $client->phone ?? '');
+        if (strlen($waNumber) == 11 && str_starts_with($waNumber, '01')) {
+            $waNumber = "88" . $waNumber;
+        }
+        
+        if (empty($waNumber)) {
+            return back()->with('error', 'দোকানের কোনো সাপোর্ট নাম্বার যুক্ত নেই! দয়া করে তাদের ফেইসবুক পেইজ বা এডমিনের সাথে যোগাযোগ করুন।');
+        }
+
+        $msg = urlencode("হ্যালো, আমি আমার একাউন্টের পাসওয়ার্ড ভুলে গেছি।\nআমার লগিন তথ্য: " . $request->login . "\nদয়া করে আমাকে নতুন পাসওয়ার্ড দিয়ে সাহায্য করুন।");
+        return redirect()->to("https://wa.me/{$waNumber}?text={$msg}");
+    }
+
     public function logout(Request $request, $slug = null)
     {
         Auth::guard('customer')->logout();

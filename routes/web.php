@@ -103,6 +103,8 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
         Route::post('/login', [App\Http\Controllers\CustomerAuthController::class, 'login'])->name('shop.customer.login.submit');
         Route::get('/register', [App\Http\Controllers\CustomerAuthController::class, 'showRegisterForm'])->name('shop.customer.register');
         Route::post('/register', [App\Http\Controllers\CustomerAuthController::class, 'register'])->name('shop.customer.register.submit');
+        Route::get('/forgot-password', [App\Http\Controllers\CustomerAuthController::class, 'showForgotForm'])->name('shop.customer.forgot');
+        Route::post('/forgot-password', [App\Http\Controllers\CustomerAuthController::class, 'processForgot'])->name('shop.customer.forgot.submit');
         Route::post('/logout', [App\Http\Controllers\CustomerAuthController::class, 'logout'])->name('shop.customer.logout');
         
         Route::middleware(['auth:customer'])->group(function () {
@@ -148,6 +150,8 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(
     Route::post('/login', [App\Http\Controllers\CustomerAuthController::class, 'login'])->name('shop.customer.login.submit.custom');
     Route::get('/register', [App\Http\Controllers\CustomerAuthController::class, 'showRegisterForm'])->name('shop.customer.register.custom');
     Route::post('/register', [App\Http\Controllers\CustomerAuthController::class, 'register'])->name('shop.customer.register.submit.custom');
+    Route::get('/forgot-password', [App\Http\Controllers\CustomerAuthController::class, 'showForgotForm'])->name('shop.customer.forgot.custom');
+    Route::post('/forgot-password', [App\Http\Controllers\CustomerAuthController::class, 'processForgot'])->name('shop.customer.forgot.submit.custom');
     Route::post('/logout', [App\Http\Controllers\CustomerAuthController::class, 'logout'])->name('shop.customer.logout.custom');
     
     Route::middleware(['auth:customer'])->group(function () {

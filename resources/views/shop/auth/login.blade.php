@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="text-sm">
-                    <a href="#" class="font-medium text-primary hover:underline">
+                    <a href="{{ $clean ? $baseUrl.'/forgot-password' : route('shop.customer.forgot', $client->slug) }}" class="font-medium text-primary hover:underline">
                         পাসওয়ার্ড ভুলে গেছেন?
                     </a>
                 </div>
