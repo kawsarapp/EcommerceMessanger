@@ -67,7 +67,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     </div>
     @endif
 
-    <header class="bg-primary sticky top-0 z-50 shadow-lg" x-data="{ scrolled: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{'py-1': scrolled, 'py-2': !scrolled}">
+    <header class="bg-primary sticky top-0 w-full z-[100] shadow-lg self-start" x-data="{ scrolled: false }" @scroll.window="scrolled = (window.pageYOffset > 20)" :class="{'py-1': scrolled, 'py-2': !scrolled}">
         <div class="max-w-[1280px] mx-auto px-4">
             {{-- Main Row --}}
             <div class="flex items-center gap-4 h-14 md:h-16">
@@ -105,6 +105,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <a href="tel:{{$client->phone}}" class="text-white/90 hover:text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition px-2 py-1.5 rounded-lg hover:bg-white/10">
                         <i class="fas fa-phone-alt"></i>
                         <span class="hidden lg:inline">{{$client->phone}}</span>
+                    </a>
+                    @endif
+                    @if(auth('customer')->check())
+                    <a href="{{$clean?$baseUrl.'/customer/dashboard':route('shop.customer.dashboard',$client->slug)}}" class="text-white/90 hover:text-white text-xs sm:text-sm font-semibold items-center gap-1.5 transition px-2 py-1.5 rounded-lg hover:bg-white/10 hidden md:flex">
+                        <i class="fas fa-user-circle text-lg"></i>
+                        <span class="hidden lg:inline">অ্যাকাউন্ট</span>
+                    </a>
+                    @else
+                    <a href="{{$clean?$baseUrl.'/login':route('shop.customer.login',$client->slug)}}" class="text-white/90 hover:text-white text-xs sm:text-sm font-semibold items-center gap-1.5 transition px-2 py-1.5 rounded-lg hover:bg-white/10 hidden md:flex">
+                        <i class="fas fa-user-circle text-lg"></i>
+                        <span class="hidden lg:inline">লগিন / সাইনআপ</span>
                     </a>
                     @endif
                     @php $bgCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
