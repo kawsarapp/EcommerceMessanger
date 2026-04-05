@@ -116,6 +116,11 @@
                     @endif
                 </a>
 
+                {{-- Header Category Menu --}}
+                <div class="hidden lg:block ml-6">
+                    @include('shop.partials.header-category-menu')
+                </div>
+
                 {{-- Desktop Navigation Center --}}
                 <nav class="hidden lg:flex items-center gap-8 translate-x-8">
                     @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)

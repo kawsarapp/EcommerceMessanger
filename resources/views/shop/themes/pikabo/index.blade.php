@@ -107,19 +107,9 @@
 
     @if(!request('category') || request('category') == 'all')
     {{-- Hero Area --}}
-    @php
-        $heroImg = $client->widgets['hero_banner']['image'] ?? null;
-        $heroBg = $heroImg ? asset('storage/' . $heroImg) : ($client->banner ? asset('storage/' . $client->banner) : 'https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?auto=format&fit=crop&w=1600&q=80');
-    @endphp
-    <div class="hero-banner relative group cursor-pointer" style="background-image: url('{{ $heroBg }}');">
-        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
-        @if(!$heroImg && !$client->banner)
-        <div class="absolute bottom-8 right-8 bg-white/90 backdrop-blur px-6 py-3 rounded-lg shadow-lg">
-            <span class="text-bdblue font-bold text-xl block leading-tight">Starting From</span>
-            <span class="text-red-500 font-extrabold text-4xl block">TK. 36,990</span>
-        </div>
-        @endif
-    </div>
+    @if($client->widget('hero_banner'))
+        <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="$categories ?? null" />
+    @endif
 
     {{-- Official Warranty Banner / Trust Badges --}}
     @if($client->widgets['trust_badges']['active'] ?? true)
@@ -236,17 +226,9 @@
                 
                 <div x-ref="flock" class="flex gap-4 overflow-x-auto hide-scroll pb-2">
                     @foreach($flashProducts->take(10) as $p)
-                    <a href="{{$baseUrl}}/product/{{$p->slug}}" class="min-w-[160px] md:min-w-[180px] product-card shrink-0">
-                        @if($p->sale_price)<span class="absolute top-0 right-12 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-b-md shadow-sm z-10">-{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%</span>@endif
-                        <div class="p-2 flex justify-center mb-2"><img src="{{asset('storage/'.$p->thumbnail)}}" class="h-28 object-contain group-hover:scale-105 transition" loading="lazy"></div>
-                        <div class="mt-auto">
-                            <h4 class="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug mb-1">{{$p->name}}</h4>
-                            <div class="text-red-600 font-extrabold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</div>
-                            @if($p->sale_price)<del class="text-[10px] text-gray-400 font-medium">৳{{number_format($p->regular_price)}}</del>@endif
-                            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden"><div class="bg-red-500 h-1.5" style="width: {{ rand(60, 95) }}%"></div></div>
-                            <div class="text-[9px] text-gray-500 mt-1">Limited Stock</div>
-                        </div>
-                    </a>
+                    <div class="min-w-[160px] md:min-w-[180px] shrink-0 h-full pb-2">
+                        @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
+                    </div>
                     @endforeach
                 </div>
             </div>
@@ -289,39 +271,9 @@
 
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                 @forelse($products as $p)
-                <a href="{{$baseUrl}}/product/{{$p->slug}}" class="product-card group relative">
-                    @if($p->sale_price)
-                        @php $discount = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
-                        <div class="absolute top-0 right-0 bg-red-600 text-white font-extrabold text-[10px] px-2 py-1 rounded-bl-lg shadow-sm z-10">-{{$discount}}% OFF</div>
-                    @endif
-                    
-                    <div class="relative pt-4 pb-4 flex justify-center">
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="product-card-img group-hover:scale-105 transition" loading="lazy" alt="{{$p->name}}">
-                    </div>
-
-                    <div class="mt-auto pt-2 border-t border-gray-100">
-                        <h4 class="text-[12px] text-gray-800 line-clamp-2 h-9 mb-1">{{$p->name}}</h4>
-                        <div class="flex items-center gap-2">
-                            <span class="text-bdblue font-bold text-sm">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
-                            @if($p->sale_price)<del class="text-[10px] text-gray-400">৳{{number_format($p->regular_price)}}</del>@endif
-                        </div>
-                        
-                        @php 
-                            $rating = $p->average_rating ?? 0; 
-                            $reviewsCount = $p->reviews_count ?? 0;
-                        @endphp
-                        @if($reviewsCount > 0)
-                        <div class="flex items-center text-yellow-400 text-xs mt-1 gap-0.5">
-                            @for($i=1; $i<=5; $i++)
-                                <i class="fas fa-star {{ $i <= $rating ? 'text-yellow-400' : 'text-gray-200' }}"></i>
-                            @endfor
-                            <span class="text-gray-400 text-[10px] ml-1">({{ $reviewsCount }})</span>
-                        </div>
-                        @else
-                        <div class="flex items-center text-xs mt-1 h-4"></div>
-                        @endif
-                    </div>
-                </a>
+                <div class="h-full">
+                    @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
+                </div>
                 @empty
                     <div class="col-span-full py-20 text-center border text-gray-400 text-sm">No products found.</div>
                 @endforelse

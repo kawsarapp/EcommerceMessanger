@@ -158,11 +158,8 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
     <nav class="bg-white border-b border-gray-200 hidden md:block shadow-sm">
         <div class="max-w-[1340px] mx-auto px-4 lg:px-6 flex items-center justify-between">
             <div class="flex items-center gap-6 xl:gap-10">
-                <div class="w-64 border-r border-gray-100 flex items-center gap-3 py-3 cursor-pointer group">
-                    <i class="fas fa-bars text-gray-500 group-hover:text-swred transition"></i>
-                    <span class="text-xs font-black text-gray-800 uppercase tracking-tight group-hover:text-swred transition">
-                        {{ $client->widgets['category_filter']['text'] ?? 'SHOP BY CATEGORY' }}
-                    </span>
+                <div class="w-64 border-r border-gray-100 flex items-center pr-3 py-1 cursor-pointer group">
+                    @include('shop.partials.header-category-menu')
                 </div>
                 <div class="flex items-center gap-1 xl:gap-3">
                     @if(isset($primaryMenu) && $primaryMenu->items->count() > 0)

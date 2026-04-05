@@ -145,39 +145,9 @@ $primary='#0084d6';
         <div class="max-w-[1400px] mx-auto px-4 flex items-center h-10">
             
             {{-- Category Sidebar Toggle (If needed) --}}
-            <div class="nav-dropdown h-full relative group w-64 border-r border-gray-100">
-                <div class="h-full flex items-center gap-3 pr-5 hover:text-bdblue transition cursor-pointer text-sm font-medium">
-                    <i class="fas fa-bars text-gray-500"></i>
-                    <span class="flex-1 text-left">Shop by Category</span>
-                </div>
-                
-                {{-- Dropdown Menu --}}
-                <div class="dropdown-menu absolute top-full left-0 w-64 bg-white shadow-xl border border-gray-100 rounded-b min-h-[400px] hidden z-50 py-2">
-                    <ul class="text-sm text-gray-600">
-                        @if(isset($categories))
-                            @foreach($categories->take(12) as $c)
-                            <li class="relative group/sub">
-                                <a href="{{$baseUrl}}?category={{$c->slug}}" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition flex items-center justify-between">
-                                    <span class="line-clamp-1">{{$c->name}}</span> 
-                                    @if($c->children->count() > 0)
-                                        <i class="fas fa-chevron-right text-[10px] text-gray-400"></i>
-                                    @endif
-                                </a>
-                                @if($c->children->count() > 0)
-                                <div class="absolute top-0 left-full w-48 bg-white shadow-xl border border-gray-100 rounded z-[60] py-2 hidden group-hover/sub:block">
-                                    <ul class="text-xs text-gray-600">
-                                        @foreach($c->children as $sub)
-                                        <li><a href="{{$baseUrl}}?category={{$sub->slug}}" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition">{{$sub->name}}</a></li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                                @endif
-                            </li>
-                            @endforeach
-                        @endif
-                        <li><a href="{{$baseUrl}}?category=all" class="block px-5 py-2 hover:text-bdblue hover:bg-gray-50 font-medium transition flex items-center justify-between"><span>All Products</span></a></li>
-                    </ul>
-                </div>
+            {{-- Category Sidebar Toggle (If needed) --}}
+            <div class="h-full relative group w-64 border-r border-gray-100 flex items-center pr-4">
+                @include('shop.partials.header-category-menu')
             </div>
 
             <div class="flex items-center ml-6 flex-1 gap-6">

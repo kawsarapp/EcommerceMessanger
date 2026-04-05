@@ -50,86 +50,15 @@
 <div class="max-w-[1340px] mx-auto px-4 lg:px-6">
     
     @if(!request('category') || request('category') == 'all')
-    {{-- Top Section: Sidebar + Banners --}}
-    <div class="flex flex-col lg:flex-row gap-0 lg:gap-6 mb-12">
-        
-        {{-- Left Sidebar Category Menu --}}
-        @php
-            $catActive = $client->widgets['category_filter']['active'] ?? true;
-            $catText   = $client->widgets['category_filter']['text'] ?? 'SHOP BY CATEGORY';
-            $sideIcons = ['fa-th-large','fa-hamburger','fa-baby','fa-baby-carriage','fa-broom','fa-paw','fa-heartbeat','fa-tshirt','fa-blender','fa-pen-alt','fa-puzzle-piece','fa-mobile-alt'];
-        @endphp
-        
-        @if($catActive)
-        <div class="hidden lg:block w-[256px] shrink-0 sw-sidebar self-start shadow-sm rounded-sm mt-4">
-            @if(isset($categories) && count($categories) > 0)
-                @foreach($categories->take(12) as $c)
-                <div class="relative group" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-                    <a href="{{ $baseUrl }}?category={{ $c->slug }}" class="sw-sidebar-item group">
-                        <span class="flex items-center gap-3">
-                            <i class="fas {{ $sideIcons[$loop->index % count($sideIcons)] }} text-gray-400 text-sm group-hover:text-swred w-5 text-center"></i>
-                            {{ $c->name }}
-                        </span> 
-                        @if($c->children->count() > 0)
-                            <i class="fas fa-chevron-right text-[10px] text-gray-300 group-hover:text-swred transition"></i>
-                        @endif
-                    </a>
-                    
-                    @if($c->children->count() > 0)
-                    <div x-show="open" x-transition.opacity.duration.200ms class="absolute top-0 left-[256px] w-[200px] bg-white border border-gray-100 shadow-xl z-50 rounded-sm overflow-hidden py-1 hidden group-hover:block" x-cloak>
-                        @foreach($c->children as $sub)
-                            <a href="{{ $baseUrl }}?category={{ $sub->slug }}" class="block px-4 py-2.5 text-[13px] font-medium text-gray-600 hover:text-swred hover:bg-red-50 transition border-b border-gray-50 last:border-0">{{ $sub->name }}</a>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
-                @endforeach
-            @endif
+    {{-- Hero Banner Component --}}
+    @if($client->widget('hero_banner'))
+        <div class="-mx-4 md:mx-0">
+             <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="$categories ?? null" />
         </div>
-        @endif
+    @endif
 
-        {{-- Right Visual Area --}}
-        <div class="flex-1 mt-4 {{ !$catActive ? 'w-full' : '' }}">
-            {{-- Hero Banner --}}
-            @php
-                $heroActive       = $client->widgets['hero_banner']['active'] ?? true;
-                $heroText         = $client->widgets['hero_banner']['text'] ?? '';
-                $heroLink         = $client->widgets['hero_banner']['link'] ?? '#';
-                $heroButtonText   = $client->widgets['hero_banner']['button_text'] ?? 'EXPLORE NOW';
-                $heroWidgetImg    = $client->widgets['hero_banner']['image'] ?? null;
-                $heroBg = $heroWidgetImg
-                    ? asset('storage/'.$heroWidgetImg)
-                    : ($client->banner ? asset('storage/'.$client->banner) : null);
-            @endphp
-            
-            @if($heroActive && $heroBg)
-            <a href="{{ $heroLink }}" class="w-full bg-swred relative overflow-hidden group cursor-pointer border border-red-700 flex items-center p-8 lg:p-12 mb-4 rounded-sm min-h-[160px] md:min-h-[240px] block">
-                <img src="{{ $heroBg }}" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition duration-[2s]" loading="lazy" alt="{{ $client->shop_name }}">
-                <div class="absolute inset-0 bg-gradient-to-r from-red-900/60 to-red-800/20"></div>
-                <div class="relative z-10 w-full flex justify-between items-center h-full">
-                    <div class="flex flex-col text-white drop-shadow-md max-w-lg">
-                        @if($heroText)
-                        <h2 class="text-2xl xl:text-4xl font-black uppercase leading-tight mb-3">
-                            {!! nl2br(e($heroText)) !!}
-                        </h2>
-                        @else
-                        <h2 class="text-2xl xl:text-4xl font-black uppercase leading-tight mb-3">
-                            {{ $client->shop_name }}
-                        </h2>
-                        @if($client->tagline)<p class="text-red-100 font-medium text-sm mb-4">{{ $client->tagline }}</p>@endif
-                        @endif
-                        <button class="bg-swyellow text-swdark font-black px-6 py-2 rounded-full uppercase text-xs mt-2 hover:bg-yellow-300 transition shadow w-max">{{ $heroButtonText }}</button>
-                    </div>
-                </div>
-            </a>
-            @elseif($heroActive)
-            {{-- Minimal text banner if no image --}}
-            <div class="w-full bg-swred relative overflow-hidden border border-red-700 flex items-center p-8 mb-4 rounded-sm min-h-[100px]">
-                <div class="relative z-10 text-white">
-                    <h2 class="text-xl font-black uppercase">{{ $client->tagline ?? $client->shop_name }}</h2>
-                </div>
-            </div>
-            @endif
+    <div class="flex flex-col lg:flex-row gap-0 lg:gap-6 mt-4 mb-12">
+        <div class="flex-1">
             
             {{-- Featured Category Tiles Slider --}}
             @php 
@@ -218,33 +147,8 @@
             
             <div x-ref="slider" class="sw-scroll-track">
             @forelse($products->take(10) as $p)
-                <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]" style="--badge-color:{{ $flashColor }}">
-                    @if($p->sale_price)<span class="absolute top-0 left-0 text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm" style="background-color:var(--badge-color);"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
-                    
-                    <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300" alt="{{ $p->name }}">
-                    </a>
-                    
-                    <div class="text-center mt-auto flex flex-col items-center">
-                        <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="w-full">
-                            <h4 class="text-xs font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-2 hover:text-swred transition">{{ $p->name }}</h4>
-                        </a>
-                        
-                        <div class="flex items-center justify-center gap-1.5 mb-2 h-6">
-                            @if($p->sale_price)
-                                <del class="text-[11px] text-gray-400 font-medium">৳{{ number_format($p->regular_price, 0) }}</del>
-                            @endif
-                            <span class="font-bold text-swred text-sm">৳{{ number_format($p->sale_price ?? $p->regular_price, 0) }}</span>
-                        </div>
-                        
-                        @if($client->show_order_button ?? true)
-                        <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full mt-1">
-                            <button class="sw-btn-pill sw-btn-red py-2 text-xs w-[85%] hover:shadow-md">
-                                <i class="fas fa-plus mr-1"></i> Add to Bag
-                            </button>
-                        </form>
-                        @endif
-                    </div>
+                <div class="shrink-0 w-[160px] md:w-[200px] lg:w-[215px] snap-start h-full pb-2">
+                    @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
                 </div>
             @empty
                 <div class="py-16 text-center text-gray-400">No products available.</div>
@@ -312,31 +216,8 @@
             
             <div x-ref="slider" class="sw-scroll-track">
             @forelse($products->skip($skipCount) as $p)
-                <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
-                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
-                    
-                    <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="flex items-center justify-center h-40 mb-2 mt-4">
-                        <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300" alt="{{ $p->name }}">
-                    </a>
-                    
-                    <div class="text-center mt-auto flex flex-col items-center">
-                        <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="w-full">
-                            <h4 class="text-xs font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-2 hover:text-swred transition">{{ $p->name }}</h4>
-                        </a>
-                        
-                        <div class="flex items-center justify-center gap-1.5 mb-2 h-6">
-                            @if($p->sale_price)<del class="text-[11px] text-gray-400 font-medium">৳{{ number_format($p->regular_price, 0) }}</del>@endif
-                            <span class="font-bold text-swred text-sm">৳{{ number_format($p->sale_price ?? $p->regular_price, 0) }}</span>
-                        </div>
-                        
-                        @if($client->show_order_button ?? true)
-                        <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full mt-1">
-                            <button class="sw-btn-pill sw-btn-red py-2 text-xs w-[85%] hover:shadow-md">
-                                <i class="fas fa-plus mr-1"></i> Add to Bag
-                            </button>
-                        </form>
-                        @endif
-                    </div>
+                <div class="shrink-0 w-[160px] md:w-[200px] lg:w-[215px] snap-start h-full pb-2">
+                    @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
                 </div>
             @empty
                 {{-- Section 1 already showed products, this is fine being empty --}}

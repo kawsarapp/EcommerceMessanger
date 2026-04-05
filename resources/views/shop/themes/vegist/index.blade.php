@@ -48,51 +48,8 @@
 @endif
 
 {{-- Hero Section --}}
-@php
-    $heroActive = $client->widgets['hero_banner']['active'] ?? true;
-    $heroText = $client->widgets['hero_banner']['text'] ?? 'Organic vegetable';
-    $heroBtnText = $client->widgets['hero_banner']['button_text'] ?? 'Shop now';
-    $heroLink = $client->widgets['hero_banner']['link'] ?? '#';
-    $heroColor = $client->widgets['hero_banner']['color'] ?? '#222222';
-    $heroImage = $client->widgets['hero_banner']['image'] ? asset('storage/'.$client->widgets['hero_banner']['image']) : null;
-    if(!$heroImage && $client->banner) $heroImage = asset('storage/'.$client->banner);
-@endphp
-
-@if($heroActive)
-<div class="max-w-[1400px] mx-auto px-4 xl:px-8 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {{-- Left Minor Banner (Static Design representation) --}}
-        <div class="bg-lightgreen rounded-lg overflow-hidden relative group hidden lg:flex flex-col items-center justify-between p-8 text-center min-h-[400px] hover:shadow-lg transition duration-300">
-            <div>
-                <h2 class="text-2xl font-black text-dark tracking-tight mb-4">{!! $client->widgets['hero_banner']['left_title'] ?? 'Fresh<br>supermarket' !!}</h2>
-                <a href="{{ $client->widgets['hero_banner']['left_link'] ?? $heroLink }}" class="btn-primary inline-block">{{ $client->widgets['hero_banner']['left_btn'] ?? 'Shop now' }}</a>
-            </div>
-            @if(isset($client->widgets['hero_banner']['left_image']) && $client->widgets['hero_banner']['left_image'])
-            <div class="mt-8 flex-1 w-full bg-cover bg-center rounded-lg shadow-sm" style="background-image: url('{{ asset('storage/'.$client->widgets['hero_banner']['left_image']) }}');"></div>
-            @else
-            <div class="mt-8 flex-1 w-full flex items-center justify-center bg-green-100 rounded-lg shadow-sm text-green-300">
-                <i class="fas fa-seedling text-6xl"></i>
-            </div>
-            @endif
-        </div>
-
-        {{-- Main Hero Banner --}}
-        <div class="lg:col-span-2 bg-lightgreen rounded-lg overflow-hidden relative group flex items-center min-h-[300px] lg:min-h-[400px]" style="{{ $heroImage ? 'background-image: url('.$heroImage.'); background-size: cover; background-position: center;' : '' }}">
-            <div class="relative z-10 p-8 md:p-16 max-w-lg">
-                <span class="text-primary font-medium tracking-wider text-sm md:text-base uppercase mb-2 block">100% natural</span>
-                <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-8 leading-[1.1]" style="color: {{$heroColor}}">{{ $heroText }}</h1>
-                <a href="{{$heroLink}}" class="btn-primary inline-block">{{ $heroBtnText }}</a>
-            </div>
-            @if(!$heroImage)
-            <div class="absolute inset-0 z-0 flex justify-end items-center opacity-30 pointer-events-none">
-                <i class="fas fa-leaf text-[250px] text-green-600 -mr-10"></i>
-            </div>
-            @endif
-        </div>
-
-    </div>
-</div>
+@if($client->widget('hero_banner'))
+    <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="$categories ?? null" />
 @endif
 
 {{-- Category Widget --}}
@@ -197,50 +154,8 @@
     @if($flashProducts && count($flashProducts) > 0)
     <div class="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
         @foreach($flashProducts as $p)
-        <div class="flex items-center gap-4 bg-white hover:bg-[#fcfdfa] p-4 rounded border border-transparent hover:border-gray-100 transition group relative shrink-0 w-[85vw] sm:w-[60vw] md:w-auto snap-start">
-            
-            {{-- Discount Tag --}}
-            @if($p->sale_price && $p->regular_price > 0)
-            <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 shadow">
-                -{{ round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100) }}%
-            </div>
-            @elseif($isRealFlashSale)
-            <div class="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 shadow">
-                SALE
-            </div>
-            @endif
-
-            <a href="{{$clean?$baseUrl.'/product/'.$p->slug:route('shop.product', ['shop' => $client->slug, 'product' => $p->slug])}}" class="shrink-0 w-28 h-28 bg-gray-50 flex items-center justify-center overflow-hidden mix-blend-multiply border border-gray-100 rounded">
-                @if($p->thumbnail)
-                    <img src="{{asset('storage/'.$p->thumbnail)}}" class="max-w-full max-h-full object-contain group-hover:scale-105 transition duration-500">
-                @endif
-            </a>
-
-            <div class="flex flex-col justify-center gap-1.5">
-                <a href="{{$clean?$baseUrl.'/product/'.$p->slug:route('shop.product', ['shop' => $client->slug, 'product' => $p->slug])}}" class="text-[13px] font-medium text-gray-600 hover:text-primary line-clamp-2 leading-tight">
-                    {{$p->name}}
-                </a>
-                
-                {{-- Price --}}
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[14px] font-bold text-dark">৳{{number_format((float)($p->sale_price ?? $p->regular_price ?? 0))}}</span>
-                    @if($p->sale_price && $p->regular_price > 0)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format((float)$p->regular_price)}}</span>
-                    @endif
-                </div>
-
-                {{-- Stars --}}
-                <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5 mt-1">
-                    @php $pRating = (float)($p->avg_rating ?? 5); @endphp
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= $pRating) <i class="fas fa-star"></i>
-                        @elseif($i - 0.5 <= $pRating) <i class="fas fa-star-half-alt"></i>
-                        @else <i class="far fa-star text-gray-300"></i>
-                        @endif
-                    @endfor
-                    <span class="text-gray-400 ml-1">({{ $p->total_reviews ?? 0 }})</span>
-                </div>
-            </div>
+        <div class="shrink-0 w-[45vw] sm:w-[35vw] md:w-auto snap-start h-full">
+            @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
         </div>
         @endforeach
     </div>
@@ -280,55 +195,8 @@
     @if(isset($products) && count($products) > 0)
     <div class="flex md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
         @foreach($products as $p)
-        <div class="bg-white group shrink-0 w-[45vw] sm:w-[35vw] md:w-auto snap-start">
-            <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-6 overflow-hidden mb-4 mix-blend-multiply border border-transparent group-hover:border-gray-100 transition">
-                
-                {{-- Percentage Badge --}}
-                @if($p->sale_price && $p->regular_price > 0)
-                @php $percent = round((($p->regular_price - $p->sale_price) / $p->regular_price) * 100); @endphp
-                <div class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 z-10 shadow-sm">
-                    -{{$percent}}%
-                </div>
-                @endif
-                
-                <a href="{{$clean?$baseUrl.'/product/'.$p->slug:route('shop.product', ['shop' => $client->slug, 'product' => $p->slug])}}" class="block w-full h-full">
-                    @if($p->thumbnail)
-                        <img src="{{asset('storage/'.$p->thumbnail)}}" class="w-full h-full object-contain group-hover:scale-105 transition duration-500 mix-blend-multiply">
-                    @endif
-                </a>
-
-                {{-- Quick Actions --}}
-                <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300 z-20">
-                    <button class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white shadow-lg transition">
-                        <i class="far fa-heart"></i>
-                    </button>
-                    <a href="{{$clean?$baseUrl.'/product/'.$p->slug:route('shop.product', ['shop' => $client->slug, 'product' => $p->slug])}}" class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white shadow-lg transition">
-                        <i class="fas fa-shopping-bag"></i>
-                    </a>
-                </div>
-            </div>
-
-            <div class="text-left px-1">
-                <a href="{{$clean?$baseUrl.'/product/'.$p->slug:route('shop.product', ['shop' => $client->slug, 'product' => $p->slug])}}" class="text-[13px] text-gray-600 hover:text-primary transition line-clamp-1 mb-1">
-                    {{$p->name}}
-                </a>
-                <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-[15px] font-bold text-dark">৳{{number_format((float)($p->sale_price ?? $p->regular_price ?? 0))}}</span>
-                    @if($p->sale_price && $p->regular_price > 0)
-                    <span class="text-[12px] text-gray-400 line-through">৳{{number_format((float)$p->regular_price)}}</span>
-                    @endif
-                </div>
-                <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5">
-                    @php $pRating = (float)($p->avg_rating ?? 5); @endphp
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= $pRating) <i class="fas fa-star"></i>
-                        @elseif($i - 0.5 <= $pRating) <i class="fas fa-star-half-alt"></i>
-                        @else <i class="far fa-star text-gray-300"></i>
-                        @endif
-                    @endfor
-                    <span class="text-gray-400 ml-1">({{ $p->total_reviews ?? 0 }})</span>
-                </div>
-            </div>
+        <div class="shrink-0 w-[45vw] sm:w-[35vw] md:w-auto snap-start h-full">
+            @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
         </div>
         @endforeach
     </div>
