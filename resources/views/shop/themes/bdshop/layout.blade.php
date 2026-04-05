@@ -82,6 +82,10 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 {{-- Search Bar --}}
                 @if($client->widget('search_bar'))
                 @php $sbConfig = $client->widgetConfig('search_bar'); @endphp
+                
+                {{-- Category Menu Dropdown --}}
+                @include('shop.partials.header-category-menu')
+
                 <div class="flex-1 max-w-2xl mx-2 md:mx-6">
                     <div class="relative">
                         <input type="text" placeholder="{{ $sbConfig['text'] ?? 'পণ্য খুঁজুন...' }}" 
@@ -133,23 +137,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
     </header>
 
-    {{-- Category Bar --}}
-    @if($client->widget('category_filter') && isset($categories) && count($categories) > 0)
-    <nav class="hidden md:block bg-white border-b border-slate-100 mat-elevated sticky top-[102px] sm:top-[72px] md:top-[76px] z-40">
-        <div class="max-w-[1280px] mx-auto px-4">
-            <div class="flex gap-2 overflow-x-auto hide-scroll py-3">
-                <a href="?category=all" class="px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap mat-card hover:translate-y-0 shadow-sm {{!request('category')||request('category')=='all' ? 'bg-primary text-white border border-primary' : 'bg-white text-slate-600 border border-slate-200'}}">
-                    <i class="fas fa-th-large mr-1.5"></i> সব পণ্য
-                </a>
-                @foreach($categories as $c)
-                    <a href="?category={{$c->slug}}" class="px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap mat-card hover:translate-y-0 shadow-sm {{request('category')==$c->slug ? 'bg-primary text-white border border-primary' : 'bg-white text-slate-600 border border-slate-200'}}">
-                        {{$c->name}}
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    </nav>
-    @endif
+
 
     <main class="flex-1 w-full">
         @yield('content')

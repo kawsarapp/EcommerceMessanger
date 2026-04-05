@@ -14,10 +14,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" />
 @endif
 
-{{-- Category Filter Pills (if active) --}}
-@if($client->widget('category_filter'))
-    <x-shop.widgets.category-filter :client="$client" :config="$client->widgetConfig('category_filter')" :categories="$categories" />
-@endif
+
 
 {{-- Trust Badges --}}
 @if($client->widget('trust_badges'))
