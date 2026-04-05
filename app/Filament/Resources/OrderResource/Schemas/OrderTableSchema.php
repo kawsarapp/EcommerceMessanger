@@ -293,23 +293,32 @@ class OrderTableSchema
                         }
 
                         // ── Risk Calculation ──────────────────────────────────────
-                        // Factor 1: fraud reports count
-                        $reportCount = count($reports);
-                        // Factor 2: couriers with low success ratio (<70%) or high cancellations
-                        $highRiskCouriers = $couriers->filter(fn($c) => ($c['success_ratio'] ?? 100) < 70 || ($c['cancelled_parcel'] ?? 0) >= 5);
-                        $totalCancelled   = $summary['cancelled_parcel'] ?? $couriers->sum(fn($c) => $c['cancelled_parcel'] ?? 0);
-                        $overallRatio     = $summary['success_ratio'] ?? 100;
-                        $totalParcels     = $summary['total_parcel'] ?? $couriers->sum(fn($c) => $c['total_parcel'] ?? 0);
+                        $reportCount  = count($reports);
+                        $totalCancelled = $summary['cancelled_parcel'] ?? $couriers->sum(fn($c) => $c['cancelled_parcel'] ?? 0);
+                        $overallRatio   = (float) ($summary['success_ratio'] ?? 100.0);
+                        $totalParcels   = (int)   ($summary['total_parcel'] ?? $couriers->sum(fn($c) => $c['total_parcel'] ?? 0));
 
-                        // Determine risk level
-                        if ($reportCount > 0 || $overallRatio < 60 || $highRiskCouriers->count() >= 2) {
+                        // High-risk courier: needs ENOUGH sample (≥5 parcels) AND low success (<60%)
+                        // Small sample couriers (< 5 parcels) are flagged with ⚠️ info only — not risk factor
+                        $significantHighRisk = $couriers->filter(
+                            fn($c) => ($c['total_parcel'] ?? 0) >= 5 && ($c['success_ratio'] ?? 100) < 60
+                        );
+                        // Moderate-risk courier: ≥5 parcels AND success 60-75%
+                        $moderateRiskCouriers = $couriers->filter(
+                            fn($c) => ($c['total_parcel'] ?? 0) >= 5 && ($c['success_ratio'] ?? 100) < 75
+                        );
+
+                        // 🔴 HIGH RISK: fraud reports exist, OR very low overall ratio, OR many cancellations, OR multiple significant high-risk couriers
+                        if ($reportCount > 0 || $overallRatio < 50 || $totalCancelled >= 20 || $significantHighRisk->count() >= 2) {
                             $riskIcon  = '🔴';
                             $riskLabel = 'HIGH RISK';
                             $notifType = 'danger';
-                        } elseif ($overallRatio < 80 || $totalCancelled >= 10 || $highRiskCouriers->count() >= 1) {
+                        // 🟡 MODERATE: overall ratio 50-75%, OR 5+ cancellations, OR 1 significant high-risk / moderate-risk courier
+                        } elseif ($overallRatio < 75 || $totalCancelled >= 5 || $significantHighRisk->count() >= 1 || $moderateRiskCouriers->count() >= 1) {
                             $riskIcon  = '🟡';
                             $riskLabel = 'MODERATE RISK';
                             $notifType = 'warning';
+                        // 🟢 LOW RISK: everything else
                         } else {
                             $riskIcon  = '🟢';
                             $riskLabel = 'LOW RISK';
@@ -328,9 +337,19 @@ class OrderTableSchema
                         if ($activeCouriers->isNotEmpty()) {
                             $lines[] = "🚚 Courier Breakdown:";
                             foreach ($activeCouriers as $c) {
-                                $ratio   = $c['success_ratio'] ?? 0;
-                                $emoji   = $ratio >= 80 ? '✅' : ($ratio >= 60 ? '⚠️' : '❌');
-                                $lines[] = "  {$emoji} {$c['name']}: {$c['total_parcel']} parcels | {$ratio}% success | {$c['cancelled_parcel']} cancelled";
+                                $ratio  = $c['success_ratio'] ?? 0;
+                                $total  = $c['total_parcel'] ?? 0;
+                                // Only flag low ratio if sample is meaningful (≥5 parcels)
+                                if ($total < 5) {
+                                    $emoji = 'ℹ️'; // small sample — no strong conclusion
+                                } elseif ($ratio >= 75) {
+                                    $emoji = '✅';
+                                } elseif ($ratio >= 60) {
+                                    $emoji = '⚠️';
+                                } else {
+                                    $emoji = '🔴';
+                                }
+                                $lines[] = "  {$emoji} {$c['name']}: {$total} parcels | {$ratio}% success | {$c['cancelled_parcel']} cancelled" . ($total < 5 ? ' (small sample)' : '');
                             }
                         }
 
