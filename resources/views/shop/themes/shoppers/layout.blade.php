@@ -69,6 +69,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         .footer-link { color: #6b7280; font-size: 12px; display: block; margin-bottom: 10px; transition: color 0.2s; }
         .footer-link:hover { color: #eb484e; }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="antialiased flex flex-col min-h-screen font-sans selection:bg-shred/20 selection:text-shred" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     

@@ -60,6 +60,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             .shop-name-text{font-size:1.4rem!important;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="bg-white text-gray-900 antialiased flex flex-col min-h-screen font-sans selection:bg-black selection:text-white" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 

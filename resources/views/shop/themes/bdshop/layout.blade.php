@@ -46,20 +46,14 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         :root { --tw-color-primary: {{$client->primary_color ?? "#f85606"}}; --mob-primary: {{$client->primary_color ?? "#f85606"}}; }
         [x-cloak]{display:none!important}
         body { background-color: #f8f9fa; }
-        
         /* Modern Material Depth */
-        .mat-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .mat-card:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); transform: translateY(-4px); }
-        .mat-elevated { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04); }
-        
+        .mat-card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.025); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .mat-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.05); transform: translateY(-4px); }
+        .mat-elevated { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08),0 4px 6px -4px rgba(0,0,0,0.04); }
         .hide-scroll::-webkit-scrollbar{display:none}
-        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     

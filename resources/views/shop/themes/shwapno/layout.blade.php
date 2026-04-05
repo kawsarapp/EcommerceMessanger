@@ -72,6 +72,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="antialiased flex flex-col min-h-screen font-sans selection:bg-swred/20 selection:text-swred" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     

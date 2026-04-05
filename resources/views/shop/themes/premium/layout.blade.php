@@ -64,6 +64,7 @@
             .shop-name-text{font-size:1rem!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     

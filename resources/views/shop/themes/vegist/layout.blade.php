@@ -65,6 +65,7 @@
         .btn-dark { background-color: #222222; color: #fff; padding: 10px 24px; border-radius: 4px; font-weight: 600; font-size: 14px; transition: background 0.3s ease; }
         .btn-dark:hover { background-color: var(--tw-color-primary); }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white pb-20 md:pb-0" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 

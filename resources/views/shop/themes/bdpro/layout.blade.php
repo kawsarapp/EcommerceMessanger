@@ -58,6 +58,7 @@ $primary='#1a3673';
         .bd-card:hover::before { opacity: 1; }
         .nav-dropdown:hover .dropdown-menu { display: block; }
     </style>
+    @include('shop.partials.dynamic-colors', ['client' => $client])
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
