@@ -13,9 +13,9 @@
             <div class="w-[70vw] sm:w-auto shrink-0 snap-start h-full">
                 {{-- Fallback matching logic for product-card --}}
                 @if(view()->exists('shop.themes.' . $client->theme_name . '.product-card'))
-                    @include('shop.themes.' . $client->theme_name . '.product-card', ['p' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
+                    @include('shop.themes.' . $client->theme_name . '.product-card', ['product' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
                 @else
-                    @include('shop.partials.product-card', ['p' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
+                    @include('shop.partials.product-card', ['product' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
                 @endif
             </div>
         @endforeach

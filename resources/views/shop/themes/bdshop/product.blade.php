@@ -144,7 +144,7 @@ $totalReviews = $reviews->count();
                 <h2 class="text-xl font-extrabold text-dark mb-6 flex items-center gap-3 pb-3 border-b border-slate-100">
                     <i class="fas fa-info-circle text-primary text-2xl"></i> পণ্যের বিবরণ
                 </h2>
-                <div class="prose prose-sm xl:prose-base max-w-none text-slate-600 leading-relaxed font-medium">
+                <div class="prose prose-sm xl:prose-base max-w-full text-slate-600 leading-relaxed font-medium overflow-hidden break-words prose-img:rounded-xl prose-img:max-w-full prose-table:max-w-full prose-table:overflow-x-auto">
                     {!! clean($product->description ?? $product->long_description) !!}
                 </div>
             </div>
