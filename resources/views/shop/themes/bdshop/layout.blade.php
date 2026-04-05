@@ -107,6 +107,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <span class="hidden lg:inline">{{$client->phone}}</span>
                     </a>
                     @endif
+                    @php $bgCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative text-white/90 hover:text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition px-2 py-1.5 rounded-lg hover:bg-white/10">
+                        <i class="fas fa-shopping-cart text-lg"></i>
+                        <span class="hidden lg:inline">কার্ট</span>
+                        @if($bgCartCount > 0)
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full transform translate-x-1 -translate-y-1">{{ $bgCartCount }}</span>
+                        @else
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full transform translate-x-1 -translate-y-1 hidden" data-cart-badge>0</span>
+                        @endif
+                    </a>
                 </div>
             </div>
         </div>

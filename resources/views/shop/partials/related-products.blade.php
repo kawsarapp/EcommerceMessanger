@@ -15,18 +15,7 @@
                 @if(view()->exists('shop.themes.' . $client->theme_name . '.product-card'))
                     @include('shop.themes.' . $client->theme_name . '.product-card', ['p' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
                 @else
-                    {{-- Native safe fallback card just in case --}}
-                    <a href="{{ $clean ?? false ? 'https://'.$clean.'/product/'.$rp->slug : route('shop.product.details', ['slug' => $client->slug, 'productSlug' => $rp->slug]) }}" class="group block h-full bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-xl transition-all">
-                        <div class="aspect-square bg-gray-50 relative overflow-hidden">
-                            <img src="{{ asset('storage/'.$rp->thumbnail) }}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">{{ $rp->name }}</h3>
-                            <div class="flex items-center gap-2">
-                                <span class="font-black text-primary text-base">৳{{ number_format($rp->price) }}</span>
-                            </div>
-                        </div>
-                    </a>
+                    @include('shop.partials.product-card', ['p' => $rp, 'client' => $client, 'baseUrl' => $baseUrl ?? ''])
                 @endif
             </div>
         @endforeach
