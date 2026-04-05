@@ -61,7 +61,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-white text-gray-900 antialiased flex flex-col min-h-screen font-sans selection:bg-black selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="bg-white text-gray-900 antialiased flex flex-col min-h-screen font-sans selection:bg-black selection:text-white" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -121,7 +121,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <a href="#" class="hover:text-black transition">Terms</a>
             </div>
 
-            <p class="text-[10px] font-medium text-gray-300 uppercase tracking-widest text-center">&copy; {{date('Y')}} {{$client->shop_name}}. {{ $client->tagline ? $client->tagline . '.' : 'All Rights Reserved.' }}</p>
+            <p class="text-[10px] font-medium text-gray-300 uppercase tracking-widest text-center">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. '.($client->tagline ? $client->tagline.'.' : 'All Rights Reserved.') }}</p>
         </div>
 
     {{-- Dynamic Social + Payment + Copyright from admin panel --}}

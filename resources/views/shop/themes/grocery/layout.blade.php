@@ -28,62 +28,25 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <script>
+    <meta property="og:url" content="{{ url()->current() }}">
+    @include('shop.partials.tracking', ['client' => $client])
+    
+    <!-- AlpineJS & TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Fonts: Nunito for friendly grocery look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script>
         tailwind.config={
             darkMode: 'class',
             theme:{
                 extend:{
                     colors:{
                         primary:'{{$client->primary_color ?? "#10b981"}}',
-                        secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}', // Emerald Green by default
-                        secondary: '#facc15' // Yellow accent
-                    },
-                    fontFamily:{
-                        sans:['Nunito','sans-serif']
-                    },
-                    boxShadow: {
-                        'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        :root {
-            --tw-color-primary: {{$client->primary_color ?? "#10b981"}};
-            --mob-primary: {{$client->primary_color ?? "#10b981"}};
-        }
-        [x-cloak]{display:none!important} 
-        body { background-color: #f8fafc; }
-        .hide-scroll::-webkit-scrollbar{display:none}
-        .blob-bg { background-image: radial-gradient(circle at top left, rgba(16, 185, 129, 0.05), transparent 40%), radial-gradient(circle at bottom right, rgba(250, 204, 21, 0.05), transparent 40%); }
-        
-        /* Fresh Grocery Additions */
-        .grocer-card { background: white; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02); border: 1px solid rgba(16, 185, 129, 0.08); transition: all 0.3s ease; overflow: hidden; }
-        .grocer-card:hover { box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.05), 0 10px 10px -5px rgba(16, 185, 129, 0.02); transform: translateY(-3px); border-color: rgba(16, 185, 129, 0.15); }
-        .pill-btn { border-radius: 9999px; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .pill-btn:active { transform: scale(0.95); }
-
-        @media(max-width:767px){
-            .shop-name-text{font-size:1.1rem!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary blob-bg relative" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
-
-    {{-- Decorative Background Blobs --}}
-    <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-        <div class="absolute -top-40 -left-40 w-96 h-96 bg-primary/5 rounded-full blur-[100px]"></div>
-        <div class="absolute top-[40%] -right-40 w-96 h-96 bg-yellow-400/5 rounded-full blur-[100px]"></div>
-    </div>
-
-    {{-- ? Flash Sale Banner --}}
-    @include('shop.partials.flash-sale-bar', ['client' => $client])
-
-    <header class="bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-primary/10 transition-all shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex justify-between items-center gap-3">
-            <a href="{{$baseUrl}}" class="flex items-center gap-2 group min-w-0">
-                @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-8 md:h-12 object-contain flex-shrink-0 group-hover:scale-105 transition">
                 @else
                     <div class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary text-lg flex-shrink-0">
                         <i class="fas fa-shopping-basket"></i>
@@ -191,7 +154,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-16 pt-8 border-t border-slate-100 text-center">
-            <p class="text-sm font-bold text-slate-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved. Crafted with <i class="fas fa-heart text-red-500 mx-1"></i></p>
+            <p class="text-sm font-bold text-slate-400">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. All Rights Reserved.' }} <i class="fas fa-heart text-red-500 mx-1"></i></p>
         </div>
 
     {{-- Dynamic Social + Payment + Copyright from admin panel --}}

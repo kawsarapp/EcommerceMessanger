@@ -74,20 +74,6 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             .mob-nav a{color:#9ca3af!important}
             .mob-nav a:hover,.mob-nav a.active{color:{{$client->primary_color ?? "#0ea5e9"}}!important; text-shadow: 0 0 8px var(--tw-color-primary);}
             .mob-search-bar{background:#111827!important;border-bottom-color:rgba(255,255,255,0.08)!important}
-            .mob-search-bar input{background:#030712!important;color:#fff!important;border-color:{{$client->primary_color ?? "#0ea5e9"}}!important}
-        }
-    </style>
-</head>
-<body class="bg-[#030712] text-gray-200 antialiased flex flex-col min-h-screen cyber-grid selection:bg-primary/30 selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
-
-    {{-- ? Flash Sale Banner --}}
-    @include('shop.partials.flash-sale-bar', ['client' => $client])
-
-    <header class="bg-panel/80 backdrop-blur-lg sticky top-0 z-50 border-b border-primary/20 shadow-[0_4px_30px_rgba(14,165,233,0.1)] transition-all">
-        <div class="max-w-[100rem] mx-auto px-4 md:px-8 h-14 md:h-20 flex justify-between items-center gap-3">
-            <a href="{{$baseUrl}}" class="flex items-center gap-2 min-w-0">
-                @if($client->logo)
-                    <img src="{{asset('storage/'.$client->logo)}}" class="h-7 md:h-10 object-contain flex-shrink-0">
                 @endif
                 <span class="text-base md:text-2xl font-black tracking-tight text-white truncate max-w-[160px] md:max-w-none">{{$client->shop_name}}</span>
                 <span class="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ml-1 hidden sm:inline-block flex-shrink-0">Tech</span>
@@ -166,7 +152,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
         
         <div class="max-w-[100rem] mx-auto px-4 md:px-8 mt-16 flex flex-col md:flex-row justify-between items-center border-t border-gray-800 pt-6">
-            <p class="text-xs font-medium text-gray-600 font-mono tracking-wider">&copy; {{date('Y')}} {{$client->shop_name}}</p>
+            <p class="text-xs font-medium text-gray-600 font-mono tracking-wider">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name }}</p>
             <div class="flex gap-4 mt-4 md:mt-0 text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 <span>Secure SSL</span> <span class="opacity-50">|</span> <span>Fast Shipping</span>
             </div>

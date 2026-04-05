@@ -56,7 +56,7 @@
         }
     </style>
 </head>
-<body class="text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     {{-- Top Announcement Bar --}}
     @if($client->announcement_text)
@@ -155,7 +155,7 @@
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-gray-100 text-center text-xs font-bold text-gray-400">
-            <p>&copy; {{date('Y')}} {{$client->shop_name}}. All rights reserved.</p>
+            <p>{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. All rights reserved.' }}</p>
         </div>
 
     {{-- Dynamic Social + Payment + Copyright from admin panel --}}

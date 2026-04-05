@@ -59,7 +59,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-dark text-gray-200 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/30 selection:text-white luxury-gradient" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="bg-dark text-gray-200 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/30 selection:text-white luxury-gradient" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -147,7 +147,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
         
         <div class="max-w-[100rem] mx-auto px-4 sm:px-12 mt-20 text-center">
-            <p class="text-[9px] font-light text-gray-600 uppercase tracking-[0.4em]">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+            <p class="text-[9px] font-light text-gray-600 uppercase tracking-[0.4em]">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. All Rights Reserved.' }}</p>
         </div>
 
     {{-- Dynamic Social + Payment + Copyright from admin panel --}}

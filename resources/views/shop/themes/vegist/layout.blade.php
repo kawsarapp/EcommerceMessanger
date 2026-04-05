@@ -66,7 +66,7 @@
         .btn-dark:hover { background-color: var(--tw-color-primary); }
     </style>
 </head>
-<body class="antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white pb-20 md:pb-0" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white pb-20 md:pb-0" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])

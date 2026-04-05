@@ -65,10 +65,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
-    {{-- ? Flash Sale Banner --}}
+    {{-- Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
+
+    {{-- Announcement Bar --}}
+    @if($client->announcement_text)
+    <div class="bg-primary text-white text-center py-2 px-4 text-xs font-bold tracking-widest">
+        {!! $client->announcement_text !!}
+    </div>
+    @endif
 
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b-4 border-slate-200 transition-all shadow-cloud">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-24 flex justify-between items-center gap-3">
@@ -168,7 +175,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         </div>
         
         <div class="max-w-7xl mx-auto px-6 mt-16 text-center">
-            <p class="text-base font-bold text-slate-400">&copy; {{date('Y')}} {{$client->shop_name}}. Bringing joy every day! <i class="fas fa-smile text-funyellow mx-1"></i></p>
+            <p class="text-base font-bold text-slate-400">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. Bringing joy every day!' }} <i class="fas fa-smile text-funyellow mx-1"></i></p>
         </div>
 
     {{-- Dynamic Social + Payment + Copyright from admin panel --}}

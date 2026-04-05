@@ -65,7 +65,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="bg-gray-50 text-gray-900 antialiased flex flex-col min-h-screen" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -127,7 +127,7 @@
             </div>
 
             <div class="border-t border-gray-100 pt-6">
-                <p class="text-xs text-gray-400 font-medium tracking-wide">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+                <p class="text-xs text-gray-400 font-medium tracking-wide">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. All Rights Reserved.' }}</p>
             </div>
         </div>
 

@@ -59,7 +59,7 @@ $primary='#0084d6';
         .nav-dropdown:hover .dropdown-menu { display: block; }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -292,19 +292,6 @@ $primary='#0084d6';
                             <button type="button" class="bg-blue-500 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                         </form>
                     </div>
-
-                </div>
-
-                {{-- Bottom Bar --}}
-                <div class="border-t border-white/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div class="text-[11px] text-gray-400">
-                        &copy; {{date('Y')}} <strong class="text-white">{{$client->shop_name}}</strong>. ?????????? ?????????
-                    </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs text-gray-400 mr-2">Secure Payment:</span>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Former_Visa_%28company%29_logo.svg/1024px-Former_Visa_%28company%29_logo.svg.png" class="h-3 object-contain" loading="lazy"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1024px-MasterCard_Logo.svg.png" class="h-4 object-contain" loading="lazy"></div>
                         <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain" loading="lazy"></div>
                         <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-3 object-contain" loading="lazy"></div>
                     </div>

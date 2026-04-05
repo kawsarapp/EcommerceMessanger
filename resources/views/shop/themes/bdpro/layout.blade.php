@@ -59,7 +59,7 @@ $primary='#1a3673';
         .nav-dropdown:hover .dropdown-menu { display: block; }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-bdblue/20 selection:text-bdblue" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
     
     {{-- Flash Sale Bar --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])

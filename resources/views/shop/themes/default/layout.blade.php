@@ -85,7 +85,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative overflow-x-hidden" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="text-slate-800 antialiased flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary relative overflow-x-hidden" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     <!-- Top Announcement Bar -->
     @if($client->announcement_text)
@@ -228,7 +228,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </div>
                 
                 <div class="mt-16 pt-8 border-t border-slate-200/50 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
-                    <p class="text-sm font-bold text-slate-400">&copy; {{date('Y')}} {{$client->shop_name}}. All Rights Reserved.</p>
+                    <p class="text-sm font-bold text-slate-400">{{ $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'. All Rights Reserved.' }}</p>
                     <div class="flex gap-3">
                         <i class="fab fa-cc-visa text-3xl text-slate-300 hover:text-slate-500 premium-transition hover:-translate-y-1 cursor-pointer"></i>
                         <i class="fab fa-cc-mastercard text-3xl text-slate-300 hover:text-slate-500 premium-transition hover:-translate-y-1 cursor-pointer"></i>

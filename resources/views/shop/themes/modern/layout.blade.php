@@ -55,7 +55,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         }
     </style>
 </head>
-<body class="bg-[#fafafa] text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{\{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' \}}">
+<body class="bg-[#fafafa] text-gray-900 antialiased flex flex-col min-h-screen selection:bg-primary selection:text-white" style="{{ $client->bg_color ? 'background-color: '.$client->bg_color.' !important;' : '' }}">
 
     {{-- ? Flash Sale Banner --}}
     @include('shop.partials.flash-sale-bar', ['client' => $client])
@@ -126,13 +126,21 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu3_title'] ?? 'Contact' }}</h4>
                 <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-gray-300"></i> {{$client->phone}}</p> @endif
+                    @endif
+                </div>
+            </div>
+
+            <div>
+                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu3_title'] ?? 'Contact' }}</h4>
+                <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
+                    @if($client->phone) <p><i class="fas fa-phone mr-2 text-gray-300"></i> {{$client->phone}}</p> @endif
                     @if($client->email) <p><i class="fas fa-envelope mr-2 text-gray-300"></i> {{$client->email}}</p> @endif
                     @if($client->address) <p><i class="fas fa-map-marker-alt mr-2 text-gray-300"></i> {{$client->address}}</p> @endif
                 </div>
             </div>
         </div>
         <div class="max-w-[90rem] mx-auto px-6 mt-20 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
-            <p>&copy; {{date('Y')}} {{$client->shop_name}}.</p>
+            <p>{!! $client->footer_text ?? '&copy; '.date('Y').' '.$client->shop_name.'.' !!}</p>
             <p class="mt-4 md:mt-0">{{ $client->tagline ?? 'All Rights Reserved.' }}</p>
         </div>
 
