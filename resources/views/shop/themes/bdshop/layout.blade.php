@@ -135,7 +135,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
 
     {{-- Category Bar --}}
     @if($client->widget('category_filter') && isset($categories) && count($categories) > 0)
-    <nav class="bg-white border-b border-slate-100 mat-elevated sticky top-[102px] sm:top-[72px] md:top-[76px] z-40">
+    <nav class="hidden md:block bg-white border-b border-slate-100 mat-elevated sticky top-[102px] sm:top-[72px] md:top-[76px] z-40">
         <div class="max-w-[1280px] mx-auto px-4">
             <div class="flex gap-2 overflow-x-auto hide-scroll py-3">
                 <a href="?category=all" class="px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap mat-card hover:translate-y-0 shadow-sm {{!request('category')||request('category')=='all' ? 'bg-primary text-white border border-primary' : 'bg-white text-slate-600 border border-slate-200'}}">
