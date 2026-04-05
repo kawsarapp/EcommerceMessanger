@@ -54,7 +54,7 @@
 
     {{-- SEARCH FORM --}}
     <div class="bg-white border border-gray-100 shadow-sm rounded-lg p-8 sm:p-10 mb-8 relative overflow-hidden">
-        <div class="absolute -right-20 -top-20 w-64 h-64 bg-red-50 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full opacity-50 blur-3xl pointer-events-none"></div>
         <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-yellow-50 rounded-full opacity-50 blur-2xl pointer-events-none"></div>
         
         <div class="relative z-10 text-center mb-8">
@@ -69,9 +69,9 @@
                         <i class="fas fa-hashtag"></i>
                     </div>
                     <input type="number" name="order_id" value="{{ request('order_id') }}" placeholder="Order ID লিখুন (যেমন: 1042)" required min="1"
-                        class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-full text-sm font-medium focus:outline-none focus:border-swred focus:ring-2 focus:ring-red-100 transition shadow-inner">
+                        class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-full text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-red-100 transition shadow-inner">
                 </div>
-                <button type="submit" class="bg-swred hover:bg-[#c8161c] text-white px-8 py-3.5 rounded-full font-bold text-sm transition shadow-md whitespace-nowrap">
+                <button type="submit" class="bg-primary hover:bg-[#c8161c] text-white px-8 py-3.5 rounded-full font-bold text-sm transition shadow-md whitespace-nowrap">
                     <i class="fas fa-search mr-1.5 opacity-80"></i> Track
                 </button>
             </form>
@@ -85,7 +85,7 @@
     @if(request('order_id'))
     <div class="animate-fade-in">
         <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">
-            Order <span class="text-swred">#{{ request('order_id') }}</span> এর তথ্য
+            Order <span class="text-primary">#{{ request('order_id') }}</span> এর তথ্য
         </h4>
 
         @forelse($orders ?? [] as $o)
@@ -105,7 +105,7 @@
                             'processing' => 'bg-blue-50 text-blue-700 border-blue-200',
                             'shipped'    => 'bg-purple-50 text-purple-700 border-purple-200',
                             'completed'  => 'bg-green-50 text-green-700 border-green-200',
-                            'cancelled'  => 'bg-red-50 text-red-700 border-red-200',
+                            'cancelled'  => 'bg-primary/5 text-red-700 border-red-200',
                         ];
                         $statusIcons = [
                             'pending'    => 'fa-clock',
@@ -140,7 +140,7 @@
                     </div>
                     <div class="bg-gray-50 rounded-lg p-3">
                         <span class="text-[9px] font-bold text-gray-400 block mb-1 uppercase tracking-wider">মোট পরিমাণ</span>
-                        <span class="text-[16px] font-black text-swred">৳{{ number_format($o->total_amount, 0) }}</span>
+                        <span class="text-[16px] font-black text-primary">৳{{ number_format($o->total_amount, 0) }}</span>
                     </div>
                     <div class="bg-gray-50 rounded-lg p-3">
                         <span class="text-[9px] font-bold text-gray-400 block mb-1 uppercase tracking-wider">পেমেন্ট</span>
@@ -171,11 +171,11 @@
                     <div class="flex items-center justify-between relative">
                         {{-- Progress line --}}
                         <div class="absolute top-4 left-0 right-0 h-1 bg-gray-200 z-0">
-                            <div class="h-full bg-swred transition-all duration-700" style="width: {{ ($currentStep - 1) * 33 }}%"></div>
+                            <div class="h-full bg-primary transition-all duration-700" style="width: {{ ($currentStep - 1) * 33 }}%"></div>
                         </div>
                         @foreach([['icon'=>'fa-clipboard-check','label'=>'অর্ডার গৃহীত'], ['icon'=>'fa-cog','label'=>'প্রক্রিয়াকরণ'], ['icon'=>'fa-truck','label'=>'ডেলিভারিতে'], ['icon'=>'fa-house','label'=>'পৌঁছানো']] as $i => $step)
                         <div class="relative z-10 flex flex-col items-center gap-1.5" style="width:25%">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center {{ ($i+1) <= $currentStep ? 'bg-swred text-white' : 'bg-white text-gray-300 border border-gray-200' }} shadow-sm transition-all duration-500">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center {{ ($i+1) <= $currentStep ? 'bg-primary text-white' : 'bg-white text-gray-300 border border-gray-200' }} shadow-sm transition-all duration-500">
                                 <i class="fas {{ $step['icon'] }} text-[11px]"></i>
                             </div>
                             <span class="text-[9px] font-bold text-center leading-tight {{ ($i+1) <= $currentStep ? 'text-gray-700' : 'text-gray-400' }}">{{ $step['label'] }}</span>

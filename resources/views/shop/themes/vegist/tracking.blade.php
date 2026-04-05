@@ -51,7 +51,7 @@ document.getElementById('trackForm').addEventListener('submit', async function(e
                 if(o.status == 'processing') statusColor = 'bg-blue-100 text-blue-600';
                 if(o.status == 'shipped') statusColor = 'bg-purple-100 text-purple-600';
                 if(o.status == 'delivered') statusColor = 'bg-green-100 text-green-600';
-                if(o.status == 'cancelled') statusColor = 'bg-red-100 text-red-600';
+                if(o.status == 'cancelled') statusColor = 'bg-red-100 text-primary';
                 
                 html += `
                     <div class="border border-gray-100 rounded bg-[#fcfdfa] p-5 relative overflow-hidden transition hover:shadow-sm">
@@ -72,10 +72,10 @@ document.getElementById('trackForm').addEventListener('submit', async function(e
             html += '</div>';
             resDiv.innerHTML = html;
         } else {
-            resDiv.innerHTML = `<div class="bg-red-50 text-red-600 p-4 rounded text-sm text-center border border-red-100 flex items-center justify-center gap-2"><i class="fas fa-exclamation-circle"></i> No orders found for ${phone}</div>`;
+            resDiv.innerHTML = `<div class="bg-primary/5 text-primary p-4 rounded text-sm text-center border border-primary/20 flex items-center justify-center gap-2"><i class="fas fa-exclamation-circle"></i> No orders found for ${phone}</div>`;
         }
     } catch(e) {
-        resDiv.innerHTML = `<div class="bg-red-50 text-red-600 p-4 rounded text-sm text-center border border-red-100">An error occurred. Please try again.</div>`;
+        resDiv.innerHTML = `<div class="bg-primary/5 text-primary p-4 rounded text-sm text-center border border-primary/20">An error occurred. Please try again.</div>`;
     }
 });
 </script>

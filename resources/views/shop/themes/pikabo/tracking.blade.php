@@ -16,7 +16,7 @@
             </div>
             <input type="text" name="order_id" value="{{ request('order_id') }}" placeholder="Enter 11-digit mobile number"
                 class="flex-1 py-3.5 px-4 text-sm font-medium text-dark focus:outline-none border-none placeholder-gray-400">
-            <button type="submit" class="bg-bdblue hover:bg-bddeep text-white px-6 font-bold text-sm uppercase tracking-wider transition">
+            <button type="submit" class="bg-primary hover:bg-bddeep text-white px-6 font-bold text-sm uppercase tracking-wider transition">
                 Track
             </button>
         </form>
@@ -25,11 +25,11 @@
     @if(request('order_id'))
     <div>
         <h4 class="text-center mb-6 text-sm font-bold text-gray-700 border-b border-gray-200 pb-4">
-            Orders for <span class="bg-blue-50 text-bdblue px-2 py-0.5 rounded ml-1">{{ request('order_id') }}</span>
+            Orders for <span class="bg-primary/10 text-primary px-2 py-0.5 rounded ml-1">{{ request('order_id') }}</span>
         </h4>
 
         @forelse($orders ?? [] as $o)
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4 hover:border-bdblue transition relative overflow-hidden">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4 hover:border-primary transition relative overflow-hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-5 border-b border-gray-100">
                     <div>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Order Number</span>
@@ -62,7 +62,7 @@
                     </div>
                     @if($o->courier_name)
                     <div>
-                        <span class="text-[10px] font-bold text-bdblue uppercase block mb-1">Courier</span>
+                        <span class="text-[10px] font-bold text-primary uppercase block mb-1">Courier</span>
                         <span class="text-sm font-bold text-gray-800 block">{{ $o->courier_name }}</span>
                         @if($o->tracking_code)<span class="text-[10px] text-gray-500 font-mono">{{ $o->tracking_code }}</span>@endif
                     </div>
@@ -72,10 +72,10 @@
                 @if($o->order_status == 'shipped')
                 <div class="mt-6 pt-5 border-t border-gray-100">
                     <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">
-                        <span>Ordered</span><span>Processing</span><span class="text-bdblue">Shipped</span><span>Delivered</span>
+                        <span>Ordered</span><span>Processing</span><span class="text-primary">Shipped</span><span>Delivered</span>
                     </div>
                     <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-bdblue rounded-full w-[75%]"></div>
+                        <div class="h-full bg-primary rounded-full w-[75%]"></div>
                     </div>
                 </div>
                 @endif
@@ -85,7 +85,7 @@
                 <i class="fas fa-search text-3xl text-gray-300 mb-4 inline-block"></i>
                 <h3 class="text-base font-bold text-gray-700 mb-2">No orders found</h3>
                 <p class="text-[11px] text-gray-500 mb-6">We couldn't find any orders matching this mobile number.</p>
-                <a href="{{ $baseUrl }}" class="bg-white border border-gray-200 hover:border-bdblue text-bdblue px-6 py-2 rounded text-sm font-bold transition shadow-sm">
+                <a href="{{ $baseUrl }}" class="bg-white border border-gray-200 hover:border-primary text-primary px-6 py-2 rounded text-sm font-bold transition shadow-sm">
                     Return to Shopping
                 </a>
             </div>

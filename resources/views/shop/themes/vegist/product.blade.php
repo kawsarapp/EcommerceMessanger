@@ -67,7 +67,7 @@
                  @click="showLightbox = true; lightboxImg = activeImage">
 
                 @if($pct > 0)
-                <div class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-20 shadow">-{{$pct}}%</div>
+                <div class="absolute top-3 left-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded z-20 shadow">-{{$pct}}%</div>
                 @endif
 
                 {{-- Normal image (desktop hides on zoom) --}}
@@ -145,7 +145,7 @@
                     @if($inStock)
                         <span class="text-green-600 font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>In Stock @if($stockQty > 0)<span class="text-gray-400">({{$stockQty}} left)</span>@endif</span>
                     @else
-                        <span class="text-red-500 font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>Out of Stock</span>
+                        <span class="text-primary font-medium"><i class="fas fa-circle text-[7px] mr-1"></i>Out of Stock</span>
                     @endif
                 </div>
                 @if($product->sku)
@@ -158,7 +158,7 @@
                 <span class="text-3xl font-black text-dark">৳<span x-text="Number(currentPrice).toLocaleString('en-BD')"></span></span>
                 @if($pct > 0)
                 <span class="text-lg text-gray-400 line-through">৳{{number_format((float)$product->regular_price)}}</span>
-                <span class="text-xs bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded font-semibold">Save {{$pct}}%</span>
+                <span class="text-xs bg-primary/5 text-primary border border-primary/20 px-2 py-0.5 rounded font-semibold">Save {{$pct}}%</span>
                 @endif
             </div>
 
@@ -274,9 +274,9 @@
 
             {{-- Wishlist --}}
             <button type="button" @click="toggleWishlist"
-                    class="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition mb-6 group w-max">
+                    class="flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition mb-6 group w-max">
                 <i class="far fa-heart group-hover:hidden"></i>
-                <i class="fas fa-heart hidden group-hover:block text-red-500"></i>
+                <i class="fas fa-heart hidden group-hover:block text-primary"></i>
                 <span>Add to Wishlist</span>
             </button>
 
@@ -306,7 +306,7 @@
                             <i class="fab fa-whatsapp"></i>
                         </a>
                         <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(request()->fullUrl()) }}&description={{ urlencode($product->name) }}"
-                           target="_blank" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-600 hover:text-white flex items-center justify-center text-gray-500 transition text-xs">
+                           target="_blank" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center text-gray-500 transition text-xs">
                             <i class="fab fa-pinterest-p"></i>
                         </a>
                     </div>
@@ -317,7 +317,7 @@
             <div class="flex items-center gap-3 mt-4">
                 <span class="text-[11px] text-gray-400">Secure checkout:</span>
                 <i class="fab fa-cc-visa text-2xl text-blue-700"></i>
-                <i class="fab fa-cc-mastercard text-2xl text-red-500"></i>
+                <i class="fab fa-cc-mastercard text-2xl text-primary"></i>
                 <i class="fab fa-cc-paypal text-2xl text-blue-500"></i>
             </div>
         </div>
@@ -516,7 +516,7 @@
             <div class="bg-white group rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition duration-300 shrink-0 w-[55vw] sm:w-[40vw] md:w-auto snap-start">
                 <div class="relative bg-gray-50 aspect-square flex items-center justify-center p-5 overflow-hidden mix-blend-multiply">
                     @if($rpPct > 0)
-                    <div class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">-{{$rpPct}}%</div>
+                    <div class="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">-{{$rpPct}}%</div>
                     @endif
 
                     <a href="{{$clean?$baseUrl.'/product/'.$rp->slug:route('shop.product',['shop'=>$client->slug,'product'=>$rp->slug])}}" class="block w-full h-full">

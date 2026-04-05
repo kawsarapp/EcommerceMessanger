@@ -56,7 +56,7 @@
         
         {{-- Product Image --}}
         <div class="lg:col-span-5 flex flex-col items-center relative">
-            @if($product->sale_price)<span class="absolute top-0 left-4 bg-swred text-white text-[11px] font-bold px-2 py-0.5 z-10 rounded-sm shadow-sm">SALE</span>@endif
+            @if($product->sale_price)<span class="absolute top-0 left-4 bg-primary text-white text-[11px] font-bold px-2 py-0.5 z-10 rounded-sm shadow-sm">SALE</span>@endif
             
             <div class="w-full aspect-square border border-gray-100 p-4 mb-4 flex items-center justify-center relative bg-white">
                 <img :src="mainImg" class="max-w-full max-h-full object-contain" loading="lazy" alt="{{ $product->name }}">
@@ -67,13 +67,13 @@
             @if($product->gallery && count($product->gallery) > 0)
             <div class="flex gap-3 justify-center w-full flex-wrap">
                 <div @click="mainImg = '{{ asset('storage/'.$product->thumbnail) }}'" 
-                     :class="mainImg === '{{ asset('storage/'.$product->thumbnail) }}' ? 'border-swred' : 'border-gray-200'"
+                     :class="mainImg === '{{ asset('storage/'.$product->thumbnail) }}' ? 'border-primary' : 'border-gray-200'"
                      class="w-16 h-16 bg-white border cursor-pointer p-1.5 rounded-sm hover:border-gray-400 transition">
                     <img src="{{ asset('storage/'.$product->thumbnail) }}" loading="lazy" class="w-full h-full object-contain" alt="{{ $product->name }}">
                 </div>
                 @foreach($product->gallery as $img)
                 <div @click="mainImg = '{{ asset('storage/'.$img) }}'" 
-                     :class="mainImg === '{{ asset('storage/'.$img) }}' ? 'border-swred' : 'border-gray-200'"
+                     :class="mainImg === '{{ asset('storage/'.$img) }}' ? 'border-primary' : 'border-gray-200'"
                      class="w-16 h-16 bg-white border cursor-pointer p-1.5 rounded-sm hover:border-gray-400 transition">
                     <img src="{{ asset('storage/'.$img) }}" class="w-full h-full object-contain" loading="lazy" alt="{{ $product->name }}">
                 </div>
@@ -83,7 +83,7 @@
 
             @if($product->video_url)
             <div class="mt-4 w-full px-4 mb-2">
-                <a href="{{ $product->video_url }}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 bg-red-50 text-swred border border-red-200 rounded text-sm font-bold hover:bg-swred hover:text-white transition">
+                <a href="{{ $product->video_url }}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 bg-primary/5 text-primary border border-red-200 rounded text-sm font-bold hover:bg-primary hover:text-white transition">
                     <i class="fab fa-youtube text-lg"></i> Watch Product Video
                 </a>
             </div>
@@ -98,7 +98,7 @@
             <h1 class="text-[17px] text-gray-800 font-bold leading-snug mb-3">{{ $product->name }}</h1>
             
             <div class="flex items-center gap-2 mb-5">
-                <span class="text-3xl font-black text-swred">৳{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
+                <span class="text-3xl font-black text-primary">৳{{ number_format($product->sale_price ?? $product->regular_price, 0) }}</span>
                 @if($product->sale_price)
                     <del class="text-[15px] text-gray-400 font-medium ml-1">৳{{ number_format($product->regular_price, 0) }}</del>
                     <span class="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
@@ -130,7 +130,7 @@
                     <span class="text-[11px] font-bold text-gray-700">SKU: <span class="font-normal text-gray-500">{{ $product->id }}</span></span>
                     @if($client->show_stock ?? true)
                         @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                            <span class="text-[11px] font-bold text-red-500 flex items-center gap-1"><i class="fas fa-times-circle"></i> Out of stock</span>
+                            <span class="text-[11px] font-bold text-primary flex items-center gap-1"><i class="fas fa-times-circle"></i> Out of stock</span>
                         @else
                             <span class="text-[11px] font-bold text-green-600 flex items-center gap-1"><i class="fas fa-check-circle"></i> In-stock</span>
                         @endif
@@ -205,7 +205,7 @@
 
     {{-- Reviews --}}
     <div class="mt-8 mb-12">
-        <div class="bg-swyellow text-swdark font-bold text-xs px-6 py-2 rounded-full inline-block shadow-sm mb-4">Customer Reviews</div>
+        <div class="bg-secondary text-swdark font-bold text-xs px-6 py-2 rounded-full inline-block shadow-sm mb-4">Customer Reviews</div>
         <div class="border border-gray-200 rounded-sm bg-white p-8 flex flex-col items-center justify-center">
             <div class="w-full max-w-2xl">
                 @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
@@ -226,11 +226,11 @@
                 </a>
                 <div class="text-center mt-auto flex flex-col items-center">
                     <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="w-full">
-                        <h4 class="text-[11px] font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-1 hover:text-swred transition">{{ $p->name }}</h4>
+                        <h4 class="text-[11px] font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-1 hover:text-primary transition">{{ $p->name }}</h4>
                     </a>
                     <div class="flex items-center justify-center gap-1.5 mb-2">
                         @if($p->sale_price)<del class="text-[9px] text-gray-400">৳{{ number_format((float)$p->regular_price, 0) }}</del>@endif
-                        <span class="font-bold text-swred text-xs">৳{{ number_format((float)($p->sale_price ?? $p->regular_price ?? 0), 0) }}</span>
+                        <span class="font-bold text-primary text-xs">৳{{ number_format((float)($p->sale_price ?? $p->regular_price ?? 0), 0) }}</span>
                     </div>
                     @if($client->show_order_button ?? true)
                     <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full">
@@ -255,17 +255,17 @@
             <div class="sw-scroll-track" x-data="{}" id="relatedSlider">
                 @foreach($related as $p)
                 <div class="sw-card group/card min-w-[160px] md:min-w-[200px] lg:min-w-[215px]">
-                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-swred text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
+                    @if($p->sale_price)<span class="absolute top-0 left-0 bg-primary text-white text-[10px] font-bold px-1.5 py-1 z-10 flex flex-col items-center leading-none rounded-br-sm shadow-sm"><span class="text-[8px]">৳{{ $p->regular_price - $p->sale_price }}</span><span>OFF</span></span>@endif
                     <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="flex items-center justify-center h-40 mb-2 mt-4">
                         <img src="{{ asset('storage/'.$p->thumbnail) }}" loading="lazy" class="max-w-full max-h-full object-contain group-hover/card:scale-105 transition duration-300" alt="{{ $p->name }}">
                     </a>
                     <div class="text-center mt-auto flex flex-col items-center">
                         <a href="{{ $baseUrl.'/product/'.$p->slug }}" class="w-full">
-                            <h4 class="text-xs font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-2 hover:text-swred transition">{{ $p->name }}</h4>
+                            <h4 class="text-xs font-bold text-gray-800 line-clamp-2 h-8 leading-snug mb-2 hover:text-primary transition">{{ $p->name }}</h4>
                         </a>
                         <div class="flex items-center justify-center gap-1.5 mb-2">
                             @if($p->sale_price)<del class="text-[11px] text-gray-400">৳{{ number_format((float)$p->regular_price, 0) }}</del>@endif
-                            <span class="font-bold text-swred text-sm">৳{{ number_format((float)($p->sale_price ?? $p->regular_price ?? 0), 0) }}</span>
+                            <span class="font-bold text-primary text-sm">৳{{ number_format((float)($p->sale_price ?? $p->regular_price ?? 0), 0) }}</span>
                         </div>
                         @if($client->show_order_button ?? true)
                         <form action="{{ $baseUrl.'/checkout/'.$p->slug }}" method="GET" class="w-full mt-1">

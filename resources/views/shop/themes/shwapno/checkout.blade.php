@@ -78,17 +78,17 @@
                 
                 <div class="grid sm:grid-cols-2 gap-4">
                     <div class="sw-input-group">
-                        <label class="sw-label">Full Name <span class="text-swred">*</span></label>
+                        <label class="sw-label">Full Name <span class="text-primary">*</span></label>
                         <input type="text" name="customer_name" required placeholder="John Doe" class="sw-input">
                     </div>
                     <div class="sw-input-group">
-                        <label class="sw-label">Mobile Number <span class="text-swred">*</span></label>
+                        <label class="sw-label">Mobile Number <span class="text-primary">*</span></label>
                         <input type="tel" name="customer_phone" required placeholder="01XXXXXXXXX" class="sw-input">
                     </div>
                 </div>
                 
                 <div class="sw-input-group mb-0">
-                    <label class="sw-label">Complete Address <span class="text-swred">*</span></label>
+                    <label class="sw-label">Complete Address <span class="text-primary">*</span></label>
                     <textarea name="shipping_address" required rows="3" placeholder="House No, Road No, Area, City" class="sw-input resize-none"></textarea>
                 </div>
             </div>
@@ -100,12 +100,12 @@
                     <label class="relative block m-0 p-0">
                         <input type="radio" name="_area_temp" value="inside" @change="area = 'inside'" class="peer hidden sw-radio-input" checked>
                         <div class="sw-radio-container h-full">
-                            <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-swred flex items-center justify-center shrink-0 bg-white mt-0.5">
-                                <div class="w-2.5 h-2.5 rounded-full bg-swred opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
+                            <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 bg-white mt-0.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': area === 'inside'}"></div>
                             </div>
                             <div>
                                 <div class="text-sm font-bold text-gray-800">Inside Dhaka</div>
-                                <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-swred font-bold">৳{{$client->delivery_charge_inside ?? 60}}</span></div>
+                                <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-primary font-bold">৳{{$client->delivery_charge_inside ?? 60}}</span></div>
                             </div>
                         </div>
                     </label>
@@ -113,12 +113,12 @@
                     <label class="relative block m-0 p-0">
                         <input type="radio" name="_area_temp" value="outside" @change="area = 'outside'" class="peer hidden sw-radio-input">
                         <div class="sw-radio-container h-full">
-                            <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-swred flex items-center justify-center shrink-0 bg-white mt-0.5">
-                                <div class="w-2.5 h-2.5 rounded-full bg-swred opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
+                            <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 bg-white mt-0.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': area === 'outside'}"></div>
                             </div>
                             <div>
                                 <div class="text-sm font-bold text-gray-800">Outside Dhaka</div>
-                                <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-swred font-bold">৳{{$client->delivery_charge_outside ?? 120}}</span></div>
+                                <div class="text-[11px] text-gray-500 mt-1">Delivery Charge: <span class="text-primary font-bold">৳{{$client->delivery_charge_outside ?? 120}}</span></div>
                             </div>
                         </div>
                     </label>
@@ -137,8 +137,8 @@
                            class="peer hidden sw-radio-input"
                            {{ $loop->first ? 'checked' : '' }}>
                     <div class="sw-radio-container items-center mb-0">
-                        <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-swred flex items-center justify-center shrink-0 bg-white">
-                            <div class="w-2.5 h-2.5 rounded-full bg-swred opacity-0" :class="{'opacity-100': paymentMethod==='{{ $payKey }}'}"></div>
+                        <div class="w-5 h-5 rounded-full border border-gray-300 peer-checked:border-primary flex items-center justify-center shrink-0 bg-white">
+                            <div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='{{ $payKey }}'}"></div>
                         </div>
                         <div class="flex items-center gap-3">
                             @if($payKey === 'cod')
@@ -203,27 +203,27 @@
                     </div>
                     <div x-show="couponApplied" class="bg-green-50 border border-green-200 p-3 flex justify-between items-center text-xs font-bold text-green-700 rounded-sm">
                         <div><i class="fas fa-check-circle mr-1"></i> Coupon <span x-text="couponCode" class="uppercase"></span> Applied</div>
-                        <button type="button" @click="couponApplied=false; couponDiscount=0; couponCode=''" class="text-red-500 hover:text-red-700 underline text-[10px]">Remove</button>
+                        <button type="button" @click="couponApplied=false; couponDiscount=0; couponCode=''" class="text-primary hover:text-red-700 underline text-[10px]">Remove</button>
                     </div>
-                    <p x-show="couponError" x-text="couponError" class="text-[10px] text-red-500 mt-1.5 font-medium"></p>
+                    <p x-show="couponError" x-text="couponError" class="text-[10px] text-primary mt-1.5 font-medium"></p>
                 </div>
 
                 {{-- Totals --}}
                 <div class="space-y-4 text-[13px] mb-6 border-b border-gray-100 pb-6">
                     <div class="flex justify-between text-gray-600"><span class="font-medium">Sub-Total (<span x-text="qty"></span>x)</span> <span class="font-bold">৳<span x-text="subtotal.toLocaleString()"></span></span></div>
                     <div class="flex justify-between text-gray-600"><span class="font-medium">Delivery Fee</span> <span class="font-bold text-gray-800">৳<span x-text="delivery"></span></span></div>
-                    <div x-show="couponApplied" class="flex justify-between text-red-500"><span class="font-bold">Discount</span> <span class="font-bold">- ৳<span x-text="couponDiscount.toLocaleString()"></span></span></div>
+                    <div x-show="couponApplied" class="flex justify-between text-primary"><span class="font-bold">Discount</span> <span class="font-bold">- ৳<span x-text="couponDiscount.toLocaleString()"></span></span></div>
                 </div>
                 
                 <div class="flex justify-between items-center bg-gray-50 p-4 rounded mb-6 border border-gray-100">
                     <span class="text-sm font-bold text-gray-800 uppercase">Total Payable</span>
-                    <span class="text-2xl font-black text-swred">৳<span x-text="total.toLocaleString()"></span></span>
+                    <span class="text-2xl font-black text-primary">৳<span x-text="total.toLocaleString()"></span></span>
                 </div>
 
                 @if(!empty($client->show_terms_checkbox))
-                <div class="mb-6 p-4 bg-red-50/50 border border-red-100 rounded">
+                <div class="mb-6 p-4 bg-red-50/50 border border-primary/20 rounded">
                     <label class="flex items-start gap-3 cursor-pointer group">
-                        <input type="checkbox" name="terms" required class="mt-0.5 min-w-[16px] w-4 h-4 text-swred bg-white border-gray-300 rounded focus:ring-swred accent-swred cursor-pointer">
+                        <input type="checkbox" name="terms" required class="mt-0.5 min-w-[16px] w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-swred accent-swred cursor-pointer">
                         <div>
                             <span class="text-xs font-bold text-gray-800 block">
                                 I have read and agree to the 
@@ -232,7 +232,7 @@
                                 @else
                                     Terms & Conditions
                                 @endif
-                                <span class="text-swred ml-1">*</span>
+                                <span class="text-primary ml-1">*</span>
                             </span>
                             @if(!empty($client->terms_conditions_text))
                             <div class="text-[10px] text-gray-500 font-medium leading-relaxed mt-1.5 flex gap-1.5">

@@ -72,7 +72,7 @@
                             <h4 class="text-sm font-semibold text-dark line-clamp-2 leading-tight" x-text="item.name"></h4>
                             <p x-show="item.variant" class="text-xs text-primary mt-1 font-medium" x-text="item.variant"></p>
                             <button @click="removeItem(item.key)"
-                                    class="text-[11px] text-red-400 hover:text-red-600 transition mt-2 flex items-center gap-1">
+                                    class="text-[11px] text-red-400 hover:text-primary transition mt-2 flex items-center gap-1">
                                 <i class="fas fa-trash-alt text-[10px]"></i> Remove
                             </button>
                         </div>
@@ -109,7 +109,7 @@
                 <a href="{{ $baseUrl }}" class="text-sm text-primary font-medium hover:underline flex items-center gap-2">
                     <i class="fas fa-arrow-left text-xs"></i> Continue Shopping
                 </a>
-                <button @click="clearCart()" class="text-sm text-red-400 hover:text-red-600 transition flex items-center gap-2">
+                <button @click="clearCart()" class="text-sm text-red-400 hover:text-primary transition flex items-center gap-2">
                     <i class="fas fa-trash-alt text-xs"></i> Clear Cart
                 </button>
             </div>
@@ -153,7 +153,7 @@
                 {{-- Payment icons --}}
                 <div class="flex items-center justify-center gap-3 mt-3">
                     <i class="fab fa-cc-visa text-2xl text-blue-700"></i>
-                    <i class="fab fa-cc-mastercard text-2xl text-red-500"></i>
+                    <i class="fab fa-cc-mastercard text-2xl text-primary"></i>
                     <i class="fab fa-cc-paypal text-2xl text-blue-500"></i>
                 </div>
             </div>

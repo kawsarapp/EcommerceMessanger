@@ -119,17 +119,17 @@ function productApp() {
                 {{-- Vertical Thumbnails --}}
                 <div class="w-16 flex flex-col gap-2 overflow-y-auto thumbnail-scroll max-h-[500px]">
                     <div @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" 
-                         :class="{ 'border-bdblue border-2': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
+                         :class="{ 'border-primary border-2': mainImg === '{{asset('storage/'.$product->thumbnail)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$product->thumbnail)}}' }"
                          class="w-16 h-16 border rounded cursor-pointer p-1 flex items-center justify-center bg-white shrink-0">
                          @if($product->sale_price)
-                            <span class="absolute text-[8px] bg-red-500 text-white font-bold px-1 top-0 left-0 bg-yellow-400 text-black z-10">%</span>
+                            <span class="absolute text-[8px] bg-primary text-white font-bold px-1 top-0 left-0 bg-yellow-400 text-black z-10">%</span>
                          @endif
                         <img src="{{asset('storage/'.$product->thumbnail)}}" class="max-w-full max-h-full object-contain">
                     </div>
                     
                     @foreach($product->gallery ?? [] as $img)
                     <div @click="mainImg = '{{asset('storage/'.$img)}}'" 
-                         :class="{ 'border-bdblue border-2': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
+                         :class="{ 'border-primary border-2': mainImg === '{{asset('storage/'.$img)}}', 'border-gray-200': mainImg !== '{{asset('storage/'.$img)}}' }"
                          class="w-16 h-16 border rounded cursor-pointer p-1 flex items-center justify-center bg-white shrink-0">
                         <img src="{{asset('storage/'.$img)}}" class="max-w-full max-h-full object-contain">
                     </div>
@@ -139,12 +139,12 @@ function productApp() {
                 {{-- Main Image Area --}}
                 <div class="flex-1 border border-gray-100 rounded p-4 relative flex justify-center items-center min-h-[400px]">
                     @if($product->sale_price)
-                        <div class="absolute top-4 left-4 bg-red-600 text-white font-extrabold px-3 py-1.5 rounded-lg shadow-sm z-10">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF</div>
+                        <div class="absolute top-4 left-4 bg-primary text-white font-extrabold px-3 py-1.5 rounded-lg shadow-sm z-10">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF</div>
                     @endif
                     
                     <img :src="mainImg" class="max-w-full max-h-[400px] object-contain transition-opacity duration-300 z-0" alt="{{$product->name}}">
                     
-                    <button class="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition"><i class="fas fa-heart text-2xl"></i></button>
+                    <button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition"><i class="fas fa-heart text-2xl"></i></button>
                     
                     <div class="absolute bottom-4 left-0 right-0 flex gap-4 px-4 w-full justify-between">
                         
@@ -160,7 +160,7 @@ function productApp() {
                 {{-- Title & Meta --}}
                 <div class="flex justify-between items-start mb-2">
                     <h1 class="text-xl font-bold text-gray-800 leading-snug">{{$product->name}}</h1>
-                    <button class="text-gray-400 hover:text-bdblue flex items-center gap-1 text-xs whitespace-nowrap"><i class="fas fa-share"></i> Share</button>
+                    <button class="text-gray-400 hover:text-primary flex items-center gap-1 text-xs whitespace-nowrap"><i class="fas fa-share"></i> Share</button>
                 </div>
                 
                 <div class="flex items-center gap-2 text-[10px] font-semibold text-gray-500 mb-2">
@@ -181,21 +181,21 @@ function productApp() {
                     </div>
                     <span>({{ $reviewsCount }} Reviews)</span>
                     <span class="text-gray-300 mx-1">|</span>
-                    <a href="#reviews-section" class="text-bdblue hover:underline">Add Your Review</a>
+                    <a href="#reviews-section" class="text-primary hover:underline">Add Your Review</a>
                 </div>
 
                 <div class="flex items-center gap-2 text-xs text-gray-600 mb-4 pb-4 border-b border-gray-100">
-                    <span>Brand: <a href="#" class="text-bdblue hover:underline">{{$product->brand ?? 'Generic'}}</a></span>
+                    <span>Brand: <a href="#" class="text-primary hover:underline">{{$product->brand ?? 'Generic'}}</a></span>
                     <span class="text-gray-300">|</span>
-                    <span>Sold by: <a href="#" class="text-bdblue hover:underline">{{$client->shop_name}} Official</a></span>
+                    <span>Sold by: <a href="#" class="text-primary hover:underline">{{$client->shop_name}} Official</a></span>
                 </div>
 
                 {{-- Pricing --}}
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="text-xl font-bold text-bdblue">?<span x-text="displayPrice"></span></span>
+                    <span class="text-xl font-bold text-primary">?<span x-text="displayPrice"></span></span>
                     @if($product->sale_price)
                         <del class="text-sm text-gray-400">?{{number_format($product->regular_price)}}</del>
-                        <span class="text-[10px] font-bold text-red-500 border border-red-500 px-1 py-0.5 rounded">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}%</span>
+                        <span class="text-[10px] font-bold text-primary border border-primary px-1 py-0.5 rounded">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}%</span>
                     @endif
                 </div>
 
@@ -212,7 +212,7 @@ function productApp() {
                 <div class="text-xs text-gray-700 space-y-4">
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
                         <span>EMI from : ?{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
-                        <a href="#" class="text-bdblue hover:underline flex items-center gap-1 font-semibold">Know More <i class="fas fa-chevron-right text-[8px]"></i></a>
+                        <a href="#" class="text-primary hover:underline flex items-center gap-1 font-semibold">Know More <i class="fas fa-chevron-right text-[8px]"></i></a>
                     </div>
                     <div class="flex items-center gap-2 p-2">
                         <span class="font-semibold text-gray-600 w-20">Warranty :</span>
@@ -222,13 +222,13 @@ function productApp() {
                     <div class="pt-4">
                         <h4 class="font-bold text-gray-800 mb-2">Available Offer</h4>
                         <div class="flex items-start gap-2 mb-4">
-                            <i class="fas fa-tag text-red-500 text-sm mt-0.5"></i>
-                            <span class="text-gray-600 leading-tight">Please visit this link for Bimaify Insurance Details: <a href="#" class="text-bdblue hover:underline">Bimaify Insurance</a></span>
+                            <i class="fas fa-tag text-primary text-sm mt-0.5"></i>
+                            <span class="text-gray-600 leading-tight">Please visit this link for Bimaify Insurance Details: <a href="#" class="text-primary hover:underline">Bimaify Insurance</a></span>
                         </div>
                         
-                        <div class="bg-blue-50 border border-blue-100 p-3 rounded flex items-center justify-between">
+                        <div class="bg-primary/10 border border-blue-100 p-3 rounded flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-shield-alt text-bdblue text-lg"></i>
+                                <i class="fas fa-shield-alt text-primary text-lg"></i>
                                 <span class="font-semibold text-gray-700">{{$client->shop_name}} Assured</span>
                             </div>
                             <i class="fas fa-chevron-right text-gray-400 text-[10px]"></i>
@@ -243,7 +243,7 @@ function productApp() {
                 
                 <div class="bg-[#f0f8ff] border border-blue-100 p-4 rounded mb-4">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="bg-bdblue text-white w-8 h-8 rounded flex items-center justify-center shadow-sm">
+                        <div class="bg-primary text-white w-8 h-8 rounded flex items-center justify-center shadow-sm">
                             <i class="fas fa-star text-xs"></i>
                         </div>
                         <span class="font-bold text-sm text-dark">Club Points</span>
@@ -257,7 +257,7 @@ function productApp() {
                         <i class="fas fa-undo mt-0.5 text-gray-400"></i>
                         <div>
                             <span class="font-semibold block text-gray-800">3 Days Easy Return</span>
-                            <a href="#" class="text-bdblue hover:underline">Know More</a>
+                            <a href="#" class="text-primary hover:underline">Know More</a>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
@@ -283,9 +283,9 @@ function productApp() {
         <div class="mb-12 mt-8" id="reviews-section">
             {{-- Tab Headers --}}
             <div class="flex border-b border-gray-200 gap-1 overflow-x-auto hide-scroll bg-white rounded-t">
-                <button @click="tab = 'description'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'description', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'description'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Description</button>
-                <button @click="tab = 'specifications'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'specifications', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'specifications'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Specifications</button>
-                <button @click="tab = 'reviews'" :class="{'text-bdblue border-b-2 border-bdblue font-bold': tab === 'reviews', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'reviews'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Reviews ({{ $product->reviews_count ?? 0 }})</button>
+                <button @click="tab = 'description'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'description', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'description'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Description</button>
+                <button @click="tab = 'specifications'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'specifications', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'specifications'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Specifications</button>
+                <button @click="tab = 'reviews'" :class="{'text-primary border-b-2 border-primary font-bold': tab === 'reviews', 'text-gray-500 hover:text-gray-700 font-semibold border-b-2 border-transparent': tab !== 'reviews'}" class="px-6 py-4 text-sm whitespace-nowrap transition">Reviews ({{ $product->reviews_count ?? 0 }})</button>
             </div>
             
             {{-- Tab Contents --}}

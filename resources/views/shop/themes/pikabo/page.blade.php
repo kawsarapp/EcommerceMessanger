@@ -12,9 +12,9 @@
         
         {{-- Breadcrumb --}}
         <nav class="flex items-center text-[11px] text-gray-500 mb-8 bg-white py-2.5 px-4 rounded-sm border border-gray-100 shadow-sm w-fit">
-            <a href="{{$baseUrl}}" class="hover:text-bdblue transition"><i class="fas fa-home"></i></a>
+            <a href="{{$baseUrl}}" class="hover:text-primary transition"><i class="fas fa-home"></i></a>
             <i class="fas fa-chevron-right text-[8px] mx-3 text-gray-300"></i>
-            <span class="text-bdblue font-medium">{{$page->title}}</span>
+            <span class="text-primary font-medium">{{$page->title}}</span>
         </nav>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10">
@@ -46,7 +46,7 @@
                 {{-- Quick Links --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 font-bold text-slate-700 uppercase tracking-wider text-xs flex items-center gap-2">
-                        <i class="fas fa-list text-bdblue/70"></i> Information
+                        <i class="fas fa-list text-primary/70"></i> Information
                     </div>
                     <ul class="flex flex-col text-sm font-medium">
                         @foreach($pages as $p)
@@ -54,7 +54,7 @@
                                 $pageUrl = $clean ? 'https://'.$clean.'/'.$p->slug : route('shop.page.slug', ['slug' => $client->slug, 'pageSlug' => $p->slug]);
                             @endphp
                             <li>
-                                <a href="{{$pageUrl}}" class="flex items-center justify-between px-5 py-3 border-b border-gray-50 last:border-0 {{ $page->id === $p->id ? 'text-bdblue bg-blue-50/50 font-bold' : 'text-slate-600 hover:text-bdblue hover:bg-gray-50' }} transition">
+                                <a href="{{$pageUrl}}" class="flex items-center justify-between px-5 py-3 border-b border-gray-50 last:border-0 {{ $page->id === $p->id ? 'text-primary bg-primary/10/50 font-bold' : 'text-slate-600 hover:text-primary hover:bg-gray-50' }} transition">
                                     <span>{{$p->title}}</span>
                                     <i class="fas fa-angle-right text-[10px] opacity-40"></i>
                                 </a>
@@ -64,12 +64,12 @@
                 </div>
 
                 {{-- Contact Support Card --}}
-                <div class="bg-gradient-to-br from-bddeep to-bdblue rounded-xl p-6 text-white text-center shadow-lg relative overflow-hidden">
+                <div class="bg-gradient-to-br from-bddeep to-primary rounded-xl p-6 text-white text-center shadow-lg relative overflow-hidden">
                     <div class="absolute -right-6 -top-6 text-white/10 text-6xl"><i class="fas fa-headset"></i></div>
                     <div class="relative z-10">
                         <h3 class="font-bold text-lg mb-2">Need Assistance?</h3>
                         <p class="text-xs text-blue-100 mb-4 opacity-90 leading-relaxed">Our support team is available via direct messaging to help you with your inquiries.</p>
-                        <a href="{{ $client->fb_page_url ?? '#' }}" target="_blank" class="inline-block bg-white text-bdblue font-bold px-6 py-2.5 rounded-full text-xs hover:bg-gray-100 transition shadow hover:shadow-md w-full">
+                        <a href="{{ $client->fb_page_url ?? '#' }}" target="_blank" class="inline-block bg-white text-primary font-bold px-6 py-2.5 rounded-full text-xs hover:bg-gray-100 transition shadow hover:shadow-md w-full">
                             <i class="fab fa-facebook-messenger mr-1"></i> MSG US
                         </a>
                     </div>

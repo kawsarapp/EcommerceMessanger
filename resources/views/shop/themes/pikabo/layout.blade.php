@@ -157,7 +157,7 @@ $primary='#0084d6';
                     @endforeach
                 @else
                     <a href="{{$baseUrl}}" class="text-sm font-medium hover:text-primary transition {{ request()->is('/') ? 'text-primary' : 'text-gray-700' }}">Home</a>
-                    <a href="{{$baseUrl}}?category=hot-deals" class="text-sm font-medium hover:text-primary transition text-red-600 font-bold">Offer</a>
+                    <a href="{{$baseUrl}}?category=hot-deals" class="text-sm font-medium hover:text-primary transition text-primary font-bold">Offer</a>
                     <a href="{{$baseUrl}}?category=all" class="text-sm font-medium hover:text-primary transition text-gray-700">Products</a>
                 @endif
             </div>
@@ -260,7 +260,7 @@ $primary='#0084d6';
                         <p class="text-[10px] text-gray-400 mb-3 block">Subscribe for exclusive deals & updates</p>
                         <form class="flex overflow-hidden rounded border border-white/20 focus-within:border-primary transition max-w-[200px]">
                             <input type="email" placeholder="Your email" class="w-full bg-white/5 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none border-none">
-                            <button type="button" class="bg-blue-500 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
+                            <button type="button" class="bg-primary/100 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                         </form>
                     </div>
                         <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain" loading="lazy"></div>

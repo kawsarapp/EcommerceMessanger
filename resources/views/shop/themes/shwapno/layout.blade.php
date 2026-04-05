@@ -99,7 +99,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                     </a>
                     
                     @if($client->widgets['location_picker']['active'] ?? false)
-                    <button class="hidden lg:flex items-center gap-2 border border-red-400 bg-red-600/30 hover:bg-red-600/50 transition px-3 py-1.5 rounded-sm text-white text-[11px] h-9">
+                    <button class="hidden lg:flex items-center gap-2 border border-red-400 bg-primary/30 hover:bg-primary/50 transition px-3 py-1.5 rounded-sm text-white text-[11px] h-9">
                         <i class="fas fa-truck text-base"></i>
                         <span class="font-medium whitespace-nowrap">{{ $client->widgets['location_picker']['text'] ?? 'Select delivery location' }}</span>
                         <i class="fas fa-chevron-down text-[9px] ml-1"></i>
@@ -137,7 +137,7 @@ $footerCopyright   = $client->footer_text ?? ('� ' . date('Y') . ' ' . $client
                 {{-- Right Actions (Desktop) --}}
                 <div class="hidden md:flex items-center gap-3 shrink-0">
                     @if($client->widgets['language_switcher']['active'] ?? false)
-                    <a href="#" class="border border-red-400 text-white hover:bg-red-600 px-3 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">?????</a>
+                    <a href="#" class="border border-red-400 text-white hover:bg-primary px-3 py-1.5 text-xs font-bold rounded-sm h-9 flex items-center transition">?????</a>
                     @endif
                     
                     <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="bg-white/10 hover:bg-white/20 border border-red-400 text-white px-4 py-1.5 text-[11px] font-bold rounded-sm h-9 flex items-center gap-2 transition">
