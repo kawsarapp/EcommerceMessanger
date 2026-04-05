@@ -1,8 +1,8 @@
 @php
+    $clean = $clean ?? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain ?? '', '/'));
     $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
     $cartUrl = $clean ? $baseUrl.'/cart/add' : route('shop.cart.add', $client->slug);
     $checkoutUrl = $clean ? $baseUrl.'/checkout/'.$product->slug : route('shop.checkout', ['slug' => $client->slug, 'productSlug' => $product->slug]);
-    
     // Parse Colors & Sizes safely
     $sizes = is_array($product->sizes) ? $product->sizes : (json_decode($product->sizes ?? '[]', true) ?? []);
     $colors = is_array($product->colors) ? $product->colors : (json_decode($product->colors ?? '[]', true) ?? []);
