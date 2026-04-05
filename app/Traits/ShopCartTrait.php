@@ -258,10 +258,20 @@ trait ShopCartTrait
 
         $total = ($subtotal + $shipping) - $discount;
 
+        // Create or Find Customer for CRM
+        $customerId = \Illuminate\Support\Facades\Auth::guard('customer')->id();
+        if (!$customerId && $request->filled('customer_phone')) {
+            $customer = \App\Models\Customer::firstOrCreate(
+                ['client_id' => $client->id, 'phone' => $request->customer_phone],
+                ['name' => $request->customer_name ?? 'Guest User']
+            );
+            $customerId = $customer->id;
+        }
+
         // Create Order
         $order = Order::create([
             'client_id'       => $client->id,
-            'customer_id'     => \Illuminate\Support\Facades\Auth::guard('customer')->id(),
+            'customer_id'     => $customerId,
             'customer_name'   => $request->customer_name,
             'customer_phone'  => $request->customer_phone,
             'shipping_address'=> $request->shipping_address,
