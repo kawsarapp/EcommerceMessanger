@@ -92,7 +92,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </a>
             </div>
             <!-- Right -->
-            <div class="w-1/3 flex justify-end items-center gap-4 md:gap-6">
+            <div class="w-1/3 flex justify-end items-center gap-2 md:gap-4">
+                @if($client->widget('search_bar'))
+                <form action="{{$baseUrl}}" method="GET" class="hidden md:flex items-center border-b border-gray-600 focus-within:border-primary transition-colors pb-1 mr-2">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search...' }}" class="bg-transparent border-none w-20 focus:w-28 transition-all text-[10px] text-white placeholder-gray-500 focus:ring-0 px-1 py-0 outline-none uppercase tracking-widest">
+                    <button type="submit" class="text-gray-400 hover:text-primary"><i class="fas fa-search text-xs"></i></button>
+                </form>
+                @endif
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hidden md:block text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 hover:text-primary transition">Track</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-400 hover:text-primary transition">
@@ -112,7 +118,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             
             <div class="md:col-span-5">
                 <h3 class="font-serif text-3xl mb-6 text-white tracking-widest uppercase">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-xs leading-loose font-light max-w-sm mb-6">{{ $client->description ?? ($client->tagline ?? 'Exquisite craftsmanship and timeless elegance. Curating the world\'s most desired luxury items.') }}</p>
+                <p class="text-gray-500 text-xs leading-loose font-light max-w-sm mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Exquisite craftsmanship and timeless elegance.') }}</p>
                 @if($client->phone) 
                 <p class="text-[10px] font-medium tracking-[0.2em] text-gray-400 uppercase mb-2">Concierge</p>
                 <p class="text-white text-sm font-light tracking-widest mb-4">{{$client->phone}}</p> 

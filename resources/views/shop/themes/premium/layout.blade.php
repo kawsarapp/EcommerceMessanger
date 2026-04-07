@@ -87,6 +87,17 @@
                     {{$client->shop_name}}
                 </span>
             </a>
+            
+            @if($client->widget('search_bar'))
+            <div class="hidden lg:block flex-1 max-w-xl mx-8 relative">
+                <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-full overflow-hidden focus-within:bg-white focus-within:shadow-md transition-all h-11 border border-transparent focus-within:border-gray-200">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search premium products...' }}" 
+                        class="w-full bg-transparent px-5 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none border-none h-full">
+                    <button type="submit" class="bg-transparent text-gray-500 hover:text-primary px-5 h-full"><i class="fas fa-search"></i></button>
+                </form>
+            </div>
+            @endif
+
             <div class="hidden md:flex items-center gap-5">
                 <a href="{{$clean ? $baseUrl.'/track' : route('shop.track',$client->slug)}}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors flex items-center gap-2 bg-gray-100/80 px-4 py-2 rounded-full hover:bg-white hover:shadow-sm">
                     <i class="fas fa-truck-fast"></i> Track Order
@@ -98,6 +109,17 @@
                 @endif
             </div>
         </div>
+        
+        {{-- Mobile Search --}}
+        @if($client->widget('search_bar'))
+        <div class="lg:hidden px-4 pb-3">
+            <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-full overflow-hidden border border-gray-100 h-10">
+                <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search...' }}" 
+                    class="w-full bg-transparent px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none border-none">
+                <button type="submit" class="text-gray-500 px-4"><i class="fas fa-search text-sm"></i></button>
+            </form>
+        </div>
+        @endif
     </header>
 
     <main class="flex-1 w-full pb-20">
@@ -107,7 +129,7 @@
     <footer class="bg-white border-t border-gray-200 mt-auto pt-16 pb-8">
         <div class="max-w-5xl mx-auto px-4 text-center">
             <h3 class="text-2xl font-bold tracking-widest uppercase mb-4">{{$client->shop_name}}</h3>
-            <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xl mx-auto">{{ $client->description ?? ($client->tagline ?? '????? ?????????? ???? ???????? ???? ????? ????, ???? ?????') }}</p>
+            <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xl mx-auto">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'We specialize in curating the finest premium products for your lifestyle.') }}</p>
 
             <div class="flex justify-center gap-6 mb-6 flex-wrap">
                 @if($client->phone)<a href="tel:{{$client->phone}}" class="text-gray-400 hover:text-primary transition flex items-center gap-2 text-sm"><i class="fas fa-phone"></i> {{$client->phone}}</a>@endif

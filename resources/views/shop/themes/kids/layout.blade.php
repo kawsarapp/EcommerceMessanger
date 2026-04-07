@@ -92,12 +92,18 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <span class="shop-name-text text-2xl md:text-4xl font-heading tracking-wide text-slate-800 group-hover:text-primary transition z-10 relative">{{$client->shop_name}}</span>
             </a>
             <!-- Desktop search -->
+            @if($client->widget('search_bar'))
             <div class="hidden lg:flex w-full max-w-lg mx-6 relative">
-                <input type="text" placeholder="Find toys, clothes, games..." class="w-full bg-slate-100 border-4 border-white shadow-inner px-6 py-3 rounded-full text-slate-700 font-bold focus:ring-4 focus:ring-funblue/30 focus:border-funblue transition">
-                <button class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-funblue text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition shadow-md">
-                    <i class="fas fa-search"></i>
-                </button>
+                <form action="{{$baseUrl}}" method="GET" class="w-full relative">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Find toys, clothes, games...' }}" class="w-full bg-slate-100 border-4 border-white shadow-inner px-6 py-3 rounded-full text-slate-700 font-bold focus:ring-4 focus:ring-funblue/30 focus:border-funblue transition">
+                    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-funblue text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition shadow-md">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
             </div>
+            @else
+            <div class="hidden lg:flex w-full max-w-lg mx-6 relative"></div>
+            @endif
             <div class="hidden md:flex items-center gap-3">
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-sm font-bold text-slate-700 hover:text-white transition flex items-center gap-2 bg-white px-4 py-2.5 rounded-full border-4 border-slate-200 hover:border-funblue hover:bg-funblue shadow-sm bouncy whitespace-nowrap">
                     <i class="fas fa-map-marker-alt text-funblue"></i> Track

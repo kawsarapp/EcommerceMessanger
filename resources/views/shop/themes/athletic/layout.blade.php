@@ -152,6 +152,18 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <span class="shop-name-text text-3xl md:text-5xl font-display font-bold uppercase tracking-tight text-dark">{{$client->shop_name}}</span>
             </a>
 
+            {{-- Search Bar --}}
+            @if($client->widget('search_bar'))
+            <div class="hidden md:flex flex-1 max-w-xl mx-8 relative">
+                <form action="{{$baseUrl}}" method="GET" class="w-full flex">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'পণ্য খুঁজুন...' }}" class="w-full bg-gray-100 border-4 border-dark px-6 py-3 font-sans focus:outline-none focus:border-primary skew-x-[4deg]">
+                    <button type="submit" class="bg-dark text-white px-6 border-y-4 border-r-4 border-dark hover:bg-primary transition skew-x-[4deg] ml-[-10px] z-10"><i class="fas fa-search -skew-x-[4deg]"></i></button>
+                </form>
+            </div>
+            @else
+            <div class="hidden md:flex flex-1"></div>
+            @endif
+
             {{-- Right Nav --}}
             <div class="hidden md:flex gap-8 items-center h-full">
                 <a href="{{$baseUrl}}" class="h-full flex items-center font-display text-xl uppercase tracking-wider font-bold hover:text-primary transition-colors border-b-4 border-transparent hover:border-primary">SHOP</a>
@@ -161,6 +173,16 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 @endif
             </div>
         </div>
+        
+        {{-- Mobile Search --}}
+        @if($client->widget('search_bar'))
+        <div class="md:hidden px-4 pb-4 bg-white border-b-4 border-dark">
+            <form action="{{$baseUrl}}" method="GET" class="w-full flex relative">
+                <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'পণ্য খুঁজুন...' }}" class="w-full bg-gray-100 border-4 border-dark px-4 py-2 font-sans focus:outline-none">
+                <button type="submit" class="bg-dark text-white px-4 border-y-4 border-r-4 border-dark"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+        @endif
     </header>
 
     <main class="flex-1 w-full pb-24">
@@ -172,7 +194,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
             <div>
                 <h3 class="font-display font-bold text-4xl uppercase tracking-wider mb-4">{{$client->shop_name}}</h3>
                 <p class="text-gray-400 text-sm font-sans font-semibold leading-relaxed max-w-sm">
-                    {{$client->description ?? ($client->tagline ?? 'আমাদের দোকানে স্বাগতম। সেরা পণ্য, সেরা দামে।')}}
+                    {{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'আমাদের দোকানে স্বাগতম। সেরা পণ্য, সেরা দামে।') }}
                 </p>
             </div>
             

@@ -90,7 +90,13 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </a>
             </div>
             <!-- Right: Messenger -->
-            <div class="w-auto md:w-1/3 flex justify-end items-center gap-4">
+            <div class="w-auto md:w-1/3 flex justify-end items-center gap-4 border-none min-w-[200px]">
+                @if($client->widget('search_bar'))
+                <form action="{{$baseUrl}}" method="GET" class="hidden md:flex border-b border-gray-200 focus-within:border-black transition-colors min-w-[150px]">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search...' }}" class="w-full bg-transparent border-none py-1 px-2 text-xs outline-none text-gray-700 placeholder-gray-400">
+                    <button type="submit" class="text-gray-400 hover:text-black transition px-2"><i class="fas fa-search"></i></button>
+                </form>
+                @endif
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="text-gray-400 hover:text-black transition">
                     <i class="fab fa-facebook-messenger text-lg md:text-xl"></i>
@@ -107,7 +113,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
     <footer class="bg-white border-t border-gray-100 pt-24 pb-12 mt-auto">
         <div class="max-w-[100rem] mx-auto px-4 sm:px-8 flex flex-col items-center">
             <h3 class="font-heading font-black text-4xl mb-4 text-center">{{$client->shop_name}}</h3>
-            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-8">{{ $client->description ?? ($client->tagline ?? '????? ??????? ?????? ???????? ???? ????? ????? ? ??????????') }}</p>
+            <p class="text-gray-400 text-sm font-medium leading-relaxed max-w-lg text-center mx-auto mb-8">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Discover premium quality products crafted with elegance and style.') }}</p>
             
             <div class="flex gap-6 mb-8">
                 @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-400 hover:text-black transition"><i class="fab fa-facebook-f"></i></a>@endif

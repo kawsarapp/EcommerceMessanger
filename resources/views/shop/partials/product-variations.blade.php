@@ -44,7 +44,7 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach($sizes as $s)
                     <button type="button" 
-                            @click="form.size = form.size === '{{ $s }}' ? '' : '{{ $s }}'"
+                            @click="form.size = form.size === '{{ $s }}' ? '' : '{{ $s }}'; $dispatch('variant-change', {size: form.size, color: form.color})"
                             :class="form.size === '{{ $s }}' ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-500'"
                             class="border rounded-md px-4 py-2 text-sm font-semibold transition-all">
                         {{ $s }}
@@ -63,7 +63,7 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach($colors as $c)
                     <button type="button" 
-                            @click="form.color = form.color === '{{ $c }}' ? '' : '{{ $c }}'"
+                            @click="form.color = form.color === '{{ $c }}' ? '' : '{{ $c }}'; $dispatch('variant-change', {size: form.size, color: form.color})"
                             :class="form.color === '{{ $c }}' ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-500'"
                             class="border rounded-md px-4 py-2 text-sm font-semibold transition-all">
                         {{ $c }}

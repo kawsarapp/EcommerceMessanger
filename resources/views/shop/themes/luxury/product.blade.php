@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.luxury.layout')
+@extends('shop.themes.luxury.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -6,7 +6,35 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[100rem] mx-auto px-4 sm:px-12 py-16 md:py-24" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <div class="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 100)">
         
@@ -36,7 +64,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl text-white font-light mb-8 leading-tight tracking-wide">{{$product->name}}</h1>
                 
                 <div class="flex items-center justify-center lg:justify-start gap-4">
-                    <span class="text-2xl md:text-3xl font-light tracking-widest text-gray-200">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                    <span class="text-2xl md:text-3xl font-light tracking-widest text-gray-200" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
                     @if($product->sale_price)

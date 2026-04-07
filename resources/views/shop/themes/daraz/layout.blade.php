@@ -78,12 +78,16 @@
             </a>
 
             {{-- Search Bar --}}
+            @if($client->widget('search_bar'))
             <form action="{{$baseUrl}}" method="GET" class="hidden md:flex flex-1 max-w-2xl mx-8 relative">
                 <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" class="w-full bg-gray-100 border-none rounded-lg px-6 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition outline-none">
                 <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary text-white w-8 h-8 rounded-md flex items-center justify-center hover:bg-[var(--tw-color-primary)] transition">
                     <i class="fas fa-search"></i>
                 </button>
             </form>
+            @else
+            <div class="hidden md:flex flex-1 max-w-2xl mx-8"></div>
+            @endif
 
             {{-- Right Actions --}}
             <div class="hidden md:flex items-center gap-6 shrink-0">
@@ -131,7 +135,7 @@
             <div class="md:col-span-2">
                 <h3 class="font-black text-2xl text-primary mb-4 uppercase">{{$client->shop_name}}</h3>
                 <p class="text-gray-500 text-sm leading-relaxed max-w-md">
-                    {{ $client->widgets['footer']['description'] ?? ($client->footer_text ?? '???% ??? ????? ???? ???? ????????? ??/? ???????? ???????? ??? ??????? ? ????????') }}
+                    {{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'We provide the best quality products for you.') }}
                 </p>
                 
                 <div class="flex gap-4 mt-6">
@@ -151,23 +155,23 @@
             </div>
             
             <div>
-                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">{{ $client->widgets['footer']['menu1_title'] ?? $footerMenu1->name ?? '???????? ??????' }}</h4>
+                <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">{{ $client->widgets['footer']['menu1_title'] ?? $footerMenu1->name ?? 'Customer Service' }}</h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
                     @if(isset($footerMenu1) && $footerMenu1->items->count() > 0)
                         @foreach($footerMenu1->items as $item)
                             <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="hover:text-primary transition">{{ $item->label }}</a>
                         @endforeach
                     @else
-                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">?????? ??????? ????</a>
-                        <a href="#" class="hover:text-primary transition">????? ?????</a>
-                        <a href="#" class="hover:text-primary transition">??????? ?????</a>
+                        <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="hover:text-primary transition">Track Order</a>
+                        <a href="#" class="hover:text-primary transition">Shipping Policy</a>
+                        <a href="#" class="hover:text-primary transition">Return Policy</a>
                     @endif
                 </div>
             </div>
 
             <div>
                 <h4 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-sm">
-                    {{ $client->widgets['footer']['contact_title'] ?? '???????' }}
+                    {{ $client->widgets['footer']['contact_title'] ?? 'Contact Us' }}
                 </h4>
                 <div class="flex flex-col space-y-3 text-sm text-gray-500 font-medium">
                     @if($client->phone) <p><i class="fas fa-phone mr-2 text-primary"></i> {{$client->phone}}</p> @endif

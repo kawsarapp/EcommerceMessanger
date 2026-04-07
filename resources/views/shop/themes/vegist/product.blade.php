@@ -45,18 +45,45 @@
     </div>
 </div>
 
-<div x-data="productData()" class="max-w-[1400px] mx-auto px-4 xl:px-8 pb-24 md:pb-16">
+<div x-data="{ 
+    mainImg: '{{$product->thumbnail ? asset('storage/'.$product->thumbnail) : ''}}',
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ (float)($product->sale_price ?? $product->regular_price ?? 0) }},
+    currentPrice: {{ (float)($product->sale_price ?? $product->regular_price ?? 0) }},
+    currentVariant: null,
+    zoomPos: '50% 50%',
+    showZoom: false,
+    showLightbox: false,
+    lightboxImg: '',
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();" @variant-change.window="color = $event.detail.color; size = $event.detail.size" class="max-w-[1400px] mx-auto px-4 xl:px-8 pb-24 md:pb-16">
 
     {{-- === MAIN PRODUCT GRID === --}}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
         {{-- ─── Left: Image Gallery ─── --}}
-        <div class="lg:col-span-4" x-data="{
-            zoomPos: '50% 50%',
-            showZoom: false,
-            showLightbox: false,
-            lightboxImg: ''
-        }">
+        <div class="lg:col-span-4">
 
             {{-- Main Image --}}
             <div class="relative bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden"
@@ -64,21 +91,21 @@
                  @mousemove="if(window.innerWidth > 768){ zoomPos=(($event.offsetX/$el.offsetWidth)*100)+'% '+(($event.offsetY/$el.offsetHeight)*100)+'%' }"
                  @mouseenter="showZoom = window.innerWidth > 768"
                  @mouseleave="showZoom = false"
-                 @click="showLightbox = true; lightboxImg = activeImage">
+                 @click="showLightbox = true; lightboxImg = mainImg">
 
                 @if($pct > 0)
                 <div class="absolute top-3 left-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded z-20 shadow">-{{$pct}}%</div>
                 @endif
 
                 {{-- Normal image (desktop hides on zoom) --}}
-                <img :src="activeImage" alt="{{$product->name}}"
+                <img :src="mainImg" alt="{{$product->name}}"
                      class="w-full h-full object-contain p-6 transition-opacity duration-200 cursor-zoom-in"
                      :class="showZoom ? 'opacity-0' : 'opacity-100'">
 
                 {{-- Desktop Zoom Overlay --}}
                 <div x-show="showZoom"
                      class="absolute inset-0 pointer-events-none bg-no-repeat z-10 hidden md:block"
-                     :style="'background-image:url(\'' + activeImage + '\'); background-position:' + zoomPos + '; background-size:260%;'">
+                     :style="'background-image:url(\'' + mainImg + '\'); background-position:' + zoomPos + '; background-size:260%;'">
                 </div>
 
                 {{-- Mobile tap hint --}}
@@ -107,16 +134,16 @@
             @if($product->thumbnail || count($productGallery) > 0)
             <div class="flex gap-2 mt-3 overflow-x-auto hide-scroll pb-1">
                 @if($product->thumbnail)
-                <div @click="activeImage='{{asset('storage/'.$product->thumbnail)}}'; lightboxImg=activeImage"
+                <div @click="mainImg='{{asset('storage/'.$product->thumbnail)}}'; lightboxImg=mainImg"
                      class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition shrink-0 w-16 h-16"
-                     :class="activeImage==='{{asset('storage/'.$product->thumbnail)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
+                     :class="mainImg==='{{asset('storage/'.$product->thumbnail)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
                     <img src="{{asset('storage/'.$product->thumbnail)}}" class="w-full h-full object-contain">
                 </div>
                 @endif
                 @foreach($productGallery as $img)
-                <div @click="activeImage='{{asset('storage/'.$img)}}'; lightboxImg=activeImage"
+                <div @click="mainImg='{{asset('storage/'.$img)}}'; lightboxImg=mainImg"
                      class="border-2 rounded-lg cursor-pointer p-1.5 bg-white transition shrink-0 w-16 h-16"
-                     :class="activeImage==='{{asset('storage/'.$img)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
+                     :class="mainImg==='{{asset('storage/'.$img)}}'?'border-primary shadow':'border-gray-100 hover:border-gray-300'">
                     <img src="{{asset('storage/'.$img)}}" class="w-full h-full object-contain">
                 </div>
                 @endforeach
@@ -155,7 +182,7 @@
 
             {{-- Price --}}
             <div class="flex items-baseline gap-3 mb-5">
-                <span class="text-3xl font-black text-dark">৳<span x-text="Number(currentPrice).toLocaleString('en-BD')"></span></span>
+                <span class="text-3xl font-black text-dark">৳<span x-text="new Intl.NumberFormat('en-IN').format(currentPrice)"></span></span>
                 @if($pct > 0)
                 <span class="text-lg text-gray-400 line-through">৳{{number_format((float)$product->regular_price)}}</span>
                 <span class="text-xs bg-primary/5 text-primary border border-primary/20 px-2 py-0.5 rounded font-semibold">Save {{$pct}}%</span>
@@ -169,108 +196,8 @@
             </p>
             @endif
 
-            {{-- Size Variants --}}
-            @if(count($productSizes) > 0)
-            <div class="mb-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="text-sm font-bold text-dark">Size:</span>
-                    <span class="text-sm text-primary font-semibold" x-text="selectedVariantName"></span>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($productSizes as $size)
-                    @php $sizeName = is_array($size) ? ($size['name'] ?? $size['value'] ?? $size) : $size;
-                         $sizePrice = is_array($size) ? (float)($size['price'] ?? $initPrice) : $initPrice;
-                    @endphp
-                    <label class="cursor-pointer">
-                        <input type="radio" name="variant" value="{{$sizePrice}}" data-name="{{$sizeName}}"
-                               class="peer sr-only"
-                               @change="updateVariant($event)"
-                               @if($loop->first) checked x-init="$nextTick(()=>{ updateVariant({target:$el}) })" @endif>
-                        <div class="px-4 py-2 border-2 rounded-lg text-[13px] font-medium text-gray-600
-                                    peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/5
-                                    hover:border-gray-300 transition select-none">
-                            {{$sizeName}}
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-            @endif
+            {{-- Variations / Buy Form --}}
 
-            {{-- Color Variants --}}
-            @if(count($productColors) > 0)
-            <div class="mb-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="text-sm font-bold text-dark">Color:</span>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($productColors as $color)
-                    @php $colorName = is_array($color) ? ($color['name'] ?? $color['value'] ?? $color) : $color;
-                         $colorHex  = is_array($color) ? ($color['hex'] ?? $color['code'] ?? null) : null;
-                    @endphp
-                    <button type="button" title="{{$colorName}}"
-                            class="w-8 h-8 rounded-full border-2 border-gray-200 hover:border-primary transition"
-                            style="background-color: {{ $colorHex ?? $colorName }}">
-                    </button>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            {{-- Quantity --}}
-            <div class="flex items-center gap-3 mb-5">
-                <span class="text-sm font-bold text-dark shrink-0">Qty:</span>
-                <div class="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden h-11 bg-white w-32 shrink-0">
-                    <button type="button" @click="if(qty>1) qty--"
-                            class="w-10 h-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-50 transition text-xl font-light">−</button>
-                    <input type="number" x-model="qty" min="1"
-                           class="w-full h-full text-center text-sm font-bold bg-transparent focus:outline-none border-0"
-                           readonly>
-                    <button type="button" @click="qty++"
-                            class="w-10 h-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-50 transition text-xl font-light">+</button>
-                </div>
-            </div>
-
-            {{-- CTA Buttons --}}
-            <div class="flex flex-col sm:flex-row gap-3 mb-5">
-                @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
-                    @if($client->phone)
-                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name.' - '.$baseUrl.'/product/'.$product->slug) }}"
-                       target="_blank"
-                       class="flex-1 bg-[#25d366] hover:bg-[#128c7e] text-white h-12 flex justify-center items-center rounded-xl font-bold text-sm gap-2 transition shadow-md">
-                        <i class="fab fa-whatsapp text-xl"></i> Order via WhatsApp
-                    </a>
-                    @endif
-                @elseif(!$inStock)
-                    <div class="flex-1 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm gap-2 cursor-not-allowed">
-                        <i class="fas fa-ban"></i> Out of Stock
-                    </div>
-                @else
-                    {{-- Add to Cart (AJAX) --}}
-                    
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="button" @click="addToCart()"
-                            :disabled="isLoading"
-                            class="flex-1 btn-primary h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
-                        <span x-show="!isLoading && !added" class="flex items-center gap-2">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </span>
-                        <span x-show="isLoading" class="flex items-center gap-2">
-                            <i class="fas fa-spinner fa-spin"></i> Adding...
-                        </span>
-                        <span x-show="added" class="flex items-center gap-2" x-cloak>
-                            <i class="fas fa-check-circle"></i> Added! <a :href="'{{ $cartPageUrl }}'" class="underline ml-1 text-xs">View Cart</a>
-                        </span>
-                    </button>
-
-                    {{-- Buy Now (direct checkout) --}}
-                    <button type="button" @click="buyNow()"
-                            :disabled="isLoading"
-                            class="flex-1 btn-dark h-12 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md hover:shadow-lg transition hover:bg-primary disabled:opacity-60">
-                        <i class="fas fa-bolt"></i> Buy Now
-                    </button>
-                @endif
-            </div>
 
             {{-- Wishlist --}}
             <button type="button" @click="toggleWishlist"
@@ -563,105 +490,7 @@
 
 </div>{{-- end container --}}
 
-{{-- === STICKY MOBILE CTA BAR === --}}
-<div class="fixed bottom-[56px] left-0 right-0 z-40 md:hidden px-4 pb-2">
-    <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3 flex gap-2">
-        @if(!($client->widgets['show_order_button'] ?? true) && ($client->widgets['show_chat_button'] ?? false))
-            @if($client->phone)
-            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $client->phone) }}?text={{ urlencode('I want to order: '.$product->name) }}"
-               target="_blank"
-               class="flex-1 bg-[#25d366] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md">
-                <i class="fab fa-whatsapp text-xl"></i> Order on WhatsApp
-            </a>
-            @endif
-        @elseif(!$inStock)
-            <div class="flex-1 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-semibold text-sm">
-                <i class="fas fa-ban mr-2"></i> Out of Stock
-            </div>
-        @else
-            {{-- Add to Cart --}}
-            <button type="button" @click="addToCart()"
-                    :disabled="isLoading"
-                    class="flex-1 bg-white border-2 border-primary text-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow transition active:scale-95">
-                <span x-show="!added"><i class="fas fa-shopping-cart"></i></span>
-                <span x-show="added"><i class="fas fa-check"></i></span>
-            </button>
-            {{-- Buy Now --}}
-            <button type="button" @click="buyNow()"
-                    class="flex-[2] btn-primary h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md">
-                <i class="fas fa-bolt"></i> Buy Now — ৳{{ number_format($initPrice) }}
-            </button>
-        @endif
-    </div>
-</div>
 
-<script>
-    function productData() {
-        return {
-            qty: 1,
-            basePrice: {{ $initPrice }},
-            currentPrice: {{ $initPrice }},
-            selectedVariantName: '',
-            activeImage: '{{ $product->thumbnail ? asset("storage/".$product->thumbnail) : "" }}',
-            isLoading: false,
-            added: false,
-
-            updateVariant(event) {
-                const p = parseFloat(event.target.value);
-                if (!isNaN(p) && p > 0) this.currentPrice = p;
-                this.selectedVariantName = event.target.getAttribute('data-name');
-            },
-
-            async addToCart() {
-                if (this.isLoading) return;
-                this.isLoading = true;
-                this.added = false;
-                try {
-                    const fd = new FormData();
-                    fd.append('_token', '{{ csrf_token() }}');
-                    fd.append('product_id', {{ $product->id }});
-                    fd.append('qty', this.qty);
-                    if (this.selectedVariantName) {
-                        fd.append('variant', this.selectedVariantName);
-                        fd.append('price', this.currentPrice);
-                    }
-
-                    const res  = await fetch('{{ $cartAddUrl }}', { method: 'POST', body: fd });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        this.added = true;
-                        // Update all cart badges in header & bottom nav
-                        document.querySelectorAll('[data-cart-badge]').forEach(el => {
-                            el.textContent = data.cart_count;
-                            el.classList.add('scale-125');
-                            setTimeout(() => el.classList.remove('scale-125'), 400);
-                        });
-                        setTimeout(() => { this.added = false; }, 3000);
-                    } else {
-                        alert(data.message || 'Failed to add to cart.');
-                    }
-                } catch(e) {
-                    alert('Network error, please try again.');
-                } finally {
-                    this.isLoading = false;
-                }
-            },
-
-            // Buy Now = Add to cart first, then go to checkout
-            async buyNow() {
-                await this.addToCart();
-                if (this.added) {
-                    window.location.href = '{{ $checkoutUrl }}';
-                }
-            },
-
-            toggleWishlist() {
-                console.log('Wishlist toggled for product {{ $product->id }}');
-            }
-        }
-    }
-</script>
 
 @include('shop.partials.product-sticky-bar')
 @endsection

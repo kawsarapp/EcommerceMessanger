@@ -76,6 +76,12 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 <span class="shop-name-text text-xl md:text-2xl font-black tracking-tighter uppercase">{{$client->shop_name}}</span>
             </a>
             <div class="hidden md:flex gap-6 items-center">
+                @if($client->widget('search_bar'))
+                <form action="{{$baseUrl}}" method="GET" class="relative">
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search...' }}" class="border-b border-black outline-none bg-transparent text-xs font-bold tracking-widest w-24 lg:w-32 focus:w-48 transition-all px-2 py-1 placeholder-gray-300">
+                    <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition"><i class="fas fa-search text-xs"></i></button>
+                </form>
+                @endif
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors">TRACK ORDER</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all">
@@ -94,7 +100,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
         <div class="max-w-[90rem] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             <div>
                 <h3 class="font-black text-2xl uppercase tracking-tighter mb-6">{{$client->shop_name}}</h3>
-                <p class="text-gray-500 text-sm leading-relaxed max-w-xs font-medium mb-6">{{ $client->description ?? ($client->tagline ?? 'Modern minimal design curated for the perfect shopping experience.') }}</p>
+                <p class="text-gray-500 text-sm leading-relaxed max-w-xs font-medium mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Modern minimal design curated for the perfect shopping experience.') }}</p>
                 <div class="flex gap-4">
                     @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-facebook-f"></i></a>@endif
                     @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="text-gray-400 hover:text-primary transition"><i class="fab fa-instagram"></i></a>@endif
@@ -123,13 +129,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </div>
             </div>
 
-            <div>
-                <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu3_title'] ?? 'Contact' }}</h4>
-                <div class="flex flex-col space-y-4 text-sm font-medium text-gray-500">
-                    @if($client->phone) <p><i class="fas fa-phone mr-2 text-gray-300"></i> {{$client->phone}}</p> @endif
-                    @endif
-                </div>
-            </div>
+
 
             <div>
                 <h4 class="font-bold uppercase tracking-widest text-xs mb-6 text-gray-900">{{ $client->widgets['footer']['menu3_title'] ?? 'Contact' }}</h4>

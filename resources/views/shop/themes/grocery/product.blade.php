@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.grocery.layout')
+@extends('shop.themes.grocery.layout')
 @section('title', $product->name . ' | Fresh Details')
 
 @section('content')
@@ -6,7 +6,35 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <!-- Friendly Breadcrumb -->
     <div class="mb-6 font-bold text-sm text-slate-400 tracking-wide flex items-center gap-3">
@@ -77,7 +105,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <h1 class="text-3xl lg:text-4xl font-black text-slate-800 leading-tight mb-4 tracking-tight">{{$product->name}}</h1>
                     
                     <div class="flex items-end gap-4 mt-6">
-                        <span class="text-5xl font-black text-slate-900 tracking-tighter">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                        <span class="text-5xl font-black text-slate-900 tracking-tighter" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                         @if($product->sale_price)
                             <div class="flex flex-col pb-1">
                                 <del class="text-xl text-slate-400 font-bold leading-none mb-1">৳{{number_format($product->regular_price)}}</del>

@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.kids.layout')
+@extends('shop.themes.kids.layout')
 @section('title', $product->name . ' | Yay! Kids Corner')
 
 @section('content')
@@ -6,7 +6,35 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-10" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <div class="mb-8 font-bold text-sm text-slate-400 tracking-wide flex items-center justify-center sm:justify-start gap-3 bg-white w-fit px-6 py-3 rounded-full shadow-sm border border-slate-100">
         <a href="{{$baseUrl}}" class="hover:text-primary transition flex items-center gap-1"><i class="fas fa-home"></i> Home</a> 
@@ -53,7 +81,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     <h1 class="text-4xl lg:text-5xl font-heading text-slate-800 leading-tight mb-6 drop-shadow-sm">{{$product->name}}</h1>
                     
                     <div class="flex flex-col sm:flex-row items-center lg:items-end justify-center lg:justify-start gap-4">
-                        <span class="text-5xl lg:text-6xl font-heading text-primary bg-primary/10 px-6 py-3 rounded-3xl border-2 border-primary/20 shadow-inner">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                        <span class="text-5xl lg:text-6xl font-heading text-primary bg-primary/10 px-6 py-3 rounded-3xl border-2 border-primary/20 shadow-inner" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
                         @if($product->sale_price)

@@ -143,7 +143,9 @@
 
                 {{-- Right Icons --}}
                 <div class="flex items-center gap-5 xl:gap-7 shrink-0 text-dark">
+                    @if($client->widget('search_bar'))
                     <button class="hover:text-primary transition text-lg" onclick="document.getElementById('mobile-search').classList.toggle('hidden')"><i class="fas fa-search"></i></button>
+                    @endif
                     @if(auth('customer')->check())
                     <a href="{{ $clean ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug) }}" class="hover:text-primary transition text-lg hidden md:block"><i class="far fa-user-circle"></i></a>
                     @else
@@ -166,6 +168,7 @@
         </div>
         
         {{-- Expandable Search --}}
+        @if($client->widget('search_bar'))
         <div id="mobile-search" class="hidden absolute top-full left-0 w-full bg-white p-4 shadow-lg border-t border-gray-100 z-50">
             <form action="{{ $baseUrl }}" method="GET" class="w-full relative flex items-center max-w-2xl mx-auto">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
@@ -175,6 +178,7 @@
                 </button>
             </form>
         </div>
+        @endif
     </header>
 
     <main class="flex-1 w-full bg-white">

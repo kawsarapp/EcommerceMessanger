@@ -70,7 +70,7 @@ $primary='var(--tw-color-primary)';
         <div class="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fas fa-heart text-red-500"></i>
-                <span class="font-medium">{{ $client->topbar_text ?? ('??????? ' . $client->shop_name . '-?') }}</span>
+                <span class="font-medium">{{ $client->topbar_text ?? ('Welcome to ' . $client->shop_name) }}</span>
             </div>
             @if($client->announcement_text)
             <div class="flex items-center gap-2 text-warning font-semibold text-yellow-400">
@@ -100,6 +100,7 @@ $primary='var(--tw-color-primary)';
                 </a>
 
                 {{-- Search Bar (Large Center) --}}
+                @if($client->widget('search_bar'))
                 <div class="hidden lg:flex flex-1 max-w-2xl">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100/80 rounded-lg overflow-hidden border border-gray-200 focus-within:border-primary transition-colors">
                         <i class="fas fa-search text-gray-400 pl-4"></i>
@@ -107,6 +108,9 @@ $primary='var(--tw-color-primary)';
                             class="w-full bg-transparent px-4 py-3 text-sm font-medium text-dark placeholder-gray-500 focus:outline-none focus:ring-0 border-none transition h-full">
                     </form>
                 </div>
+                @else
+                <div class="hidden lg:flex flex-1 max-w-2xl"></div>
+                @endif
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50">
@@ -137,6 +141,7 @@ $primary='var(--tw-color-primary)';
             </div>
             
             {{-- Mobile Search --}}
+            @if($client->widget('search_bar'))
             <div class="lg:hidden mt-3">
                 <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                     <i class="fas fa-search text-gray-400 pl-3 text-sm"></i>
@@ -144,6 +149,7 @@ $primary='var(--tw-color-primary)';
                         class="w-full bg-transparent px-3 py-2 text-sm text-dark placeholder-gray-500 focus:outline-none border-none">
                 </form>
             </div>
+            @endif
         </div>
     </header>
 
@@ -180,8 +186,8 @@ $primary='var(--tw-color-primary)';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} ? {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ? ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - {{ $client->tagline ?? 'Your ultimate shopping destination' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' provides the best quality products for you.') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -210,7 +216,7 @@ $primary='var(--tw-color-primary)';
                         <div class="space-y-3 mb-6">
                             @if($client->phone)<a href="tel:{{$client->phone}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-phone-alt text-primary min-w-[20px]"></i> {{$client->phone}}</a>@endif
                             @if($client->email)<a href="mailto:{{$client->email}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-envelope text-primary min-w-[20px]"></i> {{$client->email}}</a>@endif
-                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> {{ $client->widgets['office_hours']['text'] ?? '\u09B8?????? \u09EE\u09EA\u09F7\u09EA\u09EE' }}</div>
+                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> {{ $client->widgets['office_hours']['text'] ?? 'Mon-Sat 9AM-8PM' }}</div>
                         </div>
 
                         @if($client->widgets['footer']['show_social'] ?? true)

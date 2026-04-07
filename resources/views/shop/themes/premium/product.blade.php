@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.premium.layout')
+@extends('shop.themes.premium.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -6,7 +6,35 @@
     $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();" @variant-change.window="color = $event.detail.color; size = $event.detail.size">
     <div class="bg-white rounded-[2.5rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-100" x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)">
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-stretch">
@@ -67,7 +95,7 @@
                 
                 <!-- Pricing Box -->
                 <div class="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100 flex items-center gap-5">
-                    <span class="text-4xl font-extrabold text-gray-900 tracking-tighter">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                    <span class="text-4xl font-extrabold text-gray-900 tracking-tighter" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                     @if($product->sale_price)
                         <div class="flex flex-col">
                             <del class="text-gray-400 font-semibold text-lg leading-tight">৳{{number_format($product->regular_price)}}</del>

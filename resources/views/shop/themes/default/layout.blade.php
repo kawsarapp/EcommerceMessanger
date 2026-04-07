@@ -119,13 +119,17 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </a>
 
                 <!-- Desktop Search Bar -->
+                @if($client->widget('search_bar'))
                 <form action="{{ $baseUrl }}" method="GET" class="hidden md:flex flex-1 max-w-md mx-8 relative group/search">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fas fa-search text-slate-400 group-focus-within/search:text-primary premium-transition"></i>
                     </div>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products..." 
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search products...' }}" 
                         class="w-full bg-white/60 hover:bg-white border border-slate-200/60 focus:border-primary/30 focus:bg-white pl-11 pr-5 py-2.5 rounded-full text-slate-700 text-sm font-medium focus:ring-4 focus:ring-primary/10 premium-transition shadow-sm outline-none">
                 </form>
+                @else
+                <div class="hidden md:flex flex-1 max-w-md mx-8"></div>
+                @endif
                 
                 <!-- Desktop Actions -->
                 <div class="hidden md:flex items-center gap-3">
@@ -159,7 +163,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         <a href="{{$baseUrl}}" class="inline-block">
                             <span class="text-3xl font-extrabold tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">{{$client->shop_name}}</span>
                         </a>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ? ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                        <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'We provide the best quality products for you. Fast shipping and excellent customer service guaranteed.') }}</p>
                         @include('shop.partials.footer-links', ['client' => $client])
                         <div class="flex gap-4 items-center pt-2">
                             @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary hover:border-primary hover-lift premium-transition shadow-sm"><i class="fab fa-facebook-f"></i></a>@endif
@@ -171,7 +175,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <!-- Quick Links -->
                     <div>
                         <h4 class="font-extrabold text-slate-900 mb-6 text-sm uppercase tracking-widest relative inline-block">
-                            Shop
+                            {{ $client->widgets['footer']['menu1_title'] ?? 'Shop' }}
                             <span class="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-primary to-transparent rounded-full"></span>
                         </h4>
                         <div class="flex flex-col space-y-4 font-semibold text-sm text-slate-500">
@@ -184,7 +188,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <!-- Support -->
                     <div>
                          <h4 class="font-extrabold text-slate-900 mb-6 text-sm uppercase tracking-widest relative inline-block">
-                            Support
+                            {{ $client->widgets['footer']['menu2_title'] ?? 'Support' }}
                             <span class="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-primary to-transparent rounded-full"></span>
                         </h4>
                         <div class="flex flex-col space-y-4 font-semibold text-sm text-slate-500">
@@ -197,7 +201,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <!-- Contact -->
                     <div>
                          <h4 class="font-extrabold text-slate-900 mb-6 text-sm uppercase tracking-widest relative inline-block">
-                            Contact Us
+                            {{ $client->widgets['footer']['contact_title'] ?? 'Contact Us' }}
                             <span class="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-primary to-transparent rounded-full"></span>
                         </h4>
                         <div class="flex flex-col space-y-5">

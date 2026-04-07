@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.modern.layout')
+@extends('shop.themes.modern.layout')
 @section('title', $product->name . ' | ' . $client->shop_name)
 
 @section('content')
@@ -6,7 +6,35 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[90rem] mx-auto px-6 py-12 md:py-24" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[90rem] mx-auto px-6 py-12 md:py-24" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <!-- Minimal Breadcrumb -->
     <div class="mb-12">
@@ -45,7 +73,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                 <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-[0.9] text-black mb-6">{{$product->name}}</h1>
                 
                 <div class="flex items-end gap-4">
-                    <span class="text-3xl font-black text-gray-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                    <span class="text-3xl font-black text-gray-900 tracking-tight" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
                     @if($product->sale_price)

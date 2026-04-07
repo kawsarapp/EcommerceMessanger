@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.default.layout')
+@extends('shop.themes.default.layout')
 @section('title', $product->name . ' | Shop')
 
 @section('content')
@@ -6,7 +6,36 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : route('shop.show', $client->slug); 
 @endphp
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '', activeTab: 'description' }">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '', 
+    activeTab: 'description',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <!-- Clean Breadcrumb -->
     <nav class="mb-8 flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 overflow-hidden bg-white/40 backdrop-blur-xl px-5 py-3.5 rounded-2xl w-fit border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -105,7 +134,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//', '', 
                     </div>
 
                     <div class="flex items-end gap-3 mt-6">
-                        <span class="text-4xl font-extrabold text-slate-900 tracking-tight">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                        <span class="text-4xl font-extrabold text-slate-900 tracking-tight" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
     @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
 
                         @if($product->sale_price)

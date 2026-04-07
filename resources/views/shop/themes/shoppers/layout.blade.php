@@ -113,6 +113,7 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                 </a>
 
                 {{-- Search Bar --}}
+                @if($client->widget('search_bar'))
                 <div class="flex-1 w-full max-w-2xl lg:ml-8">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded shadow-sm overflow-hidden h-10 md:h-11 border border-white focus-within:ring-2 focus-within:ring-primary/50">
                         <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
@@ -122,6 +123,9 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                         </button>
                     </form>
                 </div>
+                @else
+                <div class="flex-1 w-full max-w-2xl lg:ml-8"></div>
+                @endif
 
                 {{-- User / Cart Icons --}}
                 <div class="hidden md:flex items-center gap-8 shrink-0 text-white">
@@ -240,10 +244,10 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                                 <span class="text-xs text-gray-500 leading-relaxed">Email: {{ $client->email }}</span>
                             </div>
                             @endif
-                            @if($client->widgets['office_hours']['text'] ?? false)
+                            @if(($client->widgets['office_hours']['text'] ?? false) || $client->office_hours)
                             <div class="flex items-start gap-3">
                                 <i class="far fa-clock text-primary mt-0.5 text-sm bg-red-50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center"></i>
-                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: {{ $client->widgets['office_hours']['text'] }}</span>
+                                <span class="text-xs text-gray-500 leading-relaxed">Open Time: {{ $client->widgets['office_hours']['text'] ?? $client->office_hours }}</span>
                             </div>
                             @endif
                         </div>

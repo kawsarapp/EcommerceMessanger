@@ -35,7 +35,6 @@ $primary='#0084d6';
                     colors:{
                         primary: '{{$client->primary_color ?? "#0084d6"}}',
                         secondary: '{{$client->secondary_color ?? $client->primary_color ?? "#facc15"}}',
-                        primary: '{{$client->primary_color ?? "#0084d6"}}',
                         bdlight: '#f5f7fa',
                         bdhover: '#e2e8f0',
                         bddeep: '#005b96',
@@ -104,6 +103,7 @@ $primary='#0084d6';
                 </a>
 
                 {{-- Search Bar --}}
+                @if($client->widget('search_bar'))
                 <div class="hidden lg:flex flex-1 max-w-3xl ml-10">
                     <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden border border-transparent focus-within:border-white transition-colors h-11 shadow-sm">
                         <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
@@ -111,6 +111,9 @@ $primary='#0084d6';
                         <button type="submit" class="bg-transparent text-primary px-4 h-full"><i class="fas fa-search"></i></button>
                     </form>
                 </div>
+                @else
+                <div class="hidden lg:flex flex-1 max-w-3xl ml-10"></div>
+                @endif
 
                 {{-- Right User Actions --}}
                 <div class="flex items-center gap-4 sm:gap-6 shrink-0 relative z-50 ml-auto">
@@ -130,6 +133,7 @@ $primary='#0084d6';
             </div>
             
             {{-- Mobile Search --}}
+            @if($client->widget('search_bar'))
             <div class="lg:hidden mt-3">
                 <form action="{{$baseUrl}}" method="GET" class="w-full relative flex items-center bg-white rounded-md overflow-hidden">
                     <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search in '.$client->shop_name.'...' }}" 
@@ -137,6 +141,7 @@ $primary='#0084d6';
                     <button type="submit" class="text-primary px-3"><i class="fas fa-search text-sm"></i></button>
                 </form>
             </div>
+            @endif
         </div>
     </header>
 
@@ -173,8 +178,8 @@ $primary='#0084d6';
         {{-- White SEO text block --}}
         <div class="bg-white py-12 md:py-16 border-t border-gray-200">
             <div class="max-w-4xl mx-auto px-4 text-center">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - {{ $client->tagline ?? '????? ???????? ?????? ???? ???????' }}</h2>
-                <p class="text-gray-500 text-sm leading-relaxed mb-6">{{ $client->description ?? ($client->meta_description ?? $client->shop_name . ' ? ????? ????????, ??? ????, ??? ???????? ???? ???????? ????????') }}</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-dark mb-4">{{$client->shop_name}} - {{ $client->tagline ?? 'The ultimate destination for premium quality.' }}</h2>
+                <p class="text-gray-500 text-sm leading-relaxed mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'We provide the best quality products. Fast shipping and excellent customer service guaranteed.') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
                     <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
@@ -203,7 +208,7 @@ $primary='#0084d6';
                         <div class="space-y-3 mb-6">
                             @if($client->phone)<a href="tel:{{$client->phone}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-phone-alt text-primary min-w-[20px]"></i> {{$client->phone}}</a>@endif
                             @if($client->email)<a href="mailto:{{$client->email}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-envelope text-primary min-w-[20px]"></i> {{$client->email}}</a>@endif
-                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> 10:00 AM - 11:00 PM</div>
+                            <div class="flex items-center gap-3 text-sm text-gray-300"><i class="fas fa-clock text-primary min-w-[20px]"></i> {{ $client->widgets['office_hours']['text'] ?? ($client->office_hours ?? '10:00 AM - 11:00 PM') }}</div>
                         </div>
 
                         <div class="flex gap-3 mt-4">
@@ -263,8 +268,6 @@ $primary='#0084d6';
                             <button type="button" class="bg-primary/100 hover:bg-blue-600 px-3 text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                         </form>
                     </div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/1200px-American_Express_logo_%282018%29.svg.png" class="h-4 object-contain" loading="lazy"></div>
-                        <div class="bg-white rounded p-1 flex items-center justify-center w-10 h-6"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1024px-PayPal.svg.png" class="h-3 object-contain" loading="lazy"></div>
                     </div>
                 </div>
             </div>

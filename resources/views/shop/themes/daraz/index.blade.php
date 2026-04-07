@@ -46,7 +46,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 @endif
 
 {{-- Products Section --}}
-<section class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+<section id="products" class="max-w-7xl mx-auto px-4 py-6 md:py-10">
     {{-- Section Header --}}
     <div class="flex items-center gap-3 mb-6">
         <div class="w-1.5 h-8 hero-gradient rounded-full"></div>
@@ -63,17 +63,26 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
     </div>
 
     {{-- Product Grid --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mt-4"
+         x-data="{ init() { 
+            let delay = 0;
+            this.$el.querySelectorAll('.mat-fade-item').forEach(el => {
+                setTimeout(() => { el.classList.remove('opacity-0', 'translate-y-8'); }, delay);
+                delay += 50; 
+            });
+        } }">
         @forelse($products as $p)
-            @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
+            <div class="mat-fade-item opacity-0 translate-y-8 transition-all duration-500 ease-out will-change-transform">
+                <div class="mat-card h-full rounded-2xl overflow-hidden hover:mat-elevated flex flex-col">
+                    @include('shop.partials.product-card', ['product' => $p, 'baseUrl' => $baseUrl, 'client' => $client])
+                </div>
+            </div>
         @empty
-            <div class="col-span-full py-20">
-                <div class="max-w-md mx-auto text-center">
-                    <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-box-open text-4xl text-gray-300"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">কোনো পণ্য পাওয়া যায়নি</h3>
-                    <p class="text-gray-500 mb-6">অন্য ক্যাটাগরি দেখুন বা সার্চ করুন।</p>
+            <div class="col-span-full py-20 flex flex-col items-center justify-center mat-card mat-elevated">
+                <i class="fas fa-box-open text-4xl text-slate-300 mb-4"></i>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">কোনো পণ্য পাওয়া যায়নি</h3>
+                <p class="text-sm text-slate-500">অন্য ক্যাটাগরি দেখুন।</p>
+                <div class="mt-6">
                     <a href="{{ $baseUrl }}" class="btn-primary inline-flex items-center gap-2 px-6 py-3 text-white rounded-full font-semibold transition">
                         <i class="fas fa-arrow-left"></i> সকল পণ্য দেখুন
                     </a>
@@ -83,17 +92,9 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
     </div>
 
     {{-- Pagination --}}
-    @if($products->hasPages())
-    <div class="mt-10">
-        <style>
-            .pg nav { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-            .pg nav a, .pg nav span { min-width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 600; font-size: 14px; background: white; color: #64748b; border: 1px solid #e5e7eb; transition: all 0.2s; }
-            .pg nav a:hover { border-color: var(--primary); color: var(--primary); }
-            .pg nav span[aria-current="page"] { background: var(--primary); color: white !important; border: none; }
-        </style>
-        <div class="pg">{{ $products->links('pagination::tailwind') }}</div>
+    <div class="mt-12 flex justify-center">
+        <div class="bd-pagination">{{$products->links('pagination::tailwind')}}</div>
     </div>
-    @endif
 </section>
 
 {{-- Homepage Categories --}}

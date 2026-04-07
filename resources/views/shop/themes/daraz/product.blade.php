@@ -117,33 +117,7 @@
                     <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-6 mt-auto">
                         
                         {{-- Variations --}}
-                        @if($product->colors)
-                        <div>
-                            <span class="text-gray-500 text-sm font-medium mr-4">কালার</span>
-                            <div class="flex gap-2 flex-wrap mt-2">
-                                @foreach($product->colors as $c)
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                                    <span class="px-3 py-1 text-sm border border-gray-300 rounded peer-checked:border-primary peer-checked:text-primary transition bg-white block">{{$c}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($product->sizes)
-                        <div>
-                            <span class="text-gray-500 text-sm font-medium mr-4">সাইজ</span>
-                            <div class="flex gap-2 flex-wrap mt-2">
-                                @foreach($product->sizes as $s)
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                                    <span class="min-w-[2.5rem] text-center px-3 py-1 text-sm border border-gray-300 rounded peer-checked:border-primary peer-checked:text-primary transition bg-white block">{{$s}}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
+                        @include('shop.partials.product-variations')
 
                         <div class="flex items-center gap-6 pt-4 border-t border-gray-100">
                             <span class="text-gray-500 text-sm font-medium">পরিমাণ</span>

@@ -61,7 +61,7 @@
     .thumbnail-scroll::-webkit-scrollbar { display: none; }
 </style>
 
-<div class="bg-[#f5f6f8] min-h-screen py-6" x-data="productApp()">
+<div class="bg-[#f5f6f8] min-h-screen py-6" x-data="productApp()" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();" @variant-change.window="color = $event.detail.color; size = $event.detail.size">
 <script>
 function productApp() {
     return {
@@ -71,42 +71,43 @@ function productApp() {
         size: '',
         hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
         variants: {!! json_encode($product->has_variants ? $product->variants : [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
+        currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
         
-        get currentVariant() {
-            if (!this.hasVariants) return null;
-            let c = this.color ? this.color.trim() : null;
-            let s = this.size ? this.size.trim() : null;
-            return this.variants.find(v => {
-                let matchesColor = c ? (v.color && v.color.trim() === c) : true;
-                let matchesSize = s ? (v.size && v.size.trim() === s) : true;
-                return matchesColor && matchesSize;
-            });
+        updatePrice() {
+            if(this.hasVariants) {
+                let c = this.color ? this.color.trim() : null;
+                let s = this.size ? this.size.trim() : null;
+                let matched = this.variants.find(v => {
+                    let matchesColor = c ? (v.color && v.color.trim() === c) : true;
+                    let matchesSize = s ? (v.size && v.size.trim() === s) : true;
+                    return matchesColor && matchesSize;
+                });
+                
+                if(matched) {
+                    this.currentPrice = parseInt(matched.price || {{ $product->sale_price ?? $product->regular_price ?? 0 }});
+                    if (matched.image) {
+                        this.mainImg = '/storage/' + matched.image;
+                    }
+                } else {
+                    this.currentPrice = {{ $product->sale_price ?? $product->regular_price ?? 0 }};
+                }
+            } else {
+                this.currentPrice = {{ $product->sale_price ?? $product->regular_price ?? 0 }};
+            }
         },
         
         get displayPrice() {
-            if (this.currentVariant && this.currentVariant.price > 0) {
-                return parseFloat(this.currentVariant.price).toLocaleString();
-            }
-            return '{{ number_format($product->sale_price ?? $product->regular_price) }}';
+            return this.currentPrice ? this.currentPrice.toLocaleString() : '{{ number_format($product->sale_price ?? $product->regular_price) }}';
         },
 
         get stockStatus() {
-            if (this.hasVariants) {
-                if (!this.color && !this.size) return '{{ $product->stock_status }}';
-                if (this.currentVariant) {
-                    return this.currentVariant.stock_quantity > 0 ? 'in_stock' : 'out_of_stock';
-                }
-                return 'out_of_stock';
-            }
             return '{{ $product->stock_status }}';
         },
 
         get availableStock() {
-            if (this.hasVariants) {
-                return this.currentVariant ? this.currentVariant.stock_quantity : 0;
-            }
             return {{ $product->stock_quantity ?? 0 }};
-        }
+        },
+        tab: 'description'
     };
 }
 </script>
@@ -192,9 +193,9 @@ function productApp() {
 
                 {{-- Pricing --}}
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="text-xl font-bold text-primary">?<span x-text="displayPrice"></span></span>
+                    <span class="text-xl font-bold text-primary">৳<span x-text="displayPrice"></span></span>
                     @if($product->sale_price)
-                        <del class="text-sm text-gray-400">?{{number_format($product->regular_price)}}</del>
+                        <del class="text-sm text-gray-400">৳{{number_format($product->regular_price)}}</del>
                         <span class="text-[10px] font-bold text-primary border border-primary px-1 py-0.5 rounded">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}%</span>
                     @endif
                 </div>
@@ -211,7 +212,7 @@ function productApp() {
                 {{-- EMI & Warranty Box Info --}}
                 <div class="text-xs text-gray-700 space-y-4">
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                        <span>EMI from : ?{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
+                        <span>EMI from : ৳{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
                         <a href="#" class="text-primary hover:underline flex items-center gap-1 font-semibold">Know More <i class="fas fa-chevron-right text-[8px]"></i></a>
                     </div>
                     <div class="flex items-center gap-2 p-2">

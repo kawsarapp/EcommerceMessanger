@@ -88,15 +88,19 @@ $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
             </a>
 
             {{-- Desktop Search --}}
+            @if($client->widget('search_bar'))
             <div class="hidden md:flex flex-1 max-w-xl mx-8 relative">
                 <form action="{{$baseUrl}}" method="GET" class="w-full">
-                    <input type="text" name="search" value="{{request('search')}}" placeholder="Search for fresh vegetables, fruits, meat..."
+                    <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search for fresh vegetables, fruits, meat...' }}"
                         class="w-full bg-slate-100 border-none px-6 py-3 rounded-full text-slate-700 font-semibold focus:outline-none focus:bg-white transition shadow-inner">
                     <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 text-white rounded-full flex items-center justify-center transition shadow-sm" style="background-color: var(--tw-color-primary);">
                         <i class="fas fa-search text-xs"></i>
                     </button>
                 </form>
             </div>
+            @else
+            <div class="hidden md:flex flex-1 max-w-xl mx-8 relative"></div>
+            @endif
 
             {{-- Actions --}}
             <div class="hidden md:flex items-center gap-4">
@@ -130,7 +134,7 @@ $baseUrl = $clean ? 'https://'.$clean : route('shop.show', $client->slug);
                     </div>
                     <span class="text-2xl font-black text-slate-800 tracking-tight">{{$client->shop_name}}</span>
                 </a>
-                <p class="text-slate-500 font-semibold text-sm leading-relaxed mb-6">{{ $client->description ?? 'Freshness delivered right to your doorstep. We ensure quality and hygiene in every product we pack.' }}</p>
+                <p class="text-slate-500 font-semibold text-sm leading-relaxed mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Freshness delivered right to your doorstep. We ensure quality and hygiene in every product we pack.') }}</p>
                 <div class="flex gap-3 text-2xl text-slate-400">
                     @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="hover:text-blue-600 transition"><i class="fab fa-facebook-f text-lg"></i></a>@endif
                     @if($client->instagram_url ?? false)<a href="{{$client->instagram_url}}" target="_blank" class="hover:text-pink-500 transition"><i class="fab fa-instagram text-lg"></i></a>@endif

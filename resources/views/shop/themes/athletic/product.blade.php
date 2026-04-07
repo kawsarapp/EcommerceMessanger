@@ -127,37 +127,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             <!-- Order Form -->
             <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="border-y-8 border-dark py-12 mb-12 space-y-10">
                 
-                @if($product->colors)
-                <div>
-                    <span class="font-display font-bold text-2xl uppercase tracking-widest block mb-4 border-l-4 border-primary pl-3">রঙ বেছে নিন</span>
-                    <div class="flex gap-4 flex-wrap">
-                        @foreach($product->colors as $c)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="color" value="{{$c}}" x-model="color" class="peer hidden">
-                            <span class="btn-speed bg-gray-200 text-dark border-2 border-transparent peer-checked:bg-primary peer-checked:text-white peer-checked:border-dark peer-checked:shadow-primary-md px-8 py-4 transition-all">
-                                <span>{{$c}}</span>
-                            </span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                
-                @if($product->sizes)
-                <div>
-                    <span class="font-display font-bold text-2xl uppercase tracking-widest block mb-4 border-l-4 border-primary pl-3">সাইজ বেছে নিন</span>
-                    <div class="flex gap-4 flex-wrap">
-                        @foreach($product->sizes as $s)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="size" value="{{$s}}" x-model="size" class="peer hidden">
-                            <span class="btn-speed bg-gray-200 text-dark border-2 border-transparent peer-checked:bg-primary peer-checked:text-white peer-checked:border-dark peer-checked:shadow-primary-md w-16 h-16 flex items-center justify-center transition-all">
-                                <span>{{$s}}</span>
-                            </span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                @include('shop.partials.product-variations')
 
                 @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
                     <div class="font-display font-bold text-2xl text-green-600 uppercase tracking-widest -skew-x-[4deg] bg-green-50 border-4 border-green-600 px-6 py-3 w-fit shadow-dark-sm">
@@ -214,65 +184,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             @endif
 
             <!-- Specs & Policies -->
-            @if($product->key_features || $product->material || ($client->show_return_warranty ?? true))
-            <div class="bg-dark text-white p-8 md:p-12 -skew-x-[4deg] shadow-primary-xl">
-                <h3 class="font-display text-4xl mb-6 uppercase tracking-widest border-b-2 border-primary pb-4 inline-block skew-x-[4deg]">স্পেসিফিকেশন</h3>
-                
-                <div class="grid md:grid-cols-2 gap-8 skew-x-[4deg]">
-                    <div>
-                        @if($product->key_features)
-                        <ul class="space-y-3 font-sans font-bold text-sm">
-                            @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
-                                <li class="flex items-start"><i class="fas fa-square text-primary mt-1.5 mr-4 text-xs"></i> {{$feature}}</li>
-                            @endforeach
-                        </ul>
-                        @endif
-                    </div>
-                    
-                    <div class="space-y-4 font-sans font-bold text-sm bg-black/30 p-6 border-l-4 border-primary">
-                        @if($product->material)
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-cube text-primary w-5"></i>
-                            <div>
-                                <div class="text-xs text-gray-400 uppercase tracking-wider">উপাদান</div>
-                                <div>{{$product->material}}</div>
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($product->weight ?? false)
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-weight text-primary w-5"></i>
-                            <div>
-                                <div class="text-xs text-gray-400 uppercase tracking-wider">ওজন</div>
-                                <div>{{$product->weight}}</div>
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($client->show_return_warranty ?? true)
-                        @if($product->warranty ?? false)
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-shield-alt text-primary w-5"></i>
-                            <div>
-                                <div class="text-xs text-gray-400 uppercase tracking-wider">ওয়ারেন্টি</div>
-                                <div>{{$product->warranty}}</div>
-                            </div>
-                        </div>
-                        @endif
-
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-undo-alt text-primary w-5"></i>
-                            <div>
-                                <div class="text-xs text-gray-400 uppercase tracking-wider">রিটার্ন পলিসি</div>
-                                <div>{{$product->return_policy ?? '৭ দিনের মধ্যে রিটার্ন করা যাবে'}}</div>
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @endif
+            @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
 
         </div>
     </div>

@@ -102,14 +102,18 @@ $baseUrl=$clean ? 'https://'.$clean : route('shop.show', $client->slug);
                 </a>
 
                 {{-- Desktop Search --}}
+                @if($client->widget('search_bar'))
                 <div class="hidden lg:flex w-full max-w-xl mx-8 relative">
                     <form action="{{$baseUrl}}" method="GET" class="w-full">
-                        <input type="text" name="search" value="{{request('search')}}" placeholder="Search devices, accessories, models..."
+                        <input type="text" name="search" value="{{request('search')}}" placeholder="{{ $client->widgets['search_bar']['text'] ?? 'Search devices, accessories, models...'}}"
                             class="w-full bg-dark tech-border text-sm text-white px-4 py-2.5 rounded-md focus:ring-1 transition placeholder-gray-600 focus:outline-none"
                             style="--tw-ring-color: var(--tw-color-primary);">
                         <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
                     </form>
                 </div>
+                @else
+                <div class="hidden lg:flex w-full max-w-xl mx-8 relative"></div>
+                @endif
 
                 <div class="hidden md:flex items-center gap-4">
                     <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}"
@@ -137,7 +141,7 @@ $baseUrl=$clean ? 'https://'.$clean : route('shop.show', $client->slug);
                 <h3 class="font-black text-2xl text-white tracking-tight mb-4 flex items-center gap-2">
                     <i class="fas fa-microchip text-primary"></i> {{$client->shop_name}}
                 </h3>
-                <p class="text-gray-500 text-sm leading-relaxed mb-4 font-medium">{{ $client->description ?? ($client->tagline ?? 'Your ultimate hub for next-generation tech, gadgets, and components.') }}</p>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4 font-medium">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Your ultimate hub for next-generation tech, gadgets, and components.') }}</p>
                 @if($client->email)<a href="mailto:{{$client->email}}" class="text-gray-400 hover:text-primary transition text-xs flex items-center gap-2 mb-4"><i class="fas fa-envelope"></i> {{$client->email}}</a>@endif
                 <div class="flex gap-3">
                     @if($client->facebook_url ?? false)<a href="{{$client->facebook_url}}" target="_blank" class="text-gray-500 hover:text-primary transition"><i class="fab fa-facebook-f text-sm"></i></a>@endif

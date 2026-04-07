@@ -51,14 +51,17 @@
                 (v.color === this.color || (!v.color && !this.color)) && 
                 (v.size === this.size || (!v.size && !this.size))
             );
-            if(matched && matched.price) {
-                this.currentPrice = parseInt(matched.price);
+            if(matched) {
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if (matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
             } else {
                 this.currentPrice = this.basePrice;
             }
         }
     }
-}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice());">
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();" @variant-change.window="color = $event.detail.color; size = $event.detail.size">
     
     {{-- Breadcrumb --}}
     <div class="sh-breadcrumb flex items-center gap-2">
@@ -260,7 +263,7 @@
 
                 <div x-show="tab === 'bengali'" class="animate-fade-in hidden">
                     <p class="text-justify font-medium text-gray-600">
-                        ?? ??????? ???????? ????????? ????? ????? ???? ??? ??? ??????
+                        {!! clean($product->description ?? $product->long_description) !!}
                     </p>
                 </div>
                 

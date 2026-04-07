@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.electronics.layout')
+@extends('shop.themes.electronics.layout')
 @section('title', $product->name . ' | Spec Details')
 
 @section('content')
@@ -6,7 +6,35 @@
 $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rtrim($client->custom_domain,'/')) : route('shop.show',$client->slug); 
 @endphp
 
-<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10" x-data="{ mainImg: '{{asset('storage/'.$product->thumbnail)}}', qty: 1, color: '', size: '' }">
+<main class="max-w-[100rem] mx-auto px-4 md:px-8 py-10" x-data="{ 
+    mainImg: '{{asset('storage/'.$product->thumbnail)}}', 
+    qty: 1, 
+    color: '', 
+    size: '',
+    hasVariants: {{ $product->has_variants ? 'true' : 'false' }},
+    variants: {{ $product->has_variants ? $product->variants->toJson() : '[]' }},
+    basePrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentPrice: {{ $product->sale_price ?? $product->regular_price ?? 0 }},
+    currentVariant: null,
+    updatePrice() {
+        if(this.hasVariants) {
+            let matched = this.variants.find(v => 
+                (v.color === this.color || (!v.color && !this.color)) && 
+                (v.size === this.size || (!v.size && !this.size))
+            );
+            if(matched) {
+                this.currentVariant = matched;
+                this.currentPrice = parseInt(matched.price || this.basePrice);
+                if(matched.image) {
+                    this.mainImg = '/storage/' + matched.image;
+                }
+            } else {
+                this.currentVariant = null;
+                this.currentPrice = this.basePrice;
+            }
+        }
+    }
+}" x-init="$watch('color', () => updatePrice()); $watch('size', () => updatePrice()); updatePrice();">
     
     <!-- Breadcrumb terminal style -->
     <div class="mb-8 font-mono text-[10px] font-bold text-gray-500 tracking-widest uppercase flex items-center gap-2">
@@ -66,7 +94,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                         <div class="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl point-events-none"></div>
                         <div>
                             <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest block mb-1">MSRP</span>
-                            <span class="text-4xl font-black font-mono text-white tracking-tighter">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
+                            <span class="text-4xl font-black font-mono text-white tracking-tighter" x-text="'৳' + new Intl.NumberFormat('en-IN').format(currentPrice)">৳{{number_format($product->sale_price ?? $product->regular_price)}}</span>
                         </div>
                         @if($product->sale_price)
                             <div class="pb-1">
