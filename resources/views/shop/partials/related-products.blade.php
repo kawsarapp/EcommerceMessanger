@@ -1,3 +1,14 @@
+@php
+    if(!isset($relatedProducts) && isset($product)) {
+        $relatedProducts = \App\Models\Product::where('client_id', $client->id)
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->where('status', 1)
+            ->inRandomOrder()
+            ->take(8)
+            ->get();
+    }
+@endphp
 @if(isset($relatedProducts) && $relatedProducts->count() > 0)
 <div class="mt-16 mb-10">
     <div class="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">

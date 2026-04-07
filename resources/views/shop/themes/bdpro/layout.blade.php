@@ -159,7 +159,10 @@ $primary='var(--tw-color-primary)';
             
             {{-- Category Dropdown Button --}}
             <div class="relative group h-full flex items-center bg-white/10 hover:bg-white/20 transition px-5 w-60">
-                @include('shop.partials.header-category-menu')
+                @php 
+                    $navCategories = $categories ?? \App\Models\Category::where('client_id', $client->id)->whereNull('parent_id')->with('children')->get(); 
+                @endphp
+                @include('shop.partials.header-category-menu', ['categories' => $navCategories])
             </div>
 
             <div class="flex items-center ml-6 flex-1 gap-1">

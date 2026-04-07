@@ -129,45 +129,9 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
                     @endif
                 </div>
 
-                <form action="{{$baseUrl.'/checkout/'.$product->slug}}" method="GET" class="space-y-8">
-                    
-                    @if($product->has_variants)
-                    <div class="bg-white rounded-xl">
-                        @include('shop.partials.product-variations')
-                    </div>
-                    @endif
-
-                    <!-- Quantity & Action Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-4 sm:items-end">
-                        <div class="w-full sm:w-auto">
-                            <label class="font-bold text-gray-700 text-sm block mb-2">Quantity</label>
-                            <div class="flex items-center bg-white border border-gray-300 rounded-xl overflow-hidden h-[52px] w-full sm:w-36">
-                                <button type="button" @click="if(qty>1)qty--" class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center transition border-r border-gray-300 h-full">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <input type="number" name="qty" x-model="qty" class="w-16 h-full text-center font-bold text-lg text-gray-900 p-0 border-none focus:ring-0" readonly>
-                                <button type="button" @click="qty++" class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-600 flex items-center justify-center transition border-l border-gray-300 h-full">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex-1 flex flex-col gap-3">
-                            @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                                <button type="button" disabled class="w-full h-[52px] bg-gray-200 text-gray-500 font-bold rounded-xl border border-gray-300 cursor-not-allowed">
-                                    OUT OF STOCK
-                                </button>
-                            @else
-                                @if($client->show_order_button ?? true)
-                                    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-                                    <button type="submit" class="w-full h-[52px] bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all flex justify-center items-center gap-2 text-lg">
-                                        <i class="fas fa-shopping-bag"></i> Order Now
-                                    </button>
-                                @endif
-                            @endif
-                        </div>
-                    </div>
-                </form>
+                <div class="bg-white rounded-xl">
+                    @include('shop.partials.product-variations')
+                </div>
                 
                 {{-- Info Badges --}}
                 <div class="grid grid-cols-2 gap-3 mt-8 pt-8 border-t border-gray-100">
@@ -197,45 +161,90 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
     </div>
 
-    {{-- Description Segment --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mt-8">
-        <h3 class="text-2xl font-extrabold text-gray-900 mb-6 flex items-center gap-3">
-            <span class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                <i class="fas fa-info-circle text-sm"></i>
-            </span>
-            Product Description
-        </h3>
-        <div class="prose prose-sm md:prose-base max-w-none text-gray-600 font-sans leading-relaxed">
-            @if($product->description ?? $product->short_description)
-                {!! clean($product->description ?? $product->short_description) !!}
-            @else
-                <p>No detailed description available.</p>
+    {{-- Product Details Tabs Component --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-8 overflow-hidden" x-data="{ tab: 'description' }">
+        {{-- Tabs Header --}}
+        <div class="flex overflow-x-auto hide-scroll border-b border-gray-100 bg-gray-50/50">
+            <button @click="tab = 'description'" :class="tab === 'description' ? 'border-primary text-primary font-bold bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'" class="px-6 py-4 text-sm whitespace-nowrap border-b-2 transition-all">
+                <i class="fas fa-info-circle mr-2"></i> Description
+            </button>
+            <button @click="tab = 'features'" :class="tab === 'features' ? 'border-primary text-primary font-bold bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'" class="px-6 py-4 text-sm whitespace-nowrap border-b-2 transition-all">
+                <i class="fas fa-list mr-2"></i> Features & Details
+            </button>
+            @if($product->video_url)
+            <button @click="tab = 'video'" :class="tab === 'video' ? 'border-primary text-primary font-bold bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'" class="px-6 py-4 text-sm whitespace-nowrap border-b-2 transition-all">
+                <i class="fas fa-play-circle mr-2"></i> Video Review
+            </button>
             @endif
+            <button @click="tab = 'reviews'" :class="tab === 'reviews' ? 'border-primary text-primary font-bold bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'" class="px-6 py-4 text-sm whitespace-nowrap border-b-2 transition-all">
+                <i class="fas fa-star mr-2"></i> Reviews
+            </button>
         </div>
-        
-        @if($product->key_features)
-        <div class="mt-8 pt-8 border-t border-gray-100">
-            <h4 class="font-bold text-gray-900 text-lg mb-4">Key Features</h4>
-            <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
-                @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
-                    <li class="flex items-start gap-2 bg-gray-50 p-3 rounded-lg"><i class="fas fa-check-circle text-green-500 mt-0.5"></i> <span>{{$feature}}</span></li>
-                @endforeach
-            </ul>
+
+        {{-- Tabs Content --}}
+        <div class="p-6 md:p-8">
+            
+            {{-- Description Tab --}}
+            <div x-show="tab === 'description'" x-transition.opacity class="prose prose-sm md:prose-base max-w-none text-gray-600 font-sans leading-relaxed">
+                @if($product->description ?? $product->short_description)
+                    {!! clean($product->description ?? $product->short_description) !!}
+                @else
+                    <p class="text-center py-8 text-gray-500">No detailed description available for this product.</p>
+                @endif
+            </div>
+
+            {{-- Features Tab --}}
+            <div x-show="tab === 'features'" style="display: none;" x-transition.opacity>
+                @if($product->key_features)
+                    <h4 class="font-bold text-gray-900 text-lg mb-4">Key Features</h4>
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
+                        @foreach(is_string($product->key_features) ? json_decode($product->key_features,true) : $product->key_features as $feature)
+                            <li class="flex items-start gap-2 bg-gray-50 p-3 rounded-lg"><i class="fas fa-check-circle text-green-500 mt-0.5"></i> <span>{{$feature}}</span></li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="text-center py-8 text-gray-500">No specific features listed.</p>
+                @endif
+                <div class="mt-6">
+                    @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
+                </div>
+            </div>
+
+            {{-- Video Tab --}}
+            @if($product->video_url)
+            <div x-show="tab === 'video'" style="display: none;" x-transition.opacity>
+                @php
+                    $youtubeId = '';
+                    if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $product->video_url, $match)) {
+                        $youtubeId = $match[1];
+                    }
+                @endphp
+                @if($youtubeId)
+                    <div class="relative w-full overflow-hidden rounded-xl bg-gray-900" style="padding-top: 56.25%;">
+                        <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/{{ $youtubeId }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                @else
+                    <div class="text-center py-8">
+                        <a href="{{$product->video_url}}" target="_blank" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition">
+                            <i class="fab fa-youtube text-xl"></i> Watch Video on YouTube
+                        </a>
+                    </div>
+                @endif
+            </div>
+            @endif
+
+            {{-- Reviews Tab --}}
+            <div x-show="tab === 'reviews'" style="display: none;" x-transition.opacity>
+                @include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
+            </div>
         </div>
-        @endif
     </div>
     
-    <div class="mt-8">
-        @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
-    </div>
-
-    <div class="mt-8">
+    <div class="mt-10">
         @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
     </div>
 
 </div>
-
-@include('shop.partials.product-reviews', ['product' => $product, 'client' => $client])
 
 @include('shop.partials.product-sticky-bar')
 @endsection
