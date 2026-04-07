@@ -35,7 +35,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 
     {{-- Breadcrumb --}}
     <nav class="mb-4 flex items-center text-xs text-gray-500">
-        <a href="{{ $baseUrl }}" class="hover:text-primary transition">{{ ->widgets['trans_home'] ?? 'Home' }}</a>
+        <a href="{{ $baseUrl }}" class="hover:text-primary transition">{{ $client->widgets['trans_home'] ?? 'Home' }}</a>
         <i class="fas fa-chevron-right text-[8px] mx-2 text-gray-300"></i>
         <span class="text-dark font-medium">অর্ডার করুন</span>
     </nav>
@@ -198,7 +198,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 
                 {{-- Qty --}}
                 <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                    <span class="text-sm font-semibold text-gray-600">{{ ->widgets['trans_qty'] ?? 'Quantity' }}</span>
+                    <span class="text-sm font-semibold text-gray-600">{{ $client->widgets['trans_qty'] ?? 'Quantity' }}</span>
                     <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                         <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-dark hover:bg-gray-50 transition"><i class="fas fa-minus text-xs"></i></button>
                         <span class="w-12 text-center font-bold" x-text="qty"></span>

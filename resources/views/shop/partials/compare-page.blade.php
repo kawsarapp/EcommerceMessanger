@@ -33,7 +33,7 @@
     <div class="text-center py-24">
         <div class="text-6xl mb-4">⚖️</div>
         <h2 class="text-xl font-bold text-gray-700 mb-2">কোনো পণ্য নির্বাচন করা হয়নি</h2>
-        <p class="text-gray-500 mb-6">পণ্যের পেজ থেকে "{{ ->widgets['trans_compare'] ?? 'Compare' }}" বাটনে ক্লিক করে পণ্য যোগ করুন।</p>
+        <p class="text-gray-500 mb-6">পণ্যের পেজ থেকে "{{ $client->widgets['trans_compare'] ?? 'Compare' }}" বাটনে ক্লিক করে পণ্য যোগ করুন।</p>
         <a href="{{ $baseUrl ?: route('shop.show', $client->slug) }}"
             class="inline-flex items-center gap-2 bg-gray-900 text-white font-semibold px-6 py-3 rounded-xl hover:bg-gray-700 transition">
             <i class="fas fa-shopping-bag"></i> কেনাকাটায় ফিরুন

@@ -13,7 +13,7 @@
     {{-- Stock Overlay --}}
     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
         <div class="absolute inset-0 bg-white/90 backdrop-blur-[1px] z-30 flex items-center justify-center rounded-2xl">
-            <span class="bg-gray-900 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg">{{ ->widgets['trans_out_of_stock'] ?? 'Out of Stock' }}</span>
+            <span class="bg-gray-900 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg">{{ $client->widgets['trans_out_of_stock'] ?? 'Out of Stock' }}</span>
         </div>
     @endif
 

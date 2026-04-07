@@ -14,8 +14,8 @@ main,footer{padding-bottom:calc(75px + env(safe-area-inset-bottom,0px))!importan
 </style>
 
 <nav class="mob-nav" x-data>
-    <a href="{{ $baseUrl }}" title="{{ ->widgets['trans_home'] ?? 'Home' }}" class="{{ !request('category') && request()->route()->getName() !== 'shop.checkout' ? 'active' : '' }}">
-        <i class="fas fa-home"></i><span>{{ ->widgets['trans_home'] ?? 'Home' }}</span>
+    <a href="{{ $baseUrl }}" title="{{ $client->widgets['trans_home'] ?? 'Home' }}" class="{{ !request('category') && request()->route()->getName() !== 'shop.checkout' ? 'active' : '' }}">
+        <i class="fas fa-home"></i><span>{{ $client->widgets['trans_home'] ?? 'Home' }}</span>
     </a>
 
     <a href="{{$baseUrl}}?category=all" title="ক্যাটাগরি" class="{{ request('category') ? 'active' : '' }}">

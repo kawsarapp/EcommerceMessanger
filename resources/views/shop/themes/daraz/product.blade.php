@@ -33,7 +33,7 @@
         
         {{-- Breadcrumb --}}
         <div class="text-sm text-gray-500 mb-4 flex items-center gap-2">
-            <a href="{{$baseUrl}}" class="hover:text-primary transition">{{ ->widgets['trans_home'] ?? 'Home' }}</a>
+            <a href="{{$baseUrl}}" class="hover:text-primary transition">{{ $client->widgets['trans_home'] ?? 'Home' }}</a>
             <i class="fas fa-chevron-right text-[10px]"></i>
             <span class="text-gray-400">{{$product->category->name ?? 'General'}}</span>
             <i class="fas fa-chevron-right text-[10px]"></i>
@@ -73,7 +73,7 @@
 
                     @if($product->video_url)
                     <a href="{{$product->video_url}}" target="_blank" class="w-full mt-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 py-2.5 rounded flex items-center justify-center font-bold text-sm transition">
-                        <i class="fab fa-youtube text-lg mr-2"></i> {{ ->widgets['trans_video'] ?? 'Watch Video' }}
+                        <i class="fab fa-youtube text-lg mr-2"></i> {{ $client->widgets['trans_video'] ?? 'Watch Video' }}
                     </a>
                     @endif
                 </div>
@@ -120,7 +120,7 @@
                         @include('shop.partials.product-variations')
 
                         <div class="flex items-center gap-6 pt-4 border-t border-gray-100">
-                            <span class="text-gray-500 text-sm font-medium">{{ ->widgets['trans_qty'] ?? 'Quantity' }}</span>
+                            <span class="text-gray-500 text-sm font-medium">{{ $client->widgets['trans_qty'] ?? 'Quantity' }}</span>
                             <div class="flex items-center select-none">
                                 <button type="button" @click="if(qty>1)qty--" class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"><i class="fas fa-minus text-xs"></i></button>
                                 <input type="number" name="qty" x-model="qty" class="w-12 text-center text-sm font-bold border-none bg-transparent focus:ring-0" readonly>
@@ -129,17 +129,17 @@
                         </div>
 
                         @if(($client->show_stock ?? true) && (!isset($product->stock_status) || $product->stock_status != 'out_of_stock'))
-                            <div class="text-xs font-bold text-green-600 mb-1 mt-4"><i class="fas fa-check-circle mr-1"></i> {{ ->widgets['trans_in_stock'] ?? 'In Stock' }}</div>
+                            <div class="text-xs font-bold text-green-600 mb-1 mt-4"><i class="fas fa-check-circle mr-1"></i> {{ $client->widgets['trans_in_stock'] ?? 'In Stock' }}</div>
                         @else
                             <div class="mb-1 mt-4"></div>
                         @endif
 
                         <div class="flex gap-3 pt-2">
                             @if(isset($product->stock_status) && $product->stock_status == 'out_of_stock')
-                                <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 py-3 rounded font-bold uppercase cursor-not-allowed">{{ ->widgets['trans_out_of_stock'] ?? 'Out of Stock' }}</button>
+                                <button type="button" disabled class="flex-1 bg-gray-300 text-gray-500 py-3 rounded font-bold uppercase cursor-not-allowed">{{ $client->widgets['trans_out_of_stock'] ?? 'Out of Stock' }}</button>
                             @else
                                 @if($client->show_order_button ?? true)
-                                    <button type="submit" class="flex-1 bg-[#2ABBE8] hover:bg-[#1d9fc9] text-white py-3 rounded text-sm font-bold transition shadow-sm">{{ ->widgets['trans_buy_now'] ?? 'Buy Now' }}</button>
+                                    <button type="submit" class="flex-1 bg-[#2ABBE8] hover:bg-[#1d9fc9] text-white py-3 rounded text-sm font-bold transition shadow-sm">{{ $client->widgets['trans_buy_now'] ?? 'Buy Now' }}</button>
                                 @endif
                                 @if($client->show_chat_button ?? true)
                                     @include('shop.themes.daraz.chat-button', ['client' => $client, 'product' => $product])
@@ -152,12 +152,12 @@
                 {{-- Right: Delivery Options (3 cols) --}}
                 <div class="hidden lg:block lg:col-span-3">
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <div class="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wider">{{ ->widgets['trans_delivery_opt'] ?? 'Delivery Options' }}</div>
+                        <div class="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wider">{{ $client->widgets['trans_delivery_opt'] ?? 'Delivery Options' }}</div>
                         
                         <div class="flex gap-3 mb-4">
                             <i class="fas fa-map-marker-alt text-gray-400 mt-0.5"></i>
                             <div class="text-sm text-gray-700">
-                                সারা দেশে {{ ->widgets['trans_home'] ?? 'Home' }} ডেলিভারি
+                                সারা দেশে {{ $client->widgets['trans_home'] ?? 'Home' }} ডেলিভারি
                             </div>
                         </div>
                         

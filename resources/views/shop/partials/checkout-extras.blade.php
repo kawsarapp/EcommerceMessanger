@@ -282,7 +282,7 @@
             <span class="text-2xl font-black text-violet-700">&#2547;</span>
             <input type="number" name="advance_amount"
                 min="{{ $client->partial_payment_amount ?? 0 }}"
-                placeholder="{{ ($client->partial_payment_amount ?? 0) > 0 ? 'Minimum &#2547;'.($client->partial_payment_amount) : 'যেকোনো {{ ->widgets['trans_qty'] ?? 'Quantity' }}' }}"
+                placeholder="{{ ($client->partial_payment_amount ?? 0) > 0 ? 'Minimum &#2547;'.($client->partial_payment_amount) : 'যেকোনো {{ $client->widgets['trans_qty'] ?? 'Quantity' }}' }}"
                 class="flex-1 border-2 border-violet-200 bg-white rounded-xl px-4 py-3 font-bold text-xl focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
                 :required="selectedPayment === 'partial'">
         </div>
