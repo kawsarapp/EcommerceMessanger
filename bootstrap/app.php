@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Named aliases for route-level usage
         $middleware->alias([
             'api.rate-limit' => \App\Http\Middleware\ClientApiRateLimiter::class,
+            'tenant.customer' => \App\Http\Middleware\CheckCustomerTenant::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

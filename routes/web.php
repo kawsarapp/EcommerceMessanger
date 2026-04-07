@@ -56,7 +56,7 @@ Route::middleware(['auth'])->get('/download/neuralcart-plugin', [
 // =============================================================
 // 🛍️ DYNAMIC SHOP ENGINE (Powered by DomainMappingMiddleware)
 // =============================================================
-Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->group(function () {
+Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class, 'tenant.customer'])->group(function () {
 
     // ==========================================
     // 🛒 SUB-PATH ROUTING (maindomain.com/shop/...)
