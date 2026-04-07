@@ -28,7 +28,7 @@ Route::get('/', function (Request $request) {
     }
     // না হলে মেইন সাইটের ওয়েলকাম পেজ
     return view('welcome');
-})->middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->name('home');
+})->middleware([\App\Http\Middleware\DomainMappingMiddleware::class, 'tenant.customer'])->name('home');
 
 // 🔥 Pricing Page
 Route::get('/pricing', function () {
@@ -221,7 +221,7 @@ Route::middleware(['auth'])->prefix('admin-backup')->group(function () {
 // ==========================================
 // 💳 PAYMENT GATEWAY ROUTES
 // ==========================================
-Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class])->prefix('payment')->group(function () {
+Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class, 'tenant.customer'])->prefix('payment')->group(function () {
 
     // 📲 bKash Reference Confirmation (AJAX — Manual)
     Route::post('/bkash/personal/confirm',  [PaymentController::class, 'confirmBkashPersonal'])->name('payment.bkash.personal.confirm');
