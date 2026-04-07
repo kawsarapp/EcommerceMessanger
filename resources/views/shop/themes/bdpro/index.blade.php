@@ -33,7 +33,7 @@
     {{-- Hero Banner --}}
     @if($client->widget('hero_banner'))
         <div class="mb-10">
-            <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="$categories ?? null" />
+            <x-shop.widgets.hero-banner :client="$client" :config="$client->widgetConfig('hero_banner')" :categories="null" />
         </div>
     @endif
 
