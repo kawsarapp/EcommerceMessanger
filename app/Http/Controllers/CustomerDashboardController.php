@@ -39,6 +39,11 @@ class CustomerDashboardController extends Controller
 
         $loyaltyBalance = LoyaltyPoint::balanceFor($client->id, $customer->phone);
 
-        return view('shop.customer.dashboard', compact('client', 'clean', 'baseUrl', 'customer', 'orders', 'loyaltyBalance'));
+        $totalOrders = $orders->count();
+        $pendingOrders = $orders->whereIn('order_status', ['pending', 'processing'])->count();
+        $completedOrders = $orders->where('order_status', 'delivered')->count();
+        $cancelledOrders = $orders->whereIn('order_status', ['cancelled', 'returned'])->count();
+
+        return view('shop.customer.dashboard', compact('client', 'clean', 'baseUrl', 'customer', 'orders', 'loyaltyBalance', 'totalOrders', 'pendingOrders', 'completedOrders', 'cancelledOrders'));
     }
 }

@@ -171,10 +171,10 @@ $primary='var(--tw-color-primary)';
                         <a href="{{ $item->resolved_url }}" target="{{ $item->target }}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is(ltrim($item->resolved_url, '/')) ? 'text-yellow-400' : 'text-white/90 hover:text-white' }}">{{ $item->label }}</a>
                     @endforeach
                 @else
-                    <a href="{{$baseUrl}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is('/') ? 'text-yellow-400' : '' }}"><i class="fas fa-home"></i> Home</a>
-                    <a href="{{$baseUrl}}?category=hot-deals" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-yellow-400"><i class="fas fa-fire"></i> Hot Deals</a>
-                    <a href="{{$baseUrl}}?category=all" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">All Products</a>
-                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-white/90 hover:text-white"><i class="fas fa-truck-fast"></i> Track Order</a>
+                    <a href="{{$baseUrl}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 {{ request()->is('/') ? 'text-yellow-400' : '' }}"><i class="fas fa-home"></i> {{ $client->widgets['home_text'] ?? 'Home' }}</a>
+                    <a href="{{$baseUrl}}?category=hot-deals" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-yellow-400"><i class="fas fa-fire"></i> {{ $client->widgets['hot_deals_text'] ?? 'Hot Deals' }}</a>
+                    <a href="{{$baseUrl}}?category=all" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold text-white/90 hover:text-white">{{ $client->widgets['all_products_text'] ?? 'All Products' }}</a>
+                    <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="px-4 py-2 rounded-md hover:bg-white/10 transition text-sm font-bold flex items-center gap-2 text-white/90 hover:text-white"><i class="fas fa-truck-fast"></i> {{ $client->widgets['track_order_text'] ?? 'Track Order' }}</a>
                 @endif
             </div>
         </div>
