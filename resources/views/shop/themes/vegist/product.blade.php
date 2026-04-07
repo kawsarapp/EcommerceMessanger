@@ -182,9 +182,9 @@
 
             {{-- Price --}}
             <div class="flex items-baseline gap-3 mb-5">
-                <span class="text-3xl font-black text-dark">৳<span x-text="new Intl.NumberFormat('en-IN').format(currentPrice)"></span></span>
+                <span class="text-3xl font-black text-dark">&#2547;<span x-text="new Intl.NumberFormat('en-IN').format(currentPrice)"></span></span>
                 @if($pct > 0)
-                <span class="text-lg text-gray-400 line-through">৳{{number_format((float)$product->regular_price)}}</span>
+                <span class="text-lg text-gray-400 line-through">&#2547;{{number_format((float)$product->regular_price)}}</span>
                 <span class="text-xs bg-primary/5 text-primary border border-primary/20 px-2 py-0.5 rounded font-semibold">Save {{$pct}}%</span>
                 @endif
             </div>
@@ -467,9 +467,9 @@
                         {{$rp->name}}
                     </a>
                     <div class="flex items-center gap-2">
-                        <span class="text-sm font-bold text-dark">৳{{number_format((float)($rp->sale_price ?? $rp->regular_price ?? 0))}}</span>
+                        <span class="text-sm font-bold text-dark">&#2547;{{number_format((float)($rp->sale_price ?? $rp->regular_price ?? 0))}}</span>
                         @if($rpPct > 0)
-                        <span class="text-xs text-gray-400 line-through">৳{{number_format((float)$rp->regular_price)}}</span>
+                        <span class="text-xs text-gray-400 line-through">&#2547;{{number_format((float)$rp->regular_price)}}</span>
                         @endif
                     </div>
                     <div class="flex items-center text-[#ffb522] text-[10px] gap-0.5 mt-1">

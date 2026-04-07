@@ -25,7 +25,7 @@
         <a href="{{ $clean ? $baseUrl.'/compare' : route('shop.compare', $client->slug) }}"
             id="compare-go-btn"
             class="shrink-0 bg-white text-gray-900 text-xs font-bold px-4 py-2 rounded-xl hover:bg-gray-100 transition whitespace-nowrap">
-            তুলনা করুন →
+            {{ ->widgets['trans_compare'] ?? 'Compare' }} →
         </a>
 
         {{-- Clear --}}
@@ -108,7 +108,7 @@ function renderCompareBar() {
         var pid = btn.dataset.compareBtn;
         var inList = list.find(p => p.id == pid);
         btn.classList.toggle('compare-active', !!inList);
-        btn.title = inList ? 'তুলনা থেকে সরান' : 'তুলনায় যোগ করুন';
+        btn.title = inList ? 'তুলনা থেকে সরান' : '{{ ->widgets['trans_compare'] ?? 'Add to Compare' }}';
     });
 }
 

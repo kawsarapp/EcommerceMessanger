@@ -35,7 +35,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 
     {{-- Breadcrumb --}}
     <nav class="mb-4 flex items-center text-xs text-gray-500">
-        <a href="{{ $baseUrl }}" class="hover:text-primary transition">হোম</a>
+        <a href="{{ $baseUrl }}" class="hover:text-primary transition">{{ ->widgets['trans_home'] ?? 'Home' }}</a>
         <i class="fas fa-chevron-right text-[8px] mx-2 text-gray-300"></i>
         <span class="text-dark font-medium">অর্ডার করুন</span>
     </nav>
@@ -94,7 +94,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
                             <div class="border-2 border-gray-200 rounded-xl p-4 peer-checked:border-primary peer-checked:bg-primary/5 transition text-center hover:border-primary/50">
                                 <i class="fas fa-city text-primary text-2xl mb-2"></i>
                                 <span class="block font-bold text-dark">ঢাকার ভিতরে</span>
-                                <span class="block text-xl font-bold text-primary mt-1">৳{{ $client->delivery_charge_inside ?? 60 }}</span>
+                                <span class="block text-xl font-bold text-primary mt-1">&#2547;{{ $client->delivery_charge_inside ?? 60 }}</span>
                             </div>
                         </label>
                         <label class="cursor-pointer">
@@ -102,7 +102,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
                             <div class="border-2 border-gray-200 rounded-xl p-4 peer-checked:border-primary peer-checked:bg-primary/5 transition text-center hover:border-primary/50">
                                 <i class="fas fa-map-marked-alt text-primary text-2xl mb-2"></i>
                                 <span class="block font-bold text-dark">ঢাকার বাইরে</span>
-                                <span class="block text-xl font-bold text-primary mt-1">৳{{ $client->delivery_charge_outside ?? 120 }}</span>
+                                <span class="block text-xl font-bold text-primary mt-1">&#2547;{{ $client->delivery_charge_outside ?? 120 }}</span>
                             </div>
                         </label>
                     </div>
@@ -117,7 +117,7 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
                         <button type="button" @click="applyCoupon()" class="btn-primary px-6 py-3 text-white rounded-xl font-bold text-sm transition">প্রয়োগ</button>
                     </div>
                     <div x-show="couponApplied" class="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i><span class="font-bold text-green-700 text-sm" x-text="coupon"></span><span class="text-green-600 text-xs bg-green-100 px-2 py-0.5 rounded-full" x-text="'৳'+discount+' সেভ'"></span></div>
+                        <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i><span class="font-bold text-green-700 text-sm" x-text="coupon"></span><span class="text-green-600 text-xs bg-green-100 px-2 py-0.5 rounded-full" x-text="'&#2547;'+discount+' সেভ'"></span></div>
                         <button type="button" @click="coupon=''; discount=0; couponApplied=false" class="text-red-500 text-sm font-bold hover:text-red-600"><i class="fas fa-times"></i></button>
                     </div>
                     <input type="hidden" name="coupon_code" :value="couponApplied ? coupon : ''">
@@ -192,13 +192,13 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
                             @if(request('color'))<span class="bg-gray-200 text-dark text-[10px] font-bold px-2 py-0.5 rounded">{{ request('color') }}</span>@endif
                             @if(request('size'))<span class="bg-gray-200 text-dark text-[10px] font-bold px-2 py-0.5 rounded">{{ request('size') }}</span>@endif
                         </div>
-                        <span class="font-bold text-primary text-lg">৳{{ number_format($product->sale_price ?? $product->regular_price) }}</span>
+                        <span class="font-bold text-primary text-lg">&#2547;{{ number_format($product->sale_price ?? $product->regular_price) }}</span>
                     </div>
                 </div>
 
                 {{-- Qty --}}
                 <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                    <span class="text-sm font-semibold text-gray-600">পরিমাণ</span>
+                    <span class="text-sm font-semibold text-gray-600">{{ ->widgets['trans_qty'] ?? 'Quantity' }}</span>
                     <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
                         <button type="button" @click="if(qty>1)qty--" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-dark hover:bg-gray-50 transition"><i class="fas fa-minus text-xs"></i></button>
                         <span class="w-12 text-center font-bold" x-text="qty"></span>
@@ -208,13 +208,13 @@ $baseUrl = $client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',
 
                 {{-- Totals --}}
                 <div class="space-y-3 text-sm">
-                    <div class="flex justify-between"><span class="text-gray-500">সাবটোটাল</span><span class="font-bold text-dark">৳<span x-text="subtotal.toLocaleString()"></span></span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">ডেলিভারি চার্জ</span><span class="font-bold text-dark">৳<span x-text="delivery"></span></span></div>
-                    <div x-show="couponApplied" class="flex justify-between text-green-600 bg-green-50 px-3 py-2 rounded-lg"><span><i class="fas fa-tag mr-1"></i>কুপন ডিসকাউন্ট</span><span class="font-bold">-৳<span x-text="discount"></span></span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">সাবটোটাল</span><span class="font-bold text-dark">&#2547;<span x-text="subtotal.toLocaleString()"></span></span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">ডেলিভারি চার্জ</span><span class="font-bold text-dark">&#2547;<span x-text="delivery"></span></span></div>
+                    <div x-show="couponApplied" class="flex justify-between text-green-600 bg-green-50 px-3 py-2 rounded-lg"><span><i class="fas fa-tag mr-1"></i>কুপন ডিসকাউন্ট</span><span class="font-bold">-&#2547;<span x-text="discount"></span></span></div>
                     <div class="pt-4 border-t-2 border-dashed border-gray-200">
                         <div class="flex justify-between items-center bg-gradient-to-r from-primary/5 to-orange-50 p-4 rounded-xl">
                             <span class="font-bold text-dark">সর্বমোট</span>
-                            <span class="text-2xl font-bold text-primary">৳<span x-text="total.toLocaleString()"></span></span>
+                            <span class="text-2xl font-bold text-primary">&#2547;<span x-text="total.toLocaleString()"></span></span>
                         </div>
                     </div>
                 </div>

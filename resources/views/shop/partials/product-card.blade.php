@@ -53,9 +53,9 @@
         @endif
         
         <div class="flex items-center gap-2 mt-auto">
-            <span class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">৳{{number_format($p->sale_price ?? $p->regular_price)}}</span>
+            <span class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">&#2547;{{number_format($p->sale_price ?? $p->regular_price)}}</span>
             @if($p->sale_price)
-                <del class="text-[11px] text-slate-400 font-semibold">৳{{number_format($p->regular_price)}}</del>
+                <del class="text-[11px] text-slate-400 font-semibold">&#2547;{{number_format($p->regular_price)}}</del>
             @endif
         </div>
     </div>

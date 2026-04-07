@@ -43,7 +43,7 @@
                 @if($product->discount_type == 'percentage')
                     {{ $product->discount_amount }}% OFF
                 @else
-                    ৳{{ number_format($product->discount_amount) }} OFF
+                    &#2547;{{ number_format($product->discount_amount) }} OFF
                 @endif
             </div>
         @endif

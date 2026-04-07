@@ -80,7 +80,7 @@
 
                     {{-- Price --}}
                     <div class="md:col-span-2 text-center">
-                        <span class="text-sm font-semibold text-dark">৳<span x-text="item.price.toLocaleString()"></span></span>
+                        <span class="text-sm font-semibold text-dark">&#2547;<span x-text="item.price.toLocaleString()"></span></span>
                     </div>
 
                     {{-- Qty Controls --}}
@@ -99,7 +99,7 @@
 
                     {{-- Item Total --}}
                     <div class="md:col-span-1 text-right">
-                        <span class="text-sm font-bold text-dark">৳<span x-text="(item.price * item.qty).toLocaleString()"></span></span>
+                        <span class="text-sm font-bold text-dark">&#2547;<span x-text="(item.price * item.qty).toLocaleString()"></span></span>
                     </div>
                 </div>
             </template>
@@ -123,7 +123,7 @@
                 <div class="space-y-3 text-sm text-gray-600 mb-5">
                     <div class="flex justify-between">
                         <span>Subtotal (<span x-text="cartCount"></span> items)</span>
-                        <span class="font-semibold text-dark">৳<span x-text="subtotal.toLocaleString()"></span></span>
+                        <span class="font-semibold text-dark">&#2547;<span x-text="subtotal.toLocaleString()"></span></span>
                     </div>
                     <div class="flex justify-between text-xs text-gray-400">
                         <span>Shipping</span>
@@ -134,7 +134,7 @@
                 <div class="border-t border-gray-100 pt-4 mb-6">
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-dark">Total</span>
-                        <span class="text-xl font-black text-dark">৳<span x-text="subtotal.toLocaleString()"></span></span>
+                        <span class="text-xl font-black text-dark">&#2547;<span x-text="subtotal.toLocaleString()"></span></span>
                     </div>
                 </div>
 

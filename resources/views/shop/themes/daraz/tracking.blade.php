@@ -74,7 +74,7 @@
                     </div>
                     <div class="bg-gray-50 p-3 rounded-xl">
                         <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">মোট টাকা</span>
-                        <span class="text-lg font-bold text-primary">৳{{ number_format($o->total_amount) }}</span>
+                        <span class="text-lg font-bold text-primary">&#2547;{{ number_format($o->total_amount) }}</span>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-xl">
                         <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">পেমেন্ট</span>

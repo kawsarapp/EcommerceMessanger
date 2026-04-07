@@ -13,7 +13,7 @@
     {{-- Stock Overlay --}}
     @if(isset($p->stock_status) && $p->stock_status == 'out_of_stock')
         <div class="absolute inset-0 bg-white/90 backdrop-blur-[1px] z-30 flex items-center justify-center rounded-2xl">
-            <span class="bg-gray-900 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg">স্টক শেষ</span>
+            <span class="bg-gray-900 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg">{{ ->widgets['trans_out_of_stock'] ?? 'Out of Stock' }}</span>
         </div>
     @endif
 
@@ -49,9 +49,9 @@
 
         {{-- Price --}}
         <div class="flex items-end gap-2 flex-wrap">
-            <span class="text-base md:text-lg font-bold text-dark">৳{{ number_format($p->sale_price ?? $p->regular_price) }}</span>
+            <span class="text-base md:text-lg font-bold text-dark">&#2547;{{ number_format($p->sale_price ?? $p->regular_price) }}</span>
             @if($p->sale_price)
-                <del class="text-[10px] md:text-xs text-gray-400 font-medium">৳{{ number_format($p->regular_price) }}</del>
+                <del class="text-[10px] md:text-xs text-gray-400 font-medium">&#2547;{{ number_format($p->regular_price) }}</del>
             @endif
         </div>
 

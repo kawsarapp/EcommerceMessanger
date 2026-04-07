@@ -20,7 +20,7 @@
                 <i class="fas fa-plus text-sm"></i>
             </button>
         </div>
-        <span class="text-sm font-semibold text-slate-500">× ৳<span x-text="price"></span> = ৳<span x-text="qty * price" class="text-slate-900 font-bold"></span></span>
+        <span class="text-sm font-semibold text-slate-500">× &#2547;<span x-text="price"></span> = &#2547;<span x-text="qty * price" class="text-slate-900 font-bold"></span></span>
     </div>
 </div>
 
@@ -49,7 +49,7 @@
             <i class="fas fa-check-circle text-emerald-500 text-lg"></i>
             <div>
                 <span class="font-bold text-emerald-700 text-sm block" x-text="'Coupon: ' + couponCode"></span>
-                <span class="text-xs text-emerald-600 font-medium" x-text="'You saved ৳' + couponDiscount"></span>
+                <span class="text-xs text-emerald-600 font-medium" x-text="'You saved &#2547;' + couponDiscount"></span>
             </div>
         </div>
         <button type="button" @click="removeCoupon()" class="text-red-400 hover:text-red-600 text-sm font-bold transition">
@@ -277,17 +277,17 @@
     <div x-show="selectedPayment === 'partial'"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
         class="bg-violet-50 border-2 border-violet-200 rounded-xl p-5 mb-4">
-        <label class="block text-sm font-bold text-violet-800 mb-2"><i class="fas fa-wallet mr-1"></i> Advance Amount (৳) *</label>
+        <label class="block text-sm font-bold text-violet-800 mb-2"><i class="fas fa-wallet mr-1"></i> Advance Amount (&#2547;) *</label>
         <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-violet-700">৳</span>
+            <span class="text-2xl font-black text-violet-700">&#2547;</span>
             <input type="number" name="advance_amount"
                 min="{{ $client->partial_payment_amount ?? 0 }}"
-                placeholder="{{ ($client->partial_payment_amount ?? 0) > 0 ? 'Minimum ৳'.($client->partial_payment_amount) : 'যেকোনো পরিমাণ' }}"
+                placeholder="{{ ($client->partial_payment_amount ?? 0) > 0 ? 'Minimum &#2547;'.($client->partial_payment_amount) : 'যেকোনো {{ ->widgets['trans_qty'] ?? 'Quantity' }}' }}"
                 class="flex-1 border-2 border-violet-200 bg-white rounded-xl px-4 py-3 font-bold text-xl focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
                 :required="selectedPayment === 'partial'">
         </div>
         @if(($client->partial_payment_amount ?? 0) > 0)
-        <p class="text-xs text-violet-600 mt-1.5">সর্বনিম্ন advance: <strong>৳{{ $client->partial_payment_amount }}</strong></p>
+        <p class="text-xs text-violet-600 mt-1.5">সর্বনিম্ন advance: <strong>&#2547;{{ $client->partial_payment_amount }}</strong></p>
         @endif
     </div>
     @endif

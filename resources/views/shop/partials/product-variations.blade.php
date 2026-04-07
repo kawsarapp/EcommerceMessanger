@@ -86,7 +86,7 @@
                 </div>
                 <div class="flex-1 text-right sm:text-left">
                     <span class="text-sm text-gray-500 block mb-0.5">Total Price</span>
-                    <span class="text-2xl font-black text-gray-900 tracking-tight" x-text="'৳' + (basePrice * form.qty).toLocaleString('en-IN')"></span>
+                    <span class="text-2xl font-black text-gray-900 tracking-tight" x-text="'&#2547;' + (basePrice * form.qty).toLocaleString('en-IN')"></span>
                 </div>
             </div>
 

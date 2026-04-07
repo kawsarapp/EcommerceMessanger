@@ -31,7 +31,7 @@
         @if($activeFlashSale->discount_type==='percent')
             {{ number_format($activeFlashSale->discount_percent,0) }}% OFF
         @else
-            ৳{{ number_format($activeFlashSale->discount_amount,0) }} OFF
+            &#2547;{{ number_format($activeFlashSale->discount_amount,0) }} OFF
         @endif
     </span>
     <div style="display:flex;align-items:center;gap:6px;">

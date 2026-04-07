@@ -10,7 +10,7 @@
 --}}
 
 @php
-    $currency  = $client->currency ?? '৳';
+    $currency  = $client->currency ?? '&#2547;';
     $price     = (float) ($product->sale_price ?? $product->regular_price ?? 0);
     $thumbUrl  = $product->thumbnail ? asset('storage/'.$product->thumbnail) : ($product->image ? asset('storage/'.$product->image) : '');
     $compareUrl = $clean
@@ -24,9 +24,9 @@
         data-compare-btn="{{ $product->id }}"
         onclick="addToCompare({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ $thumbUrl }}', '{{ $currency }}{{ number_format($price, 0) }}')"
         class="compare-btn inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-400 bg-white px-3 py-2 rounded-lg transition cursor-pointer select-none"
-        title="তুলনায় যোগ করুন">
+        title="{{ ->widgets['trans_compare'] ?? 'Add to Compare' }}">
         <i class="fas fa-balance-scale text-gray-400"></i>
-        <span class="compare-label">তুলনা করুন</span>
+        <span class="compare-label">{{ ->widgets['trans_compare'] ?? 'Compare' }}</span>
     </button>
 
     {{-- 🏆 Loyalty Earn Estimate --}}

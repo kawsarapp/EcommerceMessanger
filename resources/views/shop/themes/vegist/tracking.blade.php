@@ -64,7 +64,7 @@ document.getElementById('trackForm').addEventListener('submit', async function(e
                             <span class="${statusColor} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">${o.status}</span>
                         </div>
                         <div class="text-[13px] text-gray-600">
-                            <strong>Total:</strong> ৳${parseFloat(o.total).toLocaleString()} 
+                            <strong>Total:</strong> &#2547;${parseFloat(o.total).toLocaleString()} 
                         </div>
                     </div>
                 `;

@@ -54,7 +54,7 @@
                     </div>
                     <div>
                         <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Total Amount</span>
-                        <span class="text-lg font-black text-blue-600 block leading-tight">৳{{ number_format($o->total_amount) }}</span>
+                        <span class="text-lg font-black text-blue-600 block leading-tight">&#2547;{{ number_format($o->total_amount) }}</span>
                     </div>
                     <div>
                         <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Payment</span>

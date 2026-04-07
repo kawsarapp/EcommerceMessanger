@@ -26,10 +26,10 @@
             @endif
 
             <div class="flex items-end gap-3 mb-6 pb-6 border-b border-slate-100">
-                <span class="text-4xl font-extrabold text-slate-900 font-mono tracking-tighter">৳{{ number_format($product->sale_price ?? $product->regular_price) }}</span>
+                <span class="text-4xl font-extrabold text-slate-900 font-mono tracking-tighter">&#2547;{{ number_format($product->sale_price ?? $product->regular_price) }}</span>
                 @if($product->sale_price)
                     <div class="flex flex-col mb-1.5">
-                        <span class="text-sm text-slate-400 line-through font-medium font-mono">৳{{ number_format($product->regular_price) }}</span>
+                        <span class="text-sm text-slate-400 line-through font-medium font-mono">&#2547;{{ number_format($product->regular_price) }}</span>
                         <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Save {{ round((($product->regular_price - $product->sale_price)/$product->regular_price)*100) }}%</span>
                     </div>
                 @endif

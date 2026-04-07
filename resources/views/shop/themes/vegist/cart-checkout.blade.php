@@ -132,7 +132,7 @@ function checkoutApp() {
                                    class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
                             <span class="text-sm font-medium text-gray-700">{{ $method->name }}</span>
                         </div>
-                        <span class="text-sm font-bold text-dark">{!! $method->cost > 0 ? '৳'.number_format($method->cost) : '<span class="text-green-500">Free</span>' !!}</span>
+                        <span class="text-sm font-bold text-dark">{!! $method->cost > 0 ? '&#2547;'.number_format($method->cost) : '<span class="text-green-500">Free</span>' !!}</span>
                     </label>
                     @endforeach
                 </div>
@@ -144,7 +144,7 @@ function checkoutApp() {
                             <input type="radio" value="inside" @change="area='inside'" :checked="area==='inside'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
                             <span class="text-sm font-medium text-gray-700">Inside Dhaka</span>
                         </div>
-                        <span class="text-sm font-bold text-dark">৳{{ $client->delivery_charge_inside ?? 50 }}</span>
+                        <span class="text-sm font-bold text-dark">&#2547;{{ $client->delivery_charge_inside ?? 50 }}</span>
                     </label>
                     <label class="flex justify-between items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 transition"
                            :class="area === 'outside' ? 'border-primary bg-primary/5' : ''">
@@ -152,7 +152,7 @@ function checkoutApp() {
                             <input type="radio" value="outside" @change="area='outside'" :checked="area==='outside'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
                             <span class="text-sm font-medium text-gray-700">Outside Dhaka</span>
                         </div>
-                        <span class="text-sm font-bold text-dark">৳{{ $client->delivery_charge_outside ?? 100 }}</span>
+                        <span class="text-sm font-bold text-dark">&#2547;{{ $client->delivery_charge_outside ?? 100 }}</span>
                     </label>
                 </div>
                 @endif
@@ -178,7 +178,7 @@ function checkoutApp() {
 
                 <button type="submit"
                         class="mt-5 w-full btn-primary rounded-xl !py-4 text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-                    <i class="fas fa-lock text-sm"></i> Place Order — ৳<span x-text="Math.round(total).toLocaleString()"></span>
+                    <i class="fas fa-lock text-sm"></i> Place Order — &#2547;<span x-text="Math.round(total).toLocaleString()"></span>
                 </button>
             </div>
         </div>
@@ -210,7 +210,7 @@ function checkoutApp() {
                                 <p class="text-[10px] text-primary">{{ $item['variant'] }}</p>
                                 @endif
                             </div>
-                            <span class="text-xs font-bold text-dark shrink-0">৳{{ number_format($item['price'] * $item['qty']) }}</span>
+                            <span class="text-xs font-bold text-dark shrink-0">&#2547;{{ number_format($item['price'] * $item['qty']) }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -227,19 +227,19 @@ function checkoutApp() {
                     <div class="space-y-2.5 text-sm border-t border-gray-100 pt-4">
                         <div class="flex justify-between text-gray-500">
                             <span>Subtotal</span>
-                            <span class="font-medium text-dark">৳{{ number_format($subtotal) }}</span>
+                            <span class="font-medium text-dark">&#2547;{{ number_format($subtotal) }}</span>
                         </div>
                         <div class="flex justify-between text-gray-500">
                             <span>Shipping</span>
-                            <span class="font-medium text-dark">৳<span x-text="delivery.toLocaleString()"></span></span>
+                            <span class="font-medium text-dark">&#2547;<span x-text="delivery.toLocaleString()"></span></span>
                         </div>
                         <div x-show="couponDiscount > 0" class="flex justify-between text-green-500">
                             <span>Coupon discount</span>
-                            <span class="font-medium">- ৳<span x-text="couponDiscount.toLocaleString()"></span></span>
+                            <span class="font-medium">- &#2547;<span x-text="couponDiscount.toLocaleString()"></span></span>
                         </div>
                         <div class="flex justify-between font-bold text-dark text-base pt-2 border-t border-gray-100">
                             <span>Total</span>
-                            <span>৳<span x-text="Math.round(total).toLocaleString()"></span></span>
+                            <span>&#2547;<span x-text="Math.round(total).toLocaleString()"></span></span>
                         </div>
                     </div>
                 </div>

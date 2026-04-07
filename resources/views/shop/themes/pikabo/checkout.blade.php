@@ -139,7 +139,7 @@ function checkoutApp() {
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-primary"></i> {{ $method->name }}</div>
-                                            <div class="text-xs text-gray-500 font-medium">{!! $method->cost > 0 ? '৳'.number_format($method->cost) : 'Free' !!}</div>
+                                            <div class="text-xs text-gray-500 font-medium">{!! $method->cost > 0 ? '&#2547;'.number_format($method->cost) : 'Free' !!}</div>
                                             @if($method->estimated_time)
                                                 <div class="text-[9px] text-gray-400 mt-0.5"><i class="far fa-clock"></i> {{ $method->estimated_time }}</div>
                                             @endif
@@ -151,7 +151,7 @@ function checkoutApp() {
                             <div class="mt-3 bg-primary/10/50 border border-blue-100 rounded-md py-2 px-3 flex items-center text-[10px] text-gray-600">
                                 <i class="fas fa-info-circle text-blue-500 mr-2"></i> 
                                 Selected: <span class="font-bold text-gray-800 ml-1" x-text="shippingMethods.find(m => m.id == shippingMethodId)?.name"></span> 
-                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
+                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '&#2547;'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
                             </div>
                         @else
                             <div class="grid sm:grid-cols-3 gap-3">
@@ -176,7 +176,7 @@ function checkoutApp() {
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-blue-500"></i> Inside Dhaka</div>
-                                            <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_inside ?? 50}}</div>
+                                            <div class="text-xs text-gray-500 font-medium">&#2547;{{$client->delivery_charge_inside ?? 50}}</div>
                                         </div>
                                     </div>
                                 </label>
@@ -189,7 +189,7 @@ function checkoutApp() {
                                         </div>
                                         <div>
                                             <div class="text-[11px] font-bold text-dark flex items-center gap-1.5"><i class="fas fa-truck text-green-500"></i> Outside Dhaka</div>
-                                            <div class="text-xs text-gray-500 font-medium">৳{{$client->delivery_charge_outside ?? 100}}</div>
+                                            <div class="text-xs text-gray-500 font-medium">&#2547;{{$client->delivery_charge_outside ?? 100}}</div>
                                         </div>
                                     </div>
                                 </label>
@@ -197,9 +197,9 @@ function checkoutApp() {
                             
                             <div class="mt-3 bg-primary/10/50 border border-blue-100 rounded-md py-2 px-3 flex items-center text-[10px] text-gray-600">
                                 <i class="fas fa-info-circle text-blue-500 mr-2"></i> Selected: <span x-text="area==='office'?'Office Pickup':(area==='inside'?'Inside Dhaka':'Outside Dhaka')" class="font-bold text-gray-800 ml-1"></span> 
-                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '৳'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
+                                <span class="mx-2 text-gray-300">•</span> Charge:  <span x-text="delivery > 0 ? '&#2547;'+delivery : 'Free'" class="font-bold text-gray-800 mx-1"></span>
                                 <span class="mx-2 text-gray-300">•</span> Time: Same day 
-                                <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-primary mr-1"></i> Free delivery above ৳10,000.00
+                                <span class="mx-2 text-gray-300">•</span> <i class="fas fa-gift text-primary mr-1"></i> Free delivery above &#2547;10,000.00
                             </div>
                         @endif
                     </div>
@@ -322,11 +322,11 @@ function checkoutApp() {
                             </div>
                             <div class="flex-1 flex flex-col justify-center">
                                 <h4 class="font-bold text-gray-800 text-[11px] line-clamp-1 pr-10 hover:text-primary transition cursor-pointer" title="{{ $product->name }}">{{ $product->name }}</h4>
-                                <div class="text-[10px] text-gray-500 font-medium">Qty: <span x-text="qty"></span> &times; ৳{{ number_format($product->sale_price ?? $product->regular_price) }}</div>
+                                <div class="text-[10px] text-gray-500 font-medium">Qty: <span x-text="qty"></span> &times; &#2547;{{ number_format($product->sale_price ?? $product->regular_price) }}</div>
                                 @if(request('color') || request('size'))
                                     <div class="text-[9px] text-gray-400 mt-0.5 font-medium uppercase">{{ request('color') }} {{ request('size') }}</div>
                                 @endif
-                                <div class="absolute right-0 top-1.5 font-bold text-dark text-[11px]">৳<span x-text="(qty * price).toLocaleString()"></span></div>
+                                <div class="absolute right-0 top-1.5 font-bold text-dark text-[11px]">&#2547;<span x-text="(qty * price).toLocaleString()"></span></div>
                             </div>
                         </div>
 
@@ -347,7 +347,7 @@ function checkoutApp() {
 
                         {{-- Totals --}}
                         <div class="space-y-3 pt-2 text-xs font-medium">
-                            <div class="flex justify-between items-center"><span class="text-gray-500">Subtotal</span><span class="text-gray-700 font-semibold">৳<span x-text="subtotal.toLocaleString()"></span></span></div>
+                            <div class="flex justify-between items-center"><span class="text-gray-500">Subtotal</span><span class="text-gray-700 font-semibold">&#2547;<span x-text="subtotal.toLocaleString()"></span></span></div>
                             
                             <div class="flex justify-between items-center text-gray-500">
                                 <span class="flex items-center gap-1.5"><i class="fas fa-truck text-gray-400"></i> Delivery 
@@ -358,17 +358,17 @@ function checkoutApp() {
                                         (<span x-text="shippingMethods.find(m => m.id == shippingMethodId)?.name"></span>)
                                     </span>
                                 </span>
-                                <span class="text-gray-700 font-semibold text-[11px]" :class="{'text-green-600 font-bold': delivery === 0}" x-text="delivery === 0 ? 'Free' : '৳'+delivery"></span>
+                                <span class="text-gray-700 font-semibold text-[11px]" :class="{'text-green-600 font-bold': delivery === 0}" x-text="delivery === 0 ? 'Free' : '&#2547;'+delivery"></span>
                             </div>
                             
-                            <div x-show="couponApplied" class="flex justify-between items-center"><span class="text-primary">Discount (<span x-text="couponCode" class="uppercase text-[9px]"></span>)</span><span class="text-primary font-bold">-৳<span x-text="couponDiscount.toLocaleString()"></span></span></div>
+                            <div x-show="couponApplied" class="flex justify-between items-center"><span class="text-primary">Discount (<span x-text="couponCode" class="uppercase text-[9px]"></span>)</span><span class="text-primary font-bold">-&#2547;<span x-text="couponDiscount.toLocaleString()"></span></span></div>
                         </div>
                     </div>
                     
                     {{-- Grand Total --}}
                     <div class="px-5 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                         <span class="font-bold text-gray-800 text-base">Total</span>
-                        <span class="text-2xl font-black text-[#0084d6] tracking-tight">৳<span x-text="total.toLocaleString()"></span></span>
+                        <span class="text-2xl font-black text-[#0084d6] tracking-tight">&#2547;<span x-text="total.toLocaleString()"></span></span>
                     </div>
 
                 </div>
