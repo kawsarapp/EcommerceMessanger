@@ -23,10 +23,10 @@
     @endif
 
     {{-- Strict Square Image Container --}}
-    <div class="relative w-full pt-[100%] bg-slate-50 shrink-0">
-        <div class="absolute inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden">
+    <div class="relative w-full pt-[100%] bg-white shrink-0">
+        <div class="absolute inset-0 flex items-center justify-center overflow-hidden">
             <img src="{{asset('storage/'.$p->thumbnail)}}" alt="{{$p->name}}" loading="lazy"
-                class="w-full h-full object-contain mix-blend-multiply z-10 transform group-hover:scale-110 transition-transform duration-500">
+                class="w-full h-full object-contain z-10 transform group-hover:scale-[1.03] transition-transform duration-500">
         </div>
     </div>
     

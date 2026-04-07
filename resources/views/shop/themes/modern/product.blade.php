@@ -46,7 +46,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start" x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)">
         
         <!-- Imagery Left Column (7 cols) -->
-        <div class="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 transition-all duration-500 ease-out" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+        <div class="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 transition-all duration-500 ease-out lg:sticky lg:top-32" :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
             <!-- Thumbnails Horizontal on Mobile, Vertical on Desktop -->
             <div class="flex md:flex-col gap-3 overflow-x-auto hide-scroll md:overflow-y-auto md:max-h-[80vh] w-full md:w-24 shrink-0">
                 <button type="button" @click="mainImg = '{{asset('storage/'.$product->thumbnail)}}'" class="relative aspect-square w-20 md:w-full bg-white rounded-md mb-1 overflow-hidden focus:outline-none ring-2 hover:ring-primary transition" :class="mainImg == '{{asset('storage/'.$product->thumbnail)}}' ? 'ring-primary' : 'ring-transparent border border-gray-200'">
@@ -66,7 +66,7 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
         </div>
         
         <!-- Info Right Column (5 cols) -->
-        <div class="lg:col-span-5 flex flex-col lg:sticky lg:top-32 bg-white/95 backdrop-blur-md rounded-2xl p-6 lg:p-10 shadow-lg border border-white/20 transition-all duration-500 ease-out delay-100" :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'">
+        <div class="lg:col-span-5 flex flex-col bg-white/95 backdrop-blur-md rounded-2xl p-6 lg:p-10 shadow-lg border border-white/20 transition-all duration-500 ease-out delay-100" :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'">
             
             <div class="mb-6 border-b border-gray-100 pb-6">
                 <span class="text-xs font-bold uppercase tracking-widest text-primary mb-3 block">{{$product->category->name ?? 'Essential'}}</span>
@@ -81,6 +81,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
             </div>
 
             @include('shop.partials.product-variations')
+            
+            <!-- Move Warranty up to accompany the product directly -->
+            <div class="mt-6 mb-2">
+                @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
+            </div>
             
             <!-- Modern Minimal System Tabs -->
             <div class="mt-8 pt-8 border-t border-gray-100" x-data="{ activeTab: 'description' }">
@@ -154,7 +159,6 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
     <div class="mt-20">
         @include('shop.partials.related-products', ['client' => $client, 'product' => $product])
-        @include('shop.partials.product-warranty', ['client' => $client, 'product' => $product])
     </div>
 </main>
 
