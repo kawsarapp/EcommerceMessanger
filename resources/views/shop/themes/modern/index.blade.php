@@ -8,11 +8,11 @@ $baseUrl=$client->custom_domain ? 'https://'.preg_replace('/^https?:\/\//','',rt
 
 <!-- Giant Hero Minimalist -->
 @if(($client->widgets['hero_banner']['image'] ?? $client->banner))
-<section class="w-full h-[65vh] md:h-[80vh] relative bg-gray-100 group overflow-hidden">
-    <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out cursor-pointer">
-    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-16">
+<section class="w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-auto md:h-[75vh] relative bg-gray-100 group overflow-hidden">
+    <img src="{{asset('storage/'.($client->widgets['hero_banner']['image'] ?? $client->banner ?? ''))}}" class="w-full h-full object-cover object-center transform group-hover:scale-105 transition duration-1000 ease-in-out">
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-16">
         <div class="max-w-[90rem] w-full mx-auto">
-            <h2 class="text-5xl md:text-8xl text-white font-black tracking-tighter uppercase leading-[0.9] drop-shadow-sm">{{$client->widgets['hero_banner']['text'] ?? $client->meta_title ?? 'New Era.'}}</h2>
+            <h2 class="text-4xl sm:text-5xl md:text-8xl text-white font-black tracking-tighter uppercase leading-[0.95] drop-shadow-sm">{{$client->widgets['hero_banner']['text'] ?? $client->meta_title ?? 'New Era.'}}</h2>
         </div>
     </div>
 </section>

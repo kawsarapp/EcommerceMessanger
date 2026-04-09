@@ -82,6 +82,15 @@ $baseUrl=$clean?'https://'.$clean:route('shop.show',$client->slug);
                     <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition"><i class="fas fa-search text-xs"></i></button>
                 </form>
                 @endif
+                
+                @php $deskCartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
+                <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors relative flex items-center gap-1.5">
+                    CART <i class="fas fa-shopping-cart"></i>
+                    @if($deskCartCount > 0)
+                        <span class="absolute -top-3 -right-3 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">{{ $deskCartCount }}</span>
+                    @endif
+                </a>
+                
                 <a href="{{$clean?$baseUrl.'/track':route('shop.track',$client->slug)}}" class="text-xs font-black uppercase tracking-[0.15em] text-gray-500 hover:text-black transition-colors">TRACK ORDER</a>
                 @if($client->fb_page_id)
                 <a href="https://m.me/{{$client->fb_page_id}}" target="_blank" class="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all">

@@ -197,7 +197,7 @@
             @endif
 
             {{-- Variations / Buy Form --}}
-
+            @include('shop.partials.product-variations')
 
             {{-- Wishlist --}}
             <button type="button" @click="toggleWishlist"

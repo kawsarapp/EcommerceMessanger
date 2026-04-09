@@ -27,7 +27,8 @@ Route::get('/', function (Request $request) {
         return app(ShopController::class)->show($request, null);
     }
     // না হলে মেইন সাইটের ওয়েলকাম পেজ
-    return view('welcome');
+    $siteSetting = \App\Models\SiteSetting::first();
+    return view('welcome', compact('siteSetting'));
 })->middleware([\App\Http\Middleware\DomainMappingMiddleware::class, 'tenant.customer'])->name('home');
 
 // 🔥 Pricing Page

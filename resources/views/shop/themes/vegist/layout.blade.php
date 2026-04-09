@@ -82,7 +82,7 @@
     {{-- Top Bar (Dark) --}}
     <div class="bg-[#1f1f1f] text-[#cfcfcf] text-[11px] py-2.5 hidden lg:block">
         <div class="max-w-[1400px] mx-auto px-4 xl:px-8 flex justify-between items-center tracking-wide">
-            <div>{{ $client->topbar_text ?? '?? ????? ???? ????? ?????? | ???????? ????????' }}</div>
+            <div>{{ $client->topbar_text ?? 'ফ্রি হোম ডেলিভারি স্পেশাল অফারে | ১০০% অরিজিনাল' }}</div>
             <div class="flex items-center gap-6">
                 <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-white transition">My order</a>
                 <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="hover:text-white transition">Track order</a>
@@ -190,7 +190,7 @@
         $footerDesc  = $client->widgets['footer']['brand_description'] ?? $client->description ?? '';
         $showSocial  = $client->widgets['footer']['show_social'] ?? true;
         $showPayment = $client->widgets['footer']['show_payment'] ?? true;
-        $footerCopy  = $client->footer_text ?? ('? ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
+        $footerCopy  = $client->footer_text ?? ('© ' . date('Y') . ' ' . $client->shop_name . '. All Rights Reserved.');
         $fbUrl = $client->social_facebook ?? $client->facebook_url ?? null;
         $ytUrl = $client->social_youtube  ?? $client->youtube_url  ?? null;
         $igUrl = $client->social_instagram ?? $client->instagram_url ?? null;
@@ -215,7 +215,7 @@
                     @endif
                 </a>
                 <p class="text-[13px] text-gray-500 leading-relaxed mb-8 pr-4">
-                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' ? ????? ????????, ??? ????, ?????????') }}
+                    {{ $footerDesc ?: ($client->tagline ?? $client->shop_name . ' - আপনার বিশ্বস্ত অনলাইন শপ') }}
                 </p>
                 <div class="flex flex-wrap items-center gap-8">
                     @if($client->address)

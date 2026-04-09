@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redycart — বাংলাদেশের #১ AI-চালিত eCommerce প্ল্যাটফর্ম</title>
-    <meta name="description" content="Redycart দিয়ে আপনার অনলাইন শপ খুলুন মিনিটেই। AI chatbot, auto order, courrier booking, flash sale সব এক প্ল্যাটফর্মে।">
+    <title>{{ $siteSetting?->site_name ?? 'Redycart' }} — বাংলাদেশের #১ AI-চালিত eCommerce প্ল্যাটফর্ম</title>
+    <meta name="description" content="{{ $siteSetting?->hero_subtitle ?? 'Redycart দিয়ে আপনার অনলাইন শপ খুলুন মিনিটেই। AI chatbot, auto order, courrier booking, flash sale সব এক প্ল্যাটফর্মে।' }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -55,7 +55,7 @@
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-orange-400 flex items-center justify-center shadow-lg">
                 <i class="fas fa-bolt text-white text-sm"></i>
             </div>
-            <span class="text-xl font-black text-gray-900 tracking-tight">Redy<span class="text-primary-500">cart</span></span>
+            <span class="text-xl font-black text-gray-900 tracking-tight">{{ $siteSetting?->site_name ?? 'Redycart' }}</span>
         </a>
         <div class="hidden md:flex items-center gap-8">
             <a href="#features" class="nav-link">Features</a>
@@ -86,17 +86,16 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-500"></span>
                 </span>
-                <span class="text-xs font-bold text-gray-700 uppercase tracking-widest bangla">🇧🇩 বাংলাদেশের সেরা AI eCommerce Platform</span>
+                <span class="text-xs font-bold text-gray-700 uppercase tracking-widest bangla">{{ $siteSetting?->hero_badge ?? '🇧🇩 বাংলাদেশের সেরা AI eCommerce Platform' }}</span>
             </div>
 
             <h1 class="text-5xl md:text-7xl xl:text-8xl font-black text-gray-900 leading-[1.05] mb-6 tracking-tight">
-                আপনার <span class="gradient-text">Online Shop</span><br>
-                <span class="text-4xl md:text-6xl font-black text-gray-700">মিনিটেই তৈরি, AI দিয়ে চালু</span>
+                {{ $siteSetting?->hero_title_part1 ?? 'আপনার Online Shop' }}<br>
+                <span class="text-4xl md:text-6xl font-black text-gray-700 gradient-text">{{ $siteSetting?->hero_title_part2 ?? 'মিনিটেই তৈরি, AI দিয়ে চালু' }}</span>
             </h1>
             
             <p class="text-lg md:text-xl text-gray-500 mb-10 max-w-3xl mx-auto leading-relaxed bangla">
-                Redycart দিয়ে আপনার নিজের eCommerce স্টোর খুলুন। AI chatbot অর্ডার নেবে, courier বুক করবে, flash sale চালাবে —
-                <strong class="text-gray-900">আপনি শুধু ঘুমাবেন, AI কাজ করবে।</strong>
+                {{ $siteSetting?->hero_subtitle ?? 'Redycart দিয়ে আপনার নিজের eCommerce স্টোর খুলুন। AI chatbot অর্ডার নেবে, courier বুক করবে, flash sale চালাবে — আপনি শুধু ঘুমাবেন, AI কাজ করবে।' }}
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -185,17 +184,41 @@
         <!-- Big Features Grid -->
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             @php
-            $features = [
-                ['icon'=>'fa-robot','color'=>'from-blue-500 to-indigo-600','bg'=>'bg-blue-50','title'=>'AI Chatbot (Omni-Channel)','bangla'=>'Facebook, WhatsApp, Instagram — সব জায়গায় একই AI কাজ করে। কাস্টমারের প্রশ্নের ১ সেকেন্ডে উত্তর দেয়, প্রোডাক্ট দেখায়, অর্ডার নেয়।','tags'=>['Messenger','WhatsApp','Instagram']],
-                ['icon'=>'fa-store','color'=>'from-primary-500 to-orange-500','bg'=>'bg-orange-50','title'=>'সুন্দর Storefront + ১৬ থিম','bangla'=>'Daraz, Shwapno, Pikabo, Fashion, Luxury সহ ১৬+ প্রিমিয়াম থিম। Custom domain যোগ করুন, brand color দিন — মিনিটেই প্রফেশনাল শপ।','tags'=>['16+ Themes','Custom Domain','Mobile Ready']],
-                ['icon'=>'fa-bolt','color'=>'from-yellow-500 to-orange-500','bg'=>'bg-yellow-50','title'=>'Flash Sale + Countdown','bangla'=>'ঈদ অফার, বিশেষ ছাড় — Flash sale তৈরি করুন countdown timer সহ। AI নিজেই সেল শেষ হলে বন্ধ করে দেয়।','tags'=>['Countdown Timer','Auto End','Banner']],
-                ['icon'=>'fa-truck-fast','color'=>'from-green-500 to-emerald-600','bg'=>'bg-green-50','title'=>'Auto Courier Booking','bangla'=>'Steadfast, Pathao, RedX — ১ ক্লিকেই কুরিয়ারে অর্ডার সাবমিট। Tracking number AI-র কাছে থাকে, কাস্টমারকে জানায়।','tags'=>['Steadfast','Pathao','RedX']],
-                ['icon'=>'fa-bullhorn','color'=>'from-purple-500 to-pink-600','bg'=>'bg-purple-50','title'=>'Marketing Broadcast','bangla'=>'পুরনো হাজারো কাস্টমারকে একসাথে মেসেজ পাঠান। অফার জানান, বিক্রি বাড়ান। Email, SMS, Messenger — সব চ্যানেলে।','tags'=>['Messenger Blast','SMS','Email Campaign']],
-                ['icon'=>'fa-star','color'=>'from-amber-500 to-yellow-500','bg'=>'bg-amber-50','title'=>'Review + Loyalty Points','bangla'=>'Customer review system চালু করুন। Loyalty points দিয়ে কাস্টমার ফেরত আনুন। Referral program দিয়ে নতুন কাস্টমার পান।','tags'=>['Star Rating','Loyalty','Referral']],
-                ['icon'=>'fa-chart-line','color'=>'from-cyan-500 to-blue-600','bg'=>'bg-cyan-50','title'=>'Analytics Dashboard','bangla'=>'Sales report, best products, কোন চ্যানেল থেকে বেশি অর্ডার — সব দেখুন। Export করুন, decision নিন।','tags'=>['Sales Chart','Best Seller','Export']],
-                ['icon'=>'fa-ticket','color'=>'from-rose-500 to-red-600','bg'=>'bg-rose-50','title'=>'Coupon + Partial Payment','bangla'=>'Promo code তৈরি করুন। Advance নেওয়ার সুবিধা দিন। COD, bKash, SSLCommerz — সব payment option।','tags'=>['Promo Code','bKash','COD']],
-                ['icon'=>'fa-shield-halved','color'=>'from-gray-700 to-gray-900','bg'=>'bg-gray-50','title'=>'Staff Accounts + Permissions','bangla'=>'Staff account তৈরি করুন আলাদা permission সহ। শুধু অর্ডার দেখবে নাকি এডিট করবে — আপনি ঠিক করুন।','tags'=>['Multi User','Role Control','Secure']],
-            ];
+            $dynamicFeatures = $siteSetting?->features ?? [];
+            if(empty($dynamicFeatures)) {
+                $features = [
+                    ['icon'=>'fa-robot','color'=>'from-blue-500 to-indigo-600','bg'=>'bg-blue-50','title'=>'AI Chatbot (Omni-Channel)','bangla'=>'Facebook, WhatsApp, Instagram — সব জায়গায় একই AI কাজ করে। কাস্টমারের প্রশ্নের ১ সেকেন্ডে উত্তর দেয়, প্রোডাক্ট দেখায়, অর্ডার নেয়।','tags'=>['Messenger','WhatsApp','Instagram']],
+                    ['icon'=>'fa-store','color'=>'from-primary-500 to-orange-500','bg'=>'bg-orange-50','title'=>'সুন্দর Storefront + ১৬ থিম','bangla'=>'Daraz, Shwapno, Pikabo, Fashion, Luxury সহ ১৬+ প্রিমিয়াম থিম। Custom domain যোগ করুন, brand color দিন — মিনিটেই প্রফেশনাল শপ।','tags'=>['16+ Themes','Custom Domain','Mobile Ready']],
+                    ['icon'=>'fa-bolt','color'=>'from-yellow-500 to-orange-500','bg'=>'bg-yellow-50','title'=>'Flash Sale + Countdown','bangla'=>'ঈদ অফার, বিশেষ ছাড় — Flash sale তৈরি করুন countdown timer সহ। AI নিজেই সেল শেষ হলে বন্ধ করে দেয়।','tags'=>['Countdown Timer','Auto End','Banner']],
+                    ['icon'=>'fa-truck-fast','color'=>'from-green-500 to-emerald-600','bg'=>'bg-green-50','title'=>'Auto Courier Booking','bangla'=>'Steadfast, Pathao, RedX — ১ ক্লিকেই কুরিয়ারে অর্ডার সাবমিট। Tracking number AI-র কাছে থাকে, কাস্টমারকে জানায়।','tags'=>['Steadfast','Pathao','RedX']],
+                    ['icon'=>'fa-bullhorn','color'=>'from-purple-500 to-pink-600','bg'=>'bg-purple-50','title'=>'Marketing Broadcast','bangla'=>'পুরনো হাজারো কাস্টমারকে একসাথে মেসেজ পাঠান। অফার জানান, বিক্রি বাড়ান। Email, SMS, Messenger — সব চ্যানেলে।','tags'=>['Messenger Blast','SMS','Email Campaign']],
+                    ['icon'=>'fa-star','color'=>'from-amber-500 to-yellow-500','bg'=>'bg-amber-50','title'=>'Review + Loyalty Points','bangla'=>'Customer review system চালু করুন। Loyalty points দিয়ে কাস্টমার ফেরত আনুন। Referral program দিয়ে নতুন কাস্টমার পান।','tags'=>['Star Rating','Loyalty','Referral']],
+                    ['icon'=>'fa-chart-line','color'=>'from-cyan-500 to-blue-600','bg'=>'bg-cyan-50','title'=>'Analytics Dashboard','bangla'=>'Sales report, best products, কোন চ্যানেল থেকে বেশি অর্ডার — সব দেখুন। Export করুন, decision নিন।','tags'=>['Sales Chart','Best Seller','Export']],
+                    ['icon'=>'fa-ticket','color'=>'from-rose-500 to-red-600','bg'=>'bg-rose-50','title'=>'Coupon + Partial Payment','bangla'=>'Promo code তৈরি করুন। Advance নেওয়ার সুবিধা দিন। COD, bKash, SSLCommerz — সব payment option।','tags'=>['Promo Code','bKash','COD']],
+                    ['icon'=>'fa-shield-halved','color'=>'from-gray-700 to-gray-900','bg'=>'bg-gray-50','title'=>'Staff Accounts + Permissions','bangla'=>'Staff account তৈরি করুন আলাদা permission সহ। শুধু অর্ডার দেখবে নাকি এডিট করবে — আপনি ঠিক করুন।','tags'=>['Multi User','Role Control','Secure']],
+                ];
+            } else {
+                $colorMap = [
+                    'blue' => ['color' => 'from-blue-500 to-indigo-600', 'bg' => 'bg-blue-50'],
+                    'purple' => ['color' => 'from-purple-500 to-pink-600', 'bg' => 'bg-purple-50'],
+                    'green' => ['color' => 'from-green-500 to-emerald-600', 'bg' => 'bg-green-50'],
+                    'orange' => ['color' => 'from-orange-500 to-red-500', 'bg' => 'bg-orange-50'],
+                    'pink' => ['color' => 'from-pink-500 to-rose-600', 'bg' => 'bg-pink-50'],
+                    'cyan' => ['color' => 'from-cyan-500 to-blue-600', 'bg' => 'bg-cyan-50'],
+                ];
+                $features = [];
+                foreach($dynamicFeatures as $df) {
+                    $colorInfo = $colorMap[$df['color_class'] ?? 'blue'] ?? $colorMap['blue'];
+                    $features[] = [
+                        'icon' => $df['icon'] ?? 'fa-star',
+                        'title' => $df['title'] ?? '',
+                        'bangla' => $df['desc'] ?? '',
+                        'color' => $colorInfo['color'],
+                        'bg' => $colorInfo['bg'],
+                        'tags' => []
+                    ];
+                }
+            }
             @endphp
 
             @foreach($features as $f)
@@ -205,11 +228,13 @@
                 </div>
                 <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $f['title'] }}</h3>
                 <p class="text-gray-500 text-sm bangla leading-relaxed mb-4">{{ $f['bangla'] }}</p>
+                @if(!empty($f['tags']))
                 <div class="flex flex-wrap gap-2">
                     @foreach($f['tags'] as $tag)
                     <span class="feature-pill bg-gray-100 text-gray-600">{{ $tag }}</span>
                     @endforeach
                 </div>
+                @endif
             </div>
             @endforeach
         </div>
@@ -275,12 +300,43 @@
         </div>
         <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <!-- Old Way -->
-            <div class="rounded-3xl border-t-4 border-red-400 bg-red-50 p-8">
-                <div class="text-red-500 font-black text-lg mb-2">❌ আগের পদ্ধতি</div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-6">Manual Human Team</h3>
+            <div class="rounded-3xl border-t-4 border-red-400 bg-red-50 p-8 flex flex-col justify-between">
+                <div>
+                    <div class="text-red-500 font-black text-lg mb-2">❌ আগের পদ্ধতি</div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">{{ $siteSetting?->cost_comparison['manual_title'] ?? 'Manual Human Team' }}</h3>
+                    
+                    @php
+                    $painPoints = $siteSetting?->pain_points ?? [];
+                    @endphp
+                    @if(!empty($painPoints))
+                    <div class="mb-8 space-y-3">
+                        @foreach($painPoints as $pp)
+                        <div class="flex items-start gap-3 bg-red-100/50 p-3 rounded-xl border border-red-100">
+                            <div class="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0">
+                                <i class="{{ $pp['icon'] ?? 'fas fa-exclamation-triangle' }}"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900 text-sm bangla">{{ $pp['title'] ?? '' }}</div>
+                                <div class="text-xs text-gray-600 bangla mt-1 leading-relaxed">{{ $pp['desc'] ?? '' }}</div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
                 <div class="space-y-3 mb-8">
                     @php
-                    $oldCosts = [['label'=>'৩ জন স্টাফের বেতন (শিফটিং)','amount'=>'৪৫,০০০৳'],['label'=>'অফিস ভাড়া ও বিদ্যুৎ','amount'=>'১৫,০০০৳'],['label'=>'ভুল অর্ডারের লস (গড়)','amount'=>'১০,০০০৳'],['label'=>'রাত ১২টার পর missed orders','amount'=>'???']];
+                    $oldCosts = empty($siteSetting?->cost_comparison) ? [
+                        ['label'=>'৩ জন স্টাফের বেতন (শিফটিং)','amount'=>'৪৫,০০০৳'],
+                        ['label'=>'অফিস ভাড়া ও বিদ্যুৎ','amount'=>'১৫,০০০৳'],
+                        ['label'=>'ভুল অর্ডারের লস (গড়)','amount'=>'১০,০০০৳'],
+                        ['label'=>'রাত ১২টার পর missed orders','amount'=>'???']
+                    ] : [
+                        ['label'=> $siteSetting?->cost_comparison['manual_scenario'] ?? '', 'amount'=>''],
+                        ['label'=>'স্টাফের বেতন', 'amount'=> $siteSetting?->cost_comparison['manual_salary'] ?? ''],
+                        ['label'=>'ওভারহেড খরচ', 'amount'=> $siteSetting?->cost_comparison['manual_overhead'] ?? ''],
+                        ['label'=>'ভুল অর্ডারের লস', 'amount'=> $siteSetting?->cost_comparison['manual_loss'] ?? '']
+                    ];
                     @endphp
                     @foreach($oldCosts as $c)
                     <div class="flex justify-between border-b border-red-100 pb-3">
@@ -291,27 +347,41 @@
                 </div>
                 <div class="bg-white rounded-2xl p-4 flex justify-between items-center border-2 border-red-100">
                     <span class="font-bold bangla">মাসিক মোট খরচ</span>
-                    <span class="text-2xl font-black text-red-500">৭০,০০০৳<span class="text-sm text-gray-400">/মাস</span></span>
+                    <span class="text-2xl font-black text-red-500 text-right">{{ $siteSetting?->cost_comparison['manual_total'] ?? '৭০,০০০৳' }}<span class="block text-sm text-gray-400">/মাস</span></span>
                 </div>
             </div>
 
             <!-- Redycart Way -->
-            <div class="rounded-3xl border-t-4 border-primary-500 bg-orange-50 p-8 shadow-xl relative">
-                <div class="absolute -top-4 -right-4 bg-gradient-to-r from-primary-500 to-orange-400 text-white text-xs font-black px-4 py-2 rounded-xl shadow-lg">🏆 Smart Choice</div>
-                <div class="text-primary-500 font-black text-lg mb-2">✅ Redycart পদ্ধতি</div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-6">AI-Powered Platform</h3>
-                <ul class="space-y-3 mb-8">
-                    @foreach(['২৪/৭ কাজ করে, কোনো ঘুম নেই','১ সেকেন্ডে ইনস্ট্যান্ট রিপ্লাই','১০০% নির্ভুল অর্ডার','আনলিমিটেড কাস্টমার হ্যান্ডেল','Flash sale, analytics, courier সব এক জায়গায়','যেকোনো সময় scale up করুন'] as $item)
-                    <li class="flex items-center gap-3 text-gray-700 bangla text-sm">
-                        <i class="fas fa-check-circle text-green-500 text-base shrink-0"></i>{{ $item }}
-                    </li>
-                    @endforeach
-                </ul>
+            <div class="rounded-3xl border-t-4 border-primary-500 bg-orange-50 p-8 shadow-xl relative flex flex-col justify-between">
+                <div>
+                    <div class="absolute -top-4 -right-4 bg-gradient-to-r from-primary-500 to-orange-400 text-white text-xs font-black px-4 py-2 rounded-xl shadow-lg">🏆 Smart Choice</div>
+                    <div class="text-primary-500 font-black text-lg mb-2">✅ Redycart পদ্ধতি</div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">{{ $siteSetting?->cost_comparison['ai_title'] ?? 'AI-Powered Platform' }}</h3>
+                    <ul class="space-y-3 mb-8">
+                        @php
+                        $aiItems = empty($siteSetting?->cost_comparison) ? 
+                            ['২৪/৭ কাজ করে, কোনো ঘুম নেই','১ সেকেন্ডে ইনস্ট্যান্ট রিপ্লাই','১০০% নির্ভুল অর্ডার','আনলিমিটেড কাস্টমার হ্যান্ডেল','Flash sale, analytics, courier সব এক জায়গায়','যেকোনো সময় scale up করুন'] : 
+                            [
+                                $siteSetting?->cost_comparison['ai_scenario'] ?? '',
+                                $siteSetting?->cost_comparison['ai_capacity'] ?? '',
+                                $siteSetting?->cost_comparison['ai_accuracy'] ?? '',
+                                'বাজেট: ' . ($siteSetting?->cost_comparison['ai_salary'] ?? '০ ৳'),
+                            ];
+                        // Filter empty items
+                        $aiItems = array_filter($aiItems);
+                        @endphp
+                        @foreach($aiItems as $item)
+                        <li class="flex items-center gap-3 text-gray-700 bangla text-sm">
+                            <i class="fas fa-check-circle text-green-500 text-base shrink-0"></i>{{ $item }}
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
                 <div class="bg-white rounded-2xl p-4 flex justify-between items-center border-2 border-primary-100">
                     <span class="font-bold bangla">মাসিক মোট খরচ</span>
                     <div class="text-right">
-                        <div class="text-2xl font-black text-primary-500">মাত্র ১,৯৯৯৳<span class="text-sm text-gray-400">/মাস থেকে</span></div>
-                        <div class="text-xs text-green-600 font-bold bangla">৯৭% সাশ্রয়!</div>
+                        <div class="text-2xl font-black text-primary-500">{{ $siteSetting?->cost_comparison['ai_total'] ?? '১,৯৯৯৳' }}</div>
+                        <div class="text-xs text-green-600 font-bold bangla mt-1 flex items-center justify-end gap-1"><i class="fas fa-arrow-down"></i> বিশাল সাশ্রয়!</div>
                     </div>
                 </div>
             </div>
@@ -432,19 +502,28 @@
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-orange-400 flex items-center justify-center">
                         <i class="fas fa-bolt text-white text-xs"></i>
                     </div>
-                    <span class="text-white font-black text-lg">Redy<span class="text-primary-500">cart</span>.com</span>
+                    <span class="text-white font-black text-lg">{{ $siteSetting?->site_name ?? 'Redycart' }}</span>
                 </a>
-                <p class="text-sm bangla">বাংলাদেশের #১ AI-চালিত eCommerce প্ল্যাটফর্ম</p>
+                <p class="text-sm bangla mb-4">{{ $siteSetting?->footer_text ?? 'বাংলাদেশের #১ AI-চালিত eCommerce প্ল্যাটফর্ম' }}</p>
+                <div class="flex flex-col gap-2 text-sm text-gray-500">
+                    @if($siteSetting?->phone)<div><i class="fas fa-phone mr-2 w-4 text-center"></i>{{ $siteSetting->phone }}</div>@endif
+                    @if($siteSetting?->email)<div><i class="fas fa-envelope mr-2 w-4 text-center"></i>{{ $siteSetting->email }}</div>@endif
+                    @if($siteSetting?->address)<div><i class="fas fa-map-marker-alt mr-2 w-4 text-center"></i>{{ $siteSetting->address }}</div>@endif
+                </div>
+                <div class="flex gap-4 mt-4">
+                    @if($siteSetting?->facebook_link)<a href="{{ $siteSetting->facebook_link }}" target="_blank" class="text-gray-500 hover:text-blue-500 transition"><i class="fab fa-facebook fa-lg"></i></a>@endif
+                    @if($siteSetting?->youtube_link)<a href="{{ $siteSetting->youtube_link }}" target="_blank" class="text-gray-500 hover:text-red-500 transition"><i class="fab fa-youtube fa-lg"></i></a>@endif
+                </div>
             </div>
-            <div class="flex gap-8 text-sm">
+            <div class="flex flex-col md:flex-row gap-5 md:gap-8 text-sm text-center md:text-left mt-6 md:mt-0">
                 <a href="#features" class="hover:text-white transition">Features</a>
                 <a href="#pricing" class="hover:text-white transition">Pricing</a>
                 <a href="{{ route('filament.admin.auth.register') }}" class="hover:text-primary-400 transition font-semibold">Register</a>
                 <a href="{{ route('filament.admin.auth.login') }}" class="hover:text-white transition">Login</a>
             </div>
         </div>
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-xs bangla">
-            &copy; {{ date('Y') }} Redycart.com — All Rights Reserved. Powered by AI 🤖
+        <div class="border-t border-gray-800 mt-10 pt-8 text-center text-xs bangla">
+            &copy; {{ date('Y') }} {{ $siteSetting?->site_name ?? 'Redycart.com' }} — All Rights Reserved. <br class="md:hidden">Powered by {{ $siteSetting?->developer_name ?? 'AI' }} 🤖
         </div>
     </div>
 </footer>

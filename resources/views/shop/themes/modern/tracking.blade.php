@@ -32,12 +32,51 @@
                         <div class="text-right">
                              <span class="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 bg-white border border-gray-200 shadow-sm
                                 @if($o->order_status == 'pending') text-yellow-600
-                                @elseif($o->order_status == 'completed') text-green-600
+                                @elseif($o->order_status == 'completed' || $o->order_status == 'delivered') text-green-600
                                 @elseif($o->order_status == 'cancelled') text-red-600
                                 @else text-black @endif">
                                 {{$o->order_status}}
                             </span>
                         </div>
+                    </div>
+
+                    <!-- Visual Order Timeline -->
+                    @php
+                        $statuses = ['pending', 'processing', 'shipped', 'delivered'];
+                        $currentStat = strtolower($o->order_status);
+                        if($currentStat == 'completed') $currentStat = 'delivered'; // normalize
+                        $currentIndex = array_search($currentStat, $statuses);
+                        if($currentIndex === false) $currentIndex = 0;
+                        if(in_array($currentStat, ['cancelled', 'returned'])) $currentIndex = -1;
+                    @endphp
+                    
+                    <div class="w-full py-4 mb-10 overflow-hidden">
+                        @if($currentIndex >= 0)
+                        <div class="relative w-full px-4 sm:px-12">
+                            <!-- Background Track -->
+                            <div class="absolute top-[7px] left-8 sm:left-16 right-8 sm:right-16 h-[2px] bg-gray-200"></div>
+                            <!-- Active Track -->
+                            <div class="absolute top-[7px] left-8 sm:left-16 h-[2px] bg-black transition-all duration-1000" style="width: calc({{ ($currentIndex / 3) * 100 }}% - 2rem)"></div>
+                            
+                            <!-- Nodes -->
+                            <div class="relative flex justify-between z-10 w-full">
+                                @foreach($statuses as $index => $status)
+                                <div class="flex flex-col items-center">
+                                    <div class="w-4 h-4 rounded-full flex items-center justify-center transition-colors duration-500 {{ $index <= $currentIndex ? 'bg-black text-white' : 'bg-gray-200 text-transparent' }} ring-4 ring-gray-50">
+                                        @if($index <= $currentIndex)
+                                            <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                        @endif
+                                    </div>
+                                    <span class="mt-3 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.15em] {{ $index <= $currentIndex ? 'text-black' : 'text-gray-400' }}">{{ $status }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @else
+                        <div class="p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-bold uppercase tracking-widest text-center mt-2">
+                            This Order is currently marked as: {{ $o->order_status }}
+                        </div>
+                        @endif
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
