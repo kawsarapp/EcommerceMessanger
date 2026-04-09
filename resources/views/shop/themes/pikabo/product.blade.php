@@ -107,7 +107,9 @@ function productApp() {
         get availableStock() {
             return {{ $product->stock_quantity ?? 0 }};
         },
-        tab: 'description'
+        tab: 'description',
+        zoomPos: '50% 50%',
+        showZoom: false
     };
 }
 </script>
@@ -138,20 +140,22 @@ function productApp() {
                 </div>
 
                 {{-- Main Image Area --}}
-                <div class="flex-1 border border-gray-100 rounded p-4 relative flex justify-center items-center min-h-[400px]">
+                <div class="flex-1 border border-gray-100 rounded p-4 relative flex justify-center items-center min-h-[400px] overflow-hidden bg-white group"
+                     style="aspect-ratio:1/1;"
+                     @mousemove="if(window.innerWidth > 768){ zoomPos=(($event.offsetX/$el.offsetWidth)*100)+'% '+(($event.offsetY/$el.offsetHeight)*100)+'%' }"
+                     @mouseenter="showZoom = window.innerWidth > 768"
+                     @mouseleave="showZoom = false">
+                     
                     @if($product->sale_price)
-                        <div class="absolute top-4 left-4 bg-primary text-white font-extrabold px-3 py-1.5 rounded-lg shadow-sm z-10">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF</div>
+                        <div class="absolute top-4 left-4 bg-primary text-white text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm z-20">-{{ round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100) }}% OFF</div>
                     @endif
                     
-                    <img :src="mainImg" class="max-w-full max-h-[400px] object-contain transition-opacity duration-300 z-0" alt="{{$product->name}}">
+                    <img :src="mainImg" class="w-full h-full object-contain transition-opacity duration-300 z-10" :class="showZoom ? 'opacity-0' : 'opacity-100'" alt="{{$product->name}}">
                     
-                    <button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition"><i class="fas fa-heart text-2xl"></i></button>
-                    
-                    <div class="absolute bottom-4 left-0 right-0 flex gap-4 px-4 w-full justify-between">
-                        
-    @include('shop.partials.product-features-bar', ['product' => $product, 'client' => $client, 'clean' => $clean ?? false, 'baseUrl' => $baseUrl ?? ''])
-<button type="button" class="w-1/2 prod-btn-outline py-2.5 rounded text-sm uppercase">Add to Cart</button>
-                        <button type="submit" form="checkout-form" class="w-1/2 prod-btn-solid py-2.5 rounded text-sm uppercase">Buy Now</button>
+                    {{-- Zoom Overlay --}}
+                    <div x-show="showZoom"
+                         class="absolute inset-0 pointer-events-none bg-no-repeat z-20 hidden md:block"
+                         :style="'background-image:url(\'' + mainImg + '\'); background-position:' + zoomPos + '; background-size:250%;'">
                     </div>
                 </div>
             </div>
