@@ -194,7 +194,7 @@ class Product extends Model
      */
     public function getEarnablePointsAttribute(): int
     {
-        if ($this->reward_points > 0) return clone $this->reward_points;
+        if ($this->reward_points > 0) return (int) $this->reward_points;
         return 0; // Global rate disabled as requested
     }
 
