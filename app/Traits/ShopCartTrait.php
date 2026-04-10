@@ -313,6 +313,12 @@ trait ShopCartTrait
         // Tracking
         app(\App\Services\ServerSideTrackingService::class)->dispatchPurchase($order);
 
+        // Loyalty Points (Check if widget is active and calculate points)
+        if ($client->widget('loyalty.active')) {
+            $rate = (int)($client->widgets['loyalty']['rate'] ?? 1);
+            \App\Models\LoyaltyPoint::earnFromOrder($order, $rate);
+        }
+
         // Clear cart after successful order
         $this->saveCart($client->id, []);
 

@@ -26,7 +26,7 @@ class LoyaltyPoint extends Model
 
         static::create([
             'client_id'     => $order->client_id,
-            'sender_id'     => $order->sender_id,
+            'sender_id'     => $order->sender_id ?? $order->customer_phone,
             'customer_name' => $order->customer_name,
             'customer_phone'=> $order->customer_phone,
             'points'        => $pts,
