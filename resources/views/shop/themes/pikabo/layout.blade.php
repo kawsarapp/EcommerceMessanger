@@ -123,7 +123,20 @@ $primary='#0084d6';
                     
                     {{-- Mini Cart Icon (Reactive) --}}
                     @php $cartCount = session()->has('cart_'.$client->id) ? count(session()->get('cart_'.$client->id)) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}"
+                                        {{-- User Account / Login --}}
+                    @if(auth('customer')->check())
+                        <a href="{{ $clean ? $baseUrl.'/customer/dashboard' : route('shop.customer.dashboard', $client->slug) }}" class="flex items-center text-white hover:text-gray-200 transition font-medium gap-1.5 sm:gap-2">
+                            <i class="fas fa-user-circle text-lg"></i>
+                            <span class="text-sm hidden sm:block">Account</span>
+                        </a>
+                    @else
+                        <a href="{{ $clean ? $baseUrl.'/customer/login' : route('shop.customer.login', $client->slug) }}" class="flex items-center text-white hover:text-gray-200 transition font-medium gap-1.5 sm:gap-2">
+                            <i class="fas fa-user text-lg"></i>
+                            <span class="text-sm hidden sm:block">Login</span>
+                        </a>
+                    @endif
+
+                                        <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}"
                        x-data="{ count: {{ $cartCount }} }"
                        @cart-updated.window="if ($event.detail.count !== null) count = $event.detail.count"
                        class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
@@ -151,7 +164,7 @@ $primary='#0084d6';
     </header>
 
     {{-- Navigation Bar (White/Light Gray) --}}
-    <nav class="bg-white text-dark sticky top-[72px] sm:top-[-1px] z-40 hidden md:block border-b border-gray-200 shadow-sm">
+    <nav class="bg-white text-dark z-40 hidden md:block border-b border-gray-200">
         <div class="max-w-[1400px] mx-auto px-4 flex items-center h-10">
             
             {{-- Category Sidebar Toggle (If needed) --}}
@@ -173,6 +186,7 @@ $primary='#0084d6';
             </div>
         </div>
     </nav>
+</div>
 
     <main class="flex-1 w-full pb-10">
         @yield('content')

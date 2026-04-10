@@ -35,12 +35,14 @@ class ShopController extends Controller
     {
         $theme = $client->theme_name ?? 'default';
 
-        // Load all active menus for this storefront at once to reduce queries
         $menus = \App\Models\Menu::with(['items' => fn($q) => $q->orderBy('sort_order')])
             ->where('client_id', $client->id)
             ->where('is_active', true)
             ->get()
             ->keyBy('location');
+
+        // Load Categories globally for top header nav
+        $categories = $this->productService->getSidebarCategories($client->id);
 
         $data = array_merge($data, [
             'primaryMenu' => $menus->get('primary_header'),
@@ -48,6 +50,7 @@ class ShopController extends Controller
             'footerMenu2' => $menus->get('footer_2'),
             'footerMenu3' => $menus->get('footer_3'),
             'mobileNavMenu' => $menus->get('mobile_nav'),
+            'categories'  => $categories,
         ]);
 
         return view("shop.themes.{$theme}.{$viewName}", $data);
