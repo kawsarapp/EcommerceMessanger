@@ -189,7 +189,11 @@ function productApp() {
                     <a href="#reviews-section" class="text-primary hover:underline">Add Your Review</a>
                 </div>
 
-                <div class="flex items-center gap-2 text-xs text-gray-600 mb-4 pb-4 border-b border-gray-100">
+                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600 mb-4 pb-4 border-b border-gray-100">
+                    @if($product->category)
+                    <span>Category: <a href="{{ $baseUrl }}?category={{ $product->category->slug }}" class="text-primary hover:underline">{{$product->category->name}}</a></span>
+                    <span class="text-gray-300">|</span>
+                    @endif
                     @if($product->brand)
                     <span>Brand: <a href="{{ $baseUrl }}?brand={{ urlencode($product->brand) }}" class="text-primary hover:underline">{{$product->brand}}</a></span>
                     <span class="text-gray-300">|</span>
