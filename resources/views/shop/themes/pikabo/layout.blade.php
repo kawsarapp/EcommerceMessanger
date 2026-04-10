@@ -121,12 +121,17 @@ $primary='#0084d6';
                         Track Order
                     </a>
                     
-                    {{-- Mini Cart Icon --}}
-                    @php $cartCount = session()->has('cart') ? count(session()->get('cart')) : 0; @endphp
-                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}" class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
+                    {{-- Mini Cart Icon (Reactive) --}}
+                    @php $cartCount = session()->has('cart_'.$client->id) ? count(session()->get('cart_'.$client->id)) : 0; @endphp
+                    <a href="{{$clean?$baseUrl.'/cart':route('shop.cart',$client->slug)}}"
+                       x-data="{ count: {{ $cartCount }} }"
+                       @cart-updated.window="if ($event.detail.count !== null) count = $event.detail.count"
+                       class="relative flex items-center text-white hover:text-gray-200 transition cursor-pointer font-medium gap-2">
                         <i class="fas fa-shopping-cart text-lg"></i>
                         <span class="text-sm">Cart</span>
-                        <span class="bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center absolute -top-2 -right-4">{{ $cartCount }}</span>
+                        <span x-text="count"
+                              :class="count > 0 ? 'bg-yellow-400 text-gray-900' : 'bg-primary text-white'"
+                              class="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center absolute -top-2 -right-5 transition-all"></span>
                     </a>
                 </div>
                 
@@ -182,10 +187,28 @@ $primary='#0084d6';
                 <p class="text-gray-500 text-sm leading-relaxed mb-6">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'We provide the best quality products. Fast shipping and excellent customer service guaranteed.') }}</p>
                 
                 <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-xs font-bold text-gray-600">
-                    <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-green-500"></i> 100% Genuine Products</span>
-                    <span class="flex items-center gap-1.5"><i class="fas fa-truck text-primary"></i> Fast Nationwide Delivery</span>
-                    <span class="flex items-center gap-1.5"><i class="fas fa-leaf text-green-600"></i> Best Selections</span>
-                    <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-blue-500"></i> Official Warranty</span>
+                    @php
+                        $trustBadges = $client->widgets['trust_badges']['items'] ?? [];
+                        $defaultBadges = [
+                            ['icon' => 'fas fa-check-circle', 'color' => 'text-green-500', 'title' => '100% Genuine Products'],
+                            ['icon' => 'fas fa-truck',        'color' => 'text-primary',    'title' => 'Fast Nationwide Delivery'],
+                            ['icon' => 'fas fa-leaf',         'color' => 'text-green-600',  'title' => 'Best Selections'],
+                            ['icon' => 'fas fa-shield-alt',   'color' => 'text-blue-500',   'title' => 'Official Warranty'],
+                        ];
+                    @endphp
+                    @if(count($trustBadges) > 0)
+                        @foreach($trustBadges as $badge)
+                        <span class="flex items-center gap-1.5">
+                            <i class="{{ $badge['icon'] ?? 'fas fa-check' }} text-primary"></i>
+                            {{ $badge['title'] ?? '' }}
+                            @if(!empty($badge['subtitle']))<span class="font-normal text-gray-400 ml-1">— {{ $badge['subtitle'] }}</span>@endif
+                        </span>
+                        @endforeach
+                    @else
+                        @foreach($defaultBadges as $b)
+                        <span class="flex items-center gap-1.5"><i class="{{ $b['icon'] }} {{ $b['color'] }}"></i> {{ $b['title'] }}</span>
+                        @endforeach
+                    @endif
                 </div>
             </div>
         </div>
@@ -203,7 +226,7 @@ $primary='#0084d6';
                             @endif
                             <span class="text-white font-extrabold text-2xl uppercase tracking-tighter">{{$client->shop_name}}<sup class="text-[10px] font-normal">&trade;</sup></span>
                         </div>
-                        <p class="text-gray-400 text-xs leading-relaxed mb-6 max-w-sm">Your premier destination for quality products. We deliver excellence in every product.</p>
+                        <p class="text-gray-400 text-xs leading-relaxed mb-6 max-w-sm">{{ $client->widgets['footer']['brand_description'] ?? ($client->description ?? 'Your premier destination for quality products.') }}</p>
                         
                         <div class="space-y-3 mb-6">
                             @if($client->phone)<a href="tel:{{$client->phone}}" class="flex items-center gap-3 text-sm hover:text-primary transition"><i class="fas fa-phone-alt text-primary min-w-[20px]"></i> {{$client->phone}}</a>@endif

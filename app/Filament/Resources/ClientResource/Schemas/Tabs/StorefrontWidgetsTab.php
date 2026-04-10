@@ -268,6 +268,63 @@ class StorefrontWidgetsTab
                 ->columns(2)
                 ->collapsible()
                 ->collapsed(),
+
+            // ─── Delivery Time Text ───────────────────────────────
+            Section::make('🚚 Delivery Time Widget')
+                ->description('Product page এ delivery সংক্রান্ত তথ্য দেখাবে (Pikabo ও অন্য theme)।')
+                ->schema([
+                    TextInput::make('widgets.delivery_time.text')
+                        ->label('Delivery Info Text')
+                        ->placeholder('e.g. ঢাকায় ২৪ ঘণ্টা, সারাদেশে ২-৩ দিন')
+                        ->helperText('Product page এর sidebar-এ delivery সময় দেখাবে।')
+                        ->columnSpanFull(),
+                ])
+                ->columns(1)
+                ->collapsible()
+                ->collapsed(),
+
+            // ─── Info Cards (Product Page Sidebar) ───────────────
+            Section::make('📋 Product Page Info Cards')
+                ->description('Product page এর ডান পাশে ৩টি info card দেখাবে — Delivery, Return ও Warranty। Icon, Title ও Description customize করুন। (Pikabo ও Vegist theme)')
+                ->schema([
+                    Toggle::make('widgets.info_cards.active')
+                        ->label('Enable Info Cards Sidebar')
+                        ->default(true)
+                        ->onColor('success')
+                        ->inline(false)
+                        ->columnSpanFull(),
+
+                    TextInput::make('widgets.info_cards.heading')
+                        ->label('Section Heading')
+                        ->placeholder('Why Shop With Us')
+                        ->helperText('Cards এর উপরে heading text।')
+                        ->columnSpanFull(),
+
+                    Repeater::make('widgets.info_cards.items')
+                        ->label('Info Cards (max 3)')
+                        ->schema([
+                            TextInput::make('icon')
+                                ->label('Font Awesome Icon Class')
+                                ->placeholder('fas fa-truck')
+                                ->helperText('e.g. fas fa-truck, fas fa-undo, fas fa-shield-alt'),
+                            TextInput::make('title')
+                                ->label('Card Title')
+                                ->placeholder('Fast Delivery')
+                                ->required(),
+                            TextInput::make('description')
+                                ->label('Card Description')
+                                ->placeholder('ঢাকায় ২৪ ঘণ্টা, সারাদেশে ২-৩ দিন'),
+                        ])
+                        ->columns(3)
+                        ->maxItems(3)
+                        ->defaultItems(0)
+                        ->addActionLabel('+ Add Info Card')
+                        ->columnSpanFull()
+                        ->helperText('খালি রাখলে product এর warranty/return_policy এবং delivery text থেকে স্বয়ংক্রিয় দেখাবে।'),
+                ])
+                ->columns(1)
+                ->collapsible()
+                ->collapsed(),
         ];
     }
 }

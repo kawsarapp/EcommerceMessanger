@@ -170,8 +170,8 @@ function productApp() {
                 
                 <div class="flex items-center gap-2 text-[10px] font-semibold text-gray-500 mb-2">
                     @php 
-                        $rating = $product->average_rating ?? 0;
-                        $reviewsCount = $product->reviews_count ?? 0;
+                        $rating = $product->avg_rating ?? $product->average_rating ?? 0;
+                        $reviewsCount = $product->total_reviews ?? $product->reviews_count ?? 0;
                     @endphp
                     <div class="flex text-yellow-400 text-xs">
                         @for($i=1; $i<=5; $i++)
@@ -190,9 +190,11 @@ function productApp() {
                 </div>
 
                 <div class="flex items-center gap-2 text-xs text-gray-600 mb-4 pb-4 border-b border-gray-100">
-                    <span>Brand: <a href="#" class="text-primary hover:underline">{{$product->brand ?? 'Generic'}}</a></span>
+                    @if($product->brand)
+                    <span>Brand: <a href="{{ $baseUrl }}?brand={{ urlencode($product->brand) }}" class="text-primary hover:underline">{{$product->brand}}</a></span>
                     <span class="text-gray-300">|</span>
-                    <span>Sold by: <a href="#" class="text-primary hover:underline">{{$client->shop_name}} Official</a></span>
+                    @endif
+                    <span>Sold by: <a href="{{$baseUrl}}" class="text-primary hover:underline">{{$client->shop_name}}</a></span>
                 </div>
 
                 {{-- Pricing --}}
@@ -213,74 +215,75 @@ function productApp() {
 
                 @include('shop.partials.product-variations')
 
-                {{-- EMI & Warranty Box Info --}}
-                <div class="text-xs text-gray-700 space-y-4">
-                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                        <span>EMI from : &#2547;{{ number_format(($product->sale_price ?? $product->regular_price) / 12, 2) }}/month</span>
-                        <a href="#" class="text-primary hover:underline flex items-center gap-1 font-semibold">Know More <i class="fas fa-chevron-right text-[8px]"></i></a>
+                {{-- Warranty & Return Policy (Dynamic from product) --}}
+                @if($product->warranty || $product->return_policy)
+                <div class="text-xs text-gray-700 space-y-2">
+                    @if($product->warranty)
+                    <div class="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <i class="fas fa-shield-alt text-primary"></i>
+                        <span class="font-semibold text-gray-600">Warranty:</span>
+                        <span>{{$product->warranty}}</span>
                     </div>
-                    <div class="flex items-center gap-2 p-2">
-                        <span class="font-semibold text-gray-600 w-20">Warranty :</span>
-                        <span>{{$product->warranty ?? '12 Months Official Warranty'}}</span>
+                    @endif
+                    @if(($client->show_return_warranty ?? true) && $product->return_policy)
+                    <div class="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <i class="fas fa-undo text-primary"></i>
+                        <span class="font-semibold text-gray-600">Return Policy:</span>
+                        <span>{{$product->return_policy}}</span>
                     </div>
-                    
-                    <div class="pt-4">
-                        <h4 class="font-bold text-gray-800 mb-2">Available Offer</h4>
-                        <div class="flex items-start gap-2 mb-4">
-                            <i class="fas fa-tag text-primary text-sm mt-0.5"></i>
-                            <span class="text-gray-600 leading-tight">Please visit this link for Bimaify Insurance Details: <a href="#" class="text-primary hover:underline">Bimaify Insurance</a></span>
-                        </div>
-                        
-                        <div class="bg-primary/10 border border-blue-100 p-3 rounded flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-shield-alt text-primary text-lg"></i>
-                                <span class="font-semibold text-gray-700">{{$client->shop_name}} Assured</span>
-                            </div>
-                            <i class="fas fa-chevron-right text-gray-400 text-[10px]"></i>
-                        </div>
-                    </div>
+                    @endif
                 </div>
+                @endif
             </div>
 
-            {{-- Rightmost Sidebar: Features / Points --}}
+            {{-- Rightmost Sidebar: Dynamic Info Cards (from widgets.info_cards) --}}
+            @php
+                $infoCardsActive = $client->widgets['info_cards']['active'] ?? true;
+                $defaultCards = [
+                    ['icon' => 'fas fa-truck',       'title' => 'Fast Delivery',         'desc' => $client->widgets['delivery_time']['text'] ?? 'Quick delivery across Bangladesh.'],
+                    ['icon' => 'fas fa-undo',        'title' => 'Easy Return',            'desc' => $product->return_policy ?? 'Hassle-free return policy.'],
+                    ['icon' => 'fas fa-shield-alt',  'title' => 'Warranty',               'desc' => $product->warranty ?? ($client->shop_name . ' quality guaranteed.')],
+                ];
+            @endphp
+            @if($infoCardsActive)
             <div class="lg:w-[20%] border-l border-gray-100 pl-6 hidden lg:block">
-                <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Available Offer</h4>
-                
-                <div class="bg-[#f0f8ff] border border-blue-100 p-4 rounded mb-4">
-                    <div class="flex items-center gap-3 mb-2">
+                <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">{{ $client->widgets['info_cards']['heading'] ?? 'Why Shop With Us' }}</h4>
+
+                {{-- Loyalty Points (only if enabled) --}}
+                @if($client->widget('loyalty'))
+                @php $loyaltyRate = (float)($client->widgets['loyalty']['rate'] ?? 1); @endphp
+                <div class="bg-primary/10 border border-primary/20 p-4 rounded mb-4">
+                    <div class="flex items-center gap-3 mb-1">
                         <div class="bg-primary text-white w-8 h-8 rounded flex items-center justify-center shadow-sm">
                             <i class="fas fa-star text-xs"></i>
                         </div>
-                        <span class="font-bold text-sm text-dark">Club Points</span>
+                        <span class="font-bold text-sm text-dark">Loyalty Points</span>
                     </div>
-                    <div class="text-xs text-gray-600 pl-11">Earn {{ round(($product->sale_price ?? $product->regular_price) * 0.02) }} Club Points</div>
+                    <div class="text-xs text-gray-600 pl-11">Earn {{ round(($product->sale_price ?? $product->regular_price) * ($loyaltyRate / 100)) }} Points on this order</div>
                 </div>
+                @endif
 
-                {{-- Feature list --}}
-                <div class="mt-6 space-y-4 text-xs text-gray-600">
+                {{-- Dynamic Info Cards --}}
+                <div class="space-y-4 text-xs text-gray-600">
+                    @foreach($defaultCards as $i => $default)
+                    @php
+                        $cardIcon  = $client->widgets['info_cards']['items'][$i]['icon']  ?? $default['icon'];
+                        $cardTitle = $client->widgets['info_cards']['items'][$i]['title'] ?? $default['title'];
+                        $cardDesc  = $client->widgets['info_cards']['items'][$i]['description'] ?? $default['desc'];
+                    @endphp
+                    @if($cardDesc)
                     <div class="flex items-start gap-3">
-                        <i class="fas fa-undo mt-0.5 text-gray-400"></i>
+                        <i class="{{ $cardIcon }} mt-0.5 text-primary"></i>
                         <div>
-                            <span class="font-semibold block text-gray-800">3 Days Easy Return</span>
-                            <a href="#" class="text-primary hover:underline">Know More</a>
+                            <span class="font-semibold block text-gray-800">{{ $cardTitle }}</span>
+                            <span class="text-gray-500 block mt-0.5">{{ $cardDesc }}</span>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3">
-                        <i class="fas fa-truck mt-0.5 text-gray-400"></i>
-                        <div>
-                            <span class="font-semibold block text-gray-800">Fast Delivery Nationwide</span>
-                            <span class="text-gray-500 block mt-1">Within 48 Hours in Dhaka</span>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <i class="fas fa-certificate mt-0.5 text-gray-400"></i>
-                        <div>
-                            <span class="font-semibold block text-gray-800">100% Authentic Products</span>
-                            <span class="text-gray-500 block mt-1">Direct from Official Distributors</span>
-                        </div>
-                    </div>
+                    @endif
+                    @endforeach
                 </div>
             </div>
+            @endif
 
         </div>
 
@@ -302,14 +305,23 @@ function productApp() {
                 <div x-show="tab === 'specifications'" class="animate-fade-in hidden">
                     <div class="max-w-xl bg-gray-50 rounded-lg border border-gray-200 p-6">
                         <div class="grid grid-cols-2 gap-y-4 text-sm">
-                            <div class="font-bold text-dark">Brand</div><div class="text-right">{{$product->brand ?? 'Generic'}}</div>
-                            <div class="font-bold text-dark border-t border-gray-200 pt-4">SKU</div><div class="text-right border-t border-gray-200 pt-4">{{$product->id}}{{$product->client_id*87}}</div>
+                            @if($product->brand)
+                            <div class="font-bold text-dark">Brand</div><div class="text-right">{{$product->brand}}</div>
+                            @endif
+                            @if($product->sku)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">SKU</div><div class="text-right border-t border-gray-200 pt-4">{{$product->sku}}</div>
+                            @endif
                             @if($product->material)
                             <div class="font-bold text-dark border-t border-gray-200 pt-4">Material</div><div class="text-right border-t border-gray-200 pt-4">{{$product->material}}</div>
                             @endif
-                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Warranty</div><div class="text-right border-t border-gray-200 pt-4">{{$product->warranty ?? 'N/A'}}</div>
-                            @if($client->show_return_warranty ?? true)
-                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Return Policy</div><div class="text-right border-t border-gray-200 pt-4">{{$product->return_policy ?? '7 Days Easy Return'}}</div>
+                            @if($product->weight)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Weight</div><div class="text-right border-t border-gray-200 pt-4">{{$product->weight}}</div>
+                            @endif
+                            @if($product->warranty)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Warranty</div><div class="text-right border-t border-gray-200 pt-4">{{$product->warranty}}</div>
+                            @endif
+                            @if(($client->show_return_warranty ?? true) && $product->return_policy)
+                            <div class="font-bold text-dark border-t border-gray-200 pt-4">Return Policy</div><div class="text-right border-t border-gray-200 pt-4">{{$product->return_policy}}</div>
                             @endif
                         </div>
                     </div>

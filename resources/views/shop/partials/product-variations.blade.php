@@ -164,7 +164,17 @@ document.addEventListener('alpine:init', () => {
                 .then(r => r.json())
                 .then(data => {
                     if(data.success) {
-                        window.location.reload(); // Quick refresh to update cart icons/drawers natively
+                        // ✅ Cart count update — no page reload needed
+                        const newCount = data.cart_count ?? (data.cart ? Object.keys(data.cart).length : null);
+                        if (newCount !== null) {
+                            window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: newCount } }));
+                        } else {
+                            // Fallback: fetch fresh count from server
+                            fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                .then(() => window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: null } })));
+                        }
+                        // Show toast notification
+                        window.dispatchEvent(new CustomEvent('cart-toast', { detail: { message: '✅ Added to cart!' } }));
                     } else {
                         alert(data.message || 'Failed to add item to cart.');
                     }
@@ -176,3 +186,20 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 </script>
+
+{{-- 🛒 Cart Toast Notification --}}
+<div x-data="{ show: false, msg: '' }"
+     @cart-toast.window="msg = $event.detail.message; show = true; setTimeout(() => show = false, 3000)"
+     x-show="show"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-4"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 translate-y-4"
+     x-cloak
+     class="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[99999] bg-gray-900 text-white text-sm font-semibold px-6 py-3 rounded-full shadow-xl flex items-center gap-2 whitespace-nowrap"
+     style="pointer-events:none;">
+    <i class="fas fa-check-circle text-green-400"></i>
+    <span x-text="msg"></span>
+</div>
