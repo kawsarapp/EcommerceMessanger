@@ -165,7 +165,7 @@ function productApp() {
                 {{-- Title & Meta --}}
                 <div class="flex justify-between items-start mb-2">
                     <h1 class="text-xl font-bold text-gray-800 leading-snug">{{$product->name}}</h1>
-                    <button class="text-gray-400 hover:text-primary flex items-center gap-1 text-xs whitespace-nowrap"><i class="fas fa-share"></i> Share</button>
+                    <button onclick="if(navigator.share){ navigator.share({title: '{{ addslashes($product->name) }}', url: window.location.href}); } else { navigator.clipboard.writeText(window.location.href); alert('Link copied to clipboard!'); }" class="text-gray-400 hover:text-primary flex items-center gap-1 text-xs whitespace-nowrap"><i class="fas fa-share"></i> Share</button>
                 </div>
                 
                 <div class="flex items-center gap-2 text-[10px] font-semibold text-gray-500 mb-2">
@@ -249,18 +249,6 @@ function productApp() {
             <div class="lg:w-[20%] border-l border-gray-100 pl-6 hidden lg:block">
                 <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">{{ $client->widgets['info_cards']['heading'] ?? 'Why Shop With Us' }}</h4>
 
-                {{-- Loyalty Points (only if enabled & product has points) --}}
-                @if($client->widget('loyalty') && $product->earnable_points > 0)
-                <div class="bg-primary/10 border border-primary/20 p-4 rounded mb-4">
-                    <div class="flex items-center gap-3 mb-1">
-                        <div class="bg-primary text-white w-8 h-8 rounded flex items-center justify-center shadow-sm">
-                            <i class="fas fa-star text-xs"></i>
-                        </div>
-                        <span class="font-bold text-sm text-dark">Loyalty Points</span>
-                    </div>
-                    <div class="text-xs text-gray-600 pl-11">Earn {{ $product->earnable_points }} Points per item</div>
-                </div>
-                @endif
 
                 {{-- Dynamic Info Cards --}}
                 <div class="space-y-4 text-xs text-gray-600">

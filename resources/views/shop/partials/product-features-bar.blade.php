@@ -30,17 +30,11 @@
     </button>
 
     {{-- 🏆 Loyalty Earn Estimate --}}
-    @if($client->widgets['loyalty']['active'] ?? false)
-        @php
-            $rate     = (int) ($client->widgets['loyalty']['rate'] ?? 1);
-            $estimate = (int) floor($price * $rate / 100);
-        @endphp
-        @if($estimate > 0)
+    @if(($client->widgets['loyalty']['active'] ?? false) && isset($product->earnable_points) && $product->earnable_points > 0)
         <div class="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
             <span>🏆</span>
-            <span>কিনলে <strong>{{ number_format($estimate) }} points</strong> পাবেন</span>
+            <span>কিনলে <strong>{{ number_format($product->earnable_points) }} points</strong> পাবেন</span>
         </div>
-        @endif
     @endif
 </div>
 
