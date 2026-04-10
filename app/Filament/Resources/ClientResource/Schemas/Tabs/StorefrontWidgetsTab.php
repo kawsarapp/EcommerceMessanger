@@ -251,19 +251,20 @@ class StorefrontWidgetsTab
 
             // ─── Loyalty Program ──────────────────────────────────
             Section::make('🏆 Loyalty Points Widget')
-                ->description('Product page এ "কিনলে X points পাবেন" badge দেখাবে।')
+                ->description('Product page এ "কিনলে X points পাবেন" badge দেখাবে এবং চেকআউটে পয়েন্ট রিডিম করার অপশন দেবে।')
                 ->schema([
                     Toggle::make('widgets.loyalty.active')
-                        ->label('Enable Loyalty Points Badge')
+                        ->label('Enable Loyalty Points System')
                         ->default(false)
                         ->onColor('success')
-                        ->inline(false),
+                        ->inline(false)
+                        ->columnSpanFull(),
 
-                    TextInput::make('widgets.loyalty.rate')
-                        ->label('Points Rate (%)')
+                    TextInput::make('widgets.loyalty.redemption_value')
+                        ->label('1 Point = How Many Taka?')
                         ->numeric()
                         ->default(1)
-                        ->helperText('Product price এর কত % points পাবে। e.g. 1 = 1 point per 100৳।'),
+                        ->helperText('চেকআউটে পেমেন্টের সময় 1 পয়েন্টের মূল্য কত টাকা হবে। (e.g. 1 মানে 1 পয়েন্টে 1 টাকা ছাড়)'),
                 ])
                 ->columns(2)
                 ->collapsible()

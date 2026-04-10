@@ -37,6 +37,10 @@ function checkoutApp() {
         notes: '',
         couponCode: '', couponDiscount: 0, couponApplied: false, couponMsg: '', couponOk: false,
 
+        pointsBalance: {{ $loyaltyBalance ?? 0 }},
+        pointsValueRate: {{ (int)($client->widgets['loyalty']['redemption_value'] ?? 1) }},
+        pointsRedeemed: '', pointsDiscount: 0, pointsMsg: '', pointsOk: false,
+
         get delivery() {
             if (this.shippingMethods && this.shippingMethods.length > 0) {
                 let sm = this.shippingMethods.find(m => m.id == this.shippingMethodId);
@@ -44,7 +48,24 @@ function checkoutApp() {
             }
             return this.area === 'inside' ? {{ $client->delivery_charge_inside ?? 50 }} : {{ $client->delivery_charge_outside ?? 100 }};
         },
-        get total() { return this.subtotal + this.delivery - this.couponDiscount; },
+        get total() { return Math.max(0, this.subtotal + this.delivery - this.couponDiscount - this.pointsDiscount); },
+
+        applyPoints() {
+            let pts = parseInt(this.pointsRedeemed) || 0;
+            this.pointsMsg = ''; this.pointsOk = false;
+            if (pts <= 0) {
+                this.pointsDiscount = 0;
+                return;
+            }
+            if (pts > this.pointsBalance) {
+                this.pointsMsg = 'Insufficient points!';
+                this.pointsDiscount = 0;
+                return;
+            }
+            this.pointsDiscount = pts * this.pointsValueRate;
+            this.pointsOk = true;
+            this.pointsMsg = `Applied discount of ৳${this.pointsDiscount}`;
+        },
 
         async applyCoupon() {
             if (!this.couponCode) return;
@@ -79,6 +100,7 @@ function checkoutApp() {
         <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
         <input type="hidden" name="area" :value="area">
         <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
+        <input type="hidden" name="redeem_points" :value="pointsOk ? pointsRedeemed : 0">
         <input type="hidden" name="notes" :value="notes">
 
         {{-- Left Column --}}
@@ -222,6 +244,22 @@ function checkoutApp() {
                                 class="bg-dark text-white font-bold px-5 rounded-lg hover:bg-primary transition text-xs shrink-0">Apply</button>
                     </div>
                     <p x-show="couponMsg" class="text-xs mb-4 -mt-3" :class="couponOk ? 'text-green-500' : 'text-red-400'" x-text="couponMsg"></p>
+
+                    {{-- Redeem Points --}}
+                    @if($client->widget('loyalty.active') && auth('customer')->check())
+                    <div class="mb-5 border-t border-gray-100 pt-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-dark">Redeem Points</span>
+                            <span class="text-[10px] text-gray-500">Balance: <strong class="text-primary">{{ $loyaltyBalance ?? 0 }} pts</strong></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" x-model="pointsRedeemed" placeholder="Amount to redeem" min="1" :max="pointsBalance" class="vg-input !rounded-lg !py-2.5 text-xs">
+                            <button type="button" @click="applyPoints()"
+                                    class="bg-dark text-white font-bold px-5 rounded-lg hover:bg-primary transition text-xs shrink-0">Apply</button>
+                        </div>
+                        <p x-show="pointsMsg" class="text-xs mt-1" :class="pointsOk ? 'text-green-500' : 'text-red-400'" x-text="pointsMsg"></p>
+                    </div>
+                    @endif
 
                     {{-- Totals --}}
                     <div class="space-y-2.5 text-sm border-t border-gray-100 pt-4">

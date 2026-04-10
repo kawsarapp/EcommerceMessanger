@@ -249,9 +249,8 @@ function productApp() {
             <div class="lg:w-[20%] border-l border-gray-100 pl-6 hidden lg:block">
                 <h4 class="font-bold text-xs text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">{{ $client->widgets['info_cards']['heading'] ?? 'Why Shop With Us' }}</h4>
 
-                {{-- Loyalty Points (only if enabled) --}}
-                @if($client->widget('loyalty'))
-                @php $loyaltyRate = (float)($client->widgets['loyalty']['rate'] ?? 1); @endphp
+                {{-- Loyalty Points (only if enabled & product has points) --}}
+                @if($client->widget('loyalty') && $product->earnable_points > 0)
                 <div class="bg-primary/10 border border-primary/20 p-4 rounded mb-4">
                     <div class="flex items-center gap-3 mb-1">
                         <div class="bg-primary text-white w-8 h-8 rounded flex items-center justify-center shadow-sm">
@@ -259,7 +258,7 @@ function productApp() {
                         </div>
                         <span class="font-bold text-sm text-dark">Loyalty Points</span>
                     </div>
-                    <div class="text-xs text-gray-600 pl-11">Earn {{ round(($product->sale_price ?? $product->regular_price) * ($loyaltyRate / 100)) }} Points on this order</div>
+                    <div class="text-xs text-gray-600 pl-11">Earn {{ $product->earnable_points }} Points per item</div>
                 </div>
                 @endif
 

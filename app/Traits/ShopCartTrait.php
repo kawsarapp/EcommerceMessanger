@@ -210,7 +210,11 @@ trait ShopCartTrait
         $pages           = $this->clientService->getActivePages($client->id);
         $shippingMethods = ShippingMethod::where('client_id', $client->id)->where('is_active', true)->get();
 
-        return $this->themeView($client, 'cart-checkout', compact('client', 'cart', 'pages', 'shippingMethods'));
+        // Fetch customer loyalty balance
+        $customer = \Illuminate\Support\Facades\Auth::guard('customer')->user();
+        $loyaltyBalance = $customer ? \App\Models\LoyaltyPoint::balanceFor($client->id, $customer->phone) : 0;
+
+        return $this->themeView($client, 'cart-checkout', compact('client', 'cart', 'pages', 'shippingMethods', 'loyaltyBalance'));
     }
 
     // ─── POST /cart/checkout/process ────────────────────────────
@@ -256,7 +260,27 @@ trait ShopCartTrait
             }
         }
 
+        // Redemption of Points
+        $redeemedPoints = 0;
+        $loyaltyDiscount = 0;
+        if ($client->widget('loyalty.active') && $request->filled('redeem_points') && $request->redeem_points > 0) {
+            $pointsRequested = (int) $request->redeem_points;
+            $customerId = \Illuminate\Support\Facades\Auth::guard('customer')->id();
+            if ($customerId) {
+                // Verify balance
+                $customerPhone = \Illuminate\Support\Facades\Auth::guard('customer')->user()->phone;
+                $balance = \App\Models\LoyaltyPoint::balanceFor($client->id, $customerPhone);
+                if ($pointsRequested <= $balance) {
+                    $rate = (float)($client->widgets['loyalty']['redemption_value'] ?? 1);
+                    $redeemedPoints = $pointsRequested;
+                    $loyaltyDiscount = $redeemedPoints * $rate;
+                    $discount += $loyaltyDiscount; // Add to overall order discount
+                }
+            }
+        }
+
         $total = ($subtotal + $shipping) - $discount;
+        if ($total < 0) $total = 0;
 
         // Create or Find Customer for CRM
         $customerId = \Illuminate\Support\Facades\Auth::guard('customer')->id();
@@ -286,10 +310,16 @@ trait ShopCartTrait
             'payment_method'  => $request->payment_method ?? 'cod',
         ]);
 
+        $totalEarnedPoints = 0;
+
         // Create Order Items from cart
         foreach ($cart as $item) {
             $product = Product::find($item['product_id']);
             if (!$product) continue;
+
+            if ($product->earnable_points > 0) {
+                $totalEarnedPoints += ($product->earnable_points * $item['qty']);
+            }
 
             OrderItem::create([
                 'order_id'   => $order->id,
@@ -313,10 +343,23 @@ trait ShopCartTrait
         // Tracking
         app(\App\Services\ServerSideTrackingService::class)->dispatchPurchase($order);
 
-        // Loyalty Points (Check if widget is active and calculate points)
-        if ($client->widget('loyalty.active')) {
-            $rate = (int)($client->widgets['loyalty']['rate'] ?? 1);
-            \App\Models\LoyaltyPoint::earnFromOrder($order, $rate);
+        // Loyalty Points (Award exactly what was calculated per product)
+        if ($client->widget('loyalty.active') && $totalEarnedPoints > 0) {
+            \App\Models\LoyaltyPoint::earnFromOrder($order, $totalEarnedPoints);
+        }
+
+        // Deduct redeemed points
+        if ($redeemedPoints > 0) {
+            \App\Models\LoyaltyPoint::create([
+                'client_id'      => $client->id,
+                'sender_id'      => $order->customer_phone,
+                'customer_name'  => $order->customer_name,
+                'customer_phone' => $order->customer_phone,
+                'points'         => -$redeemedPoints,
+                'type'           => 'redeemed',
+                'order_id'       => $order->id,
+                'note'           => "Redeemed $redeemedPoints points for discount of ৳$loyaltyDiscount on Order #{$order->id}"
+            ]);
         }
 
         // Clear cart after successful order

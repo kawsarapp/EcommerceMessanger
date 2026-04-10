@@ -18,18 +18,17 @@ class LoyaltyPoint extends Model
             ->sum('points');
     }
 
-    /** Order থেকে points earn করা (configurable rate) */
-    public static function earnFromOrder(Order $order, int $pointsPerTaka = 1): void
+    /** Order থেকে points earn করা (exact amount from cart item loop) */
+    public static function earnFromOrder(Order $order, int $exactPoints): void
     {
-        $pts = (int) floor($order->total_amount * $pointsPerTaka / 100); // 1 pt per 100tk
-        if ($pts <= 0) return;
+        if ($exactPoints <= 0) return;
 
         static::create([
             'client_id'     => $order->client_id,
             'sender_id'     => $order->sender_id ?? $order->customer_phone,
             'customer_name' => $order->customer_name,
             'customer_phone'=> $order->customer_phone,
-            'points'        => $pts,
+            'points'        => $exactPoints,
             'type'          => 'earned',
             'order_id'      => $order->id,
             'note'          => "Order #{$order->id} থেকে অর্জিত",

@@ -26,6 +26,7 @@ class Product extends Model
         'has_variants',
         'tags',
         'regular_price',
+        'reward_points',
         'sale_price',
         'discount_type',
         'tax',
@@ -181,6 +182,20 @@ class Product extends Model
     public function subCategory(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'sub_category_id');
+    }
+
+    public function variations()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * Get earnable loyalty points for this product.
+     */
+    public function getEarnablePointsAttribute(): int
+    {
+        if ($this->reward_points > 0) return clone $this->reward_points;
+        return 0; // Global rate disabled as requested
     }
 
     public function variants(): HasMany

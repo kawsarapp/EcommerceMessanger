@@ -147,6 +147,12 @@ class ProductFormSchema
                                         ->prefix('৳')
                                         ->placeholder('Optional'),
 
+                                    TextInput::make('reward_points')
+                                        ->numeric()
+                                        ->label('Reward Points')
+                                        ->placeholder('e.g. 50')
+                                        ->helperText('Blank বা 0 রাখলে কোনো পয়েন্ট পাবে না।'),
+
                                     TextInput::make('stock_quantity')
                                         ->label('Stock Count')
                                         ->numeric()
