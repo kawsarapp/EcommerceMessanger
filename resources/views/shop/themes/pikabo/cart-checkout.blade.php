@@ -30,7 +30,7 @@
 function checkoutApp() {
     return {
         area: 'inside',
-        paymentMethod: 'cod',
+        paymentMethod: '{{ array_key_first($activePaymentMethods ?? []) ?? "cod" }}',
         shippingMethods: {!! json_encode($shippingMethods ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
         shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
         subtotal: {{ $subtotal }},
@@ -320,5 +320,7 @@ function checkoutApp() {
 </div>
 </div>
 @endsection
+
+
 
 
