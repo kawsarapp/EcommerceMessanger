@@ -204,10 +204,22 @@ function checkoutApp() {
                         @endif
                     </div>
 
-                    {{-- Payment Method --}}
+                    {{-- Payment Method (Dynamic from Dashboard) --}}
+                    @php
+                        $gateways = $client->payment_gateways ?? [];
+                        $hasBkash = !empty($gateways['bkash_pgw']['active']) || !empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']);
+                        $hasSsl = !empty($gateways['sslcommerz']['active']);
+                        $hasCod = $client->cod_active ?? true;
+                        $hasPartial = $client->partial_payment_active ?? false;
+                        $hasFull = $client->full_payment_active ?? false;
+                        // If no payment type is enabled, default to showing COD
+                        if (!$hasCod && !$hasBkash && !$hasSsl) { $hasCod = true; }
+                    @endphp
                     <div class="mb-8">
                         <h2 class="text-sm font-semibold text-gray-800 mb-3">Payment Method</h2>
                         
+                        {{-- Payment Type Tabs: Only show if both full+partial or partial is active --}}
+                        @if($hasPartial || $hasFull)
                         <div class="flex gap-4 border-b border-gray-200 mb-4 pb-1">
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="radio" name="payment_type" value="full" @change="paymentType='full'" class="peer hidden" checked>
@@ -216,6 +228,7 @@ function checkoutApp() {
                                 </div>
                                 <span class="text-xs font-semibold text-gray-600 peer-checked:text-dark">Full Payment</span>
                             </label>
+                            @if($hasPartial)
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="radio" name="payment_type" value="partial" @change="paymentType='partial'" class="peer hidden">
                                 <div class="w-3.5 h-3.5 rounded-full border flex items-center justify-center peer-checked:border-primary">
@@ -223,9 +236,13 @@ function checkoutApp() {
                                 </div>
                                 <span class="text-xs font-semibold text-gray-500 peer-checked:text-dark">Partial Payment (10%)</span>
                             </label>
+                            @endif
                         </div>
+                        @endif
 
                         <div class="grid sm:grid-cols-3 gap-3 mb-3">
+                            {{-- COD --}}
+                            @if($hasCod)
                             <label class="cursor-pointer">
                                 <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="peer hidden" checked>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
@@ -233,46 +250,48 @@ function checkoutApp() {
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='cod'}"></div>
                                     </div>
                                     <div class="flex flex-col">
-                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-clock text-orange-500"></i> Pay in 30 min</div>
-                                        <div class="text-[9px] text-primary mt-0.5 leading-tight">Order will be cancelled if not paid</div>
+                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-money-bill-wave text-green-600"></i> Cash on Delivery</div>
+                                        <div class="text-[9px] text-gray-500 mt-0.5 leading-tight">পণ্য হাতে পেয়ে পেমেন্ট করুন</div>
                                     </div>
                                 </div>
                             </label>
+                            @endif
                             
+                            {{-- bKash --}}
+                            @if($hasBkash)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="bkash" @change="paymentMethod='bkash'" class="peer hidden">
+                                <input type="radio" name="_pmt" value="bkash" @change="paymentMethod='bkash'" class="peer hidden" {{ !$hasCod ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='bkash'}"></div>
                                     </div>
-                                    <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-mobile text-[#e2136e]"></i> bKash</div>
+                                    <div class="flex flex-col">
+                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-mobile text-[#e2136e]"></i> bKash</div>
+                                        @if(!empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']))
+                                            <div class="text-[9px] text-gray-500 mt-0.5">Send Money / Payment</div>
+                                        @else
+                                            <div class="text-[9px] text-gray-500 mt-0.5">Automatic Checkout</div>
+                                        @endif
+                                    </div>
                                 </div>
                             </label>
+                            @endif
 
+                            {{-- SSLCommerz / Online Payment --}}
+                            @if($hasSsl)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="online" @change="paymentMethod='online'" class="peer hidden">
+                                <input type="radio" name="_pmt" value="online" @change="paymentMethod='online'" class="peer hidden" {{ !$hasCod && !$hasBkash ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='online'}"></div>
                                     </div>
-                                    <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-shield-alt text-green-600"></i> Pay Online</div>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="w-full sm:w-1/3 pr-1.5">
-                            <label class="cursor-pointer h-full">
-                                <input type="radio" name="_pmt" value="credit" @change="paymentMethod='credit'" class="peer hidden">
-                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
-                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='credit'}"></div>
-                                    </div>
                                     <div class="flex flex-col">
-                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-credit-card text-bddeep"></i> Use Credit</div>
-                                        <div class="text-[9px] text-gray-500 mt-0.5">Check by phone</div>
+                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-shield-alt text-green-600"></i> Pay Online</div>
+                                        <div class="text-[9px] text-gray-500 mt-0.5">Visa, Mastercard, Nagad, Rocket</div>
                                     </div>
                                 </div>
                             </label>
+                            @endif
                         </div>
                     </div>
 
