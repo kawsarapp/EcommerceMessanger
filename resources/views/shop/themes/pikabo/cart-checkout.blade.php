@@ -96,8 +96,7 @@ function checkoutApp() {
 
     <form action="{{ $formAction }}" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         @csrf
-        <input type="hidden" name="payment_method" :value="paymentMethod">
-        <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
+                <input type="hidden" name="shipping_method_id" :value="shippingMethodId">
         <input type="hidden" name="area" :value="area">
         <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
         <input type="hidden" name="redeem_points" :value="pointsOk ? pointsRedeemed : 0">
@@ -183,42 +182,41 @@ function checkoutApp() {
             {{-- Payment --}}
             <div class="vg-section">
                 <h2 class="vg-section-title"><i class="fas fa-credit-card text-primary mr-2"></i>Payment Method</h2>
-                <input type="hidden" name="payment_method" :value="paymentMethod">
-                @php $cartGws = $activePaymentMethods ?? []; $cartFirst = array_key_first($cartGws) ?? "cod"; @endphp
+                                @php $cartGws = $activePaymentMethods ?? []; $cartFirst = array_key_first($cartGws) ?? "cod"; @endphp
                 <div class="space-y-2">
                 @if(isset($cartGws["cod"]) || empty($cartGws))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='cod' ? 'border-primary bg-primary/5' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300" {{ $cartFirst === "cod" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="cod" @change="paymentMethod='cod'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300" {{ $cartFirst === "cod" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">Cash on Delivery (COD)</span><p class="text-xs text-gray-400 mt-0.5">Pay when you receive your order</p></div>
                 </label>
                 @endif
                 @if(isset($cartGws["uddoktapay"]))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='uddoktapay' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="w-4 h-4 text-emerald-500 focus:ring-emerald-500 border-gray-300" {{ $cartFirst === "uddoktapay" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="w-4 h-4 text-emerald-500 focus:ring-emerald-500 border-gray-300" {{ $cartFirst === "uddoktapay" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">UddoktaPay</span><p class="text-xs text-gray-400 mt-0.5">bKash, Nagad, Rocket</p></div>
                 </label>
                 @endif
                 @if(isset($cartGws["bkash_merchant"]))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='bkash_merchant' ? 'border-pink-500 bg-pink-50' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="bkash_merchant" @change="paymentMethod='bkash_merchant'" class="w-4 h-4 text-pink-500 focus:ring-pink-500 border-gray-300" {{ $cartFirst === "bkash_merchant" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="bkash_merchant" @change="paymentMethod='bkash_merchant'" class="w-4 h-4 text-pink-500 focus:ring-pink-500 border-gray-300" {{ $cartFirst === "bkash_merchant" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">bKash (Merchant)</span><p class="text-xs text-gray-400 mt-0.5">Send Money / Payment</p></div>
                 </label>
                 @endif
                 @if(isset($cartGws["bkash_personal"]))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='bkash_personal' ? 'border-pink-400 bg-pink-50' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="bkash_personal" @change="paymentMethod='bkash_personal'" class="w-4 h-4 text-pink-400 border-gray-300" {{ $cartFirst === "bkash_personal" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="bkash_personal" @change="paymentMethod='bkash_personal'" class="w-4 h-4 text-pink-400 border-gray-300" {{ $cartFirst === "bkash_personal" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">bKash (Personal)</span><p class="text-xs text-gray-400 mt-0.5">Send Money</p></div>
                 </label>
                 @endif
                 @if(isset($cartGws["sslcommerz"]))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='sslcommerz' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="sslcommerz" @change="paymentMethod='sslcommerz'" class="w-4 h-4 text-blue-500 border-gray-300" {{ $cartFirst === "sslcommerz" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="sslcommerz" @change="paymentMethod='sslcommerz'" class="w-4 h-4 text-blue-500 border-gray-300" {{ $cartFirst === "sslcommerz" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">Online Payment</span><p class="text-xs text-gray-400 mt-0.5">Visa, Mastercard, Nagad, Rocket</p></div>
                 </label>
                 @endif
                 @if(isset($cartGws["surjopay"]))
                 <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='surjopay' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
-                    <input type="radio" name="_pmt" value="surjopay" @change="paymentMethod='surjopay'" class="w-4 h-4 text-orange-500 border-gray-300" {{ $cartFirst === "surjopay" ? "checked" : "" }}>
+                    <input type="radio" name="payment_method" value="surjopay" @change="paymentMethod='surjopay'" class="w-4 h-4 text-orange-500 border-gray-300" {{ $cartFirst === "surjopay" ? "checked" : "" }}>
                     <div><span class="text-sm font-semibold text-dark">Surjopay</span><p class="text-xs text-gray-400 mt-0.5">Online Payment Gateway</p></div>
                 </label>
                 @endif

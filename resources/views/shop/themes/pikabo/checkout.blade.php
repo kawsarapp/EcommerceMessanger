@@ -95,8 +95,7 @@ function checkoutApp() {
                     <input type="hidden" name="area" :value="area">
                     <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
                     <input type="hidden" name="coupon_discount" :value="couponDiscount">
-                    <input type="hidden" name="payment_method" :value="paymentMethod">
-
+                    
                     {{-- Customer Information --}}
                     <div class="mb-8">
                         <div class="flex justify-between items-center mb-4">
@@ -254,7 +253,7 @@ function checkoutApp() {
                             {{-- COD --}}
                             @if($hasCod)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="peer hidden" checked>
+                                <input type="radio" name="payment_method" value="cod" @change="paymentMethod='cod'" class="peer hidden" checked>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='cod'}"></div>
@@ -270,7 +269,7 @@ function checkoutApp() {
                             {{-- bKash --}}
                             @if($hasBkash)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="{{ $bkashMethod }}" @change="paymentMethod='{{ $bkashMethod }}'" class="peer hidden" {{ !$hasCod ? 'checked' : '' }}>
+                                <input type="radio" name="payment_method" value="{{ $bkashMethod }}" @change="paymentMethod='{{ $bkashMethod }}'" class="peer hidden" {{ !$hasCod ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='{{ $bkashMethod }}'}"></div>
@@ -290,7 +289,7 @@ function checkoutApp() {
                             {{-- SSLCommerz / Online Payment --}}
                             @if($hasSsl)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="online" @change="paymentMethod='online'" class="peer hidden" {{ !$hasCod && !$hasBkash ? 'checked' : '' }}>
+                                <input type="radio" name="payment_method" value="online" @change="paymentMethod='online'" class="peer hidden" {{ !$hasCod && !$hasBkash ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='online'}"></div>
@@ -306,7 +305,7 @@ function checkoutApp() {
                             {{-- UddoktaPay --}}
                             @if($hasUddoktaPay)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="peer hidden" {{ !$hasCod && !$hasBkash && !$hasSsl ? 'checked' : '' }}>
+                                <input type="radio" name="payment_method" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="peer hidden" {{ !$hasCod && !$hasBkash && !$hasSsl ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
                                         <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='uddoktapay'}"></div>
