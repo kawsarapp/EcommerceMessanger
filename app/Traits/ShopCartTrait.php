@@ -192,15 +192,21 @@ trait ShopCartTrait
     // ─── GET /cart/checkout ─────────────────────────────────────
     public function cartCheckout(Request $request, $slug = null)
     {
+        Log::info("=== GET CHECKOUT PAGE ===");
+        
         $client = $request->has('current_client')
             ? $request->current_client
             : $this->clientService->getSafeClient($request, $slug);
 
-        if (!$client || !$client->exists) return redirect('/');
+        if (!$client || !$client->exists) {
+            Log::error("GET Checkout Failed: Client is missing or invalid. Redirecting to /");
+            return redirect('/');
+        }
 
         $cart = $this->getCart($client->id);
 
         if (empty($cart)) {
+            Log::warning("GET Checkout Failed: Cart is empty for Client {$client->id}. Redirecting to shop base URL.");
             $baseUrl = $client->custom_domain
                 ? 'https://' . preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/'))
                 : route('shop.show', $client->slug);
@@ -221,11 +227,19 @@ trait ShopCartTrait
     // ─── POST /cart/checkout/process ────────────────────────────
     public function processCartCheckout(Request $request, $slug = null)
     {
+        Log::info("=== CHECKOUT SUBMISSION STARTED ===");
+        Log::info("Checkout payload: " . json_encode($request->all()));
+
         $client = $request->has('current_client')
             ? $request->current_client
             : $this->clientService->getSafeClient($request, $slug);
 
-        if (!$client || !$client->exists) return redirect('/');
+        if (!$client || !$client->exists) {
+            Log::error("Checkout Failed: Client is null or missing.");
+            return redirect('/');
+        }
+        
+        Log::info("Checkout Step 1: Client resolved: {$client->id}");
 
         $request->validate([
             'customer_name'  => 'required|string|max:255',
@@ -234,7 +248,10 @@ trait ShopCartTrait
         ]);
 
         $cart = $this->getCart($client->id);
-        if (empty($cart)) return back()->with('error', 'Your cart is empty!');
+        if (empty($cart)) {
+            Log::warning("Checkout Failed: Cart is empty for Client {$client->id}");
+            return back()->with('error', 'Your cart is empty!');
+        }
 
         // Shipping
         $shipping = 0;

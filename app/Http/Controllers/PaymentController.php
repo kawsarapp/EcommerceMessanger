@@ -596,17 +596,24 @@ class PaymentController extends Controller
 
     public function initiateUddoktaPay(Request $request, $orderId)
     {
+        Log::info("=== INITIATING UDDOKTAPAY FOR ORDER: {$orderId} ===");
         $order  = Order::with('client')->findOrFail($orderId);
         $client = $order->client;
+        
+        Log::info("UddoktaPay Init Step 1: Order loaded. Client ID: {$client->id}");
 
         if (!$client->isPaymentGatewayActive('uddoktapay')) {
+            Log::error("UddoktaPay Error: Gateway not active for client {$client->id}");
             abort(403, 'UddoktaPay is not enabled for this shop.');
         }
+
         if ($order->payment_status === 'paid') {
+            Log::info("UddoktaPay Init: Order already paid.");
             return $this->redirectToOrderSuccess($order, $client, 'This order is already paid.');
         }
 
         $config  = $client->getPaymentGatewayConfig('uddoktapay');
+        Log::info("UddoktaPay Config Read: " . json_encode($config));
         $baseUrl = rtrim($config['base_url'] ?? 'https://sandbox.uddoktapay.com', '/');
         $apiKey  = $config['api_key'] ?? '';
         $amount  = ($order->advance_amount ?? 0) > 0 ? $order->advance_amount : $order->total_amount;

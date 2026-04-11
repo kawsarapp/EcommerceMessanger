@@ -7,8 +7,17 @@ trait ShopTrackingTrait
 {
     public function trackOrder(Request $request, $slug = null)
     {
+        Log::info("=== TRACK ORDER ACCESSED ===");
+        Log::info("Track Order Request Payload: " . json_encode($request->all()));
+
         $client = $this->clientService->getSafeClient($request, $slug);
-        if (!$client->exists) return redirect('/');
+        
+        if (!$client->exists) {
+            Log::error("Track Order Failed: Client not found, redirecting to /");
+            return redirect('/');
+        }
+        
+        Log::info("Track Order Step 1: Client resolved: {$client->id}");
        
         $pages = $this->clientService->getActivePages($client->id);
         
