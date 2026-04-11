@@ -144,8 +144,19 @@ class CategoryResource extends Resource
 
             Forms\Components\Section::make('Category Banner & Settings')
                 ->schema([
+                    Forms\Components\FileUpload::make('image')
+                        ->label('Category Icon / Thumbnail')
+                        ->helperText('Homepage category card এ এই ছবি দেখাবে। Square (1:1) ছবি দিন।')
+                        ->image()
+                        ->imageEditor()
+                        ->disk('public')
+                        ->directory('categories/icons')
+                        ->visibility('public')
+                        ->maxSize(2048),
+
                     Forms\Components\FileUpload::make('banner_image')
                         ->label('Category Banner (Optional)')
+                        ->helperText('Category page এর top এ full-width banner দেখাবে।')
                         ->image()
                         ->directory('categories/banners')
                         ->columnSpanFull(),

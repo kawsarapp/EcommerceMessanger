@@ -144,7 +144,9 @@
                 @php $style = $catStyles[$index % count($catStyles)] @endphp
                 <a href="{{$baseUrl}}?category={{$c->slug}}" class="category-card">
                     <div class="category-img-container {{$style['bg']}} bg-opacity-20">
-                        @if($c->image)
+                        @if($c->banner_image)
+                            <img src="{{asset('storage/'.$c->banner_image)}}" class="w-full h-24 object-contain mix-blend-multiply" alt="{{$c->name}}">
+                        @elseif($c->image)
                             <img src="{{asset('storage/'.$c->image)}}" class="w-full h-24 object-contain mix-blend-multiply" alt="{{$c->name}}">
                         @else
                             <i class="fas fa-box text-4xl text-gray-400"></i>
