@@ -209,12 +209,13 @@ trait ShopCartTrait
 
         $pages           = $this->clientService->getActivePages($client->id);
         $shippingMethods = ShippingMethod::where('client_id', $client->id)->where('is_active', true)->get();
+        $activePaymentMethods = $client->getActivePaymentMethods();
 
         // Fetch customer loyalty balance
         $customer = \Illuminate\Support\Facades\Auth::guard('customer')->user();
         $loyaltyBalance = $customer ? \App\Models\LoyaltyPoint::balanceFor($client->id, $customer->phone) : 0;
 
-        return $this->themeView($client, 'cart-checkout', compact('client', 'cart', 'pages', 'shippingMethods', 'loyaltyBalance'));
+        return $this->themeView($client, 'cart-checkout', compact('client', 'cart', 'pages', 'shippingMethods', 'loyaltyBalance', 'activePaymentMethods'));
     }
 
     // ─── POST /cart/checkout/process ────────────────────────────

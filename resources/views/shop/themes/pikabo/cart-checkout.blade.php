@@ -1,4 +1,4 @@
-@extends('shop.themes.pikabo.layout')
+ï»¿@extends('shop.themes.pikabo.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')
@@ -183,13 +183,46 @@ function checkoutApp() {
             {{-- Payment --}}
             <div class="vg-section">
                 <h2 class="vg-section-title"><i class="fas fa-credit-card text-primary mr-2"></i>Payment Method</h2>
-                <label class="flex items-center gap-3 p-4 border border-primary bg-primary/5 rounded-xl cursor-pointer">
-                    <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300" checked>
-                    <div>
-                        <span class="text-sm font-semibold text-dark">Cash on Delivery (COD)</span>
-                        <p class="text-xs text-gray-400 mt-0.5">Pay when you receive your order</p>
-                    </div>
+                <input type="hidden" name="payment_method" :value="paymentMethod">
+                @php $cartGws = $activePaymentMethods ?? []; $cartFirst = array_key_first($cartGws) ?? "cod"; @endphp
+                <div class="space-y-2">
+                @if(isset($cartGws["cod"]) || empty($cartGws))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='cod' ? 'border-primary bg-primary/5' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="cod" @change="paymentMethod='cod'" class="w-4 h-4 text-primary focus:ring-primary border-gray-300" {{ $cartFirst === "cod" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">Cash on Delivery (COD)</span><p class="text-xs text-gray-400 mt-0.5">Pay when you receive your order</p></div>
                 </label>
+                @endif
+                @if(isset($cartGws["uddoktapay"]))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='uddoktapay' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="w-4 h-4 text-emerald-500 focus:ring-emerald-500 border-gray-300" {{ $cartFirst === "uddoktapay" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">UddoktaPay</span><p class="text-xs text-gray-400 mt-0.5">bKash, Nagad, Rocket</p></div>
+                </label>
+                @endif
+                @if(isset($cartGws["bkash_merchant"]))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='bkash_merchant' ? 'border-pink-500 bg-pink-50' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="bkash_merchant" @change="paymentMethod='bkash_merchant'" class="w-4 h-4 text-pink-500 focus:ring-pink-500 border-gray-300" {{ $cartFirst === "bkash_merchant" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">bKash (Merchant)</span><p class="text-xs text-gray-400 mt-0.5">Send Money / Payment</p></div>
+                </label>
+                @endif
+                @if(isset($cartGws["bkash_personal"]))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='bkash_personal' ? 'border-pink-400 bg-pink-50' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="bkash_personal" @change="paymentMethod='bkash_personal'" class="w-4 h-4 text-pink-400 border-gray-300" {{ $cartFirst === "bkash_personal" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">bKash (Personal)</span><p class="text-xs text-gray-400 mt-0.5">Send Money</p></div>
+                </label>
+                @endif
+                @if(isset($cartGws["sslcommerz"]))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='sslcommerz' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="sslcommerz" @change="paymentMethod='sslcommerz'" class="w-4 h-4 text-blue-500 border-gray-300" {{ $cartFirst === "sslcommerz" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">Online Payment</span><p class="text-xs text-gray-400 mt-0.5">Visa, Mastercard, Nagad, Rocket</p></div>
+                </label>
+                @endif
+                @if(isset($cartGws["surjopay"]))
+                <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition" :class="paymentMethod==='surjopay' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
+                    <input type="radio" name="_pmt" value="surjopay" @change="paymentMethod='surjopay'" class="w-4 h-4 text-orange-500 border-gray-300" {{ $cartFirst === "surjopay" ? "checked" : "" }}>
+                    <div><span class="text-sm font-semibold text-dark">Surjopay</span><p class="text-xs text-gray-400 mt-0.5">Online Payment Gateway</p></div>
+                </label>
+                @endif
+                </div>
 
                 @if($client->show_terms_checkbox ?? false)
                 <label class="flex items-start gap-2 cursor-pointer mt-4">
@@ -200,7 +233,7 @@ function checkoutApp() {
 
                 <button type="submit"
                         class="mt-5 w-full btn-primary rounded-xl !py-4 text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-                    <i class="fas fa-lock text-sm"></i> Place Order — ?<span x-text="Math.round(total).toLocaleString()"></span>
+                    <i class="fas fa-lock text-sm"></i> Place Order ï¿½ ?<span x-text="Math.round(total).toLocaleString()"></span>
                 </button>
             </div>
         </div>
@@ -287,4 +320,5 @@ function checkoutApp() {
 </div>
 </div>
 @endsection
+
 
