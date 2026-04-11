@@ -8,7 +8,7 @@
     <!-- Dropdown Toggle Button -->
     <button @click="open = !open" 
             @mouseover="if(!isMobile) open = true"
-            class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all focus:outline-none h-10 sm:h-auto">
+            class="flex items-center gap-2 {{ $btnClass ?? 'bg-white/10 hover:bg-white/20 text-white' }} px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all focus:outline-none h-10 sm:h-auto">
         <i class="fas fa-bars"></i>
         <span class="hidden sm:inline">ক্যাটাগরি</span>
         <i class="fas fa-chevron-down text-[10px] sm:text-xs transition-transform duration-200" :class="{'rotate-180': open}"></i>

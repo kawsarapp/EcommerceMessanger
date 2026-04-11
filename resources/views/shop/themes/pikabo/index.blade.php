@@ -236,35 +236,122 @@
     </div>
     @endif
 
-    {{-- Best Deals on Official Appliances --}}
+    {{-- Best Deals / Products Section --}}
     <div class="mb-12 flex gap-6">
         
-        {{-- Sidebar (Filter replica visually) --}}
-        @if(!request('category') || request('category') == 'all')
-        <div class="w-64 hidden lg:block shrink-0">
-            <h3 class="font-normal text-lg mb-4">Filter</h3>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Price</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Brand</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Display Size (Inches)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">RAM(GB)</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">Processor</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-            <div class="border-t border-gray-200 py-3 flex justify-between items-center cursor-pointer hover:text-primary"><span class="text-sm font-medium">5G</span> <i class="fas fa-chevron-down text-xs text-gray-400"></i></div>
-        </div>
-        @endif
+        {{-- Dynamic Sidebar Filter --}}
+        @php
+            $allBrands = \App\Models\Product::where('client_id', $client->id)
+                ->where('stock_status', 'in_stock')
+                ->whereNotNull('brand')
+                ->pluck('brand')
+                ->unique()
+                ->sort()
+                ->values();
+
+            $allColors = \App\Models\Product::where('client_id', $client->id)
+                ->where('stock_status', 'in_stock')
+                ->whereNotNull('colors')
+                ->pluck('colors')
+                ->flatMap(fn($c) => is_array($c) ? $c : (is_string($c) ? json_decode($c, true) ?? [] : []))
+                ->unique()
+                ->sort()
+                ->values();
+        @endphp
+
+        <form method="GET" action="{{ $baseUrl }}" id="filter-form" class="w-64 hidden lg:block shrink-0 self-start">
+            @if(request('category'))<input type="hidden" name="category" value="{{ request('category') }}">@endif
+            @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
+
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-base text-gray-800">Filter</h3>
+                    @if(request()->hasAny(['min_price','max_price','brand','color','sort']))
+                        <a href="{{ $baseUrl }}{{ request('category') ? '?category='.request('category') : '' }}" class="text-xs text-primary hover:underline">Clear All</a>
+                    @endif
+                </div>
+
+                {{-- Categories --}}
+                @if(isset($categories) && count($categories) > 0)
+                <div x-data="{ open: true }" class="border-t border-gray-100 py-3">
+                    <button type="button" @click="open = !open" class="w-full flex justify-between items-center text-sm font-semibold text-gray-700 hover:text-primary">
+                        <span>Category</span><i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" class="mt-2 space-y-1.5">
+                        <a href="{{ $baseUrl }}" class="block text-xs {{ !request('category') || request('category') === 'all' ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary' }}">All Products</a>
+                        @foreach($categories as $cat)
+                        <a href="{{ $baseUrl }}?category={{ $cat->slug }}" class="block text-xs {{ request('category') === $cat->slug ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary' }}">
+                            {{ $cat->name }} <span class="text-gray-400">({{ $cat->products_count }})</span>
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Price Range --}}
+                <div x-data="{ open: true }" class="border-t border-gray-100 py-3">
+                    <button type="button" @click="open = !open" class="w-full flex justify-between items-center text-sm font-semibold text-gray-700 hover:text-primary">
+                        <span>Price Range</span><i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" class="mt-2 flex gap-2 items-center">
+                        <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="Min" class="w-1/2 border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-primary">
+                        <span class="text-gray-400 text-xs">-</span>
+                        <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="Max" class="w-1/2 border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-primary">
+                    </div>
+                </div>
+
+                {{-- Brand --}}
+                @if($allBrands->count() > 0)
+                <div x-data="{ open: false }" class="border-t border-gray-100 py-3">
+                    <button type="button" @click="open = !open" class="w-full flex justify-between items-center text-sm font-semibold text-gray-700 hover:text-primary">
+                        <span>Brand</span><i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" class="mt-2 space-y-1.5">
+                        @foreach($allBrands as $brand)
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="brand" value="{{ $brand }}" {{ request('brand') === $brand ? 'checked' : '' }} class="accent-primary">
+                            <span class="text-xs text-gray-600">{{ $brand }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Color --}}
+                @if($allColors->count() > 0)
+                <div x-data="{ open: false }" class="border-t border-gray-100 py-3">
+                    <button type="button" @click="open = !open" class="w-full flex justify-between items-center text-sm font-semibold text-gray-700 hover:text-primary">
+                        <span>Color</span><i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" :class="{'rotate-180': open}"></i>
+                    </button>
+                    <div x-show="open" class="mt-2 flex flex-wrap gap-2">
+                        @foreach($allColors as $color)
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" name="color" value="{{ $color }}" {{ request('color') === $color ? 'checked' : '' }} class="accent-primary hidden">
+                            <span class="text-xs border rounded-full px-3 py-1 {{ request('color') === $color ? 'bg-primary text-white border-primary' : 'text-gray-600 border-gray-200 hover:border-primary hover:text-primary' }}">{{ $color }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <button type="submit" class="mt-4 w-full bg-primary text-white text-xs font-bold py-2 rounded hover:opacity-90 transition">Apply Filter</button>
+            </div>
+        </form>
 
         {{-- Product Grid --}}
         <div class="flex-1">
             <div class="section-title mb-4">
                 <div class="flex flex-col">
                     <span class="text-lg font-bold">{{ $client->widgets['products']['title'] ?? 'সেরা পণ্য সমূহ' }}</span>
-                    <span class="text-xs font-normal text-gray-500 mt-1">{{ count($products) }} Items in Best Deals</span>
+                    <span class="text-xs font-normal text-gray-500 mt-1">{{ $products->total() }} Items</span>
                 </div>
                 <div class="hidden sm:flex items-center text-sm">
                     <span class="text-gray-500 mr-2">Sort By:</span>
-                    <select class="border border-gray-200 rounded px-3 py-1 bg-white focus:outline-none focus:border-primary text-xs">
-                        <option>Default</option>
-                        <option>Price Low to High</option>
-                        <option>Price High to Low</option>
+                    <select name="sort" form="filter-form" onchange="document.getElementById('filter-form').submit()" class="border border-gray-200 rounded px-3 py-1 bg-white focus:outline-none focus:border-primary text-xs">
+                        <option value="" {{ !request('sort') ? 'selected' : '' }}>Default</option>
+                        <option value="price_asc" {{ request('sort') === 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
+                        <option value="price_desc" {{ request('sort') === 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
+                        <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Oldest First</option>
                     </select>
                 </div>
             </div>

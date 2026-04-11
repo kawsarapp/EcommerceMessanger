@@ -37,8 +37,21 @@ class ShopProductService
         }
 
         // প্রাইস ফিল্টার
-        if ($request->filled('min_price')) $query->where('regular_price', '>=', $request->min_price);
-        if ($request->filled('max_price')) $query->where('regular_price', '<=', $request->max_price);
+        if ($request->filled('min_price')) $query->where('sale_price', '>=', $request->min_price);
+        if ($request->filled('max_price')) $query->where('sale_price', '<=', $request->max_price);
+
+        // ব্র্যান্ড ফিল্টার
+        if ($request->filled('brand')) {
+            $query->where('brand', $request->brand);
+        }
+
+        // কালার ফিল্টার — JSON array field
+        if ($request->filled('color')) {
+            $color = $request->color;
+            $query->where(function($q) use ($color) {
+                $q->whereJsonContains('colors', $color);
+            });
+        }
 
         // সর্টিং
         switch ($request->sort) {

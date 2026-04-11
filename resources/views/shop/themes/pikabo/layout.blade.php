@@ -167,10 +167,9 @@ $primary='#0084d6';
     <nav class="bg-white text-dark z-40 hidden md:block border-b border-gray-200">
         <div class="max-w-[1400px] mx-auto px-4 flex items-center h-10">
             
-            {{-- Category Sidebar Toggle (If needed) --}}
-            {{-- Category Sidebar Toggle (If needed) --}}
-            <div class="h-full relative group w-64 border-r border-gray-100 flex items-center pr-4">
-                @include('shop.partials.header-category-menu')
+            {{-- Category Dropdown --}}
+            <div class="h-full relative group border-r border-gray-100 flex items-center pr-4">
+                @include('shop.partials.header-category-menu', ['btnClass' => 'bg-gray-100 hover:bg-gray-200 text-gray-800'])
             </div>
 
             <div class="flex items-center ml-6 flex-1 gap-6">
