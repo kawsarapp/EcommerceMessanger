@@ -387,6 +387,11 @@ class Client extends Model
             $methods["surjopay"] = "Surjopay";
         }
 
+        // UddoktaPay — needs base_url + api_key
+        if (!empty($gateways["uddoktapay"]["active"]) && !empty($gateways["uddoktapay"]["api_key"])) {
+            $methods["uddoktapay"] = "UddoktaPay";
+        }
+
         // Safety: always have at least COD
         if (empty($methods)) {
             $methods["cod"] = "Cash on Delivery";

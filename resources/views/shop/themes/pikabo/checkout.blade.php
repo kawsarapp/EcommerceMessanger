@@ -14,7 +14,7 @@ function checkoutApp() {
         shippingMethods: {!! json_encode($shippingMethods ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
         shippingMethodId: {{ (isset($shippingMethods) && $shippingMethods->count() > 0) ? $shippingMethods->first()->id : 'null' }},
         area: 'inside', // 'office', 'inside', 'outside'
-        paymentMethod: 'cod', // COD for simplicity here representing 'Pay in 30 min'
+        paymentMethod: '{{ $defaultMethod ?? 'cod' }}',
         paymentType: 'full', // 'full', 'partial'
         qty: {{ request('qty', 1) }},
         price: {{ $product->sale_price ?? $product->regular_price }},
@@ -95,6 +95,7 @@ function checkoutApp() {
                     <input type="hidden" name="area" :value="area">
                     <input type="hidden" name="coupon_code" :value="couponApplied ? couponCode : ''">
                     <input type="hidden" name="coupon_discount" :value="couponDiscount">
+                    <input type="hidden" name="payment_method" :value="paymentMethod">
 
                     {{-- Customer Information --}}
                     <div class="mb-8">
@@ -214,6 +215,11 @@ function checkoutApp() {
                         $hasPartial    = $client->partial_payment_active ?? false;
                         $hasFull       = $client->full_payment_active ?? false;
                         if (!$hasCod && !$hasBkash && !$hasSsl && !$hasUddoktaPay) { $hasCod = true; }
+                        // bKash method priority: pgw > merchant > personal
+                        $bkashMethod   = !empty($gateways['bkash_pgw']['active']) ? 'bkash_pgw'
+                            : (!empty($gateways['bkash_merchant']['active']) ? 'bkash_merchant' : 'bkash_personal');
+                        // Default selected method for Alpine.js
+                        $defaultMethod = $hasCod ? 'cod' : ($hasBkash ? $bkashMethod : ($hasSsl ? 'sslcommerz' : ($hasUddoktaPay ? 'uddoktapay' : 'cod')));
                     @endphp
                     <div class="mb-8">
                         <h2 class="text-sm font-semibold text-gray-800 mb-3">Payment Method</h2>
@@ -260,17 +266,17 @@ function checkoutApp() {
                             {{-- bKash --}}
                             @if($hasBkash)
                             <label class="cursor-pointer">
-                                <input type="radio" name="_pmt" value="bkash" @change="paymentMethod='bkash'" class="peer hidden" {{ !$hasCod ? 'checked' : '' }}>
+                                <input type="radio" name="_pmt" value="{{ $bkashMethod }}" @change="paymentMethod='{{ $bkashMethod }}'" class="peer hidden" {{ !$hasCod ? 'checked' : '' }}>
                                 <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
                                     <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='bkash'}"></div>
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='{{ $bkashMethod }}'}"></div>
                                     </div>
                                     <div class="flex flex-col">
                                         <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-mobile text-[#e2136e]"></i> bKash</div>
-                                        @if(!empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']))
-                                            <div class="text-[9px] text-gray-500 mt-0.5">Send Money / Payment</div>
-                                        @else
+                                        @if($bkashMethod === 'bkash_pgw')
                                             <div class="text-[9px] text-gray-500 mt-0.5">Automatic Checkout</div>
+                                        @else
+                                            <div class="text-[9px] text-gray-500 mt-0.5">Send Money / Payment</div>
                                         @endif
                                     </div>
                                 </div>
