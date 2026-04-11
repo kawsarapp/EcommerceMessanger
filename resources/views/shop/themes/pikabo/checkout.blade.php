@@ -207,17 +207,21 @@ function checkoutApp() {
 
                     {{-- Payment Method (Dynamic from Dashboard) --}}
                     @php
-                        $gateways = $client->payment_gateways ?? [];
-                        $hasBkash      = !empty($gateways['bkash_pgw']['active']) || !empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']);
-                        $hasSsl        = !empty($gateways['sslcommerz']['active']);
-                        $hasUddoktaPay = !empty($gateways['uddoktapay']['active']);
-                        $hasCod        = $client->cod_active ?? true;
-                        $hasPartial    = $client->partial_payment_active ?? false;
-                        $hasFull       = $client->full_payment_active ?? false;
-                        if (!$hasCod && !$hasBkash && !$hasSsl && !$hasUddoktaPay) { $hasCod = true; }
+                        $hasCod        = isset($activePaymentMethods['cod']);
+                        $hasPartial    = isset($activePaymentMethods['partial']);
+                        $hasFull       = isset($activePaymentMethods['full']);
+                        
+                        $hasBkashPgw   = isset($activePaymentMethods['bkash_pgw']);
+                        $hasBkashMer   = isset($activePaymentMethods['bkash_merchant']);
+                        $hasBkashPer   = isset($activePaymentMethods['bkash_personal']);
+                        $hasBkash      = $hasBkashPgw || $hasBkashMer || $hasBkashPer;
+                        
+                        $hasSsl        = isset($activePaymentMethods['sslcommerz']);
+                        $hasUddoktaPay = isset($activePaymentMethods['uddoktapay']);
+                        
                         // bKash method priority: pgw > merchant > personal
-                        $bkashMethod   = !empty($gateways['bkash_pgw']['active']) ? 'bkash_pgw'
-                            : (!empty($gateways['bkash_merchant']['active']) ? 'bkash_merchant' : 'bkash_personal');
+                        $bkashMethod   = $hasBkashPgw ? 'bkash_pgw' : ($hasBkashMer ? 'bkash_merchant' : 'bkash_personal');
+                        
                         // Default selected method for Alpine.js
                         $defaultMethod = $hasCod ? 'cod' : ($hasBkash ? $bkashMethod : ($hasSsl ? 'sslcommerz' : ($hasUddoktaPay ? 'uddoktapay' : 'cod')));
                     @endphp
