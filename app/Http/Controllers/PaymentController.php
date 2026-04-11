@@ -632,11 +632,25 @@ class PaymentController extends Controller
             }
 
             Log::warning('UddoktaPay: No payment_url', $response ?? []);
-            return back()->with('error', 'UddoktaPay error: ' . ($response['message'] ?? 'Unknown error'));
+            
+            $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
+            $trackBase   = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
+            
+            return redirect($trackBase . '?order_id=' . $order->id)
+                ->with('order_confirmed', true)
+                ->with('order_id', $order->id)
+                ->with('error', 'UddoktaPay error: ' . ($response['message'] ?? 'Unknown API error (Check API Key/URL)'));
 
         } catch (\Exception $e) {
             Log::error('UddoktaPay Init Error: ' . $e->getMessage());
-            return back()->with('error', 'Payment gateway error. Please try again.');
+            
+            $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
+            $trackBase   = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
+            
+            return redirect($trackBase . '?order_id=' . $order->id)
+                ->with('order_confirmed', true)
+                ->with('order_id', $order->id)
+                ->with('error', 'Payment gateway connection error: ' . $e->getMessage());
         }
     }
 
