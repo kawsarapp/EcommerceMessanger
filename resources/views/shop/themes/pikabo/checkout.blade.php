@@ -1,4 +1,4 @@
-﻿@extends('shop.themes.pikabo.layout')
+@extends('shop.themes.pikabo.layout')
 @section('title', 'Checkout | ' . $client->shop_name)
 
 @section('content')
@@ -119,7 +119,7 @@ function checkoutApp() {
                                 <label class="block text-xs font-semibold text-gray-500 mb-1.5"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Delivery Address *</label>
                                 <textarea name="shipping_address" required rows="3" placeholder="Enter your complete delivery address with house number, street, area, and district" 
                                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-dark placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary transition shadow-sm resize-none bg-white"></textarea>
-                                <span class="text-[10px] text-gray-400 mt-1 block flex items-center gap-1"><i class="fas fa-info-circle text-blue-400"></i> <a href="{{ `$clean ? `$baseUrl.`"/track`" : route(`"shop.track`", `$client->slug) }}" class="text-blue-500 hover:underline">Track Order</a> to save addresses for faster checkout next time</span>
+                                <span class="text-[10px] text-gray-400 mt-1 block flex items-center gap-1"><i class="fas fa-info-circle text-blue-400"></i> <a href="{{ $clean ? $baseUrl.'/track' : route('shop.track', $client->slug) }}" class="text-blue-500 hover:underline">Track Order</a> to save addresses for faster checkout next time</span>
                             </div>
                         </div>
                     </div>
