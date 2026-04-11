@@ -213,6 +213,51 @@ class PaymentGatewaysTab
                 ->collapsible(),
 
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            // 💚 UddoktaPay
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Section::make('💚 UddoktaPay (bKash / Nagad / Rocket via 3rd Party)')
+                ->description('UddoktaPay হলো একটি payment aggregator। আপনার নিজস্ব UddoktaPay installation (self-hosted) বা sandbox account থাকলে এখানে credentials দিন। Customer বিভিন্ন payment method ব্যবহার করতে পারবে।')
+                ->schema([
+                    Toggle::make('payment_gateways.uddoktapay.active')
+                        ->label('UddoktaPay চালু করুন')
+                        ->default(false)
+                        ->live()
+                        ->onColor('success'),
+
+                    Toggle::make('payment_gateways.uddoktapay.is_sandbox')
+                        ->label('Sandbox Mode (Test)')
+                        ->default(true)
+                        ->onColor('warning')
+                        ->offColor('danger')
+                        ->visible(fn ($get) => $get('payment_gateways.uddoktapay.active'))
+                        ->helperText('⚠️ Sandbox mode এ real টাকা কাটবে না। Live করতে বন্ধ করুন।'),
+
+                    TextInput::make('payment_gateways.uddoktapay.base_url')
+                        ->label('UddoktaPay Base URL')
+                        ->placeholder('https://pay.yourdomain.com')
+                        ->url()
+                        ->visible(fn ($get) => $get('payment_gateways.uddoktapay.active'))
+                        ->required(fn ($get) => $get('payment_gateways.uddoktapay.active'))
+                        ->helperText('আপনার UddoktaPay panel এর URL। Sandbox: https://sandbox.uddoktapay.com'),
+
+                    TextInput::make('payment_gateways.uddoktapay.api_key')
+                        ->label('API Key')
+                        ->placeholder('your_uddoktapay_api_key')
+                        ->password()
+                        ->revealable()
+                        ->visible(fn ($get) => $get('payment_gateways.uddoktapay.active'))
+                        ->required(fn ($get) => $get('payment_gateways.uddoktapay.active'))
+                        ->helperText('UddoktaPay panel → Setting → API Key।'),
+
+                    Placeholder::make('uddoktapay_note')
+                        ->label('')
+                        ->content('📌 Sandbox test করতে: base_url = https://sandbox.uddoktapay.com, api_key = 982d381360a69d419689740d9f2e26ce36fb7a50')
+                        ->visible(fn ($get) => $get('payment_gateways.uddoktapay.active')),
+                ])
+                ->columns(2)
+                ->collapsible(),
+
+            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             // 💰 Payment Mode Settings (Partial / Full)
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             Section::make('💰 Payment Mode Settings')

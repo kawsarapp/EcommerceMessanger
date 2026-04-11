@@ -207,13 +207,13 @@ function checkoutApp() {
                     {{-- Payment Method (Dynamic from Dashboard) --}}
                     @php
                         $gateways = $client->payment_gateways ?? [];
-                        $hasBkash = !empty($gateways['bkash_pgw']['active']) || !empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']);
-                        $hasSsl = !empty($gateways['sslcommerz']['active']);
-                        $hasCod = $client->cod_active ?? true;
-                        $hasPartial = $client->partial_payment_active ?? false;
-                        $hasFull = $client->full_payment_active ?? false;
-                        // If no payment type is enabled, default to showing COD
-                        if (!$hasCod && !$hasBkash && !$hasSsl) { $hasCod = true; }
+                        $hasBkash      = !empty($gateways['bkash_pgw']['active']) || !empty($gateways['bkash_merchant']['active']) || !empty($gateways['bkash_personal']['active']);
+                        $hasSsl        = !empty($gateways['sslcommerz']['active']);
+                        $hasUddoktaPay = !empty($gateways['uddoktapay']['active']);
+                        $hasCod        = $client->cod_active ?? true;
+                        $hasPartial    = $client->partial_payment_active ?? false;
+                        $hasFull       = $client->full_payment_active ?? false;
+                        if (!$hasCod && !$hasBkash && !$hasSsl && !$hasUddoktaPay) { $hasCod = true; }
                     @endphp
                     <div class="mb-8">
                         <h2 class="text-sm font-semibold text-gray-800 mb-3">Payment Method</h2>
@@ -288,6 +288,22 @@ function checkoutApp() {
                                     <div class="flex flex-col">
                                         <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-shield-alt text-green-600"></i> Pay Online</div>
                                         <div class="text-[9px] text-gray-500 mt-0.5">Visa, Mastercard, Nagad, Rocket</div>
+                                    </div>
+                                </div>
+                            </label>
+                            @endif
+
+                            {{-- UddoktaPay --}}
+                            @if($hasUddoktaPay)
+                            <label class="cursor-pointer">
+                                <input type="radio" name="_pmt" value="uddoktapay" @change="paymentMethod='uddoktapay'" class="peer hidden" {{ !$hasCod && !$hasBkash && !$hasSsl ? 'checked' : '' }}>
+                                <div class="border border-gray-300 rounded-md px-3 py-4 peer-checked:border-primary peer-checked:ring-1 peer-checked:ring-primary transition relative bg-white shadow-sm flex items-center gap-2 hover:border-gray-400 h-full">
+                                    <div class="w-3 h-3 rounded-full border flex-shrink-0 flex items-center justify-center peer-checked:border-primary">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-primary opacity-0" :class="{'opacity-100': paymentMethod==='uddoktapay'}"></div>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <div class="text-[11px] font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-bolt text-green-500"></i> UddoktaPay</div>
+                                        <div class="text-[9px] text-gray-500 mt-0.5">bKash, Nagad, Rocket</div>
                                     </div>
                                 </div>
                             </label>

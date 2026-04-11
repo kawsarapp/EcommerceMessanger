@@ -365,7 +365,29 @@ trait ShopCartTrait
         // Clear cart after successful order
         $this->saveCart($client->id, []);
 
-        // Redirect to track page
+        // 🔀 Payment Gateway Redirects
+        $selectedMethod = $request->payment_method ?? 'cod';
+
+        if ($selectedMethod === 'sslcommerz') {
+            return redirect()->route('payment.sslcommerz.init', $order->id);
+        }
+        if ($selectedMethod === 'surjopay') {
+            return redirect()->route('payment.surjopay.init', $order->id);
+        }
+        if ($selectedMethod === 'uddoktapay') {
+            return redirect()->route('payment.uddoktapay.init', $order->id);
+        }
+        if ($selectedMethod === 'bkash_personal' || $selectedMethod === 'bkash_merchant') {
+            $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
+            $trackBase   = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
+            return redirect($trackBase . '?order_id=' . $order->id . '&show_bkash=1')
+                ->with('order_confirmed', true)
+                ->with('order_id', $order->id)
+                ->with('payment_method', $selectedMethod)
+                ->with('bkash_number', $client->payment_gateways[$selectedMethod]['number'] ?? '');
+        }
+
+        // Default: COD — Redirect to track page
         $cleanDomain = $client->custom_domain ? preg_replace('/^https?:\/\//', '', rtrim($client->custom_domain, '/')) : null;
         $trackBase   = $cleanDomain ? 'https://' . $cleanDomain . '/track' : route('shop.track', $client->slug);
 

@@ -243,4 +243,10 @@ Route::middleware([\App\Http\Middleware\DomainMappingMiddleware::class, 'tenant.
     Route::get('/surjopay/{orderId}/success', [PaymentController::class, 'surjopaySuccess'])->name('payment.surjopay.success');
     Route::get('/surjopay/{orderId}/fail',    [PaymentController::class, 'surjopayFail'])->name('payment.surjopay.fail');
     Route::get('/surjopay/{orderId}/cancel',  [PaymentController::class, 'surjopayCancel'])->name('payment.surjopay.cancel');
+
+    // 💚 UddoktaPay
+    Route::get('/uddoktapay/{orderId}/init',    [PaymentController::class, 'initiateUddoktaPay'])->name('payment.uddoktapay.init');
+    Route::get('/uddoktapay/{orderId}/success', [PaymentController::class, 'uddoktapaySuccess'])->name('payment.uddoktapay.success');
+    Route::get('/uddoktapay/{orderId}/cancel',  [PaymentController::class, 'uddoktapayCancel'])->name('payment.uddoktapay.cancel');
+    Route::post('/uddoktapay/{orderId}/webhook',[PaymentController::class, 'uddoktapayWebhook'])->name('payment.uddoktapay.webhook')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 });

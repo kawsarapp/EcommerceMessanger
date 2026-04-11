@@ -591,6 +591,153 @@ class PaymentController extends Controller
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 💚 UDDOKTAPAY
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    public function initiateUddoktaPay(Request $request, $orderId)
+    {
+        $order  = Order::with('client')->findOrFail($orderId);
+        $client = $order->client;
+
+        if (!$client->isPaymentGatewayActive('uddoktapay')) {
+            abort(403, 'UddoktaPay is not enabled for this shop.');
+        }
+        if ($order->payment_status === 'paid') {
+            return $this->redirectToOrderSuccess($order, $client, 'This order is already paid.');
+        }
+
+        $config  = $client->getPaymentGatewayConfig('uddoktapay');
+        $baseUrl = rtrim($config['base_url'] ?? 'https://sandbox.uddoktapay.com', '/');
+        $apiKey  = $config['api_key'] ?? '';
+        $amount  = ($order->advance_amount ?? 0) > 0 ? $order->advance_amount : $order->total_amount;
+
+        try {
+            $response = Http::withHeaders([
+                'RT-UDDOKTAPAY-API-KEY' => $apiKey,
+                'Accept'                => 'application/json',
+                'Content-Type'          => 'application/json',
+            ])->timeout(15)->post("{$baseUrl}/api/checkout-v2", [
+                'full_name'    => $order->customer_name ?? 'Customer',
+                'email'        => $order->customer_email ?? 'customer@shop.com',
+                'amount'       => number_format((float) $amount, 2, '.', ''),
+                'metadata'     => ['order_id' => (string) $orderId],
+                'redirect_url' => url("/payment/uddoktapay/{$orderId}/success"),
+                'cancel_url'   => url("/payment/uddoktapay/{$orderId}/cancel"),
+                'webhook_url'  => url("/payment/uddoktapay/{$orderId}/webhook"),
+            ])->json();
+
+            if (!empty($response['payment_url'])) {
+                $order->update(['payment_method' => 'uddoktapay', 'payment_status' => 'pending']);
+                return redirect($response['payment_url']);
+            }
+
+            Log::warning('UddoktaPay: No payment_url', $response ?? []);
+            return back()->with('error', 'UddoktaPay error: ' . ($response['message'] ?? 'Unknown error'));
+
+        } catch (\Exception $e) {
+            Log::error('UddoktaPay Init Error: ' . $e->getMessage());
+            return back()->with('error', 'Payment gateway error. Please try again.');
+        }
+    }
+
+    public function uddoktapaySuccess(Request $request, $orderId)
+    {
+        $order  = Order::with('client')->findOrFail($orderId);
+        $client = $order->client;
+
+        if ($order->payment_status === 'paid') {
+            return $this->redirectToOrderSuccess($order, $client, 'Your order is already confirmed.');
+        }
+
+        $invoiceId = $request->get('invoice_id');
+        if (empty($invoiceId)) {
+            return $this->redirectToOrderFail($order, $client, 'Invalid payment callback.');
+        }
+
+        $config  = $client->getPaymentGatewayConfig('uddoktapay');
+        $baseUrl = rtrim($config['base_url'] ?? 'https://sandbox.uddoktapay.com', '/');
+        $apiKey  = $config['api_key'] ?? '';
+
+        try {
+            $response = Http::withHeaders([
+                'RT-UDDOKTAPAY-API-KEY' => $apiKey,
+                'Accept'                => 'application/json',
+                'Content-Type'          => 'application/json',
+            ])->timeout(15)->post("{$baseUrl}/api/verify-payment", [
+                'invoice_id' => $invoiceId,
+            ])->json();
+
+            if (($response['status'] ?? '') === 'COMPLETED') {
+                $paidAmount  = (float) ($response['charged_amount'] ?? $response['amount'] ?? 0);
+                $orderAmount = (float) (($order->advance_amount ?? 0) > 0 ? $order->advance_amount : $order->total_amount);
+
+                if ($paidAmount < ($orderAmount - 1)) {
+                    Log::warning("UddoktaPay amount mismatch for order #{$orderId}: expected={$orderAmount}, paid={$paidAmount}");
+                    return $this->redirectToOrderFail($order, $client, 'Payment amount mismatch. Contact support.');
+                }
+
+                $order->update([
+                    'payment_status'    => 'paid',
+                    'payment_reference' => $response['transaction_id'] ?? $invoiceId,
+                    'advance_amount'    => $paidAmount,
+                ]);
+
+                return $this->redirectToOrderSuccess($order, $client, 'Payment successful! Your order is confirmed.');
+            }
+
+            Log::warning("UddoktaPay: Not COMPLETED for order #{$orderId}", $response ?? []);
+            return $this->redirectToOrderFail($order, $client, 'Payment not verified. Contact support.');
+
+        } catch (\Exception $e) {
+            Log::error('UddoktaPay Verify Error: ' . $e->getMessage());
+            return $this->redirectToOrderFail($order, $client, 'Payment verification failed.');
+        }
+    }
+
+    public function uddoktapayCancel(Request $request, $orderId)
+    {
+        $order = Order::with('client')->findOrFail($orderId);
+        if ($order->payment_status !== 'paid') {
+            $order->update(['payment_status' => 'pending']);
+        }
+        return $this->redirectToOrderFail($order, $order->client, 'Payment cancelled. You can try again.');
+    }
+
+    public function uddoktapayWebhook(Request $request, $orderId)
+    {
+        $order = Order::with('client')->findOrFail($orderId);
+        if ($order->payment_status === 'paid') {
+            return response()->json(['ok' => true]);
+        }
+        $invoiceId = $request->get('invoice_id');
+        if (!$invoiceId) return response()->json(['ok' => false], 400);
+
+        $client  = $order->client;
+        $config  = $client->getPaymentGatewayConfig('uddoktapay');
+        $baseUrl = rtrim($config['base_url'] ?? 'https://sandbox.uddoktapay.com', '/');
+        $apiKey  = $config['api_key'] ?? '';
+
+        try {
+            $response = Http::withHeaders([
+                'RT-UDDOKTAPAY-API-KEY' => $apiKey,
+                'Accept'                => 'application/json',
+                'Content-Type'          => 'application/json',
+            ])->timeout(10)->post("{$baseUrl}/api/verify-payment", ['invoice_id' => $invoiceId])->json();
+
+            if (($response['status'] ?? '') === 'COMPLETED') {
+                $order->update([
+                    'payment_status'    => 'paid',
+                    'payment_reference' => $response['transaction_id'] ?? $invoiceId,
+                    'advance_amount'    => (float) ($response['charged_amount'] ?? $response['amount'] ?? 0),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('UddoktaPay Webhook Error: ' . $e->getMessage());
+        }
+        return response()->json(['ok' => true]);
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 🔧 REDIRECT HELPERS
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

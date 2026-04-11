@@ -221,6 +221,10 @@ trait ShopCheckoutTrait
             return redirect()->route('payment.surjopay.init', $order->id);
         }
 
+        if ($selectedMethod === 'uddoktapay') {
+            return redirect()->route('payment.uddoktapay.init', $order->id);
+        }
+
         // bKash → tracking page এ যাবে, সেখানে TRX entry দেবে
         if ($selectedMethod === 'bkash_personal' || $selectedMethod === 'bkash_merchant') {
             $cleanDomain = $client->custom_domain
