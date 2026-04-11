@@ -193,10 +193,13 @@ class CategoryResource extends Resource
 
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('banner_image')
-                    ->label('Image')
+                Tables\Columns\ImageColumn::make('image')
+                    ->label('Icon')
                     ->circular()
-                    ->defaultImageUrl(asset('images/default-category.png')),
+                    ->defaultImageUrl(fn($record) => $record->banner_image
+                        ? asset('storage/'.$record->banner_image)
+                        : 'https://ui-avatars.com/api/?name='.urlencode($record->name).'&background=random&size=64'
+                    ),
 
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()

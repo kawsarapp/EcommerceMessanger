@@ -36,7 +36,12 @@
                     <div x-data="{ expanded: false }" class="relative border-b border-gray-50 last:border-none">
                         <button @click="expanded = !expanded" 
                                 class="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors text-left focus:outline-none">
-                            <span>{{ $c->name }}</span>
+                            <span class="flex items-center gap-2">
+                                @if($c->image)
+                                    <img src="{{ asset('storage/'.$c->image) }}" class="w-4 h-4 object-contain opacity-80" alt="{{ $c->name }}">
+                                @endif
+                                {{ $c->name }}
+                            </span>
                             <i class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-200" :class="{'rotate-180': expanded}"></i>
                         </button>
                         
@@ -56,7 +61,10 @@
                     </div>
                 @else
                     <!-- Simple Category -->
-                    <a href="?category={{ $c->slug }}" class="block px-5 py-3 text-sm font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none">
+                    <a href="?category={{ $c->slug }}" class="flex items-center gap-2 px-5 py-3 text-sm font-semibold text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors border-b border-gray-50 last:border-none">
+                        @if($c->image)
+                            <img src="{{ asset('storage/'.$c->image) }}" class="w-4 h-4 object-contain opacity-80" alt="{{ $c->name }}">
+                        @endif
                         {{ $c->name }}
                     </a>
                 @endif
