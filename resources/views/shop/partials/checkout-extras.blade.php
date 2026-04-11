@@ -201,6 +201,23 @@
         </label>
         @endif
 
+        @if(isset($methods['uddoktapay']))
+        <label class="cursor-pointer">
+            <input type="radio" name="payment_method" value="uddoktapay" x-model="selectedPayment" class="peer hidden" {{ $firstKey === 'uddoktapay' ? 'checked' : '' }}>
+            <div class="border-2 border-slate-200 rounded-xl p-4 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 transition-all hover:border-slate-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-bolt text-emerald-600"></i>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-bold text-slate-800">UddoktaPay</span>
+                        <span class="block text-xs text-slate-500">bKash, Nagad, Rocket</span>
+                    </div>
+                </div>
+            </div>
+        </label>
+        @endif
+
         {{-- 🔴 bKash PGW — Official Checkout API --}}
         @if(isset($methods['bkash_pgw']))
         <label class="cursor-pointer">
@@ -318,6 +335,22 @@
             <p class="text-sm font-bold text-orange-800">Surjopay Secure Payment</p>
             <p class="text-xs text-orange-600 mt-1">
                 "Order Confirm" করলে আপনাকে Surjopay payment page এ নেওয়া হবে।
+            </p>
+        </div>
+    </div>
+    @endif
+
+    {{-- ══ UddoktaPay Info ══ --}}
+    @if(isset($methods['uddoktapay']))
+    <div x-show="selectedPayment === 'uddoktapay'"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+        class="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-5 mb-4 flex items-start gap-3">
+        <i class="fas fa-bolt text-emerald-500 mt-0.5"></i>
+        <div>
+            <p class="text-sm font-bold text-emerald-800">UddoktaPay Secure Payment</p>
+            <p class="text-xs text-emerald-600 mt-1">
+                "Order Confirm" করলে আপনাকে UddoktaPay secure payment page এ নেওয়া হবে।
+                bKash, Nagad, Rocket সহ বিভিন্ন মাধ্যমে পেমেন্ট করতে পারবেন।
             </p>
         </div>
     </div>
