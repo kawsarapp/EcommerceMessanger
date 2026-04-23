@@ -11,7 +11,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // All active WhatsApp sessions stored here
-const sessions = {};
+const sessions = {};           // Only READY clients
+const initializingClients = {}; // Clients that are still launching Chromium
 const sessionReadyPromises = {};
 
 // Send webhook back to Laravel
@@ -81,9 +82,19 @@ function formatToWhatsApp(rawNumber) {
 
 // Core: initialize a WhatsApp session
 function initializeWhatsAppClient(instance_id, res = null) {
+    // Already connected and ready
     if (sessions[instance_id]) {
         if (res) return res.json({ success: true, status: 'connected' });
         return sessions[instance_id];
+    }
+
+    // Already initializing (Chromium launching) — don't create duplicate
+    if (initializingClients[instance_id]) {
+        if (res) {
+            // Wait for the existing initialization to finish
+            console.log(`[WA] Already initializing ${instance_id}, waiting...`);
+        }
+        return initializingClients[instance_id];
     }
 
     console.log(`[WA] Initializing session for: ${instance_id}`);
@@ -114,8 +125,9 @@ function initializeWhatsAppClient(instance_id, res = null) {
     });
 
     client.on('ready', () => {
-        console.log(`[WA] READY for ${instance_id}`);
-        sessions[instance_id] = client;
+        console.log(`[WA] ✅ READY for ${instance_id}`);
+        sessions[instance_id] = client;         // NOW it's truly connected
+        delete initializingClients[instance_id]; // Remove from initializing
         sendWebhookToLaravel('status', { instance_id, status: 'connected' });
 
         if (sessionReadyPromises[instance_id]?.resolve) {
@@ -188,13 +200,23 @@ function initializeWhatsAppClient(instance_id, res = null) {
     });
 
     client.on('disconnected', (reason) => {
-        console.log(`[WA] Disconnected ${instance_id}:`, reason);
+        console.log(`[WA] ❌ Disconnected ${instance_id}:`, reason);
         delete sessions[instance_id];
+        delete initializingClients[instance_id];
         sendWebhookToLaravel('status', { instance_id, status: 'disconnected' });
     });
 
+    client.on('auth_failure', (msg) => {
+        console.error(`[WA] ❌ Auth Failure for ${instance_id}:`, msg);
+        delete initializingClients[instance_id];
+        if (res && !res.headersSent) {
+            res.json({ success: false, status: 'auth_failure', error: msg });
+        }
+    });
+
+    console.log(`[WA] 🚀 Launching Chromium for ${instance_id}...`);
+    initializingClients[instance_id] = client;  // Track as initializing (NOT ready)
     client.initialize();
-    sessions[instance_id] = client;
     return client;
 }
 
@@ -273,7 +295,23 @@ app.post('/api/disconnect', async (req, res) => {
     res.json({ success: true, message: 'Already disconnected' });
 });
 
+// Status check endpoint
+app.post('/api/status', (req, res) => {
+    const { instance_id } = req.body;
+    if (!instance_id) return res.status(400).json({ success: false });
+    
+    if (sessions[instance_id]) {
+        return res.json({ success: true, status: 'connected' });
+    } else if (initializingClients[instance_id]) {
+        return res.json({ success: true, status: 'initializing' });
+    }
+    return res.json({ success: true, status: 'disconnected' });
+});
+
 const PORT = process.env.WA_PORT || 3001;
 app.listen(PORT, '127.0.0.1', () => {
     console.log(`[WA Server] Running on http://127.0.0.1:${PORT}`);
 });
+
+// Keep event loop alive on VPS (prevents premature exit)
+setInterval(() => {}, 60000 * 60);

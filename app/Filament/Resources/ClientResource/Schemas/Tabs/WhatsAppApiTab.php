@@ -63,7 +63,8 @@ class WhatsAppApiTab
                                 }
                                 try {
                                     $instanceId = 'client_' . $record->id;
-                                    $response = Http::timeout(60)->post(config('services.whatsapp.api_url') . '/api/generate-qr', ['instance_id' => $instanceId]);
+                                    // Chromium/Puppeteer takes 1-3 mins to launch on VPS — need longer timeout
+                                    $response = Http::timeout(180)->post(config('services.whatsapp.api_url') . '/api/generate-qr', ['instance_id' => $instanceId]);
                                     if ($response->successful()) {
                                         $data = $response->json();
                                         if (isset($data['status']) && $data['status'] === 'connected') {
