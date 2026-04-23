@@ -93,6 +93,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
         if (res) {
             // Wait for the existing initialization to finish
             console.log(`[WA] Already initializing ${instance_id}, waiting...`);
+            return res.status(202).json({ success: true, status: 'initializing', message: 'Chromium is launching...' });
         }
         return initializingClients[instance_id];
     }
