@@ -154,33 +154,36 @@ class WhatsAppApiTab
                         ->label('Permanent Access Token')
                         ->placeholder('E.g. EAAGm0... ')
                         ->rows(3)
-                        ->required(fn (Get $get) => $get('whatsapp_type') === 'official')
-                        ->suffixAction(
-                            Action::make('test_wa_official')
-                                ->icon('heroicon-m-signal')
-                                ->tooltip('Test Meta API Connection')
-                                ->action(function ($record, Get $get) {
-                                    $phoneId = $get('wa_phone_number_id');
-                                    $token = $get('wa_access_token');
-                                    if (!$phoneId || !$token) {
-                                        Notification::make()->title('Missing ID or Token')->danger()->send();
-                                        return;
+                        ->columnSpanFull()
+                        ->required(fn (Get $get) => $get('whatsapp_type') === 'official'),
+
+                    Actions::make([
+                        Action::make('test_wa_official')
+                            ->label('Test Meta API Connection')
+                            ->icon('heroicon-m-signal')
+                            ->color('success')
+                            ->action(function ($record, Get $get) {
+                                $phoneId = $get('wa_phone_number_id');
+                                $token = $get('wa_access_token');
+                                if (!$phoneId || !$token) {
+                                    Notification::make()->title('Missing Phone Number ID or Access Token')->danger()->send();
+                                    return;
+                                }
+                                try {
+                                    $res = Http::get("https://graph.facebook.com/v19.0/{$phoneId}?access_token={$token}");
+                                    if ($res->successful()) {
+                                        $data = $res->json();
+                                        Notification::make()->title('✅ Valid! Linked Name: ' . ($data['verified_name'] ?? $data['display_phone_number'] ?? 'Unknown'))->success()->send();
+                                        \Illuminate\Support\Facades\Log::info("WhatsApp Official Test Success", $data);
+                                    } else {
+                                        \Illuminate\Support\Facades\Log::error("WhatsApp Official Test Failed", $res->json());
+                                        Notification::make()->title('❌ Connection Failed!')->body($res->json()['error']['message'] ?? 'Unknown Auth Error.')->danger()->send();
                                     }
-                                    try {
-                                        $res = Http::get("https://graph.facebook.com/v19.0/{$phoneId}?access_token={$token}");
-                                        if ($res->successful()) {
-                                            $data = $res->json();
-                                            Notification::make()->title('✅ Valid! Linked Name: ' . ($data['verified_name'] ?? $data['display_phone_number'] ?? 'Unknown'))->success()->send();
-                                            \Illuminate\Support\Facades\Log::info("WhatsApp Official Test Success", $data);
-                                        } else {
-                                            \Illuminate\Support\Facades\Log::error("WhatsApp Official Test Failed", $res->json());
-                                            Notification::make()->title('❌ Connection Failed!')->body($res->json()['error']['message'] ?? 'Unknown Auth Error.')->danger()->send();
-                                        }
-                                    } catch (\Exception $e) {
-                                        Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
-                                    }
-                                })
-                        ),
+                                } catch (\Exception $e) {
+                                    Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                                }
+                            }),
+                    ])->columnSpanFull(),
                 ])->columns(2),
         ];
     }
