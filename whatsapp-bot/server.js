@@ -228,7 +228,11 @@ function initializeWhatsAppClient(instance_id, res = null) {
 
     console.log(`[WA] 🚀 Launching Chromium for ${instance_id}...`);
     initializingClients[instance_id] = client;  // Track as initializing (NOT ready)
-    client.initialize();
+    client.initialize().catch(err => {
+        console.error(`[WA] ❌ Failed to initialize ${instance_id}:`, err.message);
+        delete initializingClients[instance_id];
+        delete qrCodes[instance_id];
+    });
     return client;
 }
 
