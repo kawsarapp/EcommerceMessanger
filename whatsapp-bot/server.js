@@ -13,6 +13,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // All active WhatsApp sessions stored here
 const sessions = {};           // Only READY clients
 const initializingClients = {}; // Clients that are still launching Chromium
+const qrCodes = {};            // Cached QR codes to bypass proxy timeouts
 const sessionReadyPromises = {};
 
 // Send webhook back to Laravel
@@ -87,6 +88,12 @@ function initializeWhatsAppClient(instance_id, res = null) {
         if (res) return res.json({ success: true, status: 'connected' });
         return sessions[instance_id];
     }
+    
+    // Check if QR code is ready and cached
+    if (qrCodes[instance_id]) {
+        if (res) return res.json({ success: true, qr_code: qrCodes[instance_id], status: 'scan_required' });
+        return null;
+    }
 
     // Already initializing (Chromium launching) — don't create duplicate
     if (initializingClients[instance_id]) {
@@ -118,9 +125,11 @@ function initializeWhatsAppClient(instance_id, res = null) {
 
     client.on('qr', async (qr) => {
         console.log(`[WA] QR Code ready for ${instance_id}`);
+        // Cache QR code for subsequent requests
+        qrCodes[instance_id] = await qrcode.toDataURL(qr);
+        
         if (res && !isQrSent) {
-            const qrImage = await qrcode.toDataURL(qr);
-            res.json({ success: true, qr_code: qrImage, status: 'scan_required' });
+            res.json({ success: true, qr_code: qrCodes[instance_id], status: 'scan_required' });
             isQrSent = true;
         }
     });
@@ -129,6 +138,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
         console.log(`[WA] ✅ READY for ${instance_id}`);
         sessions[instance_id] = client;         // NOW it's truly connected
         delete initializingClients[instance_id]; // Remove from initializing
+        delete qrCodes[instance_id];             // Clear cached QR code
         sendWebhookToLaravel('status', { instance_id, status: 'connected' });
 
         if (sessionReadyPromises[instance_id]?.resolve) {
@@ -204,6 +214,7 @@ function initializeWhatsAppClient(instance_id, res = null) {
         console.log(`[WA] ❌ Disconnected ${instance_id}:`, reason);
         delete sessions[instance_id];
         delete initializingClients[instance_id];
+        delete qrCodes[instance_id];
         sendWebhookToLaravel('status', { instance_id, status: 'disconnected' });
     });
 
@@ -227,6 +238,16 @@ function initializeWhatsAppClient(instance_id, res = null) {
 app.post('/api/generate-qr', async (req, res) => {
     const { instance_id } = req.body;
     if (!instance_id) return res.status(400).json({ success: false, message: 'instance_id required' });
+    
+    // Explicit 15 second delay wait for newly launching Chromium, giving it a chance to return QR directly 
+    // without hitting Cloudflare's 100s limit
+    if (!sessions[instance_id] && !initializingClients[instance_id] && !qrCodes[instance_id]) {
+        console.log(`[WA Express] Start requested for ${instance_id}`);
+        initializeWhatsAppClient(instance_id, res);
+        return; // handle response in callback
+    }
+    
+    // If it was already initializing, we handle it quickly
     initializeWhatsAppClient(instance_id, res);
 });
 
