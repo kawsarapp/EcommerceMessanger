@@ -110,18 +110,39 @@ class WhatsAppApiTab
                             ->icon('heroicon-m-signal')
                             ->color('success')
                             ->action(function ($record) {
-                                if (!$record || !$record->wa_instance_id) return;
+                                if (!$record || !$record->wa_instance_id) {
+                                    Notification::make()->title('Instance ID নেই। আগে QR Generate করুন।')->warning()->send();
+                                    return;
+                                }
                                 try {
-                                    $res = Http::get(config('services.whatsapp.api_url') . '/api/instance/status?instance_id=' . $record->wa_instance_id);
-                                    if ($res->successful() && isset($res->json()['status']) && $res->json()['status'] === 'connected') {
-                                        Notification::make()->title('✅ Bot is Online and Connected!')->success()->send();
-                                        \Illuminate\Support\Facades\Log::info("WhatsApp Node Test Success", $res->json());
+                                    // Use /api/generate-qr — returns {"status":"connected"} if already paired
+                                    $res = Http::timeout(15)->post(
+                                        config('services.whatsapp.api_url') . '/api/generate-qr',
+                                        ['instance_id' => $record->wa_instance_id]
+                                    );
+                                    $body = $res->json();
+                                    $status = $body['status'] ?? 'unknown';
+
+                                    if ($res->successful() && $status === 'connected') {
+                                        \Illuminate\Support\Facades\Log::info("WhatsApp Test: Connected", $body);
+                                        Notification::make()
+                                            ->title('✅ WhatsApp Connected & Ready!')
+                                            ->body('Bot চালু আছে এবং message receive করতে পারছে।')
+                                            ->success()->send();
+                                    } elseif ($res->successful() && isset($body['qr_code'])) {
+                                        Notification::make()
+                                            ->title('⚠️ QR Scan Required')
+                                            ->body('Session expired হয়েছে। Dashboard থেকে QR Code scan করুন।')
+                                            ->warning()->send();
                                     } else {
-                                        Notification::make()->title('❌ Bot is Offline. Please rescan QR.')->danger()->send();
-                                        \Illuminate\Support\Facades\Log::warning("WhatsApp Node Test Failed", $res->json() ?? []);
+                                        \Illuminate\Support\Facades\Log::warning("WhatsApp Test Failed", $body);
+                                        Notification::make()
+                                            ->title('❌ Connection Failed')
+                                            ->body('Status: ' . $status . '. Node server এর log চেক করুন।')
+                                            ->danger()->send();
                                     }
                                 } catch (\Exception $e) {
-                                    Notification::make()->title('❌ Cannot reach Node Server: ' . $e->getMessage())->danger()->send();
+                                    Notification::make()->title('❌ Node Server Unreachable')->body($e->getMessage())->danger()->send();
                                     \Illuminate\Support\Facades\Log::error("WhatsApp Node Test Error: " . $e->getMessage());
                                 }
                             })
