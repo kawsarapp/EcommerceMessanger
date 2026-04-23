@@ -1,5 +1,5 @@
 <div class="fi-widget p-0 overflow-hidden">
-    <div class="px-6 py-5 rounded-xl text-white" style="background: linear-gradient(135deg, var(--primary-600), var(--primary-800));">
+    <div class="px-6 py-5 rounded-xl text-white" style="background: linear-gradient(135deg, rgb(var(--primary-600)), rgb(var(--primary-800)));">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <p class="text-primary-200 text-sm font-medium">{{ $greeting }}, {{ auth()->user()->name }}! 👋</p>

@@ -186,7 +186,7 @@
                             {{-- Bot / Admin Message --}}
                             @if($chat->bot_response || ($chat->attachment_url && is_null($chat->user_message)))
                                 <div class="flex justify-end items-end gap-2 group">
-                                    <div class="text-white px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[80%] shadow-md" style="background: {{ is_null($chat->user_message) ? 'linear-gradient(to bottom right, #4f46e5, #6366f1)' : 'var(--primary-600)' }};">
+                                    <div class="text-white px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[80%] shadow-md" style="background: {{ is_null($chat->user_message) ? 'linear-gradient(to bottom right, #4f46e5, #6366f1)' : 'linear-gradient(to bottom right, #0ea5e9, #0284c7)' }};">
                                         @if($chat->bot_response)
                                             <p class="text-sm whitespace-pre-wrap leading-relaxed">{{ $chat->bot_response }}</p>
                                         @endif
