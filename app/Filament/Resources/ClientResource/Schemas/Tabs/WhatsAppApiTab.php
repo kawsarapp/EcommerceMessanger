@@ -74,6 +74,10 @@ class WhatsAppApiTab
                                             $record->update(['wa_instance_id' => $instanceId]);
                                             $set('generated_qr_code', $data['qr_code']);
                                             Notification::make()->title('QR Code Generated. Please Scan!')->success()->send();
+                                        } elseif (isset($data['status']) && $data['status'] === 'initializing') {
+                                            Notification::make()->title('⏳ Server is preparing QR...')->body('Please click generate again in 5-10 seconds.')->warning()->send();
+                                        } else {
+                                            Notification::make()->title('Unknown Response')->body(json_encode($data))->warning()->send();
                                         }
                                     } else {
                                         Notification::make()->title('Failed to get QR Code.')->danger()->send();
