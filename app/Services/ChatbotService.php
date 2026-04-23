@@ -84,13 +84,13 @@ class ChatbotService
         }
 
         if ($base64Image) {
-            $visionTags  = $this->utility->analyzeImageWithGoogleVision($base64Image);
+            $visionResult = $this->utility->analyzeImageWithGoogleVision($base64Image);
             $skuProduct  = null;
             $skuContext  = '';
+            $visionTags  = $visionResult['raw_string'] ?? '';
 
-            // ✅ KEY FIX: Extract detected text, search DB by SKU/name immediately
-            if ($visionTags && preg_match("/ছবির গায়ে লেখা:\s*'([^']+)'/u", $visionTags, $textMatch)) {
-                $detectedText = trim($textMatch[1]);
+            if (!empty($visionResult['detected_text'])) {
+                $detectedText = trim($visionResult['detected_text']);
                 $skuProduct   = $this->findProductBySkuOrText($clientId, $detectedText);
 
                 if ($skuProduct) {
@@ -105,10 +105,12 @@ class ChatbotService
                 }
             }
 
+
+
             $promptContext = "[সিস্টেম নোট: কাস্টমার একটি ছবি পাঠিয়েছে।"
                 . ($visionTags ? " Vision scan: '{$visionTags}'." : "")
-                . ($skuContext  ? " {$skuContext}" : " 🚨 IMPORTANT INSTRUCTION: তুমি নিজেই ছবি থেকে যেকোনো টেক্সট, প্রোডাক্ট কোড, SKU বা মডেল নম্বর (যদি ছবির গায়ে লেখা থাকে) পড়ে নাও এবং Inventory ডাটার সাথে মিলিয়ে প্রোডাক্টটি খুঁজে বের করো। যদি কোনো প্রোডাক্টের সাথে মিলে যায়, তাহলে সরাসরি সেই প্রোডাক্টের দাম ও স্টক কনফার্ম করে দাও। কাস্টমারকে নতুন করে নাম বা SKU জিজ্ঞেস করবে না!")
-                . " ⚠️ শুধু Inventory-তে থাকা তথ্যের সাথেই মেলাবে।] ";
+                . ($skuContext  ? " {$skuContext}" : " 🚨 IMPORTANT INSTRUCTION: ছবির মধ্যে কোনো প্রোডাক্টের কোড বা নাম (SKU) স্পষ্টভাবে পড়া যাচ্ছে না। তুমি নিজে থেকে ছবিটি দেখে ইনভেন্টরির সাথে কোনো প্রোডাক্ট গেস করবে সম্পাদক করবে না! কাস্টমারকে অত্যন্ত বিনীতভাবে বলো যে ছবির প্রোডাক্টটি খুঁজে পেতে সমস্যা হচ্ছে, তাই সে যেন প্রোডাক্টের নাম বা SKU কোডটি লিখে দেয় অথবা কপি করে দেয়।")
+                . " ] ";
 
             $userMessage = empty(trim($userMessage))
                 ? $promptContext . "এই ছবির product স্টকে আছে?"
@@ -211,7 +213,7 @@ class ChatbotService
                 $isTracking = false;
 
             if ($isTracking) {
-                $instruction = "কাস্টমার তার অর্ডারের অবস্থা (Tracking/Status) জানতে চাইছে। 'অর্ডার ইতিহাস' (Order History) থেকে সর্বশেষ অর্ডারের স্ট্যাটাস দেখে তাকে সুন্দর করে আপডেট দাও। \n- Shipped হলে: 'আপনার অর্ডারটি কুরিয়ারে দেওয়া হয়েছে। দ্রুত পেয়ে যাবেন।'\n- Pending/Processing হলে: 'আপনার অর্ডারটি প্রসেসিং এ আছে।'\n- Delivered হলে: 'অর্ডারটি ডেলিভারি সম্পন্ন হয়েছে।'\n- অর্ডার না থাকলে: 'আপনার কোনো অর্ডার পাওয়া যায়নি, অন্য নাম্বার দিয়ে চেক করতে পারেন।'\n⚠️ নতুন কোনো প্রোডাক্ট বিক্রির চেষ্টা করবে না।";
+                $instruction = "কাস্টমার তার অর্ডারের অবস্থা (Tracking/Status) জানতে চাইছে। 'অর্ডার ইতিহাস' (Order History) থেকে সর্বশেষ অর্ডারের স্ট্যাটাস দেখে তাকে সুন্দর করে আপডেট দাও। \n- Shipped হলে: 'আপনার অর্ডারটি কুরিয়ারে দেওয়া হয়েছে। দ্রুত পেয়ে যাবেন।'\n- Pending/Processing হলে: 'আপনার অর্ডারটি প্রসেসিং এ আছে।'\n- Delivered হলে: 'অর্ডারটি ডেলিভারি সম্পন্ন হয়েছে।'\n- অর্ডার না থাকলে বা অর্ডার ইতিহাস খালি থাকলে কাস্টমারকে সুন্দরভাবে জিজ্ঞেস করো: 'দুঃখিত, আমি আপনার অর্ডারটি খুঁজে পাচ্ছি না। অনুগ্রহ করে আপনার অর্ডার নম্বর অথবা যে ফোন নম্বর দিয়ে অর্ডার করেছেন তা দিন।' \n⚠️ কখনোই বলবে না যে 'আমার কাছে তথ্য নেই' বা 'আমি রোবট'। সর্বদা একজন হেল্পফুল কাস্টমার সাপোর্ট এজেন্টের মতো কথা বলবে।";
                 $contextData = "[]";
             }
             else {
@@ -223,16 +225,25 @@ class ChatbotService
                     }
                     elseif (!$newProduct) {
                         $greetingKeywords = [
-                            'menu', 'start', 'offer', 'ki ace', 'home', 'suru',
+                            'menu', 'offer', 'ki ace', 'suru',
                             'hi', 'hello', 'হ্যালো', 'হ্যাল', 'হ্যা', 'salaam', 'salam',
-                            'assalamu', 'assalam', 'আস্সালামু', 'আমি', 'alo', 'aloo',
-                            'নমস্কার', 'শুভেচ্ছা', 'হাই',
+                            'assalamu', 'assalam', 'আস্সালামু', 'নমস্কার', 'শুভেচ্ছা', 'হাই'
                         ];
-                        foreach ($greetingKeywords as $word) {
-                            if (stripos($userMessage, $word) !== false) {
-                                $session->update(['customer_info' => ['step' => 'start', 'history' => []]]);
-                                $stepName = 'start';
-                                break;
+                        // If it's a short message, consider checking for greeting to restart flow softly
+                        if (mb_strlen(trim($userMessage)) < 30) {
+                            foreach ($greetingKeywords as $word) {
+                                // Add word boundaries or strict checks to avoid false positives like "home" inside "home delivery"
+                                if (preg_match("/(^|\s)" . preg_quote($word, '/') . "(\s|$)/iu", $userMessage)) {
+                                    $currentInfo = $session->customer_info ?? [];
+                                    $currentInfo['step'] = 'start'; // update step to start but preserve product context
+                                    if (in_array(strtolower($word), ['menu', 'ki ace'])) {
+                                        $currentInfo['product_id'] = null; // intentional browsing starts over
+                                        $currentInfo['variant'] = [];
+                                    }
+                                    $session->update(['customer_info' => $currentInfo]);
+                                    $stepName = 'start';
+                                    break;
+                                }
                             }
                         }
                     }
@@ -439,20 +450,24 @@ class ChatbotService
         }
 
         // Local DB fallback (hosted mode)
+        // 1. Try exact SKU match strictly
         foreach ($tokens as $token) {
-            if (strlen($token) < 3) continue;
+            if (strlen($token) < 2) continue;
             $product = Product::where('client_id', $clientId)
-                ->where(function ($q) use ($token) {
-                    $q->where('sku', $token)
-                      ->orWhere('sku', 'LIKE', "%{$token}%")
-                      ->orWhere('name', 'LIKE', "%{$token}%");
-                })
+                ->where('sku', $token)
                 ->first();
             if ($product) return $product;
         }
 
-        return Product::where('client_id', $clientId)
-            ->where('name', 'LIKE', '%' . $clean . '%')
-            ->first();
+        // 2. Try partial SKU match (only for slightly longer tokens to prevent false positives)
+        foreach ($tokens as $token) {
+            if (strlen($token) < 4) continue;
+            $product = Product::where('client_id', $clientId)
+                ->where('sku', 'LIKE', "%{$token}%")
+                ->first();
+            if ($product) return $product;
+        }
+
+        return null;
     }
 }

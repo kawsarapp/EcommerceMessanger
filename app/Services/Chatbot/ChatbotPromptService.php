@@ -40,8 +40,9 @@ class ChatbotPromptService
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ১. LANGUAGE: কাস্টমার Bangla/Banglish/English যেটায় লিখবে, সেটায় উত্তর দেবে।
 ২. TONE: সংক্ষিপ্ত, বন্ধুত্বপূর্ণ, পেশাদার। মেসেঞ্জারে পড়ার উপযোগী।
-৩. FORBIDDEN: "Sir" বা "Madam" কখনো লিখবে না। সম্পূর্ণ নিষিদ্ধ।
-৪. OUT OF SCOPE: শপিং-বাইরের প্রশ্ন (রাজনীতি, কোডিং) বিনয়ের সাথে এড়াবে।
+৩. IDENTITY: তুমি কোনো রোবট বা AI নও। তুমি এই স্টোরের একজন প্রফেশনাল এক্সিকিউটিভ/সাপোর্ট মেম্বার। কেউ নাম জিজ্ঞেস করলে বলো 'আমি সাপোর্ট টিম থেকে বলছি'। কখনো বলবে না 'আমার নাম নেই'।
+৪. FORBIDDEN: "Sir" বা "Madam" কখনো লিখবে না। সম্পূর্ণ নিষিদ্ধ।
+৫. OUT OF SCOPE: শপিং-বাইরের প্রশ্ন (রাজনীতি, কোডিং) বিনয়ের সাথে এড়াবে।
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚫 NO PRESSURE — এই নিয়ম কখনো ভাঙবে না
@@ -96,7 +97,7 @@ class ChatbotPromptService
 ২. Stock নেই → বিকল্প suggest।
 ৩. Order summary দাও: Product + দাম + Delivery + Total + ঠিকানা + Phone।
 ৪. Customer confirm করলেই তবে order।
-৫. ছবি দেখাতে: [ATTACH_IMAGE: url] — fake link বানাবে না।{{step_rules}}
+৫. ছবি দেখাতে: ![Product Name](url) — fake link বানাবে না।{{step_rules}}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🛍️ CAROUSEL & QUICK REPLIES (SMART DISPLAY)
@@ -170,24 +171,35 @@ EOT;
     {
         Log::info("🔍 Fetching Order History | Shop: {$clientId} | Sender: {$senderId}");
 
-        $phone = null;
-        $bn    = ["১","২","৩","৪","৫","৬","৭","৮","৯","০"];
-        $en    = ["1","2","3","4","5","6","7","8","9","0"];
-        $cleanMsg = str_replace($bn, $en, $userMessage);
+        $phone   = null;
+        $orderId = null;
+        $bn      = ["১","২","৩","৪","৫","৬","৭","৮","৯","০"];
+        $en      = ["1","2","3","4","5","6","7","8","9","0"];
+        $cleanMsg= str_replace($bn, $en, $userMessage);
 
         if (preg_match('/01[3-9]\d{8,9}/', $cleanMsg, $matches)) {
             $phone = substr($matches[0], 0, 11);
             Log::info("📞 Phone detected for history lookup: {$phone}");
         }
+        
+        if (preg_match('/(?:order|অর্ডার)\s*(?:no|number|id|নং|নম্বর|নাম্বার|#|-)?\s*(\d{1,6})/i', $cleanMsg, $orderMatches)) {
+            $orderId = $orderMatches[1];
+            Log::info("🆔 Order ID detected for history lookup: {$orderId}");
+        } elseif (preg_match('/^(\d{1,6})$/', trim($cleanMsg), $orderMatches)) {
+           $orderId = $orderMatches[1];
+        }
 
         $query = Order::where('client_id', $clientId);
-        if ($phone) {
-            $query->where(function ($q) use ($senderId, $phone) {
-                $q->where('sender_id', $senderId)->orWhere('customer_phone', $phone);
-            });
-        } else {
-            $query->where('sender_id', $senderId);
-        }
+        
+        $query->where(function ($q) use ($senderId, $phone, $orderId) {
+            $q->where('sender_id', $senderId);
+            if ($phone) {
+                $q->orWhere('customer_phone', $phone);
+            }
+            if ($orderId) {
+                $q->orWhere('id', $orderId);
+            }
+        });
 
         $orders = $query->latest()->take(3)->get();
         if ($orders->isEmpty()) {

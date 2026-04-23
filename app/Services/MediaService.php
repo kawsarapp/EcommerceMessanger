@@ -86,9 +86,9 @@ class MediaService
 
             Log::info("🎤 Voice Downloaded | ext:.{$ext} | size:" . strlen($body) . " bytes");
 
-            // ── Step 3: Gemini first, Whisper fallback ──────────────────────
-            $result = $this->transcribeWithGemini($body, $ext)
-                   ?? $this->transcribeWithWhisper($tempPath, $ext);
+            // ── Step 3: Whisper first, Gemini fallback ──────────────────────
+            $result = $this->transcribeWithWhisper($tempPath, $ext)
+                   ?? $this->transcribeWithGemini($body, $ext);
 
             @unlink($tempPath);
 

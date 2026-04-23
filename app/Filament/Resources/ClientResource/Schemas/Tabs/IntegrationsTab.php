@@ -48,7 +48,33 @@ class IntegrationsTab
                             ->placeholder('e.g., 178414000000000')
                             ->prefixIcon('heroicon-o-camera')
                             ->visible(fn (Get $get): bool => $get('is_instagram_active'))
-                            ->required(fn (Get $get): bool => $get('is_instagram_active')),
+                            ->required(fn (Get $get): bool => $get('is_instagram_active'))
+                            ->suffixAction(
+                                Action::make('test_instagram')
+                                    ->icon('heroicon-m-signal')
+                                    ->tooltip('Test Instagram Connection')
+                                    ->action(function ($record, Get $get) {
+                                        $igId = $get('ig_account_id');
+                                        $token = $record->fb_page_token;
+                                        if (!$igId || !$token) {
+                                            Notification::make()->title('Missing Info! Please save IG ID and ensure Facebook is connected.')->danger()->send();
+                                            return;
+                                        }
+                                        try {
+                                            $res = Http::get("https://graph.facebook.com/v19.0/{$igId}?fields=id,username&access_token={$token}");
+                                            if ($res->successful()) {
+                                                $data = $res->json();
+                                                Notification::make()->title('✅ IG Connected! Username: ' . ($data['username'] ?? 'Unknown'))->success()->send();
+                                                \Illuminate\Support\Facades\Log::info("Instagram Test Success - Client: {$record->id}", $data);
+                                            } else {
+                                                \Illuminate\Support\Facades\Log::error("Instagram Test Failed - Client: {$record->id}", $res->json());
+                                                Notification::make()->title('❌ Connection Failed!')->body($res->json()['error']['message'] ?? 'Unknown Auth Error.')->danger()->send();
+                                            }
+                                        } catch (\Exception $e) {
+                                            Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                                        }
+                                    })
+                            ),
                     ])->columns(1),
 
                     Group::make([
@@ -159,6 +185,28 @@ class IntegrationsTab
                         ->color('info')
                         ->visible(fn ($record) => !$record || !$record->fb_page_id)
                         ->disabled(fn ($record) => !$record), // Disable link if client is not created yet
+                        
+                    Action::make('test_facebook')
+                        ->label('Test Connection')
+                        ->color('success')
+                        ->icon('heroicon-m-signal')
+                        ->visible(fn ($record) => $record && $record->fb_page_id && $record->fb_page_token)
+                        ->action(function ($record) {
+                            try {
+                                $res = Http::get("https://graph.facebook.com/v19.0/me?access_token={$record->fb_page_token}");
+                                if ($res->successful()) {
+                                    $data = $res->json();
+                                    Notification::make()->title('✅ Token Valid! Page Name: ' . ($data['name'] ?? 'Unknown'))->success()->send();
+                                    \Illuminate\Support\Facades\Log::info("Facebook Test Success - Client: {$record->id}", $data);
+                                } else {
+                                    \Illuminate\Support\Facades\Log::error("Facebook Test Failed - Client: {$record->id}", $res->json());
+                                    Notification::make()->title('❌ Token Invalid or Expired!')->body($res->json()['error']['message'] ?? 'Unknown FB Error')->danger()->send();
+                                }
+                            } catch (\Exception $e) {
+                                Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                        
                     Action::make('disconnect_facebook')
                         ->label('Disconnect Page')
                         ->color('danger')

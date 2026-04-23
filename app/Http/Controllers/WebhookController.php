@@ -98,6 +98,8 @@ class WebhookController extends Controller
             if ($hasMessaging) {
                 Log::info("📨 Inbox Message Detected! Forwarding to MessengerWebhookService...");
                 $messengerService->processPayload($request);
+            } else {
+                Log::warning("⚠️ Webhook Received but NO 'messaging' array found. Possible reasons: App is in Dev Mode, missing 'pages_messaging' scope, or this is just an echo/delivery event.");
             }
         }
 

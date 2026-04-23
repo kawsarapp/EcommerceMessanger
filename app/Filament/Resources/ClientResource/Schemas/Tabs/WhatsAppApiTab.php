@@ -103,6 +103,28 @@ class WhatsAppApiTab
                                     $livewire->js('window.location.reload()');
                                 }
                             })
+                            ->visible(fn ($record) => $record && $record->wa_status === 'connected'),
+                            
+                        Action::make('test_wa_unofficial')
+                            ->label('Test Connection')
+                            ->icon('heroicon-m-signal')
+                            ->color('success')
+                            ->action(function ($record) {
+                                if (!$record || !$record->wa_instance_id) return;
+                                try {
+                                    $res = Http::get(config('services.whatsapp.api_url') . '/api/instance/status?instance_id=' . $record->wa_instance_id);
+                                    if ($res->successful() && isset($res->json()['status']) && $res->json()['status'] === 'connected') {
+                                        Notification::make()->title('✅ Bot is Online and Connected!')->success()->send();
+                                        \Illuminate\Support\Facades\Log::info("WhatsApp Node Test Success", $res->json());
+                                    } else {
+                                        Notification::make()->title('❌ Bot is Offline. Please rescan QR.')->danger()->send();
+                                        \Illuminate\Support\Facades\Log::warning("WhatsApp Node Test Failed", $res->json() ?? []);
+                                    }
+                                } catch (\Exception $e) {
+                                    Notification::make()->title('❌ Cannot reach Node Server: ' . $e->getMessage())->danger()->send();
+                                    \Illuminate\Support\Facades\Log::error("WhatsApp Node Test Error: " . $e->getMessage());
+                                }
+                            })
                             ->visible(fn ($record) => $record && $record->wa_status === 'connected')
                     ]),
                     
@@ -132,7 +154,33 @@ class WhatsAppApiTab
                         ->label('Permanent Access Token')
                         ->placeholder('E.g. EAAGm0... ')
                         ->rows(3)
-                        ->required(fn (Get $get) => $get('whatsapp_type') === 'official'),
+                        ->required(fn (Get $get) => $get('whatsapp_type') === 'official')
+                        ->suffixAction(
+                            Action::make('test_wa_official')
+                                ->icon('heroicon-m-signal')
+                                ->tooltip('Test Meta API Connection')
+                                ->action(function ($record, Get $get) {
+                                    $phoneId = $get('wa_phone_number_id');
+                                    $token = $get('wa_access_token');
+                                    if (!$phoneId || !$token) {
+                                        Notification::make()->title('Missing ID or Token')->danger()->send();
+                                        return;
+                                    }
+                                    try {
+                                        $res = Http::get("https://graph.facebook.com/v19.0/{$phoneId}?access_token={$token}");
+                                        if ($res->successful()) {
+                                            $data = $res->json();
+                                            Notification::make()->title('✅ Valid! Linked Name: ' . ($data['verified_name'] ?? $data['display_phone_number'] ?? 'Unknown'))->success()->send();
+                                            \Illuminate\Support\Facades\Log::info("WhatsApp Official Test Success", $data);
+                                        } else {
+                                            \Illuminate\Support\Facades\Log::error("WhatsApp Official Test Failed", $res->json());
+                                            Notification::make()->title('❌ Connection Failed!')->body($res->json()['error']['message'] ?? 'Unknown Auth Error.')->danger()->send();
+                                        }
+                                    } catch (\Exception $e) {
+                                        Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                                    }
+                                })
+                        ),
                 ])->columns(2),
         ];
     }

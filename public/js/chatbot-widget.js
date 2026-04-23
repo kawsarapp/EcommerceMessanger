@@ -214,7 +214,15 @@
         msg.className = 'aicb-msg ' + (role === 'user' ? 'aicb-user' : 'aicb-bot');
         
         let safeText = text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-        
+
+        // Parse Markdown formatting
+        // 1. Bold text **text**
+        safeText = safeText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        // 2. Markdown Images ![alt](url)
+        safeText = safeText.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/gi, '<br><a href="$2" target="_blank"><img src="$2" alt="$1" style="max-width:100%; border-radius:8px; margin-top:8px;"></a><br>');
+        // 3. Markdown Links [text](url)
+        safeText = safeText.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/gi, '<a href="$2" target="_blank" style="color:#2563eb; text-decoration:underline;">$1</a>');
+
         // Parse Media Tags securely
         safeText = safeText.replace(/\[ATTACH_IMAGE:(https?:\/\/[^\]]+)\]/gi, '<br><a href="$1" target="_blank"><img src="$1" style="max-width:100%; border-radius:8px; margin-top:8px;"></a>');
         safeText = safeText.replace(/\[AUDIO:(https?:\/\/[^\]]+)\]/gi, '<br><audio controls src="$1" style="max-width:100%; margin-top:8px; height: 40px; border-radius: 8px;"></audio>');

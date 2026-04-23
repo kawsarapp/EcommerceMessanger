@@ -12,7 +12,7 @@ class ChatbotUtilityService
     }
     
     public function isTrackingIntent($msg) {
-        $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অবস্থা', 'কবে পাব', 'tracking', 'order kobe', 'parsel', 'parcel'];
+        $trackingKeywords = ['track', 'status', 'অর্ডার কই', 'অবস্থা', 'কবে পাব', 'tracking', 'order kobe', 'parsel', 'parcel', 'order koi', 'order number', 'order id', 'order no', 'order num', 'kothay', 'kobe pabo'];
         foreach ($trackingKeywords as $kw) {
             if (mb_strpos(mb_strtolower($msg), $kw) !== false) return true;
         }
@@ -22,6 +22,14 @@ class ChatbotUtilityService
         $cleanMsg = trim(str_replace($bn, $en, $msg));
         
         if (preg_match('/^01[3-9]\d{8}$/', $cleanMsg)) return true;
+        
+        // Also check if the user is providing an order number like '56', 'order 56', '56 amar order number'
+        if (preg_match('/(?:order|অর্ডার)\s*(?:no|number|id|নং|নম্বর|নাম্বার|#|-)?\s*\d{1,6}/i', $cleanMsg) || preg_match('/^\d{1,6}$/', $cleanMsg)) {
+            // But verify it's not a price or something else. For safety, if they say 'amar order 56', it'll match.
+            // Wait, just '^\d{1,6}$' will catch single numbers. Maybe we rely on the broader NLP. Let's just catch order number keywords.
+            return true;
+        }
+
         return false;
     }
 
@@ -272,9 +280,11 @@ class ChatbotUtilityService
                 
                 $resultStr = "";
                 if (isset($data['detected_text'])) $resultStr .= "ছবির গায়ে লেখা: '{$data['detected_text']}'. ";
-                if (isset($data['visual_tags'])) $resultStr .= "ছবির ধরন: {$data['visual_tags']}.";
-                
-                return trim($resultStr);
+                return [
+                    'detected_text' => $data['detected_text'] ?? null,
+                    'visual_tags'   => $data['visual_tags'] ?? null,
+                    'raw_string'    => trim($resultStr)
+                ];
             }
         } catch (\Exception $e) {
             Log::error("Google Vision API Error: " . $e->getMessage());

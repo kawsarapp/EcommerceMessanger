@@ -63,6 +63,14 @@ return [
         'api_key' => env('GOOGLE_VISION_API_KEY'),
     ],
 
+    'google_cloud' => [
+        'project_id'       => env('GOOGLE_CLOUD_PROJECT_ID'),
+        'location'         => env('GOOGLE_CLOUD_LOCATION', 'asia-east1'),
+        'product_set_id'   => env('GOOGLE_VISION_PRODUCT_SET_ID'),
+        'credentials_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+        'storage_bucket'   => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
+    ],
+
     'deepseek' => [
         'api_key' => env('DEEPSEEK_API_KEY'),
     ],
