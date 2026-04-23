@@ -11,6 +11,16 @@ class UsageOverview extends BaseWidget
 {
     protected static ?string $pollingInterval = '15s';
 
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+        // Staff ইউজারদের কাছে এই widget দেখানো হবে না
+        if ($user && method_exists($user, 'isStaff') && $user->isStaff()) {
+            return false;
+        }
+        return true;
+    }
+
     protected function getStats(): array
     {
         $user = auth()->user();
