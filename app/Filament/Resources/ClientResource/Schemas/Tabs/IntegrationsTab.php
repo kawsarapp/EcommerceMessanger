@@ -184,7 +184,7 @@ class IntegrationsTab
                         ->url(fn ($record) => $record ? route('auth.facebook', ['client_id' => $record->id]) : '#')
                         ->color('info')
                         ->visible(fn ($record) => !$record || !$record->fb_page_id)
-                        ->disabled(fn ($record) => !$record), // Disable link if client is not created yet
+                        ->disabled(fn ($record) => !$record),
                         
                     Action::make('test_facebook')
                         ->label('Test Connection')
@@ -206,7 +206,51 @@ class IntegrationsTab
                                 Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
                             }
                         }),
-                        
+
+                    // ─── THE CRITICAL MISSING STEP ────────────────────────────────────────
+                    // Webhook verify হলেই message আসে না — Page কে subscribed_apps এ subscribe করতে হয়।
+                    Action::make('subscribe_facebook_messages')
+                        ->label('🔔 Subscribe to Messages')
+                        ->color('warning')
+                        ->icon('heroicon-m-bell-alert')
+                        ->tooltip('এই বাটনে click না করলে Facebook কোনো message webhook-এ পাঠাবে না!')
+                        ->requiresConfirmation()
+                        ->modalHeading('Subscribe Page to Messenger Webhooks?')
+                        ->modalDescription('এটি আপনার Facebook Page কে messages, messaging_postbacks webhook event এ subscribe করবে। এরপর থেকে কাস্টমার message দিলে chatbot কাজ করবে।')
+                        ->visible(fn ($record) => $record && $record->fb_page_id && $record->fb_page_token)
+                        ->action(function ($record) {
+                            try {
+                                $res = Http::post(
+                                    "https://graph.facebook.com/v19.0/{$record->fb_page_id}/subscribed_apps",
+                                    [
+                                        'subscribed_fields' => 'messages,messaging_postbacks,feed,message_reads,message_deliveries',
+                                        'access_token'      => $record->fb_page_token,
+                                    ]
+                                );
+                                $body = $res->json();
+                                if ($res->successful() && ($body['success'] ?? false)) {
+                                    \Illuminate\Support\Facades\Log::info("✅ Facebook Subscribe Success - Client: {$record->id} Page: {$record->fb_page_id}");
+                                    Notification::make()
+                                        ->title('✅ Subscribed Successfully!')
+                                        ->body('Facebook Page এখন messages webhook-এ subscribe হয়েছে। এখন কাস্টমার message দিলে chatbot কাজ করবে।')
+                                        ->success()
+                                        ->persistent()
+                                        ->send();
+                                } else {
+                                    \Illuminate\Support\Facades\Log::error("❌ Facebook Subscribe Failed - Client: {$record->id}", $body);
+                                    Notification::make()
+                                        ->title('❌ Subscribe Failed!')
+                                        ->body($body['error']['message'] ?? 'Token এ pages_manage_metadata permission না থাকলে এই error আসে।')
+                                        ->danger()
+                                        ->persistent()
+                                        ->send();
+                                }
+                            } catch (\Exception $e) {
+                                \Illuminate\Support\Facades\Log::error("Facebook Subscribe Error - Client: {$record->id} | " . $e->getMessage());
+                                Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+
                     Action::make('disconnect_facebook')
                         ->label('Disconnect Page')
                         ->color('danger')
