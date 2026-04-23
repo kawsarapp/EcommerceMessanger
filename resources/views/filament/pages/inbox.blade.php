@@ -52,11 +52,11 @@
                         <div class="flex justify-between items-start mb-1 gap-2">
                             <div class="flex items-center gap-2 min-w-0">
                                 @if(($sender->platform ?? 'messenger') === 'whatsapp')
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-green-500 to-green-400 text-white flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0" style="background: linear-gradient(to top right, #22c55e, #4ade80);">
                                         <x-heroicon-s-phone class="w-4 h-4"/>
                                     </div>
                                 @else
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-blue-400 text-white flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0" style="background: linear-gradient(to top right, #3b82f6, #60a5fa);">
                                         <x-heroicon-s-chat-bubble-oval-left class="w-4 h-4"/>
                                     </div>
                                 @endif
@@ -104,7 +104,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <div class="w-10 h-10 rounded-full {{ $platformType === 'whatsapp' ? 'bg-gradient-to-tr from-green-600 to-green-500' : 'bg-gradient-to-tr from-blue-600 to-blue-500' }} flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0" style="background: {{ $platformType === 'whatsapp' ? 'linear-gradient(to top right, #16a34a, #22c55e)' : 'linear-gradient(to top right, #2563eb, #3b82f6)' }};">
                             <x-heroicon-s-user class="w-5 h-5"/>
                         </div>
                         <div class="min-w-0">
@@ -186,7 +186,7 @@
                             {{-- Bot / Admin Message --}}
                             @if($chat->bot_response || ($chat->attachment_url && is_null($chat->user_message)))
                                 <div class="flex justify-end items-end gap-2 group">
-                                    <div class="{{ is_null($chat->user_message) ? 'bg-gradient-to-br from-indigo-600 to-indigo-500' : 'bg-gradient-to-br from-primary-600 to-primary-500' }} text-white px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[80%] shadow-md">
+                                    <div class="text-white px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[80%] shadow-md" style="background: {{ is_null($chat->user_message) ? 'linear-gradient(to bottom right, #4f46e5, #6366f1)' : 'var(--primary-600)' }};">
                                         @if($chat->bot_response)
                                             <p class="text-sm whitespace-pre-wrap leading-relaxed">{{ $chat->bot_response }}</p>
                                         @endif
