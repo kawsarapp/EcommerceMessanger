@@ -17,6 +17,8 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Grid;
 
+use Illuminate\Support\Facades\Auth;
+
 class SiteSettingResource extends Resource
 {
     protected static ?string $model = SiteSetting::class;
@@ -30,6 +32,16 @@ class SiteSettingResource extends Resource
     public static function canCreate(): bool
     {
         return false; // Only one row should exist
+    }
+
+    public static function canViewAny(): bool
+    {
+        return Auth::id() === 1; // Only Super Admin (user id=1)
+    }
+
+    public static function canAccess(): bool
+    {
+        return Auth::id() === 1; // Only Super Admin (user id=1)
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
