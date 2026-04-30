@@ -152,6 +152,7 @@ class MediaService
                 ->attach('file', fopen($tempPath, 'r'), "voice.{$ext}")
                 ->post('https://api.openai.com/v1/audio/transcriptions', [
                     'model'           => 'whisper-1',
+                    'language'        => 'bn',
                     'prompt'          => 'Bangla/Bengali e-commerce conversation about products, prices, orders.',
                     'response_format' => 'json',
                 ]);
